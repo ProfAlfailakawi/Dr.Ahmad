@@ -57,6 +57,63 @@ function RouteLoadingLine() {
   return <div className="route-loading-line" aria-hidden="true" />
 }
 
+/* سماءٌ هيكليّة فوريّة لِـ /atlas: نجومٌ شبحيّة تُرسَم لحظةَ الدخول ريثما تنزل
+   شيفرة الصفحة الحقيقية، فلا يرى الزائر بياضاً قبل الفجر. مواقع النجوم مشتقّة
+   من بذرةٍ ثابتة (لا Math.random) فتتطابق بين التوليد المسبق والترطيب، ولا تقفز.
+   لا لونٌ حرفيٌّ ولا شكلٌ جديد: النجمة نقطةُ accent باهتة على canvas، والحركةُ
+   وميضٌ في الشفافية فقط — تسكن تماماً عند تفضيل تقليل الحركة. */
+const ATLAS_GHOST_STARS = (() => {
+  let seed = 0x9e3779b9
+  const rand = () => {
+    seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5
+    return ((seed >>> 0) % 100000) / 100000
+  }
+  return Array.from({ length: 72 }, () => ({
+    left: 4 + rand() * 92,
+    top: 6 + rand() * 84,
+    size: 1.5 + rand() * 2.6,
+    opacity: 0.06 + rand() * 0.16,
+    delay: rand() * 4,
+  }))
+})()
+
+function AtlasSkyFallback() {
+  return (
+    <div className="min-h-[70vh]" aria-busy="true">
+      <style>{'@keyframes atlasGhostTwinkle{0%,100%{opacity:.28}50%{opacity:1}}@media(prefers-reduced-motion:reduce){.atlas-ghost-star{animation:none!important}}'}</style>
+      <header className="border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
+        <div className="mx-auto max-w-shell">
+          <span className="text-[.7rem] font-semibold uppercase tracking-[.2em] text-accent/70">خريطة</span>
+          <h1 className="mt-3 font-display text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.25] text-ink/90">سماء المقالات.</h1>
+          <span className="mt-4 block h-px w-16 bg-accent/40" aria-hidden="true" />
+        </div>
+      </header>
+      <section className="px-4 py-14 md:px-11 md:py-16">
+        <div className="mx-auto max-w-shell">
+          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[16px] border border-hair bg-wash/60 md:aspect-[16/7]" aria-hidden="true">
+            {ATLAS_GHOST_STARS.map((star, i) => (
+              <span
+                key={i}
+                className="atlas-ghost-star absolute rounded-full bg-accent"
+                style={{
+                  left: `${star.left}%`,
+                  top: `${star.top}%`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  opacity: star.opacity,
+                  animation: `atlasGhostTwinkle ${5 + (i % 4)}s ease-in-out ${star.delay}s infinite`,
+                }}
+              />
+            ))}
+            <span className="absolute inset-x-8 bottom-10 h-px bg-hair" />
+          </div>
+          <p className="mt-6 text-center text-[.8rem] font-light text-ink/45">تتشكّل السماء…</p>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 /* إدارة موضع التمرير على مستوى المسارات كلّها:
    - الانتقال إلى مادة جديدة يبدأ من الأعلى.
    - روابط # تذهب إلى القسم المقصود بعد ظهوره.
@@ -691,7 +748,7 @@ function AnimatedRoutes() {
         <Route path="/concept/:term" element={<ConceptLife />} />
         <Route path="/thought" element={<ThoughtOverview />} />
         <Route path="/articles/:slug" element={<ArticleDetail />} />
-        <Route path="/atlas" element={<Atlas />} />
+        <Route path="/atlas" element={<Suspense fallback={<AtlasSkyFallback />}><Atlas /></Suspense>} />
         <Route path="/media" element={<Media />} />
         <Route path="/media/:slug" element={<MediaDetail />} />
         <Route path="/questions" element={<Questions />} />

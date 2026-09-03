@@ -5968,6 +5968,23 @@
     "verifiedAt": "2026-08-07T21:59:07.960Z",
     "bytes": 3720716
   },
+  "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.dialogue-kw.json": {
+    "bytes": 7976,
+    "sha256": "8b54eea7269c4f88ba0f87f084522b0665c4a44559adffcc9d705886224012aa",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:35:28.161Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:35:28.161Z"
+  },
+  "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.dialogue-kw.mp3": {
+    "bytes": 2191245,
+    "sha256": "db21a61096357c9eda7ecb9f3c34038cee1d0f865f9e9eb96be961c9032f2d5b",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:35:28.161Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:35:28.161Z",
+    "durationSeconds": 110
+  },
   "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.dialogue.json": {
     "bytes": 10112,
     "sha256": "b71fd31e6d3a65723b98470865e2b4ef662558736b506035a313f426592723e8",

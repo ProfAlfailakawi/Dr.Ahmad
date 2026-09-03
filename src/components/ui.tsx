@@ -1143,7 +1143,12 @@ export function Footer() {
             <ScheduleProjectLink label="الجدول" iconOnly className="site-footer__project" />
           </nav>
         </div>
-        <div className="site-footer__rights">© {year} {profile.fullName} · جميع الحقوق محفوظة</div>
+        <div className="site-footer__rights">
+          © {year} {profile.fullName} · جميع الحقوق محفوظة
+          {/* تحميلٌ كامل لا تنقّلٌ داخلي: «العتبة» تقرأ ?intro=1 عند التركيب وحده. */}
+          <span aria-hidden="true"> · </span>
+          <a href="/?intro=1" className="site-footer__text-link">شاهد تقديم الموقع</a>
+        </div>
       </div>
     </footer>
   )

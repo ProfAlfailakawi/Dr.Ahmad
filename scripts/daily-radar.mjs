@@ -134,7 +134,7 @@ const TOPIC_BUCKETS = [
   { label: 'الطالب والتحصيل', signals: ['student', 'learner', 'literacy', 'absent', 'enrollment', 'dropout', 'achievement'] },
   { label: 'التعليم الجامعي', signals: ['university', 'college', 'campus', 'higher education', 'undergraduate', 'faculty'] },
   { label: 'سياسات التعليم وتمويله', signals: ['policy', 'funding', 'district', 'reform', 'budget', 'legislat', 'federal'] },
-  { label: 'التقنية والمجتمع الرقمي', signals: ['technology', 'digital', 'platform', 'device', 'screen', 'social media', 'edtech'] },
+  { label: 'التكنولوجيا والمجتمع الرقمي', signals: ['technology', 'digital', 'platform', 'device', 'screen', 'social media', 'edtech'] },
   { label: 'البحث العلمي والدراسات', signals: ['research', 'study finds', 'researchers', 'evidence', 'data show'] },
 ]
 
@@ -145,7 +145,7 @@ function topicOf(item) {
     const hits = bucket.signals.reduce((count, signal) => count + (text.includes(signal) ? 1 : 0), 0)
     if (hits && (!best || hits > best.hits)) best = { label: bucket.label, hits }
   }
-  return best?.label || 'التعليم والتقنية'
+  return best?.label || 'التعليم والتكنولوجيا'
 }
 
 function candidateScore(item, tiredSources = new Map()) {
@@ -180,7 +180,7 @@ const TRANSLIT = [
   [/\bChatbot(s)?\b/gi, 'روبوت المحادثة'],
   [/\bAI\b/gi, 'الذكاء الاصطناعي'],
   [/\bLMS\b/gi, 'نظام إدارة التعلّم'],
-  [/\bSTEM\b/gi, 'العلوم والتقنية والهندسة والرياضيات'],
+  [/\bSTEM\b/gi, 'العلوم والتكنولوجيا والهندسة والرياضيات'],
   [/\bEdTech\b/gi, 'تقنيات التعليم'],
 ]
 const arabize = (value = '') => {

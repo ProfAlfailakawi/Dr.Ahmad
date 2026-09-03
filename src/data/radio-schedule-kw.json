@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 11220,
+ "loop": 11334,
  "gap": 8,
  "items": [
   {
@@ -697,10 +697,17 @@
    "dur": 115
   },
   {
+   "slug": "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis",
+   "title": "السوق المفتوح لاقتناء الشهادات أزمة علمية أم أخلاقية؟",
+   "cat": "التعليم",
+   "at": 11101,
+   "dur": 106
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 11101,
+   "at": 11215,
    "dur": 111
   }
  ]

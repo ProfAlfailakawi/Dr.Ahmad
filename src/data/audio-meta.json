@@ -6453,6 +6453,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.192Z"
   },
+  "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.dialogue-kw.json": {
+    "bytes": 8012,
+    "sha256": "5887b4cf6afe962b432db803789c556391771a7ff82c835bbcc5d65d1bc0daa0",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:13:28.998Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:13:28.998Z"
+  },
+  "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.dialogue-kw.mp3": {
+    "bytes": 2115405,
+    "sha256": "246b861d7bbfc70f507bb41d9cdc95aaa2dc7b065647e9d1c0a6051c0c53b189",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:13:28.998Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:13:28.998Z",
+    "durationSeconds": 106
+  },
   "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.dialogue.json": {
     "bytes": 9149,
     "sha256": "bd36124dd3117e88cad7fb179c93dbcbd574586d7ce1faccde3e45a61790994b",

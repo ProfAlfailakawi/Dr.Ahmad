@@ -6192,6 +6192,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:54.623Z"
   },
+  "the-excellence-epidemic-or-the-cult-of-grades-2.dialogue-kw.json": {
+    "bytes": 9122,
+    "sha256": "8c2ad8403d1a74c679c1c23a1fafb61057462542c6fe554044b5731ee3526320",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T19:05:25.781Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:05:25.781Z"
+  },
+  "the-excellence-epidemic-or-the-cult-of-grades-2.dialogue-kw.mp3": {
+    "bytes": 2280525,
+    "sha256": "b72c0049e64d39b18c24e23ebc8d209332d12a3b090ad84f88071b9434093c26",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T19:05:25.781Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:05:25.781Z",
+    "durationSeconds": 114
+  },
   "the-excellence-epidemic-or-the-cult-of-grades-2.dialogue.json": {
     "bytes": 9561,
     "sha256": "0e85ebff2f13ee653d9bae08e9358662195ee9ffef79895c625584212736bef3",

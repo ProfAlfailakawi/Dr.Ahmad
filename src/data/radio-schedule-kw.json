@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 10755,
+ "loop": 10877,
  "gap": 8,
  "items": [
   {
@@ -669,10 +669,17 @@
    "dur": 112
   },
   {
+   "slug": "the-excellence-epidemic-or-the-cult-of-grades-2",
+   "title": "عقولنا في عُلب ونتساءل: أين الإبداع؟",
+   "cat": "التعليم",
+   "at": 10636,
+   "dur": 114
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 10636,
+   "at": 10758,
    "dur": 111
   }
  ]

@@ -6852,6 +6852,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:56.403Z"
   },
+  "todays-childs-confusion-between-education-and-care.dialogue-kw.json": {
+    "bytes": 8559,
+    "sha256": "aa720a1b9078e67cba66bf3a98e9a161eb8448e8c7b93d10262fac403ce4432f",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T22:03:13.156Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:03:13.156Z"
+  },
+  "todays-childs-confusion-between-education-and-care.dialogue-kw.mp3": {
+    "bytes": 2120205,
+    "sha256": "674e0d9e07ff6ecf9b18a5bce2fd75831f1844492accd95a6bf7623d13bad3e1",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T22:03:13.156Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:03:13.156Z",
+    "durationSeconds": 106
+  },
   "todays-childs-confusion-between-education-and-care.dialogue.json": {
     "bytes": 9478,
     "sha256": "bc0c0720144585801f5eb296723f748a2afeb2bd074ee8d485442bc13aa468cd",

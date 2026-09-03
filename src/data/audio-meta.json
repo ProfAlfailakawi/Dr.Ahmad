@@ -5876,6 +5876,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:53.430Z"
   },
+  "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.dialogue-kw.json": {
+    "bytes": 7373,
+    "sha256": "3eb4380e045a4ffdfc2fee6110784de97021fd31dcea0b45f5be9e2330908b86",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:12:36.647Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:12:36.647Z"
+  },
+  "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.dialogue-kw.mp3": {
+    "bytes": 2110125,
+    "sha256": "7212a31ccf46373f046b0bd40fdd81a5c39ea3d2db715383f93a80dab3968658",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:12:36.647Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:12:36.647Z",
+    "durationSeconds": 105
+  },
   "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.dialogue.json": {
     "bytes": 9873,
     "sha256": "16d88a8ecb76e3d8ea746b7aad057729c3098fb266c66781b9e405e03091f320",

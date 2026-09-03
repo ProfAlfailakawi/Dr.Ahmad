@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 12373,
+ "loop": 12488,
  "gap": 8,
  "items": [
   {
@@ -767,10 +767,17 @@
    "dur": 109
   },
   {
+   "slug": "we-graduated-with-a-degree-but-the-language-was-lost-2",
+   "title": "تخرَّجنا بشهادة… لكن ضاعت اللغة!",
+   "cat": "هوية",
+   "at": 12254,
+   "dur": 107
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 12254,
+   "at": 12369,
    "dur": 111
   }
  ]

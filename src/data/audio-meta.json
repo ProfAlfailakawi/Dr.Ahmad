@@ -6990,6 +6990,23 @@
     "verifiedAt": "2026-08-07T21:58:57.759Z",
     "bytes": 3180295
   },
+  "we-graduated-with-a-degree-but-the-language-was-lost-2.dialogue-kw.json": {
+    "bytes": 9183,
+    "sha256": "5605606bdf9077c4251910cc85c395cc57e546e0932180cf8fba9948a3a171d3",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:11:28.568Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:11:28.568Z"
+  },
+  "we-graduated-with-a-degree-but-the-language-was-lost-2.dialogue-kw.mp3": {
+    "bytes": 2147565,
+    "sha256": "72cfc526519c43dd0fdaa8aa9a479b38102cbbbbeb393c9df0de7f9ace498027",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:11:28.568Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:11:28.568Z",
+    "durationSeconds": 107
+  },
   "we-graduated-with-a-degree-but-the-language-was-lost-2.dialogue.json": {
     "bytes": 9398,
     "sha256": "6ca30ecb661f47f72af2a3149d4abf0dbc74276778dd9237d949c27a039d52f1",

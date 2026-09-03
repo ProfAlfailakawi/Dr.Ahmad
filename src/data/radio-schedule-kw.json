@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 8601,
+ "loop": 8708,
  "gap": 8,
  "items": [
   {
@@ -522,24 +522,31 @@
    "dur": 103
   },
   {
+   "slug": "qabas-201805-004",
+   "title": "تحية لوزير التربية… رجل القرارات الشجاعة",
+   "cat": "التعليم",
+   "at": 8244,
+   "dur": 99
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 8244,
+   "at": 8351,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 8362,
+   "at": 8469,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 8482,
+   "at": 8589,
    "dur": 111
   }
  ]

@@ -6898,6 +6898,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.765Z"
   },
+  "turning-video-game-obsession-into-creative-meditation-2.dialogue-kw.json": {
+    "bytes": 8572,
+    "sha256": "660a93e2a9e68baa7317a1e0b1f6c650a416190845a48c83e02ce258e606cdb6",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T22:26:22.713Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:26:22.713Z"
+  },
+  "turning-video-game-obsession-into-creative-meditation-2.dialogue-kw.mp3": {
+    "bytes": 2054925,
+    "sha256": "a0825c51ffe9034f6a0decf8047c6ae9b0eeed3df7445d54467b55c61ced7007",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T22:26:22.713Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:26:22.713Z",
+    "durationSeconds": 103
+  },
   "turning-video-game-obsession-into-creative-meditation-2.dialogue.json": {
     "bytes": 9496,
     "sha256": "d31dee51108da9dbcc186bc3569209cef759ce23716df48fd48c4364b61e3a1a",

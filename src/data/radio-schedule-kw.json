@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 12488,
+ "loop": 12606,
  "gap": 8,
  "items": [
   {
@@ -774,10 +774,17 @@
    "dur": 107
   },
   {
+   "slug": "we-handed-them-the-phone-so-theyd-leave-us-alone-2",
+   "title": "سلّمناه الهاتف… ليستريح منا!",
+   "cat": "التربية",
+   "at": 12369,
+   "dur": 110
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 12369,
+   "at": 12487,
    "dur": 111
   }
  ]

@@ -7052,6 +7052,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:57.826Z"
   },
+  "we-handed-them-the-phone-so-theyd-leave-us-alone-2.dialogue-kw.json": {
+    "bytes": 7970,
+    "sha256": "4373a5d9a772e8e7dd58b16226a83a567434b17a32e223216acd003909d20b5f",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:16:17.901Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:16:17.901Z"
+  },
+  "we-handed-them-the-phone-so-theyd-leave-us-alone-2.dialogue-kw.mp3": {
+    "bytes": 2199405,
+    "sha256": "6d55f260544f9568686ac4349e1de6ba543abf8914852621474179e8fa9a59de",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:16:17.901Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:16:17.901Z",
+    "durationSeconds": 110
+  },
   "we-handed-them-the-phone-so-theyd-leave-us-alone-2.dialogue.json": {
     "bytes": 9674,
     "sha256": "af420dc1420fa20bc2344be3f7c62412b31396a31ceb0564485c797db79a121d",

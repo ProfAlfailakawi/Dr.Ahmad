@@ -6744,6 +6744,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.543Z"
   },
+  "the-teacher-what-do-you-know-about-the-teacher.dialogue-kw.json": {
+    "bytes": 9115,
+    "sha256": "21d0fb760436ae71cd5aa1e58058121126b37a41e2c6bccd65e9eb59f38cb48e",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T21:48:06.177Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:48:06.177Z"
+  },
+  "the-teacher-what-do-you-know-about-the-teacher.dialogue-kw.mp3": {
+    "bytes": 2118765,
+    "sha256": "d49ad86558566982df79679d897ccd80b651a7f1a5c2f66b774209b817c2c590",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T21:48:06.177Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:48:06.177Z",
+    "durationSeconds": 106
+  },
   "the-teacher-what-do-you-know-about-the-teacher.dialogue.json": {
     "bytes": 9152,
     "sha256": "0ae6c768e2c71ce76179c95765d2a1d308352857eea227c9f40fcf1640bb2cb8",

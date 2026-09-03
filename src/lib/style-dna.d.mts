@@ -27,6 +27,10 @@ export interface StyleDna {
     articlesWithQuestion: number; articlesWithGuillemets: number
   }
   openers: { word: string; count: number }[]
+  /* مفاصله بعد الفاصلة، مقيسةً من أرشيفه — عليها يُكسر طولُ الجملة. */
+  hinges: string[]
+  /* أفعال جمع المتكلمين مشتقّةً من متنه (٢٤٨ فعلاً) لا من قائمةٍ مكتوبة. */
+  collectiveVerbs: string[]
   closings: { questionRate: number; antithesisRate: number; appealRate: number }
   perArticle: Record<string, StyleBand>
   era?: { halfLifeYears: number; weightedSample: number; recentArticles: number }
@@ -53,6 +57,8 @@ export interface StyleCheck {
 
 export interface StyleVerdict {
   score: number
+  /* الدرجة قبل سقف التحفّظ القاطع: تُظهر تقدّم المحاكاة حين يبقى السقف. */
+  raw: number
   ready: boolean
   checks: StyleCheck[]
   corrections: string[]
@@ -72,7 +78,16 @@ export declare function sentencesOf(value?: string): string[]
 export declare function paragraphsOf(value?: string): string[]
 
 export declare function measureStyleDna(articles: ({ body?: string; iso?: string; date?: string } | string)[]): StyleDna | null
-export declare function articleMetrics(body: string): StyleMetrics
+export declare function articleMetrics(body: string, options?: { collective?: string[] }): StyleMetrics
+export declare function deriveCollectiveVerbs(corpus?: string): string[]
+export declare function wellFormedness(text: string): {
+  dangling: number; doubled: number; doubledPreposition: number
+  orphans: number; stackedConnectives: number; breaks: number
+  doubledRate: number; orphanRate: number
+}
+export declare const COLLECTIVE_SEED: string[]
+export declare const COLLECTIVE_VERBS_FALLBACK: string[]
+export declare const SUBORDINATOR_STARTS: string[]
 export declare function resolveStyleDna(dna: unknown): StyleDna
 export declare function styleBrief(dna: StyleDna | null, targetWords?: number): string
 export declare function judgeStyle(

@@ -228,6 +228,24 @@ check(longAvatarPrompt.includes('occupies only part of the clip'), 'المقطع
 check((longAvatarPrompt.match(/IDENTITY —/g) || []).length === 1, 'قفل الهوية مرة واحدة لا مرتين — التكرار يخفف وزن البقية')
 check(longAvatarPrompt.includes('alive but composed'), 'طاقة الأفتار: حياة بلا فوضى')
 check(noPeoplePrompts.includes('weight, momentum'), 'طاقة المشهد الرمزي: قوى فيزيائية مرئية')
+/* مطابقة بنك المشاهد كانت تقرأ العنوان وجملة المقطع وحدهما، وهما قصيران فلا
+   يحملان كلمةً مفتاحية غالباً. القياس على ستين مقالاً من متنه: ثلاثة وخمسون
+   كانت تسقط على المشهد الاحتياطي العام — أي أن أغلب الفيديوهات كانت تُبنى
+   بصورةٍ لا تخصّ مقالها. المتن يُرجّح الآن، فسقط العدد إلى واحد. */
+const FALLBACK_BRIEF = /One object is set in motion, meets resistance|A crowded field of material is reduced by moving air|Two opposing physical forces meet on a surface/
+const CONCEPT_SAMPLES = [
+  { key: 'شاشات', body: 'الشاشة تعطي الإجابة قبل أن يكتمل السؤال. صار الهاتف الرقمي يجيب فوراً عن كل بحث، والخوارزمية ترتب المعرفة قبل أن يسأل الطالب نفسه سؤالاً واحداً. ' },
+  { key: 'أسرة', body: 'الطفل يسأل والأم مشغولة. البيت يحتاج إنصاتاً لا محاضرة، والأب حين يجلس مع ابنه دقيقة واحدة يصنع ما لا تصنعه ساعة من النصح. ' },
+  { key: 'درجات', body: 'الدرجة رقم على ورقة. الاختبار صار غاية بدل أن يكون أداة تقييم، والتفوق يُقاس بما يُحفظ لا بما يُفهم. ' },
+]
+for (const sample of CONCEPT_SAMPLES) {
+  const body = sample.body.repeat(22)
+  const themed = { ...published, title: 'عنوان محايد بلا كلمة مفتاحية', excerpt: body.slice(0, 90), body }
+  const briefs = createArticleVideoProject({ article: themed, castMode: 'no_people' })
+    .segments.map((segment) => segment.visualBrief).join(' ')
+  check(!FALLBACK_BRIEF.test(briefs), `متن ${sample.key} يرجّح مشهده فلا يسقط على الاحتياطي`)
+}
+
 check(/OPENING RULE/.test(kinetic) && /already mid-event/.test(kinetic), 'قانون الافتتاح: الحدث بدأ قبل الإطار الأول')
 check(/Required transformation/.test(kinetic), 'كل مشهد يلزمه تحوّل مرئي لا حالة ساكنة')
 

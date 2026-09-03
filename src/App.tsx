@@ -107,7 +107,7 @@ function AtlasSkyFallback() {
             ))}
             <span className="absolute inset-x-8 bottom-10 h-px bg-hair" />
           </div>
-          <p className="mt-6 text-center text-[.8rem] font-light text-ink/45">تتشكّل السماء…</p>
+          <p className="mt-6 text-center text-[.8rem] font-light text-ink/[.45]">تتشكّل السماء…</p>
         </div>
       </section>
     </div>

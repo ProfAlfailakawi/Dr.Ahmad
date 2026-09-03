@@ -131,7 +131,10 @@ const unstable = archive.filter((item) => {
   const once = refineToStyle(item.body, dna)
   return refineToStyle(once, dna) !== once
 }).length
-assert.ok(unstable <= 12, `الصقل شبه ثابت عبر تمريرين (${unstable} من ${archive.length}؛ كان ٣٧)`)
+/* كان الشرط «شبه ثابت» ويتسامح مع اثني عشر. وقد زال سببا التذبذب: حصّة
+   الوقفات كانت تُحسب على ما تراه التمريرة لا على كل مفاصل النص، ورأسُ الجملة
+   المكسورة كان يُترك بلا إعادة فحص. الآن صفر، والشرط صفر. */
+assert.equal(unstable, 0, `الصقل ثابتٌ تماماً عبر تمريرين (${unstable} من ${archive.length}؛ كان ٣٧ ثم ١٢)`)
 const spamSource = archive[7].body
 const spammed = spamSource.split(/\s+/).map((word, index) => index % 6 === 5 ? `${word}…` : word).join(' ')
 assert.ok(judgeStyle(spammed, dna).score < judgeStyle(spamSource, dna).score, 'حشو الوقفات يخفض الدرجة ولا يرفعها')
@@ -413,7 +416,10 @@ assert.match(server, /cfModel: process\.env\.EDITORIAL_CF_MODEL \|\| ARTICLE_MOD
 assert.match(server, /clamp\(Math\.ceil\(targetWords \* 5\), 2_500, 16_384\)/, 'سقف الرموز يتّسع للعربية')
 assert.match(server, /ARTICLE_STYLE_DEADLINE_MS', 46_000/, 'الميزانية تحت باب Firebase Hosting الستين')
 assert.match(server, /const needsSecond = !alwaysTwo/, 'المرشح الثاني يُشترى عند الحاجة لا مقدماً')
-assert.match(server, /archiveBodies\(\)/, 'الخادم يقرأ الأرشيف من قرصه')
+/* كان الشرط مكتوباً على اسمٍ قديم (`archiveBodies()`) بعد أن قُسّم القارئ إلى
+   شرائح واحتياط، فصار الفاحص كله يسقط على السطر نفسه قبل أن يبلغ فحصاً واحداً
+   من فحوص الأسلوب — ولم يكن موصولاً بالبناء فلم ينتبه أحد. */
+assert.match(server, /archiveBodyFromShard\(slug\) \|\| archiveBodiesFallback\(\)/, 'الخادم يقرأ الأرشيف من قرصه')
 assert.match(server, /maxArticleRequestBytes = 384 \* 1024/, 'وحدّ الطلب يتّسع للفهرس')
 assert.match(server, /buildOrthographyIndex\(input\.existing\)/, 'بوابة الإملاء موصولةٌ بالمحرك')
 assert.match(server, /deriveExcerpt\(article\.body, article\.excerpt\)/, 'مسطرة المقتطف موصولة')
@@ -440,5 +446,118 @@ assert.match(studio, /wordCount\(bundle\.body\) < MIN_ARTICLE_WORDS\) return/, '
 const gcloudignore = readFileSync(resolve(root, '.gcloudignore'), 'utf8')
 assert.match(gcloudignore, /!src\/lib\/style-dna\.mjs/, 'الوحدة مشمولة في حزمة النشر — وإلا انهار dr-api عند الإقلاع')
 
+/* ─── ٦) محاكاة الصوت: لا تمسخ، ولا تحقن، ولا تُنقِص ─── */
+const {
+  MIMIC_CANDIDATES, OWN_FLOOR, buildMimicLexicon, contextSource, flexPattern, gateEdit, mimicVoice, wellFormedness,
+} = await import(resolve(root, 'src/lib/style-mimic.mjs'))
+
+/* السبب الجذري موثَّقاً كاختبارِ انحدار: `\b` في جافاسكربت لا ترى الحرف
+   العربي، فكل طبقةٍ بُنيت عليها كانت ميتةً بصمت. */
+assert.equal('الأمر مهم، بل هو حاسم'.replace(/،\s+(?=بل\b)/gu, '… '), 'الأمر مهم، بل هو حاسم', '`\\b` لا تطابق العربية — وهذا سبب «لا يتغيّر شيء»')
+assert.notEqual('الأمر مهم، بل هو حاسم'.replace(new RegExp('،\\s+(?=بل(?![\\p{L}\\p{M}]))', 'gu'), '… '), 'الأمر مهم، بل هو حاسم', 'والحدّ العربي الصحيح يطابق')
+
+const mimicOrtho = buildOrthographyIndex(archive)
+const lexicon = buildMimicLexicon(archive)
+assert.ok(lexicon.measured, 'المعجم لا يعمل إلا على أرشيفٍ مقيس')
+assert.ok(lexicon.rules.length >= 30, `قواعد مأذونة (${lexicon.rules.length})`)
+
+/* ★ لا يُمنع ما يكتبه هو: كل مرشحٍ بلغ ثلاثاً في سياقه محميّ. */
+const corpusText = bareText(archive.map((item) => item.body).join('\n\n'))
+for (const rule of lexicon.rules) {
+  const own = (corpusText.match(new RegExp(contextSource(rule), 'gu')) || []).length
+  assert.ok(own < OWN_FLOOR, `«${rule.phrase}» لا تُمسّ إلا وهي دون عتبته (${own})`)
+}
+for (const guard of lexicon.guarded) {
+  assert.ok(guard.own >= OWN_FLOOR, `«${guard.phrase}» محميّة لأنه يكتبها (${guard.own})`)
+}
+assert.ok(lexicon.guarded.length > 0, 'وبعض المرشحين عادةٌ له فعلاً — وإلا فالقياس معطَّل')
+
+/* ★ لا يُحقن ما لم يكتبه: كل بديلٍ مأذونٍ به مقيسٌ في متنه. */
+for (const rule of lexicon.rules.filter((item) => item.swap)) {
+  const swapCount = (corpusText.match(new RegExp(flexPattern(rule.swap), 'gu')) || []).length
+  assert.ok(swapCount >= OWN_FLOOR, `البديل «${rule.swap}» من متنه (${swapCount} مرة)`)
+}
+/* والعبارات التي كانت المحاكاة القديمة تحقنها باسمه: صفرٌ في ٥٣ ألف كلمة. */
+for (const ghost of ['الواقع أن', 'الظاهر أن', 'من هنا', 'يؤثر جوهرياً', 'أثراً عميقاً']) {
+  const count = (corpusText.match(new RegExp(flexPattern(ghost), 'gu')) || []).length
+  assert.ok(count < OWN_FLOOR, `«${ghost}» ليست من متنه (${count}) فلا تدخله`)
+  assert.ok(!MIMIC_CANDIDATES.some((item) => item.swap === ghost), `«${ghost}» ليست بديلاً مأذوناً`)
+}
+
+/* ★ على نصّه هو: لا تنقص درجته، ولا تكسر تركيبه، ولا تتغيّر بتمريرةٍ ثانية. */
+let mimicDrop = 0
+let mimicBreak = 0
+let mimicUnstable = 0
+let mimicIntruder = 0
+const contentSet = (value) => new Set(bareText(value).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+  .map((token) => (/^[وف][\p{L}]{2,}$/u.test(token) ? token.slice(1) : token)))
+for (const item of archive) {
+  const result = mimicVoice(item.body, dna, { orthography: mimicOrtho, lexicon })
+  if (result.after.score < result.before.score) mimicDrop += 1
+  const shapeBefore = wellFormedness(item.body)
+  const shapeAfter = wellFormedness(result.text)
+  for (const key of ['doubled', 'doubledPreposition', 'orphans', 'stackedConnectives']) {
+    if (shapeAfter[key] > shapeBefore[key]) { mimicBreak += 1; break }
+  }
+  if (mimicVoice(result.text, dna, { orthography: mimicOrtho, lexicon }).text !== result.text) mimicUnstable += 1
+  const allowed = contentSet(`${item.body} ${lexicon.rules.map((rule) => rule.swap || '').join(' ')}`)
+  for (const token of contentSet(result.text)) {
+    if (!allowed.has(token)) { mimicIntruder += 1; break }
+  }
+}
+assert.equal(mimicDrop, 0, 'المحاكاة لا تنقص درجة أيٍّ من مقالاته')
+assert.equal(mimicBreak, 0, 'ولا تكسر تركيب أيٍّ منها')
+assert.equal(mimicUnstable, 0, 'ونتيجتها ثابتة: تمريرةٌ ثانية لا تغيّر حرفاً')
+assert.equal(mimicIntruder, 0, 'ولا تُدخل كلمةً واحدة ليست في نصه أو في متنه')
+
+/* ★ على مسودة نموذج: تُصلح فعلاً، وتشرح، وتمتنع عمّا لا تُحسنه. */
+const mimicked = mimicVoice(generic, dna, { orthography: mimicOrtho, lexicon, archive })
+assert.ok(mimicked.changes.length >= 4, `المحاكاة تُحدث أثراً على مسودة نموذج (${mimicked.changes.length} تعديلاً)`)
+assert.ok(mimicked.after.raw - mimicked.before.raw >= 10, `والمطابقة ترتفع فعلاً (${mimicked.before.raw}٪ ← ${mimicked.after.raw}٪)`)
+assert.ok(mimicked.changes.every((change) => change.reason && change.paragraph >= 1), 'ولكل تعديلٍ سببٌ وموضع')
+assert.ok(mimicked.pending.length > 0, 'وما لا حذف آمن له يُرفع للدكتور لا يُمسخ')
+assert.equal(wellFormedness(mimicked.text).doubledPreposition, 0, 'ولا حرف جرٍّ مكرر في المخرَج')
+assert.equal(wellFormedness(mimicked.text).stackedConnectives, 0, 'ولا رابطين مرصوصين')
+assert.equal((mimicked.text.match(/\d+/g) || []).join('|'), (generic.match(/\d+/g) || []).join('|'), 'ولا رقم يتغيّر')
+
+/* ★ البوابة ترفض التمسيخ الذي كان يمرّ: هذه عيّناتٌ حرفية من مخرَج المحاكاة القديمة. */
+assert.equal(gateEdit('أحدث تحولاً في التعليم', 'أحدث تحولاً في في التعليم').ok, false, 'البوابة ترفض تكرار حرف الجر')
+assert.equal(gateEdit('نحتاج أن نتعامل معه', 'نحتاج اليوم أن أن نتعامل معه').ok, false, 'وتكرار الكلمة')
+assert.equal(gateEdit('يشهدها العالم', 'يشهدها العالم كمجرد ا لتحولات').ok, false, 'وإدخال كلماتٍ ليست في النص')
+assert.equal(gateEdit('نسبة 42% من الطلاب', 'نسبة 38% من الطلاب').ok, false, 'ومسّ الأرقام')
+
+/* ★ والحَكَم نفسه لم يعد يمدح نصاً مكسوراً: هذا مخرَج المحاكاة القديمة حرفياً. */
+const mutilated = `التعليم الرقمي في في تشكيل مستقبل الأجيال، وهو وهذا ما يضعنا أمام من الضروري إعادة النظر… ثم فإن هذه المنصات توفر تقارير دقيقة تساعد المعلم على متابعة كل طالب.
+
+ونحتاج اليوم أن أن نتعامل معه بوعي… بل هو أداة مساندة تحتاج إلى بيئة داعمة كي تؤتي ثمارها، ونجاح التجربة يتوقف على تكامل الأدوار بين المدرسة والبيت.
+
+وهذا التحول قد أحدث تحولاً في طرق التدريس والتعلم، وهو ما يفرض على المؤسسات مواكبة هذه التغيرات والاستفادة منها.`
+const mutilatedVerdict = judgeStyle(mutilated, dna)
+assert.ok(mutilatedVerdict.fatal.some((line) => line.includes('تركيبٌ مكسور')), 'التركيب المكسور تحفّظٌ قاطع')
+assert.ok(mutilatedVerdict.score <= 55, `والنصّ الممسوخ لا يتجاوز السقف (${mutilatedVerdict.score}٪ — وكان ٨٧٪)`)
+
+/* ★ ومع ذلك لا يرسب صاحب الأسلوب في هذا الفحص الجديد ولا مرة. */
+const shapeFailures = archive.filter((item) => (judgeStyle(item.body, dna).checks.find((check) => check.key === 'wellFormed')?.grade ?? 1) < 1).length
+assert.equal(shapeFailures, 0, 'ولا يسقط في «سلامة التركيب» أيٌّ من مقالاته الـ143')
+
+/* ★ والمسخ القديم لم يبقَ له أثرٌ في فاحص الأسلوب. */
+const checker = readFileSync(resolve(root, 'src/components/admin/StyleChecker.tsx'), 'utf8')
+assert.doesNotMatch(checker, /function mimicAuthorVoice/, 'محرك المسخ القديم حُذف من الفاحص')
+assert.doesNotMatch(checker, /فكيف نوظف هذا الوعي قبل أن يفوت الأوان/, 'وسؤال الخاتمة المعلَّب حُذف — لا جملة تُكتب باسمه لم يكتبها')
+assert.doesNotMatch(checker, /'الواقع أن '/, 'ولا تُحقن عبارةٌ ليست من متنه')
+assert.doesNotMatch(checker, /text\.replace\([^)]*\\b/, 'ولا تحويلَ نصٍّ مبنيّاً على حدّ الكلمة اللاتيني')
+assert.match(checker, /data-mimic-log="true"/, 'وسجل المحاكاة معروضٌ للدكتور')
+assert.match(checker, /undoMimic/, 'والتراجع بضغطة')
+assert.match(checker, /style-mimic\.mjs/, 'والفاحص يستورد المحرك المقيس')
+
+/* ★ الصوت الجمعي يُقاس صرفاً من متنه لا بقائمةٍ مكتوبة باليد. */
+assert.ok(dna.collectiveVerbs.length >= 150, `أفعال الصوت الجمعي مشتقّة من متنه (${dna.collectiveVerbs.length})`)
+for (const verb of ['نتعامل', 'نعمل', 'نتساءل', 'نريد']) {
+  assert.ok(dna.collectiveVerbs.includes(verb), `«${verb}» صوتٌ جمعيّ ولم تكن القائمة القديمة تراه`)
+}
+assert.ok(!dna.collectiveVerbs.includes('نظام'), 'و«نظام» ليست فعلاً')
+assert.ok(dna.hinges.length >= 10 && dna.hinges.includes('بل'), 'ومفاصل الكسر مقيسةٌ من مواضع فاصلته')
+
 console.log(`حَكَم الأسلوب: خضراء ✓  ·  مقالاته وسيط ${median}٪ (متوسط ${average.toFixed(1)}٪، عبور ${(passRate * 100).toFixed(0)}٪)`)
 console.log(`الفرز: نموذج عام ${genericVerdict.score}٪ · القالب القديم ${legacyVerdict.score}٪ · المسلَّم بعد التصحيح ${article.style.score}٪`)
+console.log(`المحاكاة: ${lexicon.rules.length} قاعدة مأذونة و${lexicon.guarded.length} محميّة · على مسودة نموذج ${mimicked.before.raw}٪ ← ${mimicked.after.raw}٪ بـ${mimicked.changes.length} تعديلاً و${mimicked.pending.length} موضعاً رُفع للدكتور · وعلى مقالاته: صفر انخفاض وصفر كسر وصفر تذبذب`)

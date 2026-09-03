@@ -19,6 +19,7 @@ import {
   type StyleCheck,
   type StyleVerdict,
 } from '../../lib/style-dna.mjs'
+import { buildMimicLexicon, mimicVoice, type MimicResult } from '../../lib/style-mimic.mjs'
 
 const DRAFT_KEY = 'admin-style-checker-draft-v1'
 const card = 'min-w-0 rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
@@ -42,6 +43,18 @@ const kindLabel: Record<string, string> = {
 
 const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)))
 
+const CHANGE_FORMS = { one: 'تعديل واحد', two: 'تعديلان', few: 'تعديلات', many: 'تعديلاً' }
+const PLACE_FORMS = { one: 'موضع', two: 'موضعان', few: 'مواضع', many: 'موضعاً' }
+
+const mimicKindLabel: Record<string, string> = {
+  matrix: 'فعل تقرير',
+  opener: 'افتتاح مدرسي',
+  connector: 'رابط دخيل',
+  temporal: 'ظرف منفوخ',
+  flourish: 'زخرفة',
+  orthography: 'إملاء',
+}
+
 function paragraphNumber(sentence: string, paragraphs: string[]) {
   const compact = (value: string) => value.replace(/\s+/g, ' ').trim()
   const needle = compact(sentence).slice(0, 72)
@@ -52,8 +65,11 @@ function paragraphNumber(sentence: string, paragraphs: string[]) {
 function naturalnessOf(verdict: StyleVerdict | null) {
   if (!verdict) return { score: 0, label: 'بانتظار النص', note: 'هذا مؤشر أسلوبي، وليس كاشف ذكاء اصطناعي.' }
   const grade = (key: string) => verdict.checks.find((check) => check.key === key)?.grade ?? 1
+  /* سلامة التركيب أثقل من كل ما عداها في هذا المؤشر: نصٌّ بجملٍ مكسورة قد
+     يكون إيقاعه مضبوطاً تماماً — وهو بالضبط ما تُنتجه آلةٌ تحسِّن الأرقام. */
   const penalty =
-    (1 - grade('banned')) * 28
+    (1 - grade('wellFormed')) * 34
+    + (1 - grade('banned')) * 28
     + (1 - grade('typography')) * 20
     + (1 - grade('repetition')) * 24
     + (1 - grade('lexicalDiversity')) * 14
@@ -147,74 +163,20 @@ function buildGeminiPrompt(title: string, body: string, verdict: StyleVerdict, i
   ].join('\n')
 }
 
-/**
- * محرك المحاكاة الأسلوبية المحلي — يعيد صياغة أي نص مسودة ليتطابق مع بصمة مقالات الدكتور فهد
- * محلياً 100% بدون إنترنت عبر 5 طبقات لغوية وهندسية متزامنة
- */
-function mimicAuthorVoice(sourceText: string, dna: ReturnType<typeof measureStyleDna>, orthographyIndex?: Map<string, number>): string {
-  if (!sourceText || !sourceText.trim()) return ''
-  let text = polishTypography(sourceText)
+/* محرك المحاكاة انتقل إلى src/lib/style-mimic.mjs.
 
-  // 1. معالجة الافتتاحيات التعريفية والمدرسية وتحويلها إلى افتتاحية مشهدية أو تساؤلية حيوية
-  text = text.replace(/^[\s\n]*(?:يعد|تعد|يعتبر|تعتبر|يشكل|تشكل|يمثل|تمثل)\s+([^،.؛]+?)\s+من أهم\s+([^،.؛]+?)،?\s*/u, 'ليس الحديث اليوم عن $1 كمجرد $2… بل عن ')
-  text = text.replace(/^[\s\n]*(?:يعد|تعد|يعتبر|تعتبر)\s+([^،.؛]+?)\s+(?:أمراً|عنصراً|ركيزة|حجر)\s+([^،.؛]+?)،?\s*/u, 'نقف اليوم أمام $1 بوصفه $2… ')
+   ما كان هنا قبله كان يفعل واحداً من اثنين ولا ثالث:
+   • على نصّ الدكتور: لا شيء. طبقتاه الفاعلتان (رفع الوقفات وتصحيح الإملاء)
+     كانتا مبنيّتين على `\b`، وهي في جافاسكربت لا ترى الحرف العربي، فلم
+     يطابق `/،\s+(?=بل\b)/` موضعاً واحداً في اللغة كلها. ومن هنا شعور
+     الدكتور بأن «المحاكاة نفس الكلام بدون أي تغيير» — وكان محقاً حرفياً.
+   • على مسودةٍ من نموذج: تمسيخ. «يعد التعليم الرقمي من أهم التحولات» صارت
+     «ليس الحديث اليوم عن التعليم الرقمي كمجرد ا… بل عن لتحولات»، وكانت تُحقن
+     في نصه عباراتٌ لم يكتبها قط («الواقع أن» صفر في ٥٣ ألف كلمة · «الظاهر
+     أن» صفر · «من هنا» صفر)، وتُذيَّل المقالات بسؤالٍ معلَّب واحد.
 
-  // 2. استبدال العبارات الدخيلة والإنشائية ببدائل من معجم وصوت الدكتور فهد التشاركي
-  const replacements: [RegExp, string][] = [
-    [/(?:في الختام|في الخاتمة|وفي الختام|وخلاصة القول|خلاصة القول|في الأخير|في نهاية المطاف|وفي نهاية المطاف|ومجمل القول|ونستنتج من ذلك)[،\s]*/gu, ''],
-    [/(?:مما لا شك فيه|لا شك أن|لا ريب أن|من المؤكد أن|لا يختلف اثنان أن)[،\s]*/gu, ''],
-    [/(?:من الجدير بالذكر|جدير بالذكر|تجدر الإشارة إلى أن|تجدر الإشارة|من الملاحظ أن)[،\s]*/gu, ''],
-    [/(?:في عالم اليوم|في عصرنا الحالي|في ظل التطور الحالي|في وقتنا الحاضر|في العصر الراهن)[،\s]*/gu, 'اليوم، '],
-    [/(?:يلعب دوراً رئيسياً|يلعب دوراً هاماً|يلعب دوراً محورياً|يلعب دوراً بارزاً|تلعب دوراً هاماً|يلعب دوراً)/gu, 'يؤثر جوهرياً'],
-    [/(?:دوراً هاماً|دورا هاما|دوراً رئيسياً|دوراً كبيراً|أهمية بالغة)/gu, 'أثراً عميقاً'],
-    [/(?:بالإضافة إلى ذلك|علاوة على ذلك|أضف إلى ذلك)[،\s]*/gu, 'ثم… '],
-    [/(?:من ناحية أخرى|على الجانب الآخر)[،\s]*/gu, 'في المقابل… '],
-    [/(?:الأمر الذي يجعل|مما يؤدي إلى|مما يجعل|وهو ما يقود إلى)/gu, 'وهذا ما يضعنا أمام '],
-    [/(?:يمكن القول بأن|يمكن القول إن|يمكننا القول بأن|يمكننا القول إن)[،\s]*/gu, 'الواقع أن '],
-    [/(?:بناءً على ما سبق|استناداً إلى ما سبق)[،\s]*/gu, 'هنا، '],
-    [/(?:وفي هذا السياق|في هذا السياق)[،\s]*/gu, 'من هنا، '],
-    [/(?:تكمن أهمية|تتجلى أهمية)/gu, 'يظهر أثر '],
-    [/(?:ثورة حقيقية|نقلة نوعية|حجر الزاوية|سلاح ذو حدين)/gu, 'تحول حقيقي في ممارساتنا'],
-    [/(?:بات من الضروري|أصبح لزاماً|يجب علينا حتماً|يتعين علينا حتماً)/gu, 'نحتاج اليوم أن '],
-    [/(?:يشكل تحدياً كبيراً|يشكل تحديا كبيرا|يمثل عقبة كبرى)/gu, 'يضعنا أمام اختبار حقيقي'],
-    [/(?:في تقديري الشخصي|في تقديري|في رأيي الشخصي|في رأيي|من وجهة نظري|من منظوري)[،\s]*/gu, ''],
-    [/(?:أرى أن|وأرى أن|أعتقد أن|وأعتقد أن)/gu, 'الظاهر أن '],
-    [/(?:وقد كتبت من قبل|كتبت سابقاً|كما كتبت في مقالي السابق|في مقالي السابق)[،\s]*/gu, ''],
-  ]
-
-  for (const [pattern, repl] of replacements) {
-    text = text.replace(pattern, repl)
-  }
-
-  // 3. تصحيح الإملاء المطابق لأرشيفه (مثل «أولاً»، «دائماً»، ياء «إلى» و«على»)
-  if (orthographyIndex && orthographyIndex.size) {
-    text = text.replace(/\b([^\s،.؛؟!»\n]+)\b/gu, (match) => {
-      if (match.endsWith('ى') && match !== 'على' && match !== 'إلى' && match !== 'حتى' && match !== 'أخرى' && match !== 'كبرى' && match !== 'أولى') {
-        const candidate = `${match.slice(0, -1)}ي`
-        if ((orthographyIndex.get(candidate) || 0) > (orthographyIndex.get(match) || 0) * 4) {
-          return candidate
-        }
-      }
-      return match
-    })
-  }
-
-  // 4. تعزيز الوقفات والانقلابات قبل الفواصل المتضادة
-  text = text.replace(/،\s+(?=بل\b)/gu, '… ')
-  text = text.replace(/،\s+(?=ولكن\b)/gu, '… ')
-  text = text.replace(/،\s+(?=لكن\b)/gu, '… ')
-  text = text.replace(/،\s+(?=ثم\b)/gu, '… ')
-
-  // 5. ضمان نبرة الخاتمة التساؤلية المفتوحة إذا خلا النص من الأسئلة
-  if (!text.includes('؟')) {
-    text = text.trim() + '\n\nفكيف نوظف هذا الوعي قبل أن يفوت الأوان؟'
-  }
-
-  // 6. تطبيق الصقل الإيقاعي الكامل: كسر الجمل المتورمة، رفع الوقفات والانقلابات، وتوزيع الفقرات الرشيقة
-  text = refineToStyle(text, dna)
-
-  return text
-}
+   البديل يقيس كل عبارةٍ على أرشيفه قبل المساس بها، ولا يستبدل إلا ببديلٍ
+   مقيسٍ في متنه، ويحاكم كل تعديلٍ على حدة بستّ بوابات نحوية وأمانية. */
 
 export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -231,6 +193,8 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
   const [analysisBody, setAnalysisBody] = useState(body)
   const [mode, setMode] = useState<ReviewMode>('mine')
   const [notice, setNotice] = useState('')
+  const [mimic, setMimic] = useState<MimicResult | null>(null)
+  const [undoBody, setUndoBody] = useState<string | null>(null)
 
   // تحميل الأرشيف الكامل تلقائياً ومحلياً لضمان تغذية البصمة بكامل الـ 143 مقالاً
   useEffect(() => {
@@ -276,6 +240,8 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
 
   const dna = useMemo(() => resolveStyleDna(measureStyleDna(archive)), [archive])
   const orthography = useMemo(() => buildOrthographyIndex(archive), [archive])
+  /* يُبنى مرةً واحدة على الأرشيف: كل عبارةٍ توزن في سياق تعديلها قبل المساس بها. */
+  const mimicLexicon = useMemo(() => buildMimicLexicon(archive), [archive])
   const words = countWords(body)
 
   useEffect(() => {
@@ -354,13 +320,30 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
     setNotice(polished === body ? 'النص مضبوط ترقيمياً بالفعل.' : 'صُقلت العلامات والإيقاع محلياً من دون إضافة أفكار.')
   }
 
-  // محاكاة الأسلوب الفورية المتقدمة محلياً 100%
+  /* المحاكاة: تُطبَّق وتُشرح وتُتراجَع. الشرح جزءٌ من العمل لا زينةٌ فوقه —
+     تعديلٌ لا يعرف الدكتور سببه لا يستطيع الحكم عليه. */
   const applyLocalMimic = () => {
     if (!body.trim()) return
-    const transformed = mimicAuthorVoice(body, dna, orthography)
-    setBody(transformed)
-    setAnalysisBody(transformed)
-    setNotice('تمت محاكاة أسلوبك وصقل النص بالبصمة الكاملة محلياً 100% ✓')
+    const result = mimicVoice(body, dna, { orthography, lexicon: mimicLexicon, archive })
+    setMimic(result)
+    if (!result.applied) {
+      setNotice(result.note || 'لم يتغيّر شيء: النص داخل مدى أسلوبك أصلاً.')
+      return
+    }
+    setUndoBody(body)
+    setBody(result.text)
+    setAnalysisBody(result.text)
+    const gain = (result.after?.raw ?? 0) - (result.before?.raw ?? 0)
+    setNotice(`${arabicCountPhrase(result.changes.length, CHANGE_FORMS)} · المطابقة ${gain >= 0 ? '+' : ''}${gain} نقطة`)
+  }
+
+  const undoMimic = () => {
+    if (undoBody === null) return
+    setBody(undoBody)
+    setAnalysisBody(undoBody)
+    setUndoBody(null)
+    setMimic(null)
+    setNotice('رُجّع النص كما كان قبل المحاكاة.')
   }
 
   const syncFullArchive = async () => {
@@ -381,6 +364,8 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
     setBody('')
     setAnalysisBody('')
     localStorage.removeItem(DRAFT_KEY)
+    setMimic(null)
+    setUndoBody(null)
     setNotice('مُسحت المسودة من هذا الجهاز.')
   }
 
@@ -458,6 +443,11 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
               <button type="button" className={ghost} onClick={applyLocalPolish} disabled={!body.trim()}>
                 صقل الترقيم والإيقاع
               </button>
+              {undoBody !== null && (
+                <button type="button" className={ghost} onClick={undoMimic}>
+                  تراجع عن المحاكاة
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -508,6 +498,87 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
           )}
         </aside>
       </div>
+
+      {mimic && (
+        <section className={card} data-mimic-log="true">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[.7rem] font-semibold text-accent">سجل المحاكاة</p>
+              <h3 className="mt-1 font-display text-xl font-semibold text-ink">ما غيّرته بالضبط، ولماذا.</h3>
+              <p className="mt-2 max-w-2xl text-[.7rem] leading-relaxed text-soft">
+                كل عبارةٍ هنا وُزنت على أرشيفك قبل المساس بها: ما ورد عندك ثلاث مراتٍ فأكثر لا يُمسّ، ولا يدخل نصك بديلٌ لم تكتبه بنفسك.
+              </p>
+            </div>
+            {mimic.before && mimic.after && (
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div className={`${inset} px-4 py-2`}>
+                  <strong className="block font-display text-lg text-ink">{mimic.before.raw}٪ ← {mimic.after.raw}٪</strong>
+                  <span className="text-[.62rem] text-soft">المطابقة قبل السقف</span>
+                </div>
+                <div className={`${inset} px-4 py-2`}>
+                  <strong className="block font-display text-lg text-accent">{mimic.changes.length}</strong>
+                  <span className="text-[.62rem] text-soft">{arabicCountPhrase(mimic.changes.length, CHANGE_FORMS)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {mimic.note && <p className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.76rem] leading-relaxed text-soft">{mimic.note}</p>}
+
+          {mimic.changes.length > 0 && (
+            <div className="mt-4 grid gap-2">
+              {mimic.changes.map((change, index) => (
+                <div key={`${change.kind}-${index}`} className={`${inset} flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5`}>
+                  <span className="shrink-0 rounded-full border border-accent/20 bg-accent/[.05] px-2.5 py-1 text-[.6rem] font-semibold text-accent">{mimicKindLabel[change.kind] || 'تعديل'}</span>
+                  <span className="text-[.62rem] text-soft">الفقرة {change.paragraph}</span>
+                  <span className="text-[.8rem] text-ink">«{change.from}»</span>
+                  <span className="text-soft">←</span>
+                  <span className="text-[.8rem] text-accent">{change.to ? `«${change.to}»` : 'حُذفت'}</span>
+                  <span className="basis-full text-[.68rem] leading-relaxed text-soft">{change.reason}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {mimic.pending.length > 0 && (
+            <div className="mt-4 rounded-xl border border-ink/[.15] bg-canvas px-4 py-4">
+              <strong className="text-[.74rem] text-ink">
+                {arabicCountPhrase(mimic.pending.length, PLACE_FORMS)} تحتاج يدك — وهي وحدها ما يُبقي الدرجة مسقوفة
+              </strong>
+              <p className="mt-1 text-[.68rem] leading-relaxed text-soft">عباراتٌ يعتبرها الحَكَم قاطعة، ونزعها آلياً يكسر الجملة أو يستبدلها بكلامٍ لم تكتبه. القرار قرارك.</p>
+              <ul className="mt-3 grid gap-2">
+                {mimic.pending.map((item, index) => (
+                  <li key={`${item.phrase}-${index}`} className="text-[.76rem] leading-[1.85] text-soft">
+                    <span className="font-semibold text-ink">«{item.phrase}»</span> · الفقرة {item.paragraph}
+                    {item.sentence && <span className="mt-0.5 block text-[.7rem] text-soft/80">«{item.sentence}…»</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {mimic.skipped.length > 0 && (
+            <details className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-3">
+              <summary className="cursor-pointer text-[.74rem] font-semibold text-ink">
+                وما امتنعتُ عنه ({mimic.skipped.length})
+              </summary>
+              <ul className="mt-3 grid gap-2">
+                {mimic.skipped.map((item, index) => (
+                  <li key={`skip-${index}`} className="text-[.72rem] leading-relaxed text-soft">
+                    «{item.from}» — {item.reason}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          {mimicLexicon.guarded.length > 0 && (
+            <p className="mt-4 text-[.68rem] leading-relaxed text-soft">
+              محميّةٌ لأنك تكتبها فعلاً: {mimicLexicon.guarded.map((item) => `«${item.phrase}» ${item.own}`).join(' · ')}.
+            </p>
+          )}
+        </section>
+      )}
 
       {verdict && (
         <section className={card}>

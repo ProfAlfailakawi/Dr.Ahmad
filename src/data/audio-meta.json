@@ -6300,6 +6300,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:55.187Z"
   },
+  "the-human-who-forgot-himselfarabic.dialogue-kw.json": {
+    "bytes": 8097,
+    "sha256": "c59062c0ef23d8e52828c7e2be1708de83f065648f38e4153a293cab7328ee08",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T19:28:00.250Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:28:00.250Z"
+  },
+  "the-human-who-forgot-himselfarabic.dialogue-kw.mp3": {
+    "bytes": 2070285,
+    "sha256": "d9acbbe7d1f2fddfccc0170e005ee07e10089ba4ec4d5622199e5b162af0cc8b",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T19:28:00.250Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:28:00.250Z",
+    "durationSeconds": 103
+  },
   "the-human-who-forgot-himselfarabic.dialogue.json": {
     "bytes": 9614,
     "sha256": "8fdddbd0857373ff0689e9cf68aa1ee0232ee7757e41d69f1e1b2db7678ae08f",

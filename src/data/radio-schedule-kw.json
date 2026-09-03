@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 10986,
+ "loop": 11097,
  "gap": 8,
  "items": [
   {
@@ -683,10 +683,17 @@
    "dur": 101
   },
   {
+   "slug": "the-human-who-forgot-himselfarabic",
+   "title": "الإنسان الذي نسي نفسه",
+   "cat": "مجتمع",
+   "at": 10867,
+   "dur": 103
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 10867,
+   "at": 10978,
    "dur": 111
   }
  ]

@@ -6682,6 +6682,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.074Z"
   },
+  "the-teacher-the-last-to-know-2.dialogue-kw.json": {
+    "bytes": 8510,
+    "sha256": "96d588b688472f31252afeebcb3cf35c91c144fe193b8d87a9fe088743744d5a",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T21:38:06.401Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:38:06.401Z"
+  },
+  "the-teacher-the-last-to-know-2.dialogue-kw.mp3": {
+    "bytes": 2203725,
+    "sha256": "0e8a711ff6b05b81b66e34c691aa65626b79ed1b57a46dbae52eeac886b1dbf0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T21:38:06.401Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:38:06.401Z",
+    "durationSeconds": 110
+  },
   "the-teacher-the-last-to-know-2.dialogue.json": {
     "bytes": 9526,
     "sha256": "03dd5ffa02c79893d4782b0be1ea74f984559485940b741fc3305ddfe5da3ce6",

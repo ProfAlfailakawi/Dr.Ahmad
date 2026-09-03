@@ -6076,6 +6076,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:53.890Z"
   },
+  "the-blackboard-that-no-longer-sees-anyone-2.dialogue-kw.json": {
+    "bytes": 8562,
+    "sha256": "581e70c3fee0426afb1439c0dba36e5ffa22348bfbdef784d37ec3bdf10a7ee2",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:57:21.442Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:57:21.442Z"
+  },
+  "the-blackboard-that-no-longer-sees-anyone-2.dialogue-kw.mp3": {
+    "bytes": 2248845,
+    "sha256": "e54f275fd74da691bd6f736e55717f762c8ee39d4df206b66fd2583f9804572d",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:57:21.442Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:57:21.442Z",
+    "durationSeconds": 112
+  },
   "the-blackboard-that-no-longer-sees-anyone-2.dialogue.json": {
     "bytes": 9659,
     "sha256": "ee7d01acad3ea48210f717337acb90e0a9f40520e0a272ef60b09857cce2f1ff",

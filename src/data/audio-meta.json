@@ -6790,6 +6790,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.033Z"
   },
+  "the-year-that-doesnt-begin-with-the-calendararabic.dialogue-kw.json": {
+    "bytes": 9293,
+    "sha256": "3e463b2c26d65d55f7d30630df5648446672c3549cfeb652ea8ac4b19ff64960",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T21:57:27.709Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:57:27.709Z"
+  },
+  "the-year-that-doesnt-begin-with-the-calendararabic.dialogue-kw.mp3": {
+    "bytes": 2103405,
+    "sha256": "cd39f80e9f8bacaa3e17f495708c3117d4fac9eec0cef23fb225a607c2ca1763",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T21:57:27.709Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:57:27.709Z",
+    "durationSeconds": 105
+  },
   "the-year-that-doesnt-begin-with-the-calendararabic.dialogue.json": {
     "bytes": 8892,
     "sha256": "9f893f6940d9358689640459ab51ccea9ac06e0d9d43d2e9c42e147cbbedd7ea",

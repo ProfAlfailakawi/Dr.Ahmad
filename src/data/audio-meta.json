@@ -7160,6 +7160,23 @@
     "verifiedAt": "2026-08-07T21:59:04.856Z",
     "bytes": 3445699
   },
+  "when-a-student-wishes-for-death-before-the-first-bell-2.dialogue-kw.json": {
+    "bytes": 9380,
+    "sha256": "9672863aa0eef7e22a2525476c96a66089d2b9bf56aa73e267c2751aac8a65a8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:39:16.318Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:39:16.318Z"
+  },
+  "when-a-student-wishes-for-death-before-the-first-bell-2.dialogue-kw.mp3": {
+    "bytes": 2030925,
+    "sha256": "84923d204c35d14359c703a5cdb5f17be4c89bb22c2c69db131a2afea7825a68",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:39:16.318Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:39:16.318Z",
+    "durationSeconds": 102
+  },
   "when-a-student-wishes-for-death-before-the-first-bell-2.dialogue.json": {
     "bytes": 9704,
     "sha256": "ca6c780085d320ba28e822bbbf318bc2ea1e5c4bf4745d8603f1def187e812e0",

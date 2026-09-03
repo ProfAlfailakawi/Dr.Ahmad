@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 9824,
+ "loop": 9939,
  "gap": 8,
  "items": [
   {
@@ -599,24 +599,31 @@
    "dur": 104
   },
   {
+   "slug": "qabas-201811-001",
+   "title": "وسائل الإعلام… بين المجاملة والتمثيل",
+   "cat": "إعلام",
+   "at": 9467,
+   "dur": 107
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 9467,
+   "at": 9582,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 9585,
+   "at": 9700,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 9705,
+   "at": 9820,
    "dur": 111
   }
  ]

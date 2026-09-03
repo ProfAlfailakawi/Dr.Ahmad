@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 12606,
+ "loop": 12724,
  "gap": 8,
  "items": [
   {
@@ -781,10 +781,17 @@
    "dur": 110
   },
   {
+   "slug": "we-prepare-our-children-for-success-and-leave-them-empty-handed-2",
+   "title": "نعجن أبناءنا للنجاح… ونُخرجهم فارغين",
+   "cat": "التربية",
+   "at": 12487,
+   "dur": 110
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 12487,
+   "at": 12605,
    "dur": 111
   }
  ]

@@ -7114,6 +7114,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.915Z"
   },
+  "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.dialogue-kw.json": {
+    "bytes": 7880,
+    "sha256": "6ef48065661c2ccde5d8776961abd497424b0a1e91e0b0ad127c1ec5ec2f41d8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:23:43.571Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:23:43.571Z"
+  },
+  "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.dialogue-kw.mp3": {
+    "bytes": 2203725,
+    "sha256": "37141e24afa3e63070975648778be9f99825870adb3e3be4b88c67273fae9920",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:23:43.571Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:23:43.571Z",
+    "durationSeconds": 110
+  },
   "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.dialogue.json": {
     "bytes": 9306,
     "sha256": "e9f65a902864af4fad891b4e9fa8cb2ddc5bceed62c497419a0bd392a4fdd70a",

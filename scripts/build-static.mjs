@@ -397,7 +397,7 @@ const STATIC = [
   { path: '/', title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', desc: `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، والكاتب والباحث والمستشار الكويتي. ${nBooks} كتب، ${nPapers} بحثاً محكّماً، وأكثر من ${nArticles} مقالاً منذ ${firstYear}.` },
   { path: '/publications', title: 'الكتب المنشورة', desc: `كتب د. أحمد حسين الفيلكاوي في التعليم وتكنولوجيا التعليم والذكاء الاصطناعي والتحول المجتمعي.` },
   { path: '/research', title: 'المساهمات العلمية', desc: `أبحاث د. أحمد حسين الفيلكاوي المحكمة في تكنولوجيا التعليم والتعلم الإلكتروني والذكاء الاصطناعي.` },
-  { path: '/articles', title: 'مقالاتي الفكرية', desc: `مقالات د. أحمد حسين الفيلكاوي الفكرية في التعليم والتقنية والمجتمع، منذ ${firstYear}.` },
+  { path: '/articles', title: 'مقالاتي الفكرية', desc: `مقالات د. أحمد حسين الفيلكاوي الفكرية في التعليم والتكنولوجيا والمجتمع، منذ ${firstYear}.` },
   { path: '/atlas', title: 'سماء المقالات', desc: `خريطة بصرية لأكثر من ${nArticles} مقالاً عبر السنوات.` },
   /* بلا هذا السطر لا تُبنى صفحةٌ ثابتة لـ/listen، ولا rewrite شاملاً في
      firebase.json — فالرابط المباشر يعطي 404 ولا تدخل خريطة الموقع. الصفحة
@@ -409,7 +409,7 @@ const STATIC = [
   { path: '/radar', title: 'أرشيف الرادار', desc: 'نافذة أسبوعية على أفكار ودراسات ومستجدات تستحق المتابعة، محفوظة في أرشيف زمني واضح.' },
   { path: '/upcoming', title: 'اللقاءات القادمة', desc: 'محاضرات وورش عمل ومؤتمرات قادمة.' },
   { path: '/curated', title: 'من اختياراتي', desc: 'كتاب، ومقالة، وأداة، واقتباس — مساحة تتجدّد.' },
-  { path: '/inbox', title: 'رسائل على الهامش', desc: 'رسائل قصيرة وأسئلة تفتح زوايا جديدة على التعليم والتربية والتقنية.' },
+  { path: '/inbox', title: 'رسائل على الهامش', desc: 'رسائل قصيرة وأسئلة تفتح زوايا جديدة على التعليم والتربية والتكنولوجيا.' },
   { path: '/cv', title: 'السيرة الأكاديمية', desc: 'التعليم والخبرات والعضويات والمؤتمرات.' },
   { path: '/cv-file/ar', title: 'السيرة الذاتية PDF', desc: 'تجهيز النسخة العربية من السيرة الذاتية.', robots: 'noindex, nofollow' },
   { path: '/cv-file/en', title: 'Curriculum Vitae PDF', desc: 'Preparing the English curriculum vitae PDF.', robots: 'noindex, nofollow', lang: 'en' },
@@ -664,7 +664,7 @@ function richStaticHtml(path) {
     'سيرة فكرية حيّة تقرأ أكثر من عشر سنوات من الكتابة وتكشف تحولات الأسئلة والموضوعات الأكثر إلحاحاً.',
     [
       ['العقد بوصفه مساراً', `تقرأ الوثيقة أرشيف المقالات منذ ${firstYear} باعتباره مساراً زمنياً للأفكار لا مجرد عدّاد للمنشورات.`],
-      ['تحولات الأسئلة', 'تُبرز الموضوعات التي استمرت، والمفاهيم التي ظهرت لاحقاً، والانتقال بين التعليم والتقنية والمجتمع والهوية.'],
+      ['تحولات الأسئلة', 'تُبرز الموضوعات التي استمرت، والمفاهيم التي ظهرت لاحقاً، والانتقال بين التعليم والتكنولوجيا والمجتمع والهوية.'],
       ['بوابة لفهم المشروع', 'من يريد صورة واسعة عن المسار الفكري يمكنه البدء من هذه الوثيقة ثم الانتقال إلى المقالات والأبحاث والكتب ذاتها.'],
     ],
     [['/articles','المقالات'], ['/research','الأبحاث'], ['/publications','الكتب'], ['/impact','سجل الأثر']]
@@ -838,7 +838,7 @@ function generateBodyHtml(path, lang = 'ar') {
       <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
         <h1 style="font-size: 2.5rem; font-family: 'El Messiri', serif; font-weight: bold; margin-bottom: 1rem; text-align: right; color: #15161A;">مقالاتي الفكرية</h1>
         <p style="font-size: 1.15rem; color: #626A76; line-height: 1.7; margin-bottom: 3rem; text-align: right; font-family: 'Tajawal', sans-serif;">
-          أرشيف المقالات الفكرية والتربوية والتقنية المنشورة في جريدة الجريدة وجريدة القبس ومختلف المنابر الثقافية.
+          أرشيف المقالات الفكرية والتربوية والتكنولوجية المنشورة في جريدة الجريدة وجريدة القبس ومختلف المنابر الثقافية.
         </p>
         <div style="margin-top: 2rem;">
           ${listHtml}
@@ -1393,7 +1393,7 @@ function wrapSvgText(text, max = 28) {
 const articleThemes = {
   'التعليم': { accent: '#3E5C78', accentSoft: '#E7EEF6', chip: 'فكرة تربوية' },
   'التربية': { accent: '#5A7A62', accentSoft: '#EAF4EC', chip: 'تربية وحياة' },
-  'تقنية': { accent: '#5B5FD6', accentSoft: '#ECECFE', chip: 'تقنية وإنسان' },
+  'تقنية': { accent: '#5B5FD6', accentSoft: '#ECECFE', chip: 'تكنولوجيا وإنسان' },
   'مجتمع': { accent: '#8A5A44', accentSoft: '#F8EEE8', chip: 'مجتمع ومعنى' },
   'إعلام': { accent: '#9A4D7A', accentSoft: '#F7EAF2', chip: 'إعلام وصورة' },
   'هوية': { accent: '#2D6F73', accentSoft: '#E5F5F4', chip: 'هوية ووعي' },
@@ -1490,11 +1490,11 @@ async function generateCanonicalOg() {
   const out = resolve(DIST, 'og')
   mkdirSync(out, { recursive: true })
   const variants = [
-    [HOME_OG_AR, 'د. أحمد حسين الفيلكاوي', 'تعليم · تقنية · مجتمع', 'الموقع الرسمي'],
+    [HOME_OG_AR, 'د. أحمد حسين الفيلكاوي', 'تعليم · تكنولوجيا · مجتمع', 'الموقع الرسمي'],
     [HOME_OG_EN, 'Dr. Ahmad H. Alfailakawi', 'Education · Technology · Society', 'Official website'],
   ]
   for (const [file, title, subtitle, label] of variants) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#FCFCFA"/><circle cx="1040" cy="80" r="280" fill="#3E5C78" opacity=".08"/><rect x="56" y="56" width="1088" height="518" rx="34" fill="#fff" stroke="#3E5C78" stroke-opacity=".16" stroke-width="2"/><image href="${portraitDataUri}" x="96" y="112" width="270" height="382" preserveAspectRatio="xMidYMid slice"/><image href="${logoDataUri}" x="430" y="118" width="150" height="76" preserveAspectRatio="xMidYMid meet"/><text x="1080" y="274" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="49" font-weight="700" fill="#15161A">${attr(title)}</text><text x="1080" y="345" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="30" fill="#3E5C78">${attr(subtitle)}</text><text x="1080" y="460" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="22" fill="#626A76">${attr(label)} · ${attr(SITE_HOST)}</text></svg>`
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#FCFCFA"/><circle cx="1040" cy="80" r="280" fill="#3E5C78" opacity=".08"/><rect x="56" y="56" width="1088" height="518" rx="34" fill="#fff" stroke="#3E5C78" stroke-opacity=".16" stroke-width="2"/><image href="${portraitDataUri}" x="96" y="112" width="270" height="382" preserveAspectRatio="xMidYMid slice"/><image href="${logoDataUri}" x="430" y="118" width="150" height="76" preserveAspectRatio="xMidYMid meet"/><text x="1080" y="274" text-anchor="end" font-family="El Messiri,Tajawal,Arial,serif" font-size="49" font-weight="600" fill="#15161A">${attr(title)}</text><text x="1080" y="345" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="30" fill="#3E5C78">${attr(subtitle)}</text><text x="1080" y="460" text-anchor="end" font-family="Tajawal,Arial,sans-serif" font-size="22" fill="#626A76">${attr(label)} · ${attr(SITE_HOST)}</text></svg>`
     await sharp(Buffer.from(svg)).jpeg({ quality: 90, mozjpeg: true }).toFile(resolve(DIST, file.replace(/^\//, '')))
   }
 }
@@ -1638,7 +1638,7 @@ writeFileSync(resolve(DIST, 'feed.xml'), `<?xml version="1.0" encoding="UTF-8"?>
     <!-- عنوان الخلاصة نفسه: غيابه أشهرُ ما تشكو منه مدققات RSS، ويمنع القارئات
          من تتبّع الخلاصة إن انتقلت. -->
     <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml" />
-    <description>مقالات في التعليم والتقنية والمجتمع.</description>
+    <description>مقالات في التعليم والتكنولوجيا والمجتمع.</description>
     <language>ar</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${items}

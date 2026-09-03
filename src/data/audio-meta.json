@@ -6607,6 +6607,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:54.088Z"
   },
+  "the-social-media-swamp-and-plastic-surgery-addiction-2.dialogue-kw.json": {
+    "bytes": 8138,
+    "sha256": "aa9ae865688378eaeecba29f6ff78e968b64ee902fcfc47cb8c47bef6ee8bd08",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:48:30.087Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:48:30.087Z"
+  },
+  "the-social-media-swamp-and-plastic-surgery-addiction-2.dialogue-kw.mp3": {
+    "bytes": 2215245,
+    "sha256": "664d2ce78039e51b02172d38e1f6979bf59412aedd6adbedaf83681af91464f0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:48:30.087Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:48:30.087Z",
+    "durationSeconds": 111
+  },
   "the-social-media-swamp-and-plastic-surgery-addiction-2.dialogue.json": {
     "bytes": 9280,
     "sha256": "53dcbf63436b1beef703028bcc784797b8227cc30f6ef4e5f574d1fa0df5e4bd",

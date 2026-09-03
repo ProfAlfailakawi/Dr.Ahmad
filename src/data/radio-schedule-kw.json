@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 7505,
+ "loop": 7616,
  "gap": 8,
  "items": [
   {
@@ -452,24 +452,31 @@
    "dur": 111
   },
   {
+   "slug": "qabas-201712-003",
+   "title": "هل وظيفتك مهددة بالانقراض؟",
+   "cat": "تقنية",
+   "at": 7148,
+   "dur": 103
+  },
+  {
    "slug": "success-that-does-not-bring-joy-to-its-ownerarabic",
    "title": "النجاح الذي لا يفرح صاحبه",
    "cat": "التعليم",
-   "at": 7148,
+   "at": 7259,
    "dur": 110
   },
   {
    "slug": "the-classroom-that-fears-mistakesarabic",
    "title": "الصفُّ الذي يخاف من الخطأ",
    "cat": "التعليم",
-   "at": 7266,
+   "at": 7377,
    "dur": 112
   },
   {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 7386,
+   "at": 7497,
    "dur": 111
   }
  ]

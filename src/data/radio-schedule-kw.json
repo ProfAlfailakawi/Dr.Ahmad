@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 11334,
+ "loop": 11453,
  "gap": 8,
  "items": [
   {
@@ -704,10 +704,17 @@
    "dur": 106
   },
   {
+   "slug": "the-republic-of-degrees-and-the-fall-of-thought-2",
+   "title": "جمهورية الشهادات… وسقوط الفكر!",
+   "cat": "التعليم",
+   "at": 11215,
+   "dur": 111
+  },
+  {
    "slug": "when-seriousness-becomes-a-mask-for-escapearabic",
    "title": "حين تصبح الجدية قناعاً للهروب",
    "cat": "مجتمع",
-   "at": 11215,
+   "at": 11334,
    "dur": 111
   }
  ]

@@ -6499,6 +6499,23 @@
     "verifiedAt": "2026-08-07T21:59:10.746Z",
     "bytes": 3553533
   },
+  "the-republic-of-degrees-and-the-fall-of-thought-2.dialogue-kw.json": {
+    "bytes": 7880,
+    "sha256": "5097f719e6f22ea078803b92bef5cb1d141289f8e1134de294aad36cbc8daf53",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:25:29.269Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:25:29.269Z"
+  },
+  "the-republic-of-degrees-and-the-fall-of-thought-2.dialogue-kw.mp3": {
+    "bytes": 2221005,
+    "sha256": "4d27efde67177d182f58cd6fede9c9f991979f72e79dbc03f11e04fb9ff92c82",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:25:29.269Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:25:29.269Z",
+    "durationSeconds": 111
+  },
   "the-republic-of-degrees-and-the-fall-of-thought-2.dialogue.json": {
     "bytes": 9055,
     "sha256": "5e8eefc26d886b979526cab00bdfe09ac1f24425e8147fb7853327fea2bd2e09",

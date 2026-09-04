@@ -80,12 +80,12 @@
     {
       "slug": "qabas-201612-003",
       "status": "quality-hold",
-      "failedRunId": 33520056252,
+      "failedRunId": 33845448142,
       "failedRunAttempt": 3,
       "failedRounds": 3,
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
-      "deferredAt": "2026-09-01T14:41:53.838Z"
+      "deferredAt": "2026-09-04T06:53:04.469Z"
     },
     {
       "slug": "qabas-201703-001",

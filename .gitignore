@@ -22,6 +22,10 @@ public/files
 
 # نظام
 .DS_Store
+# نسخ macOS المرقّمة (مثل «index 2.html») — لا تُلتزم في Git
+* [0-9].html
+build/
+*.tsbuildinfo
 whatsapp-agent/node_modules/
 whatsapp-agent/*.sqlite
 whatsapp-agent/*.sqlite-*
@@ -33,8 +37,24 @@ Library/Application Support/DrAhmadWhatsAppAgent/
 *.log
 
 # مخرجات بناء لا تُلتزم في الجذر (الناتج الرسمي dist/ فقط)
-/about/ /admin/ /articles/ /atlas/ /contact/ /curated/ /cv/ /inbox/ /media/
-/publications/ /questions/ /radar/ /research/ /search/ /upcoming/ /assets/ /og/
+# ملاحظة: كل نمط في سطر مستقلّ — أنماط git تُفصَل بأسطر لا بمسافات.
+/about/
+/admin/
+/articles/
+/atlas/
+/contact/
+/curated/
+/cv/
+/inbox/
+/media/
+/publications/
+/questions/
+/radar/
+/research/
+/search/
+/upcoming/
+/assets/
+/og/
 /*.html
 !/index.html
 /sitemap.xml

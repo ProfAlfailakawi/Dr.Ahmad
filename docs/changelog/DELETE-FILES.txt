@@ -1,0 +1,18 @@
+ROOT-CAUSES-AND-FILES.txt
+SEO-*-DELETION-MANIFEST.txt
+atlas/index 2.html
+contact/index 2.html
+curated/index 3.html
+cv/index 2.html
+data.ts
+docs/MIGRATION.md
+inbox/index 3.html
+media/index 2.html
+publications/index 2.html
+questions/index 3.html
+research/index 3.html
+reports/legacy-links-report.json
+scripts/audit-legacy-links.mjs
+scripts/verify-legacy-retirement.mjs
+src/pages/Legacy.tsx
+upcoming/index 3.html

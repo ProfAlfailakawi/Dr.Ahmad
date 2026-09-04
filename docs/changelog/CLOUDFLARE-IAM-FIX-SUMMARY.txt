@@ -1,0 +1,15 @@
+Cloudflare / Google IAM deployment fix
+
+Problem:
+Cloudflare preflight succeeded, but GitHub's Google service account could not create a Google Secret Manager secret, so deployment stopped with secretmanager.secrets.create denied.
+
+Fix:
+- Secret Manager remains the preferred path.
+- If Google IAM denies secret creation/version/binding, deployment no longer stops.
+- The token is taken from GitHub Secrets and connected to the Cloud Run revision as an operational fallback.
+- Nothing is written to React, the repository, or the ZIP.
+- A future run automatically migrates back to Secret Manager when roles/secretmanager.admin is granted.
+- A CI self-test covers both Secret Manager and IAM-denied fallback paths.
+- The health endpoint reports tokenStorage for diagnosis.
+
+No new Cloudflare token is required if the current replacement token passed the Cloudflare preflight.

@@ -1,0 +1,58 @@
+التسليم: الذاكرة المعرفية الذكية للكتب
+
+السبب الجذري
+- كانت الكتب تصل إلى بقية الموقع من العنوان والوصف والفهرس فقط، فظلت الصلات سطحية.
+- ثلاثة كتب مصوّرة احتاجت OCR محلياً قبل بناء الذاكرة.
+- واجهة «عالم الكتاب» كانت تقص المفاهيم إلى أول سبعة بينما البحث قد يحيل إلى مفهوم لاحق.
+- مولّد HTML الثابت كان يعيد زر YouTube والنص المؤقت القديم.
+
+ما تغير
+- خريطة عامة آمنة لـ9 كتب و1596 صفحة: مفاهيم وأسئلة وأرقام صفحات بلا متن أو PDF كامل.
+- دليل نصي خادمي فقط؛ لا يدخل حزمة React ولا dist.
+- ربط الكتب بالبحث والعقل الحي وغرفة د. أحمد والمقالات والأبحاث الـ17 واللقاءات ومسار الفكرة والخريطة المعرفية.
+- الموسوعة «الجذر المرجعي» للمشروع.
+- ملفات العينة المقصودة (الفهرس والمقدمة) باقية، ولم يضف أي PDF كامل أو رابط محلي.
+- اللقاء يعمل داخل الموقع بنص YouTube المتاح، بلا الزر الخارجي أو العبارة المؤقتة.
+
+الملفات المعدلة والمضافة
+.gcloudignore
+Dockerfile
+package.json
+server.mjs
+scripts/build-book-knowledge.mjs
+scripts/build-knowledge-graph.mjs
+scripts/build-static.mjs
+scripts/guard-private-books.mjs
+scripts/test-book-knowledge-integration.mjs
+scripts/test-book-media-polish.mjs
+scripts/test-book-world.mjs
+src/App.tsx
+src/components/BookWorld.tsx
+src/components/admin/ContentManager.tsx
+src/data.ts
+src/data/book-evidence.json
+src/data/book-knowledge.json
+src/data/knowledge-graph-index.json
+src/data/knowledge-graph.json
+src/data/legacy-profile.json
+src/data/media-transcripts.json
+src/lib/book-knowledge.ts
+src/lib/cms.ts
+src/lib/dr-ahmad-room.ts
+src/lib/intelligence.ts
+src/lib/knowledge-graph.ts
+src/pages/ArticleDetail.tsx
+src/pages/AskLibrary.tsx
+src/pages/BookDetail.tsx
+src/pages/Media.tsx
+src/pages/MediaDetail.tsx
+src/pages/PaperDetail.tsx
+src/pages/Search.tsx
+src/pages/ThoughtPaths.tsx
+
+التحقق
+- TypeScript/lint؛ معرفة الكتب وعزل المتن؛ غرفة د. أحمد 16/16؛ التنوين والبنية.
+- Vite و207 صفحات ثابتة؛ smoke لـ181 صفحة؛ 218 رابطاً داخلياً بلا كسر.
+- فحص الهاتف وسطح المكتب والروابط العميقة والفيديو والنص المفرّغ.
+
+لم يتم رفع أو نشر أو دفع أي ملف. لم تُعدّل أنظمة WhatsApp أو R2 أو الصوت ضمن هذه الحزمة.

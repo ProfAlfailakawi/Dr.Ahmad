@@ -42,7 +42,8 @@ export type ExternalVisualResult = {
   orientation: 'landscape' | 'portrait' | 'square' | 'unknown'
 }
 
-const PEXELS_FALLBACK_KEY = '***REDACTED_PEXELS_KEY***'
+// لا مفتاح محفور في المصدر: يُقرأ من متغيّر بيئة فقط، وإلا يُتخطّى المصدر بأمان (السطر ~306: if (!apiKey) return []).
+const PEXELS_FALLBACK_KEY = ((import.meta as any)?.env?.VITE_PEXELS_KEY as string | undefined) || ''
 
 /* نداءات المخازن كانت بلا مهلة إطلاقاً: مزوّد واحد معلّق (أوبنفيرس خاصة)
    يجمّد Promise.allSettled فتبقى «أبحث الآن…» مضاءة للأبد — لقطة الدكتور

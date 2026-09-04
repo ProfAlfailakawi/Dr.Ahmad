@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 13197,
+ "loop": 13305,
  "gap": 8,
  "items": [
   {
@@ -821,6 +821,13 @@
    "cat": "التعليم",
    "at": 13074,
    "dur": 115
+  },
+  {
+   "slug": "when-truth-died-and-the-narrative-survivedarabic",
+   "title": "حين ماتت الحقيقة ونجت الرواية",
+   "cat": "إعلام",
+   "at": 13197,
+   "dur": 100
   }
  ]
 }

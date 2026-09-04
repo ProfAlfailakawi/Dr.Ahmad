@@ -7475,6 +7475,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:01.878Z"
   },
+  "when-truth-died-and-the-narrative-survivedarabic.dialogue-kw.json": {
+    "bytes": 8600,
+    "sha256": "9ecad540b3f070f2204fd5c599238a122340d4bc5d12a8cd6c96b99b2de80390",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T01:05:23.151Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:05:23.151Z"
+  },
+  "when-truth-died-and-the-narrative-survivedarabic.dialogue-kw.mp3": {
+    "bytes": 2005965,
+    "sha256": "c54d807b681bdfed82ef4f33757d3c589de9196a0491857fc350045ff24871df",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T01:05:23.151Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:05:23.151Z",
+    "durationSeconds": 100
+  },
   "when-truth-died-and-the-narrative-survivedarabic.dialogue.json": {
     "bytes": 9430,
     "sha256": "74776f1a6674c33346f57de1ca5633646f82965a437b1a708adf71e012f23eb0",

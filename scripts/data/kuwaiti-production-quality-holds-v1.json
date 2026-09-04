@@ -8,16 +8,6 @@
   },
   "episodes": [
     {
-      "slug": "a-generation-without-rootsarabic",
-      "status": "quality-hold",
-      "failedRunId": 33412947922,
-      "failedRunAttempt": 3,
-      "failedRounds": 3,
-      "failedTakes": 18,
-      "reason": "لم يجتز مرجع هوية فهد ونورة وتدقيق اللهجة بعد ثلاث جولات مستقلة؛ لم ينشر ولم يرقع.",
-      "deferredAt": "2026-08-31T16:05:03.141Z"
-    },
-    {
       "slug": "do-we-contain-or-raise-2",
       "status": "quality-hold",
       "failedRunId": 33447995728,

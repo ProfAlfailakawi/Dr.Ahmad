@@ -153,6 +153,23 @@
     "verifiedAt": "2026-08-07T21:59:06.285Z",
     "bytes": 3097539
   },
+  "a-generation-without-rootsarabic.dialogue-kw.json": {
+    "bytes": 8574,
+    "sha256": "929768e7683b61d75f13b15917431ddb7e92544f7100447c87c9902ce45e83f7",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T02:09:07.097Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T02:09:07.097Z"
+  },
+  "a-generation-without-rootsarabic.dialogue-kw.mp3": {
+    "bytes": 2127405,
+    "sha256": "4f2fc7f9e3d763d243b2c397dfd15fd61472551dae8959ea65b2e86c6ecdc119",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T02:09:07.097Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T02:09:07.097Z",
+    "durationSeconds": 106
+  },
   "a-generation-without-rootsarabic.dialogue.json": {
     "bytes": 8554,
     "sha256": "54902bc78cbb4ebf48195e06eeac0a0f4706d5cae988bcb82b80a68a9dd30e0a",

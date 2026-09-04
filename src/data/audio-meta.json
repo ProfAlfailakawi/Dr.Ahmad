@@ -7367,6 +7367,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:59.727Z"
   },
+  "when-the-exam-becomes-the-goalarabic.dialogue-kw.json": {
+    "bytes": 8008,
+    "sha256": "ff280b2ab67fe00710ba6971c8a6d057e76f49b71bc11540f193caaea018b84d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T00:55:12.397Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T00:55:12.397Z"
+  },
+  "when-the-exam-becomes-the-goalarabic.dialogue-kw.mp3": {
+    "bytes": 2129805,
+    "sha256": "53cf9d20f965ea469b1d0b921d598ebfcb9db914bc4086350dd6990fa352c8cf",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T00:55:12.397Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T00:55:12.397Z",
+    "durationSeconds": 106
+  },
   "when-the-exam-becomes-the-goalarabic.dialogue.json": {
     "bytes": 9244,
     "sha256": "884df29ed5a11a89df8b3ad0abca24cb0a11accbf94365720212fcaffaf2e55b",

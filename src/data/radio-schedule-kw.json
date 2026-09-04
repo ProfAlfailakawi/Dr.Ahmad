@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 12960,
+ "loop": 13074,
  "gap": 8,
  "items": [
   {
@@ -807,6 +807,13 @@
    "cat": "مجتمع",
    "at": 12841,
    "dur": 111
+  },
+  {
+   "slug": "when-the-exam-becomes-the-goalarabic",
+   "title": "حين يصبح الامتحان هو الهدف",
+   "cat": "التعليم",
+   "at": 12960,
+   "dur": 106
   }
  ]
 }

@@ -37,8 +37,24 @@ Library/Application Support/DrAhmadWhatsAppAgent/
 *.log
 
 # مخرجات بناء لا تُلتزم في الجذر (الناتج الرسمي dist/ فقط)
-/about/ /admin/ /articles/ /atlas/ /contact/ /curated/ /cv/ /inbox/ /media/
-/publications/ /questions/ /radar/ /research/ /search/ /upcoming/ /assets/ /og/
+# ملاحظة: كل نمط في سطر مستقلّ — أنماط git تُفصَل بأسطر لا بمسافات.
+/about/
+/admin/
+/articles/
+/atlas/
+/contact/
+/curated/
+/cv/
+/inbox/
+/media/
+/publications/
+/questions/
+/radar/
+/research/
+/search/
+/upcoming/
+/assets/
+/og/
 /*.html
 !/index.html
 /sitemap.xml

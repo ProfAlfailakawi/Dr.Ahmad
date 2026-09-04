@@ -22,6 +22,10 @@ public/files
 
 # نظام
 .DS_Store
+# نسخ macOS المرقّمة (مثل «index 2.html») — لا تُلتزم في Git
+* [0-9].html
+build/
+*.tsbuildinfo
 whatsapp-agent/node_modules/
 whatsapp-agent/*.sqlite
 whatsapp-agent/*.sqlite-*

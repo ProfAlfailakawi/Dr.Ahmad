@@ -4562,6 +4562,32 @@ function createRateLimiter(limit = envNumber('AI_RATE_LIMIT_PER_MINUTE', 12, 1, 
   }
 }
 
+/* سقفٌ يوميٌّ صلبٌ لنقطة الأرشيف العامة (سؤال المكتبة). الحدّ الدقيقي في الذاكرة
+   يُصفَّر مع كل بدءٍ بارد ولا يُشارَك بين نسخ الخادم، فكان الحدّ الفعلي = 8×عدد
+   النسخ الحيّة. هذا العدّاد في Firestore — يكتبه حساب الخدمة الذي يتجاوز القواعد —
+   مشتركٌ بين كل النسخ ويصمد عبر إعادات التشغيل، فيحمي الحصة المجانية من الاستنزاف
+   الموزّع. يتدهور بلطف: إن تعذّر Firestore يسمح بالمرور، والحدّ الدقيقي/العنواني
+   يبقى أرضيةً حامية. السقف قابلٌ للضبط عبر ARCHIVE_ANSWER_DAILY_CAP. */
+async function withinArchiveDailyCap() {
+  const cap = envNumber('ARCHIVE_ANSWER_DAILY_CAP', 800, 50, 100_000)
+  const today = new Date().toISOString().slice(0, 10)
+  try {
+    const { db, FieldValue } = await getAdminFirestore()
+    const ref = db.collection('automation_state').doc('archive_answer_usage')
+    return await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(ref)
+      const data = snapshot.exists ? snapshot.data() : {}
+      const count = data && data.day === today ? Number(data.count || 0) : 0
+      if (count >= cap) return false
+      transaction.set(ref, { day: today, count: count + 1, updatedAt: FieldValue.serverTimestamp() })
+      return true
+    })
+  } catch (error) {
+    console.error('archive daily cap check failed:', error?.message || error)
+    return true
+  }
+}
+
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -5933,6 +5959,7 @@ export function createRequestHandler({
         return
       }
       if (!withinArchiveRateLimit(clientAddress(req))) throw new HttpError(429, 'Too many requests', { 'retry-after': '60' })
+      if (!(await withinArchiveDailyCap())) throw new HttpError(429, 'بلغ سؤال الأرشيف سقفه اليوم — تفضّل بالمحاولة غداً', { 'retry-after': '3600' })
       const contentType = String(req.headers['content-type'] || '').toLowerCase()
       if (contentType.split(';', 1)[0].trim() !== 'application/json') {
         req.resume()

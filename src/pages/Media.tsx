@@ -212,6 +212,20 @@ export default function Media() {
           </section>
         )}
 
+        {filteredMedia.length === 0 && (
+          <FadeUp>
+            <div className="mt-10 rounded-2xl border border-hair bg-canvas p-8 text-center">
+              {(yearFilter !== 'all' || kindFilter !== 'all' || query.trim())
+                ? <>
+                    <p className="font-display text-lg font-semibold text-ink">لا ظهور يطابق التصفية الحالية</p>
+                    <p className="mt-2 text-[.8rem] font-light text-soft">جرّب سنةً أخرى أو نوعاً مختلفاً{query.trim() ? '، أو امسح كلمة البحث' : ''}.</p>
+                    {(yearFilter !== 'all' || kindFilter !== 'all') && <button type="button" onClick={() => { setYearFilter('all'); setKindFilter('all') }} className="mt-4 border-b border-accent/[.35] pb-0.5 text-[.72rem] font-semibold text-accent">إظهار كل الظهورات</button>}
+                  </>
+                : <p className="font-display text-lg font-semibold text-ink">لا ظهورات إعلامية بعد.</p>}
+            </div>
+          </FadeUp>
+        )}
+
         {visibleCount < filteredMedia.length && (
           <div className="mt-10 flex justify-center">
             <button type="button" onClick={() => setVisibleCount((count) => Math.min(filteredMedia.length, count + 24))} className="editorial-more-link min-h-11 px-2 text-[.76rem] font-semibold text-soft transition-colors hover:text-accent">

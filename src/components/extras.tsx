@@ -14,7 +14,6 @@ import { Link as RouterLink, useLocation } from 'react-router'
 import { MySpace } from './MySpace'
 import { safeLink } from '../lib/dead-links'
 import { buildBibTeX, downloadCitationFile, inferBibTeXType, safeCitationFilename } from '../lib/bibtex'
-import { resolveTheme, syncThemeColorMeta, watchSystemTheme, writeThemeChoice } from '../lib/theme'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -490,26 +489,14 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   const [dark, setDark] = useState(false)
 
   useEffect(() => {
-    /* اختيار الزائر الصريح المحفوظ يتقدّم؛ فإن لم يختر شيئاً اتُّبع تفضيل نظامه.
-       الصنف نفسه وُضع في `public/boot.js` قبل أوّل رسم، فلا وميضَ هنا — هذا
-       السطر مزامنةٌ لحالة الزرّ لا تبديلٌ للسمة. */
-    const on = resolveTheme() === 'dark'
+    // الوضع النهاري هو الأصل دائماً — لا يتحوّل للّيلي إلا إذا اختاره الزائر بنفسه (يُحفظ اختياره)
+    const saved = (() => { try { return localStorage.getItem('theme') } catch { return null } })()
+    const on = saved === 'dark'
     setDark(on)
     document.documentElement.classList.toggle('dark', on)
-    syncThemeColorMeta(on)
     const syncFromReader = (event: Event) => setDark(Boolean((event as CustomEvent<{ dark?: boolean }>).detail?.dark))
     window.addEventListener('reader:theme-changed', syncFromReader)
-    /* تغيّر تفضيل النظام أثناء الجلسة يتبعه الموقع ما دام الزائر لم يختر صراحةً */
-    const unwatch = watchSystemTheme((systemDark) => {
-      setDark(systemDark)
-      document.documentElement.classList.toggle('dark', systemDark)
-      syncThemeColorMeta(systemDark)
-      try { localStorage.setItem('theme', systemDark ? 'dark' : 'light') } catch { /* noop */ }
-    })
-    return () => {
-      window.removeEventListener('reader:theme-changed', syncFromReader)
-      unwatch()
-    }
+    return () => window.removeEventListener('reader:theme-changed', syncFromReader)
   }, [])
 
   const toggle = (event: { currentTarget: HTMLButtonElement }) => {
@@ -527,9 +514,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       setDark(on)
       root.classList.toggle('dark', on)
       root.classList.remove('reader-paper')
-      /* ضغطةُ الزرّ اختيارٌ صريح — يُحفظ ويتقدّم على تفضيل النظام في كل زيارة لاحقة */
-      writeThemeChoice(on ? 'dark' : 'light')
-      syncThemeColorMeta(on)
+      try { localStorage.setItem('theme', on ? 'dark' : 'light') } catch { /* noop */ }
       try {
         const raw = localStorage.getItem('reader:preferences:v2')
         if (raw) localStorage.setItem('reader:preferences:v2', JSON.stringify({ ...JSON.parse(raw), theme: on ? 'dark' : 'light' }))

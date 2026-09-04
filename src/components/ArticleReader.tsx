@@ -7,7 +7,6 @@ import { SocialIcon } from './icons'
 import { highlightMergeVerdict } from '../lib/quote-merge'
 import type { ArticleRecord, PaperRecord } from '../lib/cms'
 import { buildConceptArchivePreview } from '../lib/concept-weave'
-import { readThemeChoice, resolveTheme, syncThemeColorMeta } from '../lib/theme'
 
 export type ReaderArticle = {
   slug: string
@@ -218,20 +217,12 @@ function writeJson(key: string, value: unknown) {
 function getPreferences(): ReaderPreferences {
   if (typeof window === 'undefined') return DEFAULT_PREFS
   const stored = readJson<Partial<ReaderPreferences>>(PREFS_KEY, {})
-  const siteTheme: ReaderTheme = resolveTheme()
-  /* تفضيل القارئ المحفوظ يُحترم ما دام للزائر اختيارٌ صريح للسمة. أمّا حين لا
-     اختيار — أي حين يتبع الموقعُ `prefers-color-scheme` — فالنظامُ هو الحَكَم،
-     وإلا تجمّد المقالُ على القيمة التي كُتبت آلياً في زيارةٍ سابقة. سطحُ الورق
-     مستقلٌّ عن ثنائية نهار/ليل فيبقى محفوظاً في الحالين. */
-  const storedTheme: ReaderTheme | undefined =
-    stored.theme === 'paper' ? 'paper'
-      : readThemeChoice() && (stored.theme === 'dark' || stored.theme === 'light') ? stored.theme
-        : undefined
+  const siteTheme: ReaderTheme = window.localStorage.getItem('theme') === 'dark' || document.documentElement.classList.contains('dark') ? 'dark' : 'light'
   return {
     scale: Number.isFinite(stored.scale) ? Math.min(1.2, Math.max(.88, Number(stored.scale))) : DEFAULT_PREFS.scale,
     lineHeight: Number.isFinite(stored.lineHeight) ? Math.min(2.42, Math.max(1.85, Number(stored.lineHeight))) : DEFAULT_PREFS.lineHeight,
     width: Number.isFinite(stored.width) ? Math.min(80, Math.max(56, Number(stored.width))) : DEFAULT_PREFS.width,
-    theme: storedTheme ?? siteTheme,
+    theme: stored.theme === 'dark' || stored.theme === 'paper' || stored.theme === 'light' ? stored.theme : siteTheme,
     showPopular: stored.showPopular !== false,
     focus: Boolean(stored.focus),
     vocalized: Boolean(stored.vocalized),
@@ -251,9 +242,6 @@ function applyPreferences(preferences: ReaderPreferences) {
 
   const dark = preferences.theme === 'dark'
   root.classList.toggle('dark', dark)
-  syncThemeColorMeta(dark)
-  /* مرآةٌ للمفتاح القديم فقط — الاختيارُ الصريح يُحفظ في `theme-choice` وحده،
-     فلا تتحوّل متابعةُ تفضيلِ النظام إلى قرارٍ مجمَّد. */
   try { window.localStorage.setItem('theme', dark ? 'dark' : 'light') } catch { /* noop */ }
   window.dispatchEvent(new CustomEvent('reader:theme-changed', { detail: { dark } }))
 }

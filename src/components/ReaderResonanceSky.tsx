@@ -21,8 +21,16 @@ export function ReaderResonanceSky({ articles }: { articles: ArticleRecord[] }) 
           ])
           const db = await getDb()
           if (!db) return
+          /* لا نقرأ المجموعة كلها: resolveResonantQuotes يرتّب بـ count تنازلياً
+             ثم يأخذ أعلى 18 بحدٍّ أدنى 3. فطلبُ الأعلى عدداً من Firestore يعطي
+             النتيجة نفسها بقراءاتٍ محدودة بدل قراءةٍ لكل تظليلٍ في الموقع.
+             السقف 300 هامشٌ سخيّ يستوعب الصفوف التي تسقط في الترشيح. */
           const [snapshot, bodies] = await Promise.all([
-            firestore.getDocs(firestore.collection(db, 'article_highlights')),
+            firestore.getDocs(firestore.query(
+              firestore.collection(db, 'article_highlights'),
+              firestore.orderBy('count', 'desc'),
+              firestore.limit(300),
+            )),
             loadArticleBodies(),
           ])
           const rows = snapshot.docs.map((document) => document.data())

@@ -153,6 +153,23 @@
     "verifiedAt": "2026-08-07T21:59:06.285Z",
     "bytes": 3097539
   },
+  "a-generation-without-rootsarabic.dialogue-kw.json": {
+    "bytes": 8574,
+    "sha256": "929768e7683b61d75f13b15917431ddb7e92544f7100447c87c9902ce45e83f7",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T02:09:07.097Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T02:09:07.097Z"
+  },
+  "a-generation-without-rootsarabic.dialogue-kw.mp3": {
+    "bytes": 2127405,
+    "sha256": "4f2fc7f9e3d763d243b2c397dfd15fd61472551dae8959ea65b2e86c6ecdc119",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T02:09:07.097Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T02:09:07.097Z",
+    "durationSeconds": 106
+  },
   "a-generation-without-rootsarabic.dialogue.json": {
     "bytes": 8554,
     "sha256": "54902bc78cbb4ebf48195e06eeac0a0f4706d5cae988bcb82b80a68a9dd30e0a",
@@ -5814,6 +5831,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:52.524Z"
   },
+  "qabas-201911-001.dialogue-kw.json": {
+    "bytes": 9335,
+    "sha256": "ca2b2103734ceb517225084ae15cd054cf22cc9405a2101b1fc44849f2808178",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:02:01.554Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:02:01.554Z"
+  },
+  "qabas-201911-001.dialogue-kw.mp3": {
+    "bytes": 2077965,
+    "sha256": "84da87f9b3bbe41db4d3f9ba1e6ca7a4c4c501a0ca659b718783090f6f1a1468",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:02:01.554Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:02:01.554Z",
+    "durationSeconds": 104
+  },
   "qabas-201911-001.dialogue.json": {
     "bytes": 9464,
     "sha256": "206d037a996e6eab8d2f4887f0e9446d221e685de2a4a5e8c63e5ab0f8757283",
@@ -5859,6 +5893,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:53.430Z"
   },
+  "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.dialogue-kw.json": {
+    "bytes": 7373,
+    "sha256": "3eb4380e045a4ffdfc2fee6110784de97021fd31dcea0b45f5be9e2330908b86",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:12:36.647Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:12:36.647Z"
+  },
+  "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.dialogue-kw.mp3": {
+    "bytes": 2110125,
+    "sha256": "7212a31ccf46373f046b0bd40fdd81a5c39ea3d2db715383f93a80dab3968658",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:12:36.647Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:12:36.647Z",
+    "durationSeconds": 105
+  },
   "rest-is-taught-and-the-mind-is-on-permanent-vacation-2.dialogue.json": {
     "bytes": 9873,
     "sha256": "16d88a8ecb76e3d8ea746b7aad057729c3098fb266c66781b9e405e03091f320",
@@ -5888,6 +5939,23 @@
     "verifiedAt": "2026-08-07T21:59:00.543Z",
     "bytes": 3913395
   },
+  "smartphone-child-a-creative-mind-or-a-child-being-driven.dialogue-kw.json": {
+    "bytes": 8645,
+    "sha256": "465eadf92d16edb035da82bb18aae071d202d74e54709e177e1e8e93219cead0",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:28:55.460Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:28:55.460Z"
+  },
+  "smartphone-child-a-creative-mind-or-a-child-being-driven.dialogue-kw.mp3": {
+    "bytes": 2221485,
+    "sha256": "40799f14776d2214cfe7820d0e54e4f1b61ee7757e6829d7843117935686c192",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:28:55.460Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:28:55.460Z",
+    "durationSeconds": 111
+  },
   "smartphone-child-a-creative-mind-or-a-child-being-driven.dialogue.json": {
     "bytes": 8941,
     "sha256": "85a8af6e4bdd5e7a0751b2e06b24323e7f3ebb6f00d57c3236c46a2564fc2263",
@@ -5916,6 +5984,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:07.960Z",
     "bytes": 3720716
+  },
+  "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.dialogue-kw.json": {
+    "bytes": 7976,
+    "sha256": "8b54eea7269c4f88ba0f87f084522b0665c4a44559adffcc9d705886224012aa",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:35:28.161Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:35:28.161Z"
+  },
+  "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.dialogue-kw.mp3": {
+    "bytes": 2191245,
+    "sha256": "db21a61096357c9eda7ecb9f3c34038cee1d0f865f9e9eb96be961c9032f2d5b",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:35:28.161Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:35:28.161Z",
+    "durationSeconds": 110
   },
   "students-minds-are-on-vacation-while-chatgpt-works-full-time-2.dialogue.json": {
     "bytes": 10112,
@@ -6007,6 +6092,23 @@
     "bytes": 2995557,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:53.890Z"
+  },
+  "the-blackboard-that-no-longer-sees-anyone-2.dialogue-kw.json": {
+    "bytes": 8562,
+    "sha256": "581e70c3fee0426afb1439c0dba36e5ffa22348bfbdef784d37ec3bdf10a7ee2",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T18:57:21.442Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:57:21.442Z"
+  },
+  "the-blackboard-that-no-longer-sees-anyone-2.dialogue-kw.mp3": {
+    "bytes": 2248845,
+    "sha256": "e54f275fd74da691bd6f736e55717f762c8ee39d4df206b66fd2583f9804572d",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T18:57:21.442Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T18:57:21.442Z",
+    "durationSeconds": 112
   },
   "the-blackboard-that-no-longer-sees-anyone-2.dialogue.json": {
     "bytes": 9659,
@@ -6107,6 +6209,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:54.623Z"
   },
+  "the-excellence-epidemic-or-the-cult-of-grades-2.dialogue-kw.json": {
+    "bytes": 9122,
+    "sha256": "8c2ad8403d1a74c679c1c23a1fafb61057462542c6fe554044b5731ee3526320",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T19:05:25.781Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:05:25.781Z"
+  },
+  "the-excellence-epidemic-or-the-cult-of-grades-2.dialogue-kw.mp3": {
+    "bytes": 2280525,
+    "sha256": "b72c0049e64d39b18c24e23ebc8d209332d12a3b090ad84f88071b9434093c26",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T19:05:25.781Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:05:25.781Z",
+    "durationSeconds": 114
+  },
   "the-excellence-epidemic-or-the-cult-of-grades-2.dialogue.json": {
     "bytes": 9561,
     "sha256": "0e85ebff2f13ee653d9bae08e9358662195ee9ffef79895c625584212736bef3",
@@ -6135,6 +6254,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:58:49.494Z",
     "bytes": 3780484
+  },
+  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.dialogue-kw.json": {
+    "bytes": 8503,
+    "sha256": "a3e731bfac69f8d1c18195002c82e2369b41cb06a6d81ae9be084779d7477126",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T19:11:09.018Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:11:09.018Z"
+  },
+  "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.dialogue-kw.mp3": {
+    "bytes": 2022285,
+    "sha256": "2c90cb3606b08d64b252d8303f7eedfcbb9934bdcb563036ebfc68684576319b",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T19:11:09.018Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:11:09.018Z",
+    "durationSeconds": 101
   },
   "the-homeland-is-not-a-point-of-view-in-times-of-crisisarabic.dialogue.json": {
     "bytes": 9364,
@@ -6180,6 +6316,23 @@
     "bytes": 3021888,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:55.187Z"
+  },
+  "the-human-who-forgot-himselfarabic.dialogue-kw.json": {
+    "bytes": 8097,
+    "sha256": "c59062c0ef23d8e52828c7e2be1708de83f065648f38e4153a293cab7328ee08",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T19:28:00.250Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:28:00.250Z"
+  },
+  "the-human-who-forgot-himselfarabic.dialogue-kw.mp3": {
+    "bytes": 2070285,
+    "sha256": "d9acbbe7d1f2fddfccc0170e005ee07e10089ba4ec4d5622199e5b162af0cc8b",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T19:28:00.250Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T19:28:00.250Z",
+    "durationSeconds": 103
   },
   "the-human-who-forgot-himselfarabic.dialogue.json": {
     "bytes": 9614,
@@ -6255,6 +6408,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:53.120Z"
   },
+  "the-mind-present-in-absence-absent-in-presence-2.dialogue-kw.json": {
+    "bytes": 8587,
+    "sha256": "7cb74463941606ea5f6e388595774779333bf5889469fc4140ce28aace78c37d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:06:42.439Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:06:42.439Z"
+  },
+  "the-mind-present-in-absence-absent-in-presence-2.dialogue-kw.mp3": {
+    "bytes": 2303565,
+    "sha256": "78ce5bbc8e1c5cd8ab59e377c1663725c4a43225cd7312ef620dc4389f031834",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:06:42.439Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:06:42.439Z",
+    "durationSeconds": 115
+  },
   "the-mind-present-in-absence-absent-in-presence-2.dialogue.json": {
     "bytes": 9770,
     "sha256": "6a840fc2de81b989c5a017b50c61a69a7784bcaacbc66d33a62617be95eed3ab",
@@ -6300,6 +6470,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:56.192Z"
   },
+  "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.dialogue-kw.json": {
+    "bytes": 8012,
+    "sha256": "5887b4cf6afe962b432db803789c556391771a7ff82c835bbcc5d65d1bc0daa0",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:13:28.998Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:13:28.998Z"
+  },
+  "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.dialogue-kw.mp3": {
+    "bytes": 2115405,
+    "sha256": "246b861d7bbfc70f507bb41d9cdc95aaa2dc7b065647e9d1c0a6051c0c53b189",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:13:28.998Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:13:28.998Z",
+    "durationSeconds": 106
+  },
   "the-open-market-for-acquiring-degrees-a-scientific-or-ethical-crisis.dialogue.json": {
     "bytes": 9149,
     "sha256": "bd36124dd3117e88cad7fb179c93dbcbd574586d7ce1faccde3e45a61790994b",
@@ -6329,6 +6516,23 @@
     "verifiedAt": "2026-08-07T21:59:10.746Z",
     "bytes": 3553533
   },
+  "the-republic-of-degrees-and-the-fall-of-thought-2.dialogue-kw.json": {
+    "bytes": 7880,
+    "sha256": "5097f719e6f22ea078803b92bef5cb1d141289f8e1134de294aad36cbc8daf53",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:25:29.269Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:25:29.269Z"
+  },
+  "the-republic-of-degrees-and-the-fall-of-thought-2.dialogue-kw.mp3": {
+    "bytes": 2221005,
+    "sha256": "4d27efde67177d182f58cd6fede9c9f991979f72e79dbc03f11e04fb9ff92c82",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:25:29.269Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:25:29.269Z",
+    "durationSeconds": 111
+  },
   "the-republic-of-degrees-and-the-fall-of-thought-2.dialogue.json": {
     "bytes": 9055,
     "sha256": "5e8eefc26d886b979526cab00bdfe09ac1f24425e8147fb7853327fea2bd2e09",
@@ -6357,6 +6561,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:58:52.832Z",
     "bytes": 3366287
+  },
+  "the-return-that-fails-to-fix-what-came-before-itarabic.dialogue-kw.json": {
+    "bytes": 8596,
+    "sha256": "1ac76127a9c55f1c5be6d6f15807e96c60a93a7fd06715ae7ae1501cb975168d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:31:14.378Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:31:14.378Z"
+  },
+  "the-return-that-fails-to-fix-what-came-before-itarabic.dialogue-kw.mp3": {
+    "bytes": 2121165,
+    "sha256": "9225ea56ab413a1c8970dbfd7cacd5cd9d942296623a7d23a3150b7d9624f5e0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:31:14.378Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:31:14.378Z",
+    "durationSeconds": 106
   },
   "the-return-that-fails-to-fix-what-came-before-itarabic.dialogue.json": {
     "bytes": 9090,
@@ -6402,6 +6623,23 @@
     "acceptedAt": "2026-07-28T21:55:07.041Z",
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:54.088Z"
+  },
+  "the-social-media-swamp-and-plastic-surgery-addiction-2.dialogue-kw.json": {
+    "bytes": 8138,
+    "sha256": "aa9ae865688378eaeecba29f6ff78e968b64ee902fcfc47cb8c47bef6ee8bd08",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T20:48:30.087Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:48:30.087Z"
+  },
+  "the-social-media-swamp-and-plastic-surgery-addiction-2.dialogue-kw.mp3": {
+    "bytes": 2215245,
+    "sha256": "664d2ce78039e51b02172d38e1f6979bf59412aedd6adbedaf83681af91464f0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T20:48:30.087Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T20:48:30.087Z",
+    "durationSeconds": 111
   },
   "the-social-media-swamp-and-plastic-surgery-addiction-2.dialogue.json": {
     "bytes": 9280,
@@ -6461,6 +6699,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.074Z"
   },
+  "the-teacher-the-last-to-know-2.dialogue-kw.json": {
+    "bytes": 8510,
+    "sha256": "96d588b688472f31252afeebcb3cf35c91c144fe193b8d87a9fe088743744d5a",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T21:38:06.401Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:38:06.401Z"
+  },
+  "the-teacher-the-last-to-know-2.dialogue-kw.mp3": {
+    "bytes": 2203725,
+    "sha256": "0e8a711ff6b05b81b66e34c691aa65626b79ed1b57a46dbae52eeac886b1dbf0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T21:38:06.401Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:38:06.401Z",
+    "durationSeconds": 110
+  },
   "the-teacher-the-last-to-know-2.dialogue.json": {
     "bytes": 9526,
     "sha256": "03dd5ffa02c79893d4782b0be1ea74f984559485940b741fc3305ddfe5da3ce6",
@@ -6506,6 +6761,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:57.543Z"
   },
+  "the-teacher-what-do-you-know-about-the-teacher.dialogue-kw.json": {
+    "bytes": 9115,
+    "sha256": "21d0fb760436ae71cd5aa1e58058121126b37a41e2c6bccd65e9eb59f38cb48e",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T21:48:06.177Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:48:06.177Z"
+  },
+  "the-teacher-what-do-you-know-about-the-teacher.dialogue-kw.mp3": {
+    "bytes": 2118765,
+    "sha256": "d49ad86558566982df79679d897ccd80b651a7f1a5c2f66b774209b817c2c590",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T21:48:06.177Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:48:06.177Z",
+    "durationSeconds": 106
+  },
   "the-teacher-what-do-you-know-about-the-teacher.dialogue.json": {
     "bytes": 9152,
     "sha256": "0ae6c768e2c71ce76179c95765d2a1d308352857eea227c9f40fcf1640bb2cb8",
@@ -6534,6 +6806,23 @@
     "bytes": 3365451,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.033Z"
+  },
+  "the-year-that-doesnt-begin-with-the-calendararabic.dialogue-kw.json": {
+    "bytes": 9293,
+    "sha256": "3e463b2c26d65d55f7d30630df5648446672c3549cfeb652ea8ac4b19ff64960",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T21:57:27.709Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:57:27.709Z"
+  },
+  "the-year-that-doesnt-begin-with-the-calendararabic.dialogue-kw.mp3": {
+    "bytes": 2103405,
+    "sha256": "cd39f80e9f8bacaa3e17f495708c3117d4fac9eec0cef23fb225a607c2ca1763",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T21:57:27.709Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T21:57:27.709Z",
+    "durationSeconds": 105
   },
   "the-year-that-doesnt-begin-with-the-calendararabic.dialogue.json": {
     "bytes": 8892,
@@ -6580,6 +6869,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:56.403Z"
   },
+  "todays-childs-confusion-between-education-and-care.dialogue-kw.json": {
+    "bytes": 8559,
+    "sha256": "aa720a1b9078e67cba66bf3a98e9a161eb8448e8c7b93d10262fac403ce4432f",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T22:03:13.156Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:03:13.156Z"
+  },
+  "todays-childs-confusion-between-education-and-care.dialogue-kw.mp3": {
+    "bytes": 2120205,
+    "sha256": "674e0d9e07ff6ecf9b18a5bce2fd75831f1844492accd95a6bf7623d13bad3e1",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T22:03:13.156Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:03:13.156Z",
+    "durationSeconds": 106
+  },
   "todays-childs-confusion-between-education-and-care.dialogue.json": {
     "bytes": 9478,
     "sha256": "bc0c0720144585801f5eb296723f748a2afeb2bd074ee8d485442bc13aa468cd",
@@ -6608,6 +6914,23 @@
     "bytes": 3207880,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:58.765Z"
+  },
+  "turning-video-game-obsession-into-creative-meditation-2.dialogue-kw.json": {
+    "bytes": 8572,
+    "sha256": "660a93e2a9e68baa7317a1e0b1f6c650a416190845a48c83e02ce258e606cdb6",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T22:26:22.713Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:26:22.713Z"
+  },
+  "turning-video-game-obsession-into-creative-meditation-2.dialogue-kw.mp3": {
+    "bytes": 2054925,
+    "sha256": "a0825c51ffe9034f6a0decf8047c6ae9b0eeed3df7445d54467b55c61ced7007",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T22:26:22.713Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:26:22.713Z",
+    "durationSeconds": 103
   },
   "turning-video-game-obsession-into-creative-meditation-2.dialogue.json": {
     "bytes": 9496,
@@ -6638,6 +6961,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.382Z"
   },
+  "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.dialogue-kw.json": {
+    "bytes": 9181,
+    "sha256": "136c556d4f849e9e9aa222340c62d276c2318e93a860954e9ec9c760dd758158",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T22:48:00.175Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:48:00.175Z"
+  },
+  "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.dialogue-kw.mp3": {
+    "bytes": 2184525,
+    "sha256": "61d16839b66918cb92de450134aedb41474f4af40ec32419072db4c7aa9b9ce0",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T22:48:00.175Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T22:48:00.175Z",
+    "durationSeconds": 109
+  },
   "we-breastfeed-them-with-tenderness-and-deprive-them-of-education.dialogue.json": {
     "bytes": 9113,
     "sha256": "11ca6673ea8fb3b0f079e11a94e1985932d0321b18f7bca606a5234f86d0fd7f",
@@ -6666,6 +7006,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:58:57.759Z",
     "bytes": 3180295
+  },
+  "we-graduated-with-a-degree-but-the-language-was-lost-2.dialogue-kw.json": {
+    "bytes": 9183,
+    "sha256": "5605606bdf9077c4251910cc85c395cc57e546e0932180cf8fba9948a3a171d3",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:11:28.568Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:11:28.568Z"
+  },
+  "we-graduated-with-a-degree-but-the-language-was-lost-2.dialogue-kw.mp3": {
+    "bytes": 2147565,
+    "sha256": "72cfc526519c43dd0fdaa8aa9a479b38102cbbbbeb393c9df0de7f9ace498027",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:11:28.568Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:11:28.568Z",
+    "durationSeconds": 107
   },
   "we-graduated-with-a-degree-but-the-language-was-lost-2.dialogue.json": {
     "bytes": 9398,
@@ -6712,6 +7069,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:57.826Z"
   },
+  "we-handed-them-the-phone-so-theyd-leave-us-alone-2.dialogue-kw.json": {
+    "bytes": 7970,
+    "sha256": "4373a5d9a772e8e7dd58b16226a83a567434b17a32e223216acd003909d20b5f",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:16:17.901Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:16:17.901Z"
+  },
+  "we-handed-them-the-phone-so-theyd-leave-us-alone-2.dialogue-kw.mp3": {
+    "bytes": 2199405,
+    "sha256": "6d55f260544f9568686ac4349e1de6ba543abf8914852621474179e8fa9a59de",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:16:17.901Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:16:17.901Z",
+    "durationSeconds": 110
+  },
   "we-handed-them-the-phone-so-theyd-leave-us-alone-2.dialogue.json": {
     "bytes": 9674,
     "sha256": "af420dc1420fa20bc2344be3f7c62412b31396a31ceb0564485c797db79a121d",
@@ -6757,6 +7131,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:13:59.915Z"
   },
+  "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.dialogue-kw.json": {
+    "bytes": 7880,
+    "sha256": "6ef48065661c2ccde5d8776961abd497424b0a1e91e0b0ad127c1ec5ec2f41d8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:23:43.571Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:23:43.571Z"
+  },
+  "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.dialogue-kw.mp3": {
+    "bytes": 2203725,
+    "sha256": "37141e24afa3e63070975648778be9f99825870adb3e3be4b88c67273fae9920",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:23:43.571Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:23:43.571Z",
+    "durationSeconds": 110
+  },
   "we-prepare-our-children-for-success-and-leave-them-empty-handed-2.dialogue.json": {
     "bytes": 9306,
     "sha256": "e9f65a902864af4fad891b4e9fa8cb2ddc5bceed62c497419a0bd392a4fdd70a",
@@ -6785,6 +7176,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-08-07T21:59:04.856Z",
     "bytes": 3445699
+  },
+  "when-a-student-wishes-for-death-before-the-first-bell-2.dialogue-kw.json": {
+    "bytes": 9380,
+    "sha256": "9672863aa0eef7e22a2525476c96a66089d2b9bf56aa73e267c2751aac8a65a8",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:39:16.318Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:39:16.318Z"
+  },
+  "when-a-student-wishes-for-death-before-the-first-bell-2.dialogue-kw.mp3": {
+    "bytes": 2030925,
+    "sha256": "84923d204c35d14359c703a5cdb5f17be4c89bb22c2c69db131a2afea7825a68",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:39:16.318Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:39:16.318Z",
+    "durationSeconds": 102
   },
   "when-a-student-wishes-for-death-before-the-first-bell-2.dialogue.json": {
     "bytes": 9704,
@@ -6830,6 +7238,23 @@
     "bytes": 3445699,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:00.463Z"
+  },
+  "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.dialogue-kw.json": {
+    "bytes": 8069,
+    "sha256": "b6148eed084a2b3cf2037c520f2a08ec7851bc2d85051f5792bc67b796ed0a59",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-03T23:48:02.076Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:48:02.076Z"
+  },
+  "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.dialogue-kw.mp3": {
+    "bytes": 2353965,
+    "sha256": "856a927226feff262736ff7721b0fafda63643c5fda6efa356e99d630f3a23d5",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-03T23:48:02.076Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-03T23:48:02.076Z",
+    "durationSeconds": 118
   },
   "when-cheating-becomes-intelligence-and-honesty-becomes-stupidity-2.dialogue.json": {
     "bytes": 9183,
@@ -6959,6 +7384,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T17:09:59.727Z"
   },
+  "when-the-exam-becomes-the-goalarabic.dialogue-kw.json": {
+    "bytes": 8008,
+    "sha256": "ff280b2ab67fe00710ba6971c8a6d057e76f49b71bc11540f193caaea018b84d",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T00:55:12.397Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T00:55:12.397Z"
+  },
+  "when-the-exam-becomes-the-goalarabic.dialogue-kw.mp3": {
+    "bytes": 2129805,
+    "sha256": "53cf9d20f965ea469b1d0b921d598ebfcb9db914bc4086350dd6990fa352c8cf",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T00:55:12.397Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T00:55:12.397Z",
+    "durationSeconds": 106
+  },
   "when-the-exam-becomes-the-goalarabic.dialogue.json": {
     "bytes": 9244,
     "sha256": "884df29ed5a11a89df8b3ad0abca24cb0a11accbf94365720212fcaffaf2e55b",
@@ -6987,6 +7429,23 @@
     "durationSeconds": 184,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:01.402Z"
+  },
+  "when-the-teacher-knows-why-he-teachesarabic.dialogue-kw.json": {
+    "bytes": 8550,
+    "sha256": "b1e0741791a4bb56c4d7342840084183104cebb1389cc606b0d9060dc5653fdd",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T01:00:36.408Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:00:36.408Z"
+  },
+  "when-the-teacher-knows-why-he-teachesarabic.dialogue-kw.mp3": {
+    "bytes": 2291085,
+    "sha256": "99dac39fddb62d0759055e750c5213ac1c1b072c87762ea0c5b98ecbb3e52038",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T01:00:36.409Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:00:36.409Z",
+    "durationSeconds": 115
   },
   "when-the-teacher-knows-why-he-teachesarabic.dialogue.json": {
     "bytes": 9162,
@@ -7032,6 +7491,23 @@
     "bytes": 2854287,
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:01.878Z"
+  },
+  "when-truth-died-and-the-narrative-survivedarabic.dialogue-kw.json": {
+    "bytes": 8600,
+    "sha256": "9ecad540b3f070f2204fd5c599238a122340d4bc5d12a8cd6c96b99b2de80390",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T01:05:23.151Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:05:23.151Z"
+  },
+  "when-truth-died-and-the-narrative-survivedarabic.dialogue-kw.mp3": {
+    "bytes": 2005965,
+    "sha256": "c54d807b681bdfed82ef4f33757d3c589de9196a0491857fc350045ff24871df",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T01:05:23.151Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:05:23.151Z",
+    "durationSeconds": 100
   },
   "when-truth-died-and-the-narrative-survivedarabic.dialogue.json": {
     "bytes": 9430,

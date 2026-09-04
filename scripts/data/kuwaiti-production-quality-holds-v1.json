@@ -8,6 +8,16 @@
   },
   "episodes": [
     {
+      "slug": "a-generation-without-rootsarabic",
+      "status": "quality-hold",
+      "failedRunId": 33412947922,
+      "failedRunAttempt": 3,
+      "failedRounds": 3,
+      "failedTakes": 18,
+      "reason": "لم يجتز مرجع هوية فهد ونورة وتدقيق اللهجة بعد ثلاث جولات مستقلة؛ لم ينشر ولم يرقع.",
+      "deferredAt": "2026-08-31T16:05:03.141Z"
+    },
+    {
       "slug": "do-we-contain-or-raise-2",
       "status": "quality-hold",
       "failedRunId": 33447995728,
@@ -216,36 +226,6 @@
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
       "deferredAt": "2026-09-03T14:31:25.773Z"
-    },
-    {
-      "slug": "the-media-is-a-vital-partner-in-the-educational-process",
-      "status": "quality-hold",
-      "failedRunId": 33798724108,
-      "failedRunAttempt": 3,
-      "failedRounds": 3,
-      "failedTakes": 18,
-      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
-      "deferredAt": "2026-09-03T20:00:34.051Z"
-    },
-    {
-      "slug": "the-success-that-destroyed-us-2",
-      "status": "quality-hold",
-      "failedRunId": 33806351015,
-      "failedRunAttempt": 3,
-      "failedRounds": 3,
-      "failedTakes": 18,
-      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
-      "deferredAt": "2026-09-03T21:21:55.676Z"
-    },
-    {
-      "slug": "when-i-evaluate-my-daughters-school-before-it-evaluates-the-2m",
-      "status": "quality-hold",
-      "failedRunId": 33822695816,
-      "failedRunAttempt": 3,
-      "failedRounds": 3,
-      "failedTakes": 18,
-      "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
-      "deferredAt": "2026-09-04T00:51:27.542Z"
     }
   ]
 }

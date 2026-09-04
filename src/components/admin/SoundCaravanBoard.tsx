@@ -148,10 +148,11 @@ function DetailPanel({ selection, rows, onClose }: { selection: DetailSelection;
           >
             <span className="text-[.68rem] tabular-nums text-soft">{row.n}</span>
             <span className="min-w-0 truncate text-[.78rem] font-semibold text-ink">{row.title}</span>
-            <span className="flex items-center gap-1.5" aria-label={`فهد ${row.fahed ? 'جاهز' : 'غير جاهز'}، نورة ${row.noura ? 'جاهزة' : 'غير جاهزة'}، الحوار ${row.dialogue ? 'جاهز' : 'غير جاهز'}`}>
+            <span className="flex items-center gap-1.5" aria-label={`فهد ${row.fahed ? 'جاهز' : 'غير جاهز'}، نورة ${row.noura ? 'جاهزة' : 'غير جاهزة'}، الحوار ${row.dialogue ? 'جاهز' : 'غير جاهز'}، الحوار الكويتي ${row.dialogueKuwaiti ? 'جاهز' : 'غير جاهز'}`}>
               <i className="h-2 w-2 rounded-full" style={{ background: row.fahed ? FAHED : 'var(--c-wash, #e5e5e5)' }} />
               <i className="h-2 w-2 rounded-full" style={{ background: row.noura ? NOURA : 'var(--c-wash, #e5e5e5)' }} />
               <i className="h-2 w-2 rounded-full" style={{ background: row.dialogue ? DIALOGUE : 'var(--c-wash, #e5e5e5)' }} />
+              <i className="h-2 w-2 rounded-full" style={{ background: row.dialogueKuwaiti ? KUWAITI : 'var(--c-wash, #e5e5e5)' }} />
               <span className="mr-1 text-[.7rem] text-accent">↗</span>
             </span>
           </a>
@@ -186,6 +187,7 @@ function ArticlePreview({ row, onClose }: { row: Row; onClose: () => void }) {
           ['fahed', 'فهد', row.fahed, FAHED],
           ['noura', 'نورة', row.noura, NOURA],
           ['dialogue', 'الحوار', row.dialogue, DIALOGUE],
+          ['dialogueKuwaiti', 'الحوار الكويتي', row.dialogueKuwaiti, KUWAITI],
         ] as const).map(([key, label, ready, color]) => (
           <span
             key={key}
@@ -316,10 +318,10 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
   const noura = rows.filter((row) => row.noura).length
   const dialogue = rows.filter((row) => row.dialogue).length
   const dialogueKuwaiti = rows.filter((row) => row.dialogueKuwaiti).length
-  /* النسبة العامة تبقى على المسارات الثلاثة المكتملة؛ الكويتي مسارٌ ناشئ
-     يُعرض بعدّاده الخاص كي لا يهبط الإنجاز المُثبت بمسارٍ لم يبدأ بعد. */
-  const done = fahed + noura + dialogue
-  const target = total * 3
+  /* الأربعة مساراتٍ ظاهرة معاً بعدّادٍ واحد يُقرأ في كل موضع، فالرقم نفسه
+     أينما ورد؛ الكويتي منها وإن لم تكتمل حلقاته بعد. */
+  const done = fahed + noura + dialogue + dialogueKuwaiti
+  const target = total * 4
   const overall = target ? Math.round((done / target) * 100) : 0
 
   const detailRows = useMemo(() => {
@@ -336,7 +338,7 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-ink">قافلة الصوت</h2>
-          <p className="mt-1 text-sm text-soft">لكل مقال ثلاثة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، والحوار — {arabicCountPhrase(done, READY_PATH_FORMS)} من أصل {target} ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه. ومعها مسارٌ رابع مُجهَّز للحوار الكويتي يُحسب على حدة حتى تكتمل حلقاته.</p>
+          <p className="mt-1 text-sm text-soft">لكل مقال أربعة مسارات إنتاج ظاهرة للإدارة: فهد، نورة، الحوار، والحوار الكويتي — {arabicCountPhrase(done, READY_PATH_FORMS)} من أصل {target} ({overall}٪). كل رقم قابل للفتح لمعرفة المقالات التي وراءه.</p>
         </div>
         <button
           type="button"
@@ -398,11 +400,13 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
           <div className="h-full transition-[width] duration-700" style={{ width: `${target ? (fahed / target) * 100 : 0}%`, background: FAHED }} />
           <div className="h-full transition-[width] duration-700" style={{ width: `${target ? (noura / target) * 100 : 0}%`, background: NOURA }} />
           <div className="h-full transition-[width] duration-700" style={{ width: `${target ? (dialogue / target) * 100 : 0}%`, background: DIALOGUE }} />
+          <div className="h-full transition-[width] duration-700" style={{ width: `${target ? (dialogueKuwaiti / target) * 100 : 0}%`, background: KUWAITI }} />
         </div>
         <div className="mt-3 flex flex-wrap gap-2 text-[.72rem] text-soft">
           <button type="button" onClick={() => setDetail({ voice: 'fahed', state: 'ready' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: FAHED }} />فهد {fahed}</button>
           <button type="button" onClick={() => setDetail({ voice: 'noura', state: 'ready' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: NOURA }} />نورة {noura}</button>
           <button type="button" onClick={() => setDetail({ voice: 'dialogue', state: 'ready' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: DIALOGUE }} />الحوار {dialogue}</button>
+          <button type="button" onClick={() => setDetail({ voice: 'dialogueKuwaiti', state: 'ready' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: KUWAITI }} />الحوار الكويتي {dialogueKuwaiti}</button>
           <button type="button" onClick={() => setDetail({ voice: 'noura', state: 'missing' })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 transition-colors hover:bg-wash hover:text-accent"><i className="inline-block h-2.5 w-2.5 rounded-sm bg-soft/40" />{arabicCountPhrase(total - noura, ARTICLE_PLAIN_FORMS)} بلا صوت نورة بعد</button>
         </div>
       </div>
@@ -411,11 +415,11 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
         <div className="mb-3 flex items-center gap-3">
           <h3 className="whitespace-nowrap text-base font-bold text-ink">المتون الـ{total}</h3>
           <span className="h-px flex-1 bg-hair" />
-          <span className="text-[.72rem] text-soft">اضغط الرقم لمعرفة المقال أولاً · فهد ثم نورة ثم الحوار</span>
+          <span className="text-[.72rem] text-soft">اضغط الرقم لمعرفة المقال أولاً · فهد ثم نورة ثم الحوار ثم الحوار الكويتي</span>
         </div>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(52px, 1fr))' }}>
           {rows.map((row) => {
-            const full = row.fahed && row.noura && row.dialogue
+            const full = row.fahed && row.noura && row.dialogue && row.dialogueKuwaiti
             return (
               <button
                 key={row.slug}
@@ -432,6 +436,7 @@ export function SoundCaravanBoard({ articles }: { articles: Article[] }) {
                   <i className="h-[5px] w-[9px] rounded-sm" style={{ background: row.fahed ? FAHED : 'var(--c-wash, #e5e5e5)' }} />
                   <i className="h-[5px] w-[9px] rounded-sm" style={{ background: row.noura ? NOURA : 'var(--c-wash, #e5e5e5)' }} />
                   <i className="h-[5px] w-[9px] rounded-sm" style={{ background: row.dialogue ? DIALOGUE : 'var(--c-wash, #e5e5e5)' }} />
+                  <i className="h-[5px] w-[9px] rounded-sm" style={{ background: row.dialogueKuwaiti ? KUWAITI : 'var(--c-wash, #e5e5e5)' }} />
                 </span>
               </button>
             )

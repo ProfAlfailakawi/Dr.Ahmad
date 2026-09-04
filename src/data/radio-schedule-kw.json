@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "loop": 13074,
+ "loop": 13197,
  "gap": 8,
  "items": [
   {
@@ -814,6 +814,13 @@
    "cat": "التعليم",
    "at": 12960,
    "dur": 106
+  },
+  {
+   "slug": "when-the-teacher-knows-why-he-teachesarabic",
+   "title": "حين يعرف المعلّم لماذا يعلّم",
+   "cat": "التعليم",
+   "at": 13074,
+   "dur": 115
   }
  ]
 }

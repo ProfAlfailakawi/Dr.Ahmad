@@ -7413,6 +7413,23 @@
     "validationStatus": "verified-r2",
     "verifiedAt": "2026-07-27T15:14:01.402Z"
   },
+  "when-the-teacher-knows-why-he-teachesarabic.dialogue-kw.json": {
+    "bytes": 8550,
+    "sha256": "b1e0741791a4bb56c4d7342840084183104cebb1389cc606b0d9060dc5653fdd",
+    "contentType": "application/json; charset=utf-8",
+    "publishedAt": "2026-09-04T01:00:36.408Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:00:36.408Z"
+  },
+  "when-the-teacher-knows-why-he-teachesarabic.dialogue-kw.mp3": {
+    "bytes": 2291085,
+    "sha256": "99dac39fddb62d0759055e750c5213ac1c1b072c87762ea0c5b98ecbb3e52038",
+    "contentType": "audio/mpeg",
+    "publishedAt": "2026-09-04T01:00:36.409Z",
+    "validationStatus": "verified-r2",
+    "verifiedAt": "2026-09-04T01:00:36.409Z",
+    "durationSeconds": 115
+  },
   "when-the-teacher-knows-why-he-teachesarabic.dialogue.json": {
     "bytes": 9162,
     "sha256": "c49c721e6bfa878dac16a9a56208c92b6a99fde9696df76005bf698499f807a3",

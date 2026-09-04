@@ -20,12 +20,12 @@
     {
       "slug": "do-we-contain-or-raise-2",
       "status": "quality-hold",
-      "failedRunId": 33447995728,
+      "failedRunId": 33832192113,
       "failedRunAttempt": 3,
       "failedRounds": 3,
       "failedTakes": 18,
       "reason": "استنفدت الحلقة ثلاث جولات كاملة من مرجع الهوية واللهجة؛ لم تنشر ولم ترقع.",
-      "deferredAt": "2026-08-31T22:59:13.957Z"
+      "deferredAt": "2026-09-04T03:20:14.399Z"
     },
     {
       "slug": "e-learning-culture-2",

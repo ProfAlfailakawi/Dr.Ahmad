@@ -1351,10 +1351,10 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
   }
   html = html.replace('</head>', `${head}\n  </head>`)
   const bodyHtml = generateBodyHtml(path, lang)
-  html = html.replace(
-    '<div id="root"></div>',
-    `<div id="seo-fallback">${bodyHtml}</div><div id="root"></div>`,
-  )
+  /* #root لم يعد فارغاً: صار يحمل الافتتاحية الكوفية المضمّنة، فنحقن نسخة
+     محركات البحث قبله بلا افتراضٍ عن محتواه. */
+  if (!html.includes('<div id="root">')) throw new Error('جذر React غائب عن الهيكل')
+  html = html.replace('<div id="root">', `<div id="seo-fallback">${bodyHtml}</div><div id="root">`)
   return html
 }
 
@@ -1934,7 +1934,7 @@ function assertStaticOutput() {
     .filter((file) => {
       if (!existsSync(file)) return true
       const html = readFileSync(file, 'utf8')
-      return !/<div id="seo-fallback">[\s\S]*<main\b[\s\S]*<\/main>[\s\S]*<\/div><div id="root"><\/div>/.test(html)
+      return !/<div id="seo-fallback">[\s\S]*<main\b[\s\S]*<\/main>[\s\S]*<\/div><div id="root">/.test(html)
         || !/<link rel="canonical" href="https:\/\/[^"]+" \/>/.test(html)
         || !/<script type="application\/ld\+json">/.test(html)
     })

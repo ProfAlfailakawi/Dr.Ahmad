@@ -45,6 +45,12 @@ function AppBoot() {
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing application root')
 
+/* الافتتاحية المضمّنة تسكن داخل #root حتى تُرى مع أوّل بكسل، ولو تركناها فيه
+   لمسحها React عند التركيب فجأةً بلا تلاشٍ. ننقلها إلى <body> — وهي طبقةٌ
+   ثابتة فلا تتزحزح بصرياً — ويتولّى boot.js تلاشيها عند `data-app-ready`. */
+const bootSplash = document.getElementById('boot-splash')
+if (bootSplash && bootSplash.parentElement !== document.body) document.body.appendChild(bootSplash)
+
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <AppBoot />

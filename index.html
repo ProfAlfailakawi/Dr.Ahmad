@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="الفيلكاوي" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#FCFCFA" />
     <meta name="author" content="د. أحمد حسين الفيلكاوي" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -54,6 +54,36 @@
     <meta name="description" content="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، ويضم مؤلفاته وأبحاثه ومقالاته الفكرية في التعليم والتقنية والمجتمع." />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--
+      أوّل رسمةٍ للزائر: العلامة الكوفية المربّعة نفسها التي تفتتح النسخة المثبّتة،
+      مضمّنةً في الصفحة بلا حزمةٍ ولا خطٍّ ولا ملفٍّ إضافي — هندستها منسوخة حرفاً
+      بحرف من src/lib/kufic-mark.ts، و«‪--o‬» هو ترتيب الكشف نفسه فيها. تنزاح
+      بهدوءٍ حالما يُركّب React (data-app-ready)، ويخفيها غيابُ الصنف «js» وحده
+      إن تعطّل JavaScript أو فشل الإقلاع، فلا تحجب الصفحة الثابتة أبداً.
+    --><div id="boot-splash" role="presentation" aria-hidden="true">
+        <div class="boot-splash__stage">
+          <svg class="boot-splash__mark" viewBox="0 0 25 15" aria-hidden="true" focusable="false" shape-rendering="crispEdges">
+            <g fill="currentColor">
+            <rect x="0" y="0" width="25" height="1" style="--o:0"/><rect x="0" y="1" width="1" height="1" style="--o:75"/><rect x="0" y="2" width="1" height="1" style="--o:76"/><rect x="2" y="2" width="3" height="1" style="--o:58"/><rect x="6" y="2" width="13" height="1" style="--o:33"/>
+            <rect x="20" y="2" width="1" height="1" style="--o:25"/><rect x="22" y="2" width="1" height="1" style="--o:14"/><rect x="24" y="2" width="1" height="1" style="--o:1"/><rect x="0" y="3" width="1" height="1" style="--o:77"/><rect x="2" y="3" width="1" height="1" style="--o:67"/>
+            <rect x="20" y="3" width="1" height="1" style="--o:26"/><rect x="22" y="3" width="1" height="1" style="--o:15"/><rect x="24" y="3" width="1" height="1" style="--o:2"/><rect x="0" y="4" width="3" height="1" style="--o:68"/><rect x="4" y="4" width="1" height="1" style="--o:59"/>
+            <rect x="6" y="4" width="4" height="1" style="--o:55"/><rect x="11" y="4" width="3" height="1" style="--o:48"/><rect x="15" y="4" width="4" height="1" style="--o:34"/><rect x="20" y="4" width="1" height="1" style="--o:27"/><rect x="22" y="4" width="1" height="1" style="--o:16"/>
+            <rect x="24" y="4" width="1" height="1" style="--o:3"/><rect x="4" y="5" width="1" height="1" style="--o:60"/><rect x="9" y="5" width="1" height="1" style="--o:56"/><rect x="11" y="5" width="1" height="1" style="--o:54"/><rect x="13" y="5" width="1" height="1" style="--o:49"/>
+            <rect x="18" y="5" width="1" height="1" style="--o:35"/><rect x="20" y="5" width="1" height="1" style="--o:28"/><rect x="22" y="5" width="1" height="1" style="--o:17"/><rect x="24" y="5" width="1" height="1" style="--o:4"/><rect x="0" y="6" width="3" height="1" style="--o:69"/>
+            <rect x="4" y="6" width="1" height="1" style="--o:61"/><rect x="6" y="6" width="13" height="1" style="--o:36"/><rect x="20" y="6" width="1" height="1" style="--o:29"/><rect x="22" y="6" width="1" height="1" style="--o:18"/><rect x="24" y="6" width="1" height="1" style="--o:5"/>
+            <rect x="4" y="7" width="1" height="1" style="--o:62"/><rect x="22" y="7" width="1" height="1" style="--o:19"/><rect x="24" y="7" width="1" height="1" style="--o:6"/><rect x="0" y="8" width="3" height="1" style="--o:70"/><rect x="4" y="8" width="1" height="1" style="--o:63"/>
+            <rect x="6" y="8" width="7" height="1" style="--o:51"/><rect x="14" y="8" width="1" height="1" style="--o:44"/><rect x="16" y="8" width="3" height="1" style="--o:37"/><rect x="20" y="8" width="1" height="1" style="--o:30"/><rect x="22" y="8" width="1" height="1" style="--o:20"/>
+            <rect x="24" y="8" width="1" height="1" style="--o:7"/><rect x="0" y="9" width="1" height="1" style="--o:78"/><rect x="2" y="9" width="1" height="1" style="--o:71"/><rect x="4" y="9" width="1" height="1" style="--o:64"/><rect x="6" y="9" width="1" height="1" style="--o:57"/>
+            <rect x="14" y="9" width="1" height="1" style="--o:45"/><rect x="16" y="9" width="1" height="1" style="--o:40"/><rect x="22" y="9" width="1" height="1" style="--o:21"/><rect x="24" y="9" width="1" height="1" style="--o:8"/><rect x="0" y="10" width="3" height="1" style="--o:72"/>
+            <rect x="4" y="10" width="1" height="1" style="--o:65"/><rect x="6" y="10" width="7" height="1" style="--o:52"/><rect x="14" y="10" width="1" height="1" style="--o:46"/><rect x="16" y="10" width="1" height="1" style="--o:41"/><rect x="18" y="10" width="3" height="1" style="--o:31"/>
+            <rect x="22" y="10" width="1" height="1" style="--o:22"/><rect x="24" y="10" width="1" height="1" style="--o:9"/><rect x="2" y="11" width="1" height="1" style="--o:73"/><rect x="4" y="11" width="1" height="1" style="--o:66"/><rect x="12" y="11" width="1" height="1" style="--o:53"/>
+            <rect x="14" y="11" width="1" height="1" style="--o:47"/><rect x="16" y="11" width="1" height="1" style="--o:42"/><rect x="18" y="11" width="1" height="1" style="--o:38"/><rect x="20" y="11" width="1" height="1" style="--o:32"/><rect x="22" y="11" width="1" height="1" style="--o:23"/>
+            <rect x="24" y="11" width="1" height="1" style="--o:10"/><rect x="0" y="12" width="3" height="1" style="--o:74"/><rect x="4" y="12" width="19" height="1" style="--o:24"/><rect x="24" y="12" width="1" height="1" style="--o:11"/><rect x="24" y="13" width="1" height="1" style="--o:12"/>
+            <rect x="0" y="14" width="14" height="1" style="--o:50"/><rect x="15" y="14" width="1" height="1" style="--o:43"/><rect x="17" y="14" width="1" height="1" style="--o:39"/><rect x="19" y="14" width="6" height="1" style="--o:13"/>
+            </g>
+          </svg>
+          <span class="boot-splash__rail"></span>
+        </div>
+      </div></div>
   </body>
 </html>

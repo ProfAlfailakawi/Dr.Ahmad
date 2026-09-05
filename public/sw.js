@@ -1,7 +1,7 @@
 /* خدمة العمل — قراءة المقالات دون إنترنت */
 const BUILD_ID = '__BUILD_ID__'
 const CACHE = `alfailakawi-${BUILD_ID}`
-const CORE = ['/', '/index.html', '/favicon.png', '/manifest.webmanifest', '/offline.html']
+const CORE = ['/', '/index.html', '/favicon.png', '/icon-192.png', '/icon-512.png', '/maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest', '/offline.html']
 const RETIRED_NAVIGATION_PATHS = new Set(['/mylib'])
 
 function retiredPageResponse() {

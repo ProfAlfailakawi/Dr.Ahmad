@@ -9,11 +9,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { loadArticleBodies } from '../../lib/article-bodies'
+import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, type ArabicCountForms } from '../../lib/arabic-count'
 
 type ArticleLike = { slug: string; title: string; cat?: string; body?: string }
 type Plan = { theme: string; trio: string[]; quote: string; scenes: unknown[] }
 
 const PLANS_KEY = 'monteur:plans:v1'
+const SCENE_FORMS: ArabicCountForms = { one: 'مشهد', two: 'مشهدان', few: 'مشاهد', many: 'مشهداً' }
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const softButton = 'rounded-full border border-hair px-4 py-2 text-[.82rem] font-semibold text-ink transition-colors hover:border-accent disabled:opacity-50'
 const primaryButton = 'rounded-full bg-accent px-5 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
@@ -80,7 +82,7 @@ export function Monteur({ articles }: { articles: ArticleLike[] }) {
       if (!response.ok || !data?.plan) throw new Error(data?.error || `تعذّر الاتصال (${response.status})`)
       savePlan(article.slug, data.plan)
       post({ type: 'monteur:plan', slug: article.slug, plan: data.plan })
-      setMessage(`جاهزة: ${data.plan.scenes.length} مشاهد مطابقة للمعنى — تُعرض الآن.`)
+      setMessage(`جاهزة: ${arabicCountPhrase(data.plan.scenes.length, SCENE_FORMS)} مطابقة للمعنى — تُعرض الآن.`)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'تعذّر بناء اللوحة')
     } finally { setBusy(false) }
@@ -93,7 +95,7 @@ export function Monteur({ articles }: { articles: ArticleLike[] }) {
           <p className="text-[.76rem] font-semibold uppercase text-accent">المونتير الآلي</p>
           <h2 className="mt-1 font-display text-xl font-semibold text-ink">مقالة أو تغريدة ← فيديو مشاهد يفهم موضوعها.</h2>
           <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">
-            {curated ? `${curated} مقالة لها لوحة قصصية مقروءة سلفاً (★).` : 'يحمّل المحرّك…'} المقالات الجديدة تُبنى فوراً بالمعجم، وبزر «لوحة بالذكاء» تأخذ لوحةً بالعقد نفسه وتُحفظ.
+            {curated ? `${arabicCountPhrase(curated, ARTICLE_PLAIN_FORMS)} لها لوحة قصصية مقروءة سلفاً (★).` : 'يحمّل المحرّك…'} المقالات الجديدة تُبنى فوراً بالمعجم، وبزر «لوحة بالذكاء» تأخذ لوحةً بالعقد نفسه وتُحفظ.
           </p>
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-2">

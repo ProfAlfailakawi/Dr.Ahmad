@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import '@fontsource-variable/alexandria'
 import App from './App'
 import ErrorBoundary, { healStaleBundles, isStaleBundleError } from './components/ErrorBoundary'
+import { hasMissingAppChunk, watchResourceFailures } from './lib/load-failures'
 import { startWebVitalsMonitoring } from './lib/web-vitals'
 import './index.css'
 
@@ -17,6 +18,9 @@ function healOnce() {
   void healStaleBundles()
 }
 
+/* التقاط أعطال تحميل الملفات مبكراً: يبدأ قبل العرض ليشمل حزم البداية. */
+watchResourceFailures()
+
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()
   healOnce()
@@ -26,7 +30,7 @@ window.addEventListener('vite:preloadError', (event) => {
    vite:preloadError، فيبقى الزائر أمام صفحة عطبٍ لا تُشفى. نُعالجه بالمسار نفسه. */
 window.addEventListener('unhandledrejection', (event) => {
   const message = String((event.reason as { message?: string } | undefined)?.message || event.reason || '')
-  if (isStaleBundleError(message)) healOnce()
+  if (isStaleBundleError(message) || hasMissingAppChunk()) healOnce()
 })
 
 declare global {

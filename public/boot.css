@@ -2,3 +2,94 @@ html, body { background: #FCFCFA; }
 html.dark, html.dark body { background: #111215; }
 html.js #seo-fallback { display: none !important; }
 #root:empty { min-height: 100svh; }
+
+/* ————— أوّل رسمة: افتتاحية الويب —————
+   الزائر العادي كان يواجه لوناً مسطّحاً حتى يُركّب React. هنا تُرسم العلامة
+   الكوفية المربّعة نفسها التي تفتتح النسخة المثبّتة — بلا حزمة، بلا خطٍّ
+   محمَّل، بلا ملفٍّ إضافي: هذا الملف محجوزٌ للرسم في <head> أصلاً فيصل قبل
+   أوّل بكسل، والصنف `dark` يوضعه boot.js قبل الرسم فلا يومض الوضع الخاطئ.
+
+   لا نصّ في الافتتاحية عمداً: «El Messiri» لم يصل بعدُ عند أوّل رسمة،
+   فالنصّ يظهر بخطٍّ بديل ثم يقفز — والعلامة وحدها أنقى وأقصر. */
+#boot-splash {
+  --splash-ground: #FCFCFA;
+  --splash-ink: #141917;
+  --splash-accent: 62 92 120;
+  display: none;
+}
+html.dark #boot-splash {
+  --splash-ground: #111215;
+  --splash-ink: #ECEAE4;
+  --splash-accent: 132 169 202;
+}
+/* لا تُعرض إلا حين يعمل JavaScript فعلاً: من عطّله — أو من فشل عنده الإقلاع
+   فنزع boot.js الصنف `js` بعد مهلته — يرى الصفحة الثابتة لا شاشةً معلّقة. */
+html.js #boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding:
+    max(2rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right))
+    max(2rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+  background: var(--splash-ground);
+  color: var(--splash-ink);
+  opacity: 1;
+  transition: opacity 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* رفعٌ بصريٌّ طفيف: المركز الهندسي يبدو هابطاً، فتُرفع الكتلة قليلاً. */
+.boot-splash__stage {
+  transform: translateY(-2.5%);
+  width: min(88vw, 520px);
+  text-align: center;
+}
+.boot-splash__mark {
+  display: block;
+  margin-inline: auto;
+  width: min(58vw, 15rem);
+  height: auto;
+  color: currentColor;
+}
+/* الشعرة النحاسية تحت العلامة: تتّسع ثم يمرّ فيها بريقٌ واحد — أثرُ حِبرٍ
+   يجفّ، لا مؤشّر تحميلٍ دوّار. */
+.boot-splash__rail {
+  display: block;
+  width: min(42vw, 9rem);
+  height: 1px;
+  margin: 1.65rem auto 0;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--splash-accent) / .34) 50%, transparent);
+  transform: scaleX(0);
+  transform-origin: right center;
+  animation: boot-splash-rail 620ms cubic-bezier(0.2, 0.7, 0.2, 1) 180ms forwards;
+}
+/* الكشف خليةً خليةً من اليمين — اتّجاه القراءة. `--o` على كل مستطيل هو
+   ترتيبه في src/lib/kufic-mark.ts نفسه (٠…٧٨)، ووحدةُ التأخير 620ms/79
+   فتنتهي آخر خليّة عند ‎620+260 ≈ 880ms: أقصر من افتتاحية التطبيق لأن هذا
+   موقعٌ يُفتح لا تطبيقٌ يُقلع. */
+.boot-splash__mark rect {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: boot-splash-cell 260ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: calc(var(--o, 0) * 7.848ms);
+}
+@keyframes boot-splash-cell {
+  from { opacity: 0; transform: scale(.55); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes boot-splash-rail {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+/* التسليم إلى React: تلاشٍ هادئ ثم إزالة — بلا قفزةٍ ولا وميض. */
+html.js #boot-splash.is-leaving { opacity: 0; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* لا يُخطّ شيء: العلامة كاملةٌ من أوّل رسمة، والشعرة مبسوطة. */
+  .boot-splash__mark rect { opacity: 1; transform: none; animation: none; }
+  .boot-splash__rail { transform: none; animation: none; }
+  html.js #boot-splash { transition-duration: 1ms; }
+}

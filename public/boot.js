@@ -80,6 +80,39 @@
 
   var html = document.documentElement;
   html.classList.add('js');
+
+  /* ---------- تسليم الافتتاحية إلى React ----------
+     العلامة الكوفية مرسومةٌ في index.html نفسه فتظهر مع أوّل بكسل. حين
+     يُركّب React يضع `data-app-ready` على <html>، فنُلاشيها 300ms ثم نزيلها:
+     تسليمٌ بلا قفزةٍ ولا وميض. (main.tsx ينقلها خارج #root قبل التركيب كي
+     لا يمسحها React فجأةً بلا تلاشٍ.)
+
+     ولا تحبس الواجهة أبداً: إن تأخّر التركيب أُزيلت بعد 12s — قبل مهلة
+     الإقلاع (20s) التي تكشف الصفحة الثابتة — كما يخفيها نزعُ الصنف `js`
+     هناك وحده، فهي شبكتا أمانٍ متعاقبتان لا متعارضتان. */
+  var splashRemoved = false;
+  function dismissBootSplash(immediate) {
+    if (splashRemoved) return;
+    var splash = document.getElementById('boot-splash');
+    if (!splash) return;
+    splashRemoved = true;
+    if (immediate) { splash.remove(); return; }
+    splash.classList.add('is-leaving');
+    window.setTimeout(function () { splash.remove(); }, 360);
+  }
+  if (html.hasAttribute('data-app-ready')) dismissBootSplash(true);
+  else {
+    try {
+      var appReadyObserver = new MutationObserver(function () {
+        if (!html.hasAttribute('data-app-ready')) return;
+        appReadyObserver.disconnect();
+        dismissBootSplash(false);
+      });
+      appReadyObserver.observe(html, { attributes: true, attributeFilter: ['data-app-ready'] });
+    } catch (error) { /* بلا مراقب: مهلة الأمان أدناه تكفي */ }
+  }
+  window.setTimeout(function () { dismissBootSplash(true); }, 12000);
+
   window.__appBootFallbackTimer = window.setTimeout(function () {
     var root = document.getElementById('root');
     var appRendered = html.hasAttribute('data-app-ready') || (root && root.childElementCount > 0);

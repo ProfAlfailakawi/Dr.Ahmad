@@ -5,12 +5,12 @@ import { READ_LAST_KEY, progressFor } from '../lib/reading-space'
 
 const RESUME_WINDOW = 7 * 24 * 60 * 60 * 1000
 
-/* الرسم يُوزَّع على DRAW_MS وكلّ خليّةٍ تأخذ CELL_MS بعد دورها، فآخرها ينتهي
-   عند DRAW_MS + CELL_MS. ثم تمكث العلامة كاملةً HOLD_MS قبل الانتقال. */
+/* المسحة تكشف العلامة من اليمين خلال DRAW_MS، ثم تمكث كاملةً HOLD_MS قبل
+   الانتقال. المجموع كما كان (1890ms) حين كان الكشف خلوياً، لكن الحساب صار
+   صادقاً: لا خلايا تتأخّر بعد نهاية الرسم. */
 const DRAW_MS = 1000
-const CELL_MS = 240
-const HOLD_MS = 650
-const SPLASH_MS = DRAW_MS + CELL_MS + HOLD_MS
+const HOLD_MS = 890
+const SPLASH_MS = DRAW_MS + HOLD_MS
 
 type Resume = { slug: string; title: string; percent: number }
 
@@ -64,7 +64,7 @@ export default function PwaLaunch() {
       {/* الشعار يُخطّ خليةً خليةً من اليمين خلال مدّة الانتظار نفسها: الكوفي
           المربّع خطٌّ على شبكة، فرسمُه هو الانتظار — لا هالةٌ ضبابية فوقه. */}
       <div className="pwa-launch__content">
-        <KuficMark className="pwa-launch__mark" drawMs={DRAW_MS} cellMs={CELL_MS} />
+        <KuficMark className="pwa-launch__mark" drawMs={DRAW_MS} />
         <p className="pwa-launch__eyebrow">مكتبة د. أحمد الفيلكاوي</p>
         <h1>أهلاً بعودتك.</h1>
         {resume

@@ -15,6 +15,7 @@ import { buildMultimodalMeaningCourt } from './src/lib/semantic-court.mjs'
 import { cleanResearchSample } from './src/lib/research-sample.mjs'
 import { labelPassages, pickCorpusPassages, reelCorpus } from './src/server/reel-corpus.mjs'
 import { INVENTION_PROPERTIES, INVENTION_REQUIRED, acceptInventedScenes, conceptsInText, inventionInstruction, inventionPrompt } from './src/lib/reel-invention.mjs'
+import { STORYBOARD_PROPERTIES, STORYBOARD_REQUIRED, acceptStoryboard, storyboardInstruction, storyboardPrompt } from './src/lib/monteur-storyboard.mjs'
 import { getEncyclopediaTranscriptProgress, loadEncyclopediaVideoCatalog, loadEncyclopediaVideoMoment, scheduleEncyclopediaTranscriptWarmup, searchEncyclopediaVideoMoments } from './src/server/encyclopedia-videos.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
@@ -170,6 +171,7 @@ const socialIdeasPath = '/api/ai/social-ideas'
 const articleParagraphPath = '/api/ai/article-paragraph'
 const currentContextPath = '/api/ai/current-context'
 const reelInventionPath = '/api/ai/reel-invention'
+const monteurStoryboardPath = '/api/ai/monteur-storyboard'
 const studioImagePath = '/api/ai/studio-image'
 const studioImageAliases = Object.freeze(['/api/studio-image', '/api/generate-studio-image'])
 const studioImageHealthPath = '/api/ai/studio-image/health'
@@ -5970,7 +5972,7 @@ export function createRequestHandler({
       return
     }
 
-    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, articleParagraphPath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath, reelInventionPath, ...studioImageAliases].includes(url.pathname)) {
+    if ([articleSuggestionPath, contentSuggestionPath, paperAnalysisPath, perfectArticlePath, articleParagraphPath, socialPackPath, socialIdeasPath, currentContextPath, studioImagePath, reelInventionPath, monteurStoryboardPath, ...studioImageAliases].includes(url.pathname)) {
       if (method !== 'POST') {
         sendJson(res, 405, { error: 'Method Not Allowed' }, { allow: 'POST' })
         return
@@ -6045,6 +6047,27 @@ export function createRequestHandler({
           concepts: request.concepts,
           sources: passages.map((passage) => passage.title),
         })
+        return
+      }
+      if (url.pathname === monteurStoryboardPath) {
+        /* المونتير الآلي: لوحة قصصية لمقالة جديدة بالعقد نفسه الذي قُرئت به
+           مقالات الدكتور الـ١٤٣ — استعارة لكل معنى، وكلمات العنوان من الجملة
+           حرفياً. ما خالف العقد يُسقَط قبل أن يصل إلى الشاشة. */
+        const title = boundedString(body?.title, 300)
+        const articleBody = boundedString(body?.body, 12_000)
+        if (articleBody.trim().length < 80) throw new HttpError(400, 'أرسل متن المقالة أولاً')
+        const category = boundedString(body?.category, 60)
+        const raw = await callGeminiStructured({
+          instruction: storyboardInstruction(),
+          prompt: storyboardPrompt({ title, category, body: articleBody }),
+          properties: STORYBOARD_PROPERTIES,
+          required: STORYBOARD_REQUIRED,
+          maxOutputTokens: 4_096,
+          temperature: .35,
+        })
+        const plan = acceptStoryboard(raw, articleBody)
+        if (plan.scenes.length < 4) throw new HttpError(502, 'لم تخرج لوحة كافية — أعد المحاولة')
+        sendJson(res, 200, { plan })
         return
       }
       if (url.pathname === socialIdeasPath) {

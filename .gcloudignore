@@ -45,6 +45,7 @@ src/lib/*
 !src/lib/encyclopedia-transcript-quality.mjs
 !src/lib/research-sample.mjs
 !src/lib/reel-invention.mjs
+!src/lib/monteur-storyboard.mjs
 !src/server/
 src/server/*
 !src/server/whatsapp-controller.mjs

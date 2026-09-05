@@ -38,6 +38,7 @@ COPY src/lib/adversarial-misunderstanding.mjs /app/src/lib/adversarial-misunders
 COPY src/lib/archive-scale.mjs /app/src/lib/archive-scale.mjs
 COPY src/lib/encyclopedia-transcript-quality.mjs /app/src/lib/encyclopedia-transcript-quality.mjs
 COPY src/lib/reel-invention.mjs /app/src/lib/reel-invention.mjs
+COPY src/lib/monteur-storyboard.mjs /app/src/lib/monteur-storyboard.mjs
 COPY src/lib/research-sample.mjs /app/src/lib/research-sample.mjs
 COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs

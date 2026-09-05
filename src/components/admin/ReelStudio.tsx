@@ -12,6 +12,11 @@ import DesignWorldsGallery from './DesignWorldsGallery'
 import type { DesignWorld } from '../../lib/design-worlds'
 import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, type ReelHandle } from '../../lib/reel-motion'
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
+import { lazy, Suspense } from 'react'
+
+/* المونتير الآلي — الوضع الثاني للاستوديو نفسه: فيديو مشاهد يفهم موضوعه. كسول كي لا يثقل الحزمة. */
+const MonteurEmbedLazy = lazy(() => import('./MonteurEmbed'))
+type ReelMode = 'monteur' | 'flow'
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
@@ -33,6 +38,7 @@ const MOOD_LABELS: Record<ReelPlan['mood'], string> = {
 }
 
 export function ReelStudio({ seedText = '' }: { seedText?: string }) {
+  const [mode, setMode] = useState<ReelMode>('monteur')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [variant, setVariant] = useState(0)
@@ -136,16 +142,21 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
         <div className="max-w-2xl">
           <p className="text-[.66rem] font-black uppercase tracking-[.18em] text-accent">Cinematic Reel · محلي ومجاني</p>
           <h3 className="mt-2 font-display text-2xl font-bold text-ink md:text-3xl">استوديو الريل السينمائي</h3>
-          <p className="mt-2 text-[.82rem] leading-relaxed text-soft">
+          <div className="mt-3 inline-flex rounded-full border border-hair bg-canvas p-1" role="tablist" aria-label="نوع الفيديو">
+            <button type="button" role="tab" aria-selected={mode === 'monteur'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'monteur' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('monteur')}>فيديو مشاهد يفهم موضوعه</button>
+            <button type="button" role="tab" aria-selected={mode === 'flow'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'flow' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('flow')}>ريل Flow سينمائي</button>
+          </div>
+          {mode === 'monteur' && <p className="mt-2 text-[.82rem] leading-relaxed text-soft">اكتب تغريدة أو الصق مقالة في الحقل أدناه — أو اختر مقالة من الموقع — فيبني فيديو مشاهد يفهم موضوعه: استعارة لكل جملة، إنفوجرافيك، موسيقى من مكتبتك، نمطان (رصين/جريء)، وقطع على ضربة الإيقاع. التصدير من داخل المشغّل.</p>}
+          {mode === 'flow' && <p className="mt-2 text-[.82rem] leading-relaxed text-soft">
             ألصق المقال — يقرؤه المخطِّط، يختار قالباً وعالماً لونياً ومزاجاً موسيقياً من النص نفسه،
             ثم يصدّر فيديو 1080×1920 بصوت مؤلَّف في متصفحك. المادة نفسها تعطي الريل نفسه دائماً،
             ومادتان لا تتشابهان، و«لقطة أخرى» تفتح تنويعاً شقيقاً. ويمكنك أيضاً إخراجه يدوياً من نفس معرض الـ64 عالماً المستخدم في استوديو التصاميم.
-          </p>
+          </p>}
         </div>
         {!supported && <span className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] text-amber-800">هذا المتصفح لا يدعم تسجيل الفيديو — المعاينة تعمل، والتصدير يحتاج Chrome.</span>}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_300px]">
+      <div className={`mt-5 grid gap-5 ${mode === 'flow' ? 'lg:grid-cols-[1fr_300px]' : ''}`}>
         <div className="grid gap-3">
           <label className="grid gap-2 text-[.76rem] font-semibold text-ink">
             عنوان المادة
@@ -153,9 +164,15 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           </label>
           <label className="grid gap-2 text-[.76rem] font-semibold text-ink">
             متن المقال أو مقاطعه الأقوى
-            <textarea className={`${input} min-h-44 resize-y leading-loose`} value={body} onChange={(event) => setBody(event.target.value)} placeholder="ألصق المقال كاملاً أو فقراته الجوهرية — المخطِّط ينقّب فيه عن السؤال والمقابلة والاقتباس والرقم." />
+            <textarea className={`${input} min-h-44 resize-y leading-loose`} value={body} onChange={(event) => setBody(event.target.value)} placeholder="اكتب تغريدة، أو ألصق المقال كاملاً أو فقراته الجوهرية — المخطِّط ينقّب فيه عن السؤال والمقابلة والاقتباس والرقم." />
           </label>
 
+          {mode === 'monteur' && (
+            <Suspense fallback={<p className="p-4 text-center text-[.72rem] text-soft">يجهّز المونتير…</p>}>
+              <MonteurEmbedLazy title={title} body={body} />
+            </Suspense>
+          )}
+          {mode === 'flow' && (<>
           <div className="rounded-2xl border border-hair bg-canvas/60 p-3" data-reel-world-director="shared-design-worlds-gallery">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div><p className="text-[.72rem] font-bold text-ink">إخراج الريل · نفس منظومة عوالم التصميم</p><p className="text-[.62rem] text-soft">64 عالماً، الفلاتر نفسها، المقارنة، Fusion، النسخة البعيدة، Surprise، Sliders وLocks — واختيارك يغيّر الإخراج لا اللون فقط.</p></div>
@@ -220,14 +237,15 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
               </details>
             </div>
           )}
+          </>)}
         </div>
 
-        <div className="grid content-start justify-items-center gap-2">
+        {mode === 'flow' && <div className="grid content-start justify-items-center gap-2">
           <div className="overflow-hidden rounded-[1.4rem] border border-hair bg-ink shadow-lg" style={{ width: 252, height: 448 }}>
             <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} aria-label="معاينة الريل" />
           </div>
           <p className="text-center text-[.64rem] text-soft">معاينة حيّة بالمقاس الحقيقي 1080×1920 — التسجيل يجري على هذه اللوحة نفسها.</p>
-        </div>
+        </div>}
       </div>
     </section>
   )

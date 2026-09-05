@@ -126,7 +126,10 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
         <button type="button" className={ghost} disabled={!ready} onClick={() => api.current?.play()}>تشغيل</button>
       </div>
       {message && <p className="rounded-xl border border-hair bg-canvas px-3 py-2 text-[.72rem] leading-relaxed text-ink" role="status">{message}</p>}
-      <div ref={host} className="min-h-[480px]">{!ready && <p className="p-6 text-center text-[.74rem] text-soft">يحمّل محرّك المونتير…</p>}</div>
+      {/* الحاوية تبقى فارغةً من جهة React: المحرّك يملؤها بـinnerHTML، فلو وضعنا
+          فيها عنصراً من React لمحاه المحرّك ثم فشل React في إزالته لاحقاً. */}
+      {!ready && <p className="p-6 text-center text-[.74rem] text-soft">يحمّل محرّك المونتير…</p>}
+      <div ref={host} className="min-h-[480px]" />
     </div>
   )
 }

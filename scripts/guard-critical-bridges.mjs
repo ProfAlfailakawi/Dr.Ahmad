@@ -107,6 +107,9 @@ const articleDetail = await readFile(resolve(root, 'src/pages/ArticleDetail.tsx'
 const homePage = await readFile(resolve(root, 'src/pages/Home.tsx'), 'utf8')
 const uiSource = await readFile(resolve(root, 'src/components/ui.tsx'), 'utf8')
 const cvSource = await readFile(resolve(root, 'src/pages/CV.tsx'), 'utf8')
+const monteurEmbed = await readFile(resolve(root, 'src/components/admin/MonteurEmbed.tsx'), 'utf8')
+const seoSource = await readFile(resolve(root, 'src/components/seo.tsx'), 'utf8')
+const mainSource = await readFile(resolve(root, 'src/main.tsx'), 'utf8')
 const whatsappPanel = await readFile(resolve(root, 'src/components/admin/WhatsAppAgentPanel.tsx'), 'utf8')
 const whatsappMessagesPanel = await readFile(resolve(root, 'src/components/admin/BotMessagesPanel.tsx'), 'utf8')
 const whatsappBridge = await readFile(resolve(root, 'whatsapp-bridge/bridge.mjs'), 'utf8')
@@ -312,6 +315,14 @@ const assertions = [
   [articleDetail.includes('<StudentArchive') && articleDetail.includes('openAudioPlayer(`article-audio-${slug}`)') && (articleDetail.match(/<ArticleExtensions/g) || []).length === 1, 'article features must remain preserved inside the single related-content ending layer'],
   [homePage.includes('home:selected-works:v2') && !homePage.includes('لا مواعيد معلنة حالياً') && !homePage.includes('عرض بصري واحد بلا تكرار'), 'home selections must vary and empty/upholstery copy must remain hidden'],
   [uiSource.includes('المقالات الفكرية') && uiSource.includes('EnglishOverlay'), 'menus must keep clear all-content links and discoverable branches in both languages'],
+  // حاويةُ محرّك المونتير تُملأ بـinnerHTML، فأيّ عنصرٍ من React بداخلها يمحوه
+  // المحرّك ثم يفشل React في إزالته: Failed to execute 'removeChild'.
+  [(monteurEmbed.match(/<div ref=\{host\}[\s\S]*?>/)?.[0] || '').trim().endsWith('/>'),
+  'Monteur host element must stay childless in JSX so the engine innerHTML never orphans a React node'],
+  [seoSource.includes('s.remove()') && !seoSource.includes('document.head.removeChild'),
+  'JsonLd cleanup must use remove(), which tolerates an already detached tag, instead of removeChild'],
+  [mainSource.includes('installDomResilience()'),
+  'DOM resilience net must stay installed before render so external mutations cannot crash the page'],
   [cvSource.includes('SHOW_CITATION_IMPACT = false') && cvSource.includes('<CitationImpact'), 'Scholar impact module must stay preserved but hidden for future activation'],
 ]
 

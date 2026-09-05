@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import '@fontsource-variable/alexandria'
 import App from './App'
 import ErrorBoundary, { healStaleBundles, isStaleBundleError } from './components/ErrorBoundary'
+import { installDomResilience } from './lib/dom-resilience'
 import { hasMissingAppChunk, watchResourceFailures } from './lib/load-failures'
 import { startWebVitalsMonitoring } from './lib/web-vitals'
 import './index.css'
@@ -20,6 +21,9 @@ function healOnce() {
 
 /* التقاط أعطال تحميل الملفات مبكراً: يبدأ قبل العرض ليشمل حزم البداية. */
 watchResourceFailures()
+
+/* تسامحُ إزالة العقد مع ما يعدّله المتصفح أو إضافاته خارج React. */
+installDomResilience()
 
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()

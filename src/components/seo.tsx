@@ -98,12 +98,16 @@ export function useSeo({
 
 /** بيانات منظّمة — Schema.org */
 export function JsonLd({ data }: { data: object }) {
+  // البيانات تصل كائناً حرفياً جديداً في كل عرض، فنعتمد على نصّها لا على هُويّتها
+  // كي لا يُحذف الوسم ويُعاد بناؤه مع كل رسمة.
+  const payload = JSON.stringify(data)
   useEffect(() => {
     const s = document.createElement('script')
     s.type = 'application/ld+json'
-    s.text = JSON.stringify(data)
+    s.text = payload
     document.head.appendChild(s)
-    return () => { document.head.removeChild(s) }
-  }, [data])
+    // remove() لا ترمي خطأً إن كان الوسم قد أُزيل من قبل — بخلاف removeChild.
+    return () => { s.remove() }
+  }, [payload])
   return null
 }

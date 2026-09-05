@@ -11,8 +11,11 @@ on:
       - 'package-lock.json'
       - '.github/workflows/**'
 
+# Needed to push the regenerated file back. Note PROJECT-STATUS.md is deliberately
+# absent from the paths filter above, so the commit this job makes cannot retrigger
+# this workflow — there is no loop to guard against.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: project-status-sync
@@ -40,17 +43,37 @@ jobs:
       - name: Generate PROJECT-STATUS.md
         run: npm run project:status
 
-      - name: Fail if PROJECT-STATUS.md is stale
+      # This file is generated, so a stale copy is a forgotten chore, not a defect:
+      # every contributor who adds a script trips it, and the only correct response
+      # is to run the generator and commit — exactly what this job has already done.
+      # Failing the build made a person repeat work a machine had just finished.
+      # So commit it instead, and say plainly in the log that it happened.
+      - name: Commit the regenerated file
         run: |
-          if ! git diff --quiet PROJECT-STATUS.md; then
-            echo "::error::PROJECT-STATUS.md is out of date! Run 'npm run project:status' locally and commit the changes."
-            exit 1
+          if git diff --quiet PROJECT-STATUS.md; then
+            echo "PROJECT-STATUS.md was already up to date."
+            exit 0
           fi
+          echo "::notice::PROJECT-STATUS.md was stale; regenerated and committed."
+          git diff --stat PROJECT-STATUS.md
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add PROJECT-STATUS.md
+          git commit -m "chore: تحديث PROJECT-STATUS.md تلقائياً بعد ${{ github.sha }}"
+          # main can move while this job runs. Rebasing the single generated-file
+          # commit onto it keeps the push a fast-forward instead of turning the
+          # job red — which would reintroduce the failure this step exists to end.
+          git pull --rebase origin main
+          git push origin HEAD:main
 
+      # This one stays a hard failure. A stale file is a chore; a generator that
+      # produces different output on identical input is a real bug, and committing
+      # its output automatically would hide it behind an endless stream of commits.
       - name: Verify generator idempotency
         run: |
           npm run project:status
           if ! git diff --quiet PROJECT-STATUS.md; then
             echo "::error::Generator is not idempotent! Running it twice produces different outputs."
+            git diff PROJECT-STATUS.md
             exit 1
           fi

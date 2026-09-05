@@ -2,20 +2,31 @@ import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import '@fontsource-variable/alexandria'
 import App from './App'
-import ErrorBoundary from './components/ErrorBoundary'
+import ErrorBoundary, { healStaleBundles, isStaleBundleError } from './components/ErrorBoundary'
 import { startWebVitalsMonitoring } from './lib/web-vitals'
 import './index.css'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
    حزمةً تغيّر اسمها فتغيب المتون (صفحة «قيد الإضافة» الزائفة). فشلُ التحميل
    الكسول = إعادة تحميلٍ ذاتية مرة واحدة فيأتي الهيكل الجديد بحزمه الصحيحة. */
-window.addEventListener('vite:preloadError', (event) => {
-  event.preventDefault()
+function healOnce() {
   try {
     if (sessionStorage.getItem('chunk-heal') === '1') return
     sessionStorage.setItem('chunk-heal', '1')
   } catch { /* حارس التكرار اختياري */ }
-  window.location.reload()
+  void healStaleBundles()
+}
+
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault()
+  healOnce()
+})
+
+/* الوعد المرفوض بلا التقاط: سفاري يبلّغ فشل الاستيراد الكسول هكذا أحياناً بدل
+   vite:preloadError، فيبقى الزائر أمام صفحة عطبٍ لا تُشفى. نُعالجه بالمسار نفسه. */
+window.addEventListener('unhandledrejection', (event) => {
+  const message = String((event.reason as { message?: string } | undefined)?.message || event.reason || '')
+  if (isStaleBundleError(message)) healOnce()
 })
 
 declare global {

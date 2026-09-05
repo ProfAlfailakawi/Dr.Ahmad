@@ -76,8 +76,24 @@ const today = () => {
   }
 }
 
+/* اللوحة نهاريّة دائماً: نُثبّت الوضع النهاري ما دامت مفتوحة — شاشة الدخول
+   واللوحة معاً — ونُعيد وضع الموقع الأصلي عند مغادرتها. */
+function useAdminDaylight() {
+  useEffect(() => {
+    const root = document.documentElement
+    const wasDark = root.classList.contains('dark')
+    root.classList.remove('dark')
+    root.classList.add('admin-light')
+    return () => {
+      root.classList.remove('admin-light')
+      if (wasDark) root.classList.add('dark')
+    }
+  }, [])
+}
+
 export default function Admin() {
   useSeo({ title: 'لوحة التحكم', path: '/admin', robots: 'noindex, nofollow' })
+  useAdminDaylight()
   const { user, isAdmin: allowed, loading: checking } = useAdminAuth()
   const operationsPreview = import.meta.env.DEV
     && typeof window !== 'undefined'

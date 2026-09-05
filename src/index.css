@@ -45,6 +45,21 @@ html.dark {
   color-scheme: dark;
 }
 
+/* لوحة التحكم تبقى نهاريّة (خلفية بيضاء) دائماً، حتى لو فُعِّل الوضع الليلي
+   للموقع — تقليلاً للإزعاج البصري. يغلب هذا التعريف تعريف html.dark لأنه
+   يليه في الترتيب وبنفس قوّة المُحدِّد. */
+html.admin-light {
+  --c-canvas: 252 252 250;
+  --c-ink: 21 22 26;
+  --c-soft: 94 101 112;
+  --c-accent: 62 92 120;
+  --c-accent-deep: 51 80 107;
+  --c-wash: 244 245 243;
+  --c-ember: 143 90 40;
+  --c-hair: rgba(21, 22, 26, 0.09);
+  color-scheme: light;
+}
+
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;

@@ -292,6 +292,19 @@ function Panel({ email }: { email: string }) {
     void trackAdminUsage('admin_tool_opened', { tool: initialTab, from: 'admin-entry' })
   }, [])
 
+  // لوحة التحكم بخلفية بيضاء دائماً — تقليلاً للإزعاج البصري. نُثبّت الوضع
+  // النهاري طوال بقاء اللوحة، ونُعيد وضع الموقع الأصلي عند مغادرتها.
+  useEffect(() => {
+    const root = document.documentElement
+    const wasDark = root.classList.contains('dark')
+    root.classList.remove('dark')
+    root.classList.add('admin-light')
+    return () => {
+      root.classList.remove('admin-light')
+      if (wasDark) root.classList.add('dark')
+    }
+  }, [])
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {

@@ -91,16 +91,41 @@
      الإقلاع (20s) التي تكشف الصفحة الثابتة — كما يخفيها نزعُ الصنف `js`
      هناك وحده، فهي شبكتا أمانٍ متعاقبتان لا متعارضتان. */
   var splashRemoved = false;
-  function dismissBootSplash(immediate) {
-    if (splashRemoved) return;
+  var splashShownAt = Date.now();
+  /* حدٌّ أدنى للبقاء على الشاشة. الكشف خليةً خليةً ينتهي عند ‎880ms تقريباً،
+     وكان التسليم يجري لحظة ظهور `data-app-ready` بلا انتظار: على كاشٍ دافئ
+     يُركَّب React خلال ‎300ms فتُنتزع العلامة وهي ثلثُ مرسومة — فلا يرى
+     الزائر علامةً بل شكلاً عابراً، وهو أسوأ من غياب الافتتاحية أصلاً.
+     ‎1800ms تُكمل الرسم وتترك مهلةً حقيقيةً لقراءته قبل التلاشي. */
+  var SPLASH_MIN_MS = 1800;
+  var SPLASH_MIN_REDUCED_MS = 1000;
+  function splashHoldRemaining() {
+    var reduced = false;
+    try {
+      reduced = typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (error) { /* بلا matchMedia: يُؤخَذ الحدّ الكامل */ }
+    var floor = reduced ? SPLASH_MIN_REDUCED_MS : SPLASH_MIN_MS;
+    return Math.max(0, floor - (Date.now() - splashShownAt));
+  }
+  function removeBootSplash(immediate) {
     var splash = document.getElementById('boot-splash');
     if (!splash) return;
-    splashRemoved = true;
     if (immediate) { splash.remove(); return; }
     splash.classList.add('is-leaving');
     window.setTimeout(function () { splash.remove(); }, 360);
   }
-  if (html.hasAttribute('data-app-ready')) dismissBootSplash(true);
+  function dismissBootSplash(immediate) {
+    if (splashRemoved) return;
+    if (!document.getElementById('boot-splash')) return;
+    splashRemoved = true;
+    /* `immediate` هو شبكة الأمان (12s أو تطبيقٌ جاهزٌ سلفاً): تُنفَّذ بلا مهلة. */
+    if (immediate) { removeBootSplash(true); return; }
+    var wait = splashHoldRemaining();
+    if (wait === 0) { removeBootSplash(false); return; }
+    window.setTimeout(function () { removeBootSplash(false); }, wait);
+  }
+  if (html.hasAttribute('data-app-ready')) dismissBootSplash(false);
   else {
     try {
       var appReadyObserver = new MutationObserver(function () {

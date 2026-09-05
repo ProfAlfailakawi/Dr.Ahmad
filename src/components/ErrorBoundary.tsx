@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { failedResources, hasMissingAppChunk, shortenResourceUrl } from '../lib/load-failures'
 
 /*
  * حارسُ العطب: يلتقط أي خطأ في العرض فلا تُظلم الشاشة بيضاء بلا رجعة، بل تظهر
@@ -27,6 +28,13 @@ export function isStaleBundleError(message: string) {
   return /unexpected token '<'|expected expression, got '<'/i.test(message)
 }
 
+/** سطر التشخيص: نص الخطأ ومعه أسماء الملفات التي غابت، فيُعرف السبب بدقّة. */
+export function describeFailure(message: string) {
+  const missing = failedResources().map(shortenResourceUrl)
+  if (!missing.length) return message
+  return `${message} — ${missing.join(' · ')}`
+}
+
 /** يُفرغ كل كاشات الموقع ويُلغي خدمات العمل ثم يعيد التحميل مرة واحدة. */
 export async function healStaleBundles() {
   try {
@@ -49,13 +57,17 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
 
   static getDerivedStateFromError(error: Error): State {
     const message = String(error?.message || error || '')
-    return { hasError: true, detail: message, healing: isStaleBundleError(message) }
+    return {
+      hasError: true,
+      detail: describeFailure(message),
+      healing: isStaleBundleError(message) || hasMissingAppChunk(),
+    }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     // تشخيصٌ محلّي فقط — لا إرسال لأي خدمة
     console.error('[حارس العطب] خطأٌ في العرض:', error, info.componentStack)
-    if (!isStaleBundleError(String(error?.message || ''))) return
+    if (!isStaleBundleError(String(error?.message || '')) && !hasMissingAppChunk()) return
     let healedBefore = false
     try { healedBefore = sessionStorage.getItem(HEAL_KEY) === '1' } catch { /* اختياري */ }
     if (healedBefore) {

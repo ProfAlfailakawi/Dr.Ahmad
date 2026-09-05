@@ -180,6 +180,27 @@ textarea:focus{border-color:var(--accent)}
 .ig .k{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}.ig .e{fill:none;stroke:var(--se);stroke-width:3;stroke-linecap:round}.ig .ef{fill:var(--se)}.ig .kf{fill:currentColor}.ig .dim{fill:currentColor;opacity:.18}
 .ig text{font-family:"El Messiri","Tajawal",serif;font-weight:700;fill:currentColor}
 .ig .lbl{font-family:"Tajawal";font-weight:700;font-size:10px;fill:var(--sm)}
+
+/* ===== ممرّ القوة (بعد مقارنة بصرية مع المرجع) ===== */
+.prop .k{stroke-width:5.2}.prop .e{stroke-width:5.6}.prop .soft{fill:color-mix(in srgb,var(--si) 16%,transparent)}
+.prop{filter:drop-shadow(0 22px 34px rgba(0,0,0,.42))}
+.prop::before{background:radial-gradient(circle,color-mix(in srgb,var(--se) 42%,transparent),transparent 60%)}
+.h2l{font-weight:700;font-size:clamp(1.65rem,9.6cqw,3rem);line-height:1.28;text-shadow:0 10px 34px rgba(0,0,0,.28)}
+.h2l .l2{color:var(--si)}
+.h2l .w.em{display:inline-block;background:var(--si);color:var(--sg);padding:0 .28em;border-radius:.16em;transform:rotate(-1.2deg);box-shadow:0 8px 20px rgba(0,0,0,.28)}
+.screen.light .h2l .w.em{background:#15161A;color:#FBF8F1}
+.h2l .w.em .ann path{stroke:var(--se)}
+.eyebrow2{font-size:clamp(.62rem,2.9cqw,.78rem)}
+.foot{font-weight:700;color:var(--si);opacity:.85}
+.vignette{background:radial-gradient(120% 90% at 50% 45%,transparent 50%,rgba(0,0,0,.55) 100%)}
+.screen.light .vignette{background:radial-gradient(120% 90% at 50% 45%,transparent 60%,rgba(0,0,0,.2) 100%)}
+.ig .k{stroke-width:3}.ig .e{stroke-width:4.5}.ui .e{stroke-width:3}
+.tape{font-size:clamp(1.15rem,6.2cqw,1.9rem);padding:.2rem 1rem}
+.counter .n,.giant{text-shadow:0 0 50px color-mix(in srgb,var(--se) 70%,transparent),0 12px 30px rgba(0,0,0,.4)}
+.sun line{stroke-width:3}
+.h2l .w.dot{margin:0;padding:0;background:none;color:var(--si);transform:none;box-shadow:none}
+.h2l .l{white-space:normal}
+.h2l .w.em{margin:0 .06em;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -316,41 +337,41 @@ function envDraw(ctx,W,H,M,L,al){var t=(performance.now()-ENV.t0)/1000,k=ENV.kin
 function envBeat(){if(AU.analyser){var d=AU.fdata;AU.analyser.getByteFrequencyData(d);var s=0;for(var i=1;i<10;i++)s+=d[i];var v=s/9/255;ENV.bass=v;var b=Math.max(0,(v-.55)*2.2);ENV.beat=ENV.beat*.86+b*.14;}else{ENV.beat*=.9;}}
 /* ================= عوالم التخصص (١٨) ================= */
 var THEMES={
-  ai:{n:"الذكاء الاصطناعي",trio:["يفهم","يتعلّم","يقرّر"],motif:"neural",light:{sg:"#F3F1EC",si:"#141B24",sa:"#3E5C78",se:"#C8742F",sm:"#7A808A"},dark:{sg:"#0F1720",si:"#EEF2F6",sa:"#7FB0D6",se:"#F0A85A",sm:"#8E9AA8"},
+  ai:{n:"الذكاء الاصطناعي",trio:["يفهم","يتعلّم","يقرّر"],motif:"neural",light:{sg:"#F7F5F0",si:"#0F151C",sa:"#3E5C78",se:"#D2691E",sm:"#7A808A"},dark:{sg:"#0F1720",si:"#EEF2F6",sa:"#7FB0D6",se:"#F0A85A",sm:"#8E9AA8"},
     lex:["ذكاء اصطناعي","الذكاء","اصطناعي","نموذج","نماذج","خوارزم","تعلم الآلة","روبوت","شات","توليد","تدريب النموذج","ذكي"]},
-  edtech:{n:"تكنولوجيا التعليم",w:.8,trio:["يعلّم","يبسّط","يقرّب"],motif:"pages",light:{sg:"#F4F1EA",si:"#1B1C20",sa:"#3E5C78",se:"#B0702F",sm:"#7A808A"},dark:{sg:"#131A22",si:"#EFEDE8",sa:"#84A9CA",se:"#E3B97C",sm:"#98A0AA"},
+  edtech:{n:"تكنولوجيا التعليم",w:.8,trio:["يعلّم","يبسّط","يقرّب"],motif:"pages",light:{sg:"#F8F5EE",si:"#141518",sa:"#3E5C78",se:"#C4661C",sm:"#7A808A"},dark:{sg:"#131A22",si:"#EFEDE8",sa:"#84A9CA",se:"#E3B97C",sm:"#98A0AA"},
     lex:["تكنولوجيا التعليم","تقنية التعليم","التعليم","تعليم","معلم","معلمين","طالب","طلاب","فصل","صف","مدرسة","منهج","حصة","درس"]},
-  govern:{n:"الحوكمة والبيانات",trio:["يحمي","ينظّم","يحاسب"],motif:"grid",light:{sg:"#F1F2F0",si:"#111A17",sa:"#2F5D4C",se:"#C9922F",sm:"#75807B"},dark:{sg:"#0E1A16",si:"#EEF3EF",sa:"#7FB59A",se:"#E6C572",sm:"#93A59B"},
+  govern:{n:"الحوكمة والبيانات",trio:["يحمي","ينظّم","يحاسب"],motif:"grid",light:{sg:"#F6F7F4",si:"#0C1512",sa:"#2F5D4C",se:"#D08A1E",sm:"#75807B"},dark:{sg:"#0E1A16",si:"#EEF3EF",sa:"#7FB59A",se:"#E6C572",sm:"#93A59B"},
     lex:["حوكمة","بيانات ضخمة","البيانات","بيانات","خصوصية","أخلاقيات","تشريع","قانون","سياسة","مساءلة","شفافية","أمن","حماية","ضوابط","تنظيم"]},
-  elearn:{n:"التعلّم الإلكتروني",w:.8,trio:["يصل","يتابع","يقيّم"],motif:"windows",light:{sg:"#F2F3F1",si:"#15191F",sa:"#3E5C78",se:"#C0663A",sm:"#79818B"},dark:{sg:"#111820",si:"#EEF1F5",sa:"#8AB4D8",se:"#F09A62",sm:"#93A0AE"},
+  elearn:{n:"التعلّم الإلكتروني",w:.8,trio:["يصل","يتابع","يقيّم"],motif:"windows",light:{sg:"#F7F8F6",si:"#10141A",sa:"#3E5C78",se:"#CE5A22",sm:"#79818B"},dark:{sg:"#111820",si:"#EEF1F5",sa:"#8AB4D8",se:"#F09A62",sm:"#93A0AE"},
     lex:["تعلم إلكتروني","التعلم الإلكتروني","عن بعد","منصة","منصات","مودل","تيمز","نظام إدارة التعلم","إلكتروني","افتراضي","بث","محاضرة مسجلة","واجب","اختبار إلكتروني"]},
-  smart:{n:"المدارس الذكية",trio:["يربط","يراقب","يسهّل"],motif:"geometry",light:{sg:"#F2F1EE",si:"#16181D",sa:"#4A5F86",se:"#B76A2B",sm:"#787E89"},dark:{sg:"#12151C",si:"#EEEEF2",sa:"#92A6D4",se:"#E8AD62",sm:"#959BA8"},
+  smart:{n:"المدارس الذكية",trio:["يربط","يراقب","يسهّل"],motif:"geometry",light:{sg:"#F7F6F3",si:"#111318",sa:"#4A5F86",se:"#C8611A",sm:"#787E89"},dark:{sg:"#12151C",si:"#EEEEF2",sa:"#92A6D4",se:"#E8AD62",sm:"#959BA8"},
     lex:["مدرسة ذكية","مدارس ذكية","سبورة","سبورة ذكية","أجهزة","لوحي","إنترنت الأشياء","استشعار","بنية تحتية","شبكة","واي فاي","كاميرا","ذكية"]},
-  game:{n:"التلعيب",trio:["يحفّز","يكافئ","يشوّق"],motif:"stars",light:{sg:"#F5F1EA",si:"#1C1712",sa:"#5E4B8B",se:"#D2782E",sm:"#7F786F"},dark:{sg:"#16121E",si:"#F3EEF6",sa:"#B49AE6",se:"#F5B054",sm:"#9E96AA"},
+  game:{n:"التلعيب",trio:["يحفّز","يكافئ","يشوّق"],motif:"stars",light:{sg:"#FAF6EE",si:"#16120D",sa:"#5E4B8B",se:"#DB6A1A",sm:"#7F786F"},dark:{sg:"#16121E",si:"#F3EEF6",sa:"#B49AE6",se:"#F5B054",sm:"#9E96AA"},
     lex:["تلعيب","ألعاب الفيديو","لعب","لعبة","ألعاب","لاعب","هوس","نقاط","شارة","شارات","مستوى","مستويات","تحدي","مكافأة","مكافآت","لوحة الصدارة","تحفيز","حماس"]},
-  xr:{n:"الواقع الافتراضي والمعزّز",trio:["يغمر","يجسّد","يقرّب"],motif:"hex",light:{sg:"#EFF2F3",si:"#101A20",sa:"#2A6F8A",se:"#D07A3A",sm:"#71808A"},dark:{sg:"#0A1418",si:"#E9F3F6",sa:"#5FC2D8",se:"#F3A95C",sm:"#89A0AA"},
+  xr:{n:"الواقع الافتراضي والمعزّز",trio:["يغمر","يجسّد","يقرّب"],motif:"hex",light:{sg:"#F5F8F9",si:"#0B151B",sa:"#2A6F8A",se:"#D8661F",sm:"#71808A"},dark:{sg:"#0A1418",si:"#E9F3F6",sa:"#5FC2D8",se:"#F3A95C",sm:"#89A0AA"},
     lex:["واقع افتراضي","واقع معزز","الافتراضي","المعزز","نظارة","غمر","محاكاة","ثلاثي الأبعاد","3d","هولوغرام","ميتافيرس","عوالم افتراضية"]},
-  assist:{n:"ذوو الاحتياجات الخاصة",trio:["يمكّن","يدمج","ينصف"],motif:"orbs",light:{sg:"#F5F2EE",si:"#1B1717",sa:"#5A6E8C",se:"#C3733D",sm:"#7E7A7A"},dark:{sg:"#171417",si:"#F4EFF0",sa:"#A9B9D6",se:"#F0AE73",sm:"#A1979C"},
+  assist:{n:"ذوو الاحتياجات الخاصة",trio:["يمكّن","يدمج","ينصف"],motif:"orbs",light:{sg:"#FAF7F3",si:"#151212",sa:"#5A6E8C",se:"#CF6321",sm:"#7E7A7A"},dark:{sg:"#171417",si:"#F4EFF0",sa:"#A9B9D6",se:"#F0AE73",sm:"#A1979C"},
     lex:["ذوي الاحتياجات","الاحتياجات الخاصة","إعاقة","إعاقات","دمج","تقنيات مساعدة","مساعدة","توحد","صعوبات التعلم","كفيف","أصم","إتاحة","وصول"]},
-  digital:{n:"التحول الرقمي",trio:["يحوّل","يسرّع","يوصل"],motif:"rise",light:{sg:"#F2F2F0",si:"#13171E",sa:"#3E5C78",se:"#C46E2E",sm:"#767E8A"},dark:{sg:"#0F141B",si:"#EEF0F4",sa:"#7EAAD3",se:"#F1A257",sm:"#8F9AA7"},
+  digital:{n:"التحول الرقمي",trio:["يحوّل","يسرّع","يوصل"],motif:"rise",light:{sg:"#F7F7F5",si:"#0E1219",sa:"#3E5C78",se:"#CF611B",sm:"#767E8A"},dark:{sg:"#0F141B",si:"#EEF0F4",sa:"#7EAAD3",se:"#F1A257",sm:"#8F9AA7"},
     lex:["تحول رقمي","التحول الرقمي","رقمنة","رقمي","تطبيق","تطبيقات","أتمتة","سحابة","الحوسبة","تحديث","تطوير","بنية رقمية","خدمة إلكترونية"]},
-  stem:{n:"STEM والصنّاع",trio:["يجرّب","يصنع","يكتشف"],motif:"molecule",light:{sg:"#F1F3F2",si:"#101B1C",sa:"#2E6E6A",se:"#D3782D",sm:"#71817F"},dark:{sg:"#0C1618",si:"#EAF3F2",sa:"#6FC4BE",se:"#F2A85A",sm:"#8CA3A1"},
+  stem:{n:"STEM والصنّاع",trio:["يجرّب","يصنع","يكتشف"],motif:"molecule",light:{sg:"#F6F8F7",si:"#0B1617",sa:"#2E6E6A",se:"#DA6A1B",sm:"#71817F"},dark:{sg:"#0C1618",si:"#EAF3F2",sa:"#6FC4BE",se:"#F2A85A",sm:"#8CA3A1"},
     lex:["stem","ستيم","علوم","رياضيات","هندسة","صناع","الصناع","ميكر","روبوتات","برمجة","طابعة ثلاثية","تجربة","ابتكار","اختراع","مختبر"]},
-  design:{n:"التصميم التعليمي",trio:["يخطّط","يبني","يقيس"],motif:"blueprint",light:{sg:"#F3F2EE",si:"#161A1F",sa:"#3E5C78",se:"#B9722F",sm:"#7A808A"},dark:{sg:"#111821",si:"#EEF0F3",sa:"#88AEDB",se:"#E6B36A",sm:"#93A0AE"},
+  design:{n:"التصميم التعليمي",trio:["يخطّط","يبني","يقيس"],motif:"blueprint",light:{sg:"#F8F7F3",si:"#11151A",sa:"#3E5C78",se:"#C7651C",sm:"#7A808A"},dark:{sg:"#111821",si:"#EEF0F3",sa:"#88AEDB",se:"#E6B36A",sm:"#93A0AE"},
     lex:["تصميم تعليمي","التصميم التعليمي","تصميم","نموذج آدي","addie","أهداف تعليمية","مخرجات","أنشطة","تقويم","استراتيجية","خطة الدرس","محتوى","تحليل الاحتياج"]},
-  skills:{n:"مهارات القرن ٢١",trio:["يفكّر","يتعاون","يبدع"],motif:"network",light:{sg:"#F3F1EC",si:"#171A1F",sa:"#4A5F86",se:"#C6742F",sm:"#7A8089"},dark:{sg:"#12161D",si:"#EFEFF2",sa:"#93A9D3",se:"#F0AE60",sm:"#979CA8"},
+  skills:{n:"مهارات القرن ٢١",trio:["يفكّر","يتعاون","يبدع"],motif:"network",light:{sg:"#F8F6F1",si:"#12151A",sa:"#4A5F86",se:"#D0661C",sm:"#7A8089"},dark:{sg:"#12161D",si:"#EFEFF2",sa:"#93A9D3",se:"#F0AE60",sm:"#979CA8"},
     lex:["مهارات","القرن 21","القرن ٢١","التفكير الناقد","إبداع","تعاون","تواصل","حل المشكلات","مهارة","كفاءة","كفايات","مرونة","تعلم مدى الحياة"]},
-  lead:{n:"القيادة التربوية",trio:["يوجّه","يوزّع","يلهم"],motif:"steps",light:{sg:"#F3F1ED",si:"#191A1E",sa:"#3E5C78",se:"#B86D2C",sm:"#7B7F87"},dark:{sg:"#111318",si:"#F0EFEB",sa:"#7FA1C8",se:"#E4A95C",sm:"#A1A6AE"},
+  lead:{n:"القيادة التربوية",trio:["يوجّه","يوزّع","يلهم"],motif:"steps",light:{sg:"#F8F6F2",si:"#141519",sa:"#3E5C78",se:"#C6621A",sm:"#7B7F87"},dark:{sg:"#111318",si:"#F0EFEB",sa:"#7FA1C8",se:"#E4A95C",sm:"#A1A6AE"},
     lex:["قيادة","قائد","قيادي","إدارة","مدير","إشراف","فريق","رؤية","تخطيط استراتيجي","قرار","قرارات","تفويض","تغيير","مؤسسة"]},
-  parent:{n:"التربية والأسرة",trio:["يحتوي","يصغي","يوجّه"],motif:"warm",light:{sg:"#F6F1EA",si:"#1E1815",sa:"#7B5A46",se:"#C57A3C",sm:"#857A72"},dark:{sg:"#1B1512",si:"#F5EEE7",sa:"#D3A98C",se:"#F0B06D",sm:"#A99A90"},
+  parent:{n:"التربية والأسرة",trio:["يحتوي","يصغي","يوجّه"],motif:"warm",light:{sg:"#FBF6EF",si:"#191310",sa:"#7B5A46",se:"#CF6A24",sm:"#857A72"},dark:{sg:"#1B1512",si:"#F5EEE7",sa:"#D3A98C",se:"#F0B06D",sm:"#A99A90"},
     lex:["تربية","أسرة","أب","أم","والدين","ابن","ابنة","أطفال","طفل","مراهق","مراهقة","بيت","منزل","حوار الأسرة","احتواء"]},
-  society:{n:"المجتمع والهوية",trio:["يحفظ","يجدّد","يوحّد"],motif:"arabesque",light:{sg:"#F4F0E6",si:"#1C1A16",sa:"#3E5C78",se:"#9A6A2B",sm:"#7A7466"},dark:{sg:"#14171B",si:"#EEEFF1",sa:"#8CA9C0",se:"#DFB578",sm:"#A2A8B0"},
+  society:{n:"المجتمع والهوية",trio:["يحفظ","يجدّد","يوحّد"],motif:"arabesque",light:{sg:"#F9F5EB",si:"#171511",sa:"#3E5C78",se:"#B4671C",sm:"#7A7466"},dark:{sg:"#14171B",si:"#EEEFF1",sa:"#8CA9C0",se:"#DFB578",sm:"#A2A8B0"},
     lex:["مجتمع","هوية","هويتنا","ثقافة","تراث","لغة","اللغة","اللغة العربية","الفصحى","لسان","عربية","قيم","جيل","أجيال","وطن","كويت","عادات","انتماء","تاريخ"]},
-  media:{n:"الإعلام",trio:["يبلّغ","يوضّح","يؤثّر"],motif:"waves",light:{sg:"#F2F1F0",si:"#171519",sa:"#5A4E7A",se:"#C9652F",sm:"#7B7883"},dark:{sg:"#141218",si:"#F0EEF2",sa:"#B6A6DA",se:"#F29A5E",sm:"#9C97A6"},
+  media:{n:"الإعلام",trio:["يبلّغ","يوضّح","يؤثّر"],motif:"waves",light:{sg:"#F7F6F5",si:"#121014",sa:"#5A4E7A",se:"#D25A1E",sm:"#7B7883"},dark:{sg:"#141218",si:"#F0EEF2",sa:"#B6A6DA",se:"#F29A5E",sm:"#9C97A6"},
     lex:["إعلام","الإعلام","وسائل الإعلام","إعلامي","إعلاميون","رسالة إعلامية","تلفزيون","قناة","برنامج","صحافة","صحيفة","مقال","خبر","أخبار","رسالة إعلامية","جمهور","تواصل اجتماعي","محتوى","منشور"]},
-  research:{n:"البحث العلمي",trio:["يسأل","يقيس","يثبت"],motif:"molecule",light:{sg:"#F1F2F3",si:"#0F161C",sa:"#2F5D7A",se:"#C97F30",sm:"#73808A"},dark:{sg:"#0B1420",si:"#EAF1F8",sa:"#5FB0D8",se:"#F0B860",sm:"#93A6B8"},
+  research:{n:"البحث العلمي",trio:["يسأل","يقيس","يثبت"],motif:"molecule",light:{sg:"#F6F7F8",si:"#0A1117",sa:"#2F5D7A",se:"#D2701E",sm:"#73808A"},dark:{sg:"#0B1420",si:"#EAF1F8",sa:"#5FB0D8",se:"#F0B860",sm:"#93A6B8"},
     lex:["بحث علمي","البحث","دراسة","دراسات","عينة","نتائج","إحصاء","منهج","استبانة","تحليل","فرضية","مجلة محكمة","باحث","أدلة"]},
-  read:{n:"القراءة والمعرفة",trio:["يقرأ","يتأمّل","يفهم"],motif:"letters",light:{sg:"#F4F1EA",si:"#1B1C20",sa:"#3E5C78",se:"#B0702F",sm:"#7A808A"},dark:{sg:"#0F141C",si:"#F3EFE6",sa:"#6E9CC4",se:"#E7C186",sm:"#A9AFB8"},
+  read:{n:"القراءة والمعرفة",trio:["يقرأ","يتأمّل","يفهم"],motif:"letters",light:{sg:"#F8F5EE",si:"#141518",sa:"#3E5C78",se:"#C4661C",sm:"#7A808A"},dark:{sg:"#0F141C",si:"#F3EFE6",sa:"#6E9CC4",se:"#E7C186",sm:"#A9AFB8"},
     lex:["قراءة","نقرأ","كتاب","كتب","مكتبة","صفحة","معرفة","فكر","ذاكرة","انتباه","معنى","تأمل","ثقافة"]}
 };
 var TK=Object.keys(THEMES);
@@ -450,7 +471,7 @@ function plan(text){
   var TRIO=T.trio;if(near&&typeof PLANS!=="undefined"&&PLANS[near.s]&&PLANS[near.s].trio)TRIO=PLANS[near.s].trio;
   /* نص قصير (تغريدة): وسّع الجُمل بالعبارات ثم بثلاثية العالم */
   if(sents.length<4){var ex=[];sents.forEach(function(x){x.split(/[،؛]\s+/).forEach(function(c){if(toks(c).length>=3)ex.push(c.trim());});});if(ex.length>sents.length)sents=ex;}
-  sc.push({t:"cover",nm:"الغلاف",d:5.2,title:toks(title).slice(0,6).join(" "),trio:TRIO,mode:"dark",src:title,near:near?near.t:"",cat:(typeof CUR_CAT!=="undefined"?CUR_CAT:"")});
+  sc.push({t:"cover",nm:"الغلاف",d:4.4,title:toks(title).slice(0,6).join(" "),trio:TRIO,mode:"dark",src:title,near:near?near.t:"",cat:(typeof CUR_CAT!=="undefined"?CUR_CAT:"")});
   var units=[];
   sents.forEach(function(s){
     var pct=(s.match(/([٠-٩0-9]+(?:[.,٫][٠-٩0-9]+)?)\s*[٪%]/)||[])[1];
@@ -472,7 +493,7 @@ function plan(text){
     var prefer=u.pct!=null||(u.num!=null&&u.t==="metaphor")?"num":(u.neg?"neg":null);
     var h=headline(u.s,u.prop||"book",prefer);
     var ann=prefer==="num"?"circle":(u.neg?"cross":(i%3===1?"under":"none"));
-    var base={nm:"",d:Math.max(4.4,Math.min(7.5,1.6+toks(u.s).length*.36)),h:h,ann:ann,mode:i%2?"dark":"light",prop:u.prop,idx:i,ch:i+2,src:u.s};
+    var base={nm:"",d:Math.max(3.6,Math.min(5.6,1.4+toks(u.s).length*.28)),h:h,ann:ann,mode:i%2?"dark":"light",prop:u.prop,idx:i,ch:i+2,src:u.s};
     if(u.t==="counter"){base.t="counter";base.value=u.pct;base.unit="٪";base.cap=toks(u.s).filter(function(w){return !/[٠-٩0-9]/.test(w);}).slice(0,6).join(" ");base.nm="عدّاد";}
     else if(u.t==="list"){base.t="list";base.items=u.s.replace(/^[^:：]*[:：]\s*/,"").split(/،/).map(function(x){return toks(x).slice(0,3).join(" ");}).filter(Boolean).slice(0,4);base.nm="قائمة";}
     else if(u.t==="flow"){base.t="flow";var st=u.s.split(/(?:ثم|بعدها|وبعد|أولا|ثانيا|ثالثا|←|→)/).map(function(x){return toks(x).slice(0,2).join(" ");}).filter(Boolean).slice(0,3);base.steps=st.length>=2?st:["ابحث","حلّل","قرّر"];base.nm="تدفّق";}
@@ -494,9 +515,9 @@ function plan(text){
 
 /* ================= بناء الفصول من لوحة قصصية منتقاة (قرأتُ المقالة بنفسي) ================= */
 function planCurated(text,PL){var th={key:PL.theme||"edtech",scores:{}};var T=THEMES[th.key]||THEMES.edtech;var lines=text.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);var title=lines[0]||"";var sc=[],used={};
-  sc.push({t:"cover",nm:"الغلاف",d:5.2,title:toks(title).slice(0,6).join(" "),trio:PL.trio||T.trio,mode:"dark",src:title,cat:(typeof CUR_CAT!=="undefined"?CUR_CAT:""),curated:true});
+  sc.push({t:"cover",nm:"الغلاف",d:4.4,title:toks(title).slice(0,6).join(" "),trio:PL.trio||T.trio,mode:"dark",src:title,cat:(typeof CUR_CAT!=="undefined"?CUR_CAT:""),curated:true});
   PL.scenes.slice(0,8).forEach(function(x,i){var l1=(x.l1||[]).slice(0,4),l2=(x.l2||[]).slice(0,4);var h={l1:l1,l2:l2,em:Math.min(x.em||0,l1.length+l2.length-1),cut:l1.length};
-    var base={nm:"",d:Math.max(4.4,Math.min(7.5,1.6+toks(x.src||"").length*.36)),h:h,ann:x.ann||"none",mode:i%2?"light":"dark",idx:i,src:x.src||l1.concat(l2).join(" ")};
+    var base={nm:"",d:Math.max(3.6,Math.min(5.6,1.4+toks(x.src||"").length*.28)),h:h,ann:x.ann||"none",mode:i%2?"light":"dark",idx:i,src:x.src||l1.concat(l2).join(" ")};
     var prop=x.prop&&P[x.prop]?x.prop:null;if(prop&&used[prop])prop=null;if(!prop){var fb=["book","bulb","target","compass","brain","network","door","key"];for(var q=0;q<fb.length;q++){if(!used[fb[q]]){prop=fb[q];break;}}}used[prop]=1;base.prop=prop;
     if(x.t==="counter"&&x.value!=null){base.t="counter";base.value=+x.value;base.unit=/[٪%]/.test(x.src||"")||(+x.value<=100)?"٪":"";base.cap=l1.concat(l2).filter(function(w,k){return k!==h.em;}).slice(0,6).join(" ");base.nm="عدّاد";}
     else if(x.t==="list"&&x.items&&x.items.length>=2){base.t="list";base.items=x.items.slice(0,4);base.nm="قائمة";}
@@ -638,13 +659,14 @@ function uiOf(sc,T){if(sc.t==="editor")return UI.editor();if(sc.t==="flow")retur
   var k=T.key;if(k==="game")return UI.xp();if(k==="elearn"||k==="smart")return UI.chatlms();if(k==="govern"||k==="research"||k==="digital")return UI.dashboard();if(k==="design"||k==="edtech"||k==="assist")return UI.quiz();return UI.cards();}
 
 /* ================= بناء المشاهد ================= */
-function two(h,ann){var ws=h.l1.concat(h.l2);return '<h2 class="h2l"><span class="l l1">'+h.l1.map(function(w,i){return '<span class="w'+(i===h.em?" em":"")+'">'+esc(w)+(i===h.em&&ann&&ann!=="none"?annSvg(ann):"")+'</span>';}).join(" ")+(h.l1.length?".":"")+'</span><span class="l l2">'+h.l2.map(function(w,j){var i=j+h.cut;return '<span class="w'+(i===h.em?" em":"")+'">'+esc(w)+(i===h.em&&ann&&ann!=="none"?annSvg(ann):"")+'</span>';}).join(" ")+(h.l2.length?".":"")+'</span></h2>';}
+function two(h,ann){function line(ws,off){var n=ws.length;return ws.map(function(w,j){var i=j+off,e=i===h.em,last=j===n-1;return '<span class="w'+(e?" em":"")+'">'+esc(w)+(last&&!e?".":"")+(e&&ann&&ann!=="none"?annSvg(ann):"")+'</span>'+(last&&e?'<span class="w dot">.</span>':"");}).join(" ");}
+  return '<h2 class="h2l"><span class="l l1">'+line(h.l1,0)+'</span><span class="l l2">'+line(h.l2,h.cut)+'</span></h2>';}
 function annSvg(kind){if(kind==="circle")return '<svg class="ann" viewBox="0 0 120 60" preserveAspectRatio="none"><path d="M18 30 C 14 8, 100 4, 106 26 S 84 58, 30 52 S 8 34, 24 22"/></svg>';if(kind==="cross")return '<svg class="ann cross" viewBox="0 0 120 60" preserveAspectRatio="none"><path d="M14 10 L106 50"/><path d="M106 12 L14 48"/></svg>';return '<svg class="ann under" viewBox="0 0 120 60" preserveAspectRatio="none"><path d="M6 40 C 30 30, 50 48, 74 38 S 104 34, 114 42"/></svg>';}
 function chrome(sc,T){return '<div class="chrome"><div class="top"><span class="brand"><i></i>'+esc(T.n)+'</span><span>د. الفيلكاوي</span></div><div class="bot"><span class="chap">'+ar(("0"+sc.ch).slice(-2))+' / '+ar(("0"+sc.total).slice(-2))+'</span><span class="seg">'+Array.apply(null,Array(sc.total)).map(function(_,i){return '<i class="'+(i<sc.ch?"on":"")+'"></i>';}).join("")+'</span><span>'+esc(sc.nm)+'</span></div></div>';}
 function sunSvg(){return '<div class="sun"><svg viewBox="0 0 100 100">'+Array.apply(null,Array(28)).map(function(_,i){var a=i/28*6.283,r1=i%2?30:26;return '<line class="ry" x1="'+(50+Math.cos(a)*r1)+'" y1="'+(50+Math.sin(a)*r1)+'" x2="'+(50+Math.cos(a)*44)+'" y2="'+(50+Math.sin(a)*44)+'"/>';}).join("")+'<circle cx="50" cy="50" r="18"/><circle cx="50" cy="50" r="4" fill="var(--se)" stroke="none"/></svg></div>';}
 function build(sc,T){var d=document.createElement("div");d.className="scene "+(sc.mode==="dark"?"dk":"lt")+" lay-"+(["a","b","a","c"][(sc.idx||0)%4]);var ey='<span class="eyebrow2"><b>'+ar(("0"+sc.ch).slice(-2))+'</b>'+esc(sc.nm)+'</span>';
   if(sc.t==="cover"){d.classList.add("cover");d.innerHTML='<div class="fx"></div><img class="logo" src="'+IMG.logo+'" alt=""><p class="name">د. أحمد الفيلكاوي</p><span class="role">أستاذ تكنولوجيا التعليم والذكاء الاصطناعي</span><span class="src">'+(sc.cat?esc(sc.cat)+' · ':'')+'مقالة</span><h2 class="h2l"><span class="l">'+toks(sc.title).map(function(w){return '<span class="w">'+esc(w)+'</span>';}).join(" ")+'</span></h2>'+sunSvg()+'<p class="foot"><b>'+sc.trio.map(function(w){return '<span class="tr">'+esc(w)+'.</span>';}).join(" ")+'</b></p>';}
-  else if(sc.t==="metaphor"){var p=P[sc.prop];d.innerHTML='<div class="fx"></div>'+ey+'<div class="prop">'+p.svg+'</div>'+two(sc.h,sc.ann);}
+  else if(sc.t==="metaphor"){var p=P[sc.prop];d.innerHTML='<div class="fx"></div>'+ey+'<div class="prop">'+p.svg+'</div>'+two(sc.h,sc.ann)+((sc.idx||0)%2?'<svg class="scrib" viewBox="0 0 120 30" style="width:34%;height:auto;position:relative;z-index:3;overflow:visible"><path d="M4 22 C 30 6, 70 30, 116 8 M104 6 L116 8 L110 18" fill="none" stroke="var(--se)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'');}
   else if(sc.t==="counter"){var ig=pickIG(sc,sc.idx);d.innerHTML='<div class="fx"></div>'+ey+two(sc.h,"none")+(ig?'<div class="ig">'+IG[ig](Math.round(sc.value),sc.cap)+'</div>':'<div class="counter"><span class="n">0</span><span class="u">'+esc(sc.unit)+'</span><span class="c">'+esc(sc.cap)+'</span></div><div class="ui">'+uiOf(sc,T)+'</div>');}
   else if(sc.t==="list")d.innerHTML=ey+two(sc.h,"none")+'<div class="list">'+sc.items.map(function(it,i){return '<div class="it"><i>'+ar(i+1)+'</i>'+esc(it)+'<small>'+ar(i+1)+'</small></div>';}).join("")+'</div><p class="foot">ثم راجع النتيجة.</p>';
   else if(sc.t==="flow"&&(sc.idx||0)%2)d.innerHTML=ey+two(sc.h,sc.ann)+'<div class="ig">'+IG.timeline(sc.steps)+'</div>';
@@ -667,10 +689,11 @@ function animate(el,sc){if(reduce)return;
     each(el,".credits .cr, .credits .hd",function(c,i){anim(c,[{opacity:0,transform:"translateY(14px)"},{opacity:1,transform:"none"}],{duration:600,delay:2600+i*380,easing:E,fill:"backwards"});});burst(el.querySelector(".fx"),20);}
   var ey=el.querySelector(".eyebrow2");if(ey)anim(ey,[{opacity:0,transform:"translateY(-8px)"},{opacity:1,transform:"none"}],{duration:600,easing:E,fill:"backwards"});
   var l1=el.querySelectorAll(".l1 .w"),l2=el.querySelectorAll(".l2 .w");
-  l1.forEach(function(w,i){anim(w,[{opacity:0,transform:"translateY(22px)",filter:"blur(6px)"},{opacity:1,transform:"none",filter:"blur(0)"}],{duration:600,delay:250+i*110,easing:OVER,fill:"backwards"});});
-  l2.forEach(function(w,i){anim(w,[{opacity:0,transform:"translateY(22px)",filter:"blur(6px)"},{opacity:1,transform:"none",filter:"blur(0)"}],{duration:600,delay:250+l1.length*110+200+i*110,easing:OVER,fill:"backwards"});});
+  l1.forEach(function(w,i){anim(w,[{opacity:0,transform:"translateY(22px)",filter:"blur(6px)"},{opacity:1,transform:"none",filter:"blur(0)"}],{duration:520,delay:200+i*85,easing:OVER,fill:"backwards"});});
+  l2.forEach(function(w,i){anim(w,[{opacity:0,transform:"translateY(22px)",filter:"blur(6px)"},{opacity:1,transform:"none",filter:"blur(0)"}],{duration:520,delay:200+l1.length*85+150+i*85,easing:OVER,fill:"backwards"});});
   var L2=el.querySelector(".l2");if(L2)anim(L2,[{color:"var(--sm)"},{color:"var(--sm)",offset:.55},{color:"var(--si)"}],{duration:2400,delay:400,fill:"forwards"});
   var h2=el.querySelector(".h2l:not(:has(.l1))");if(h2)anim(h2,[{opacity:0,transform:"translateY(20px) scale(.96)",filter:"blur(6px)"},{opacity:1,transform:"none",filter:"blur(0)"}],{duration:900,delay:200,easing:OVER,fill:"backwards"});
+  each(el,".scrib path",function(p){draw(p,600,1400);});
   each(el,".ann path",function(p,i){draw(p,700,1500+i*250);setTimeout(function(){sfx("draw");},1500+i*250);});
   each(el,".foot",function(f,i){anim(f,[{opacity:0,transform:"translateY(10px)"},{opacity:1,transform:"none"}],{duration:600,delay:1500+i*300,easing:E,fill:"backwards"});});
   var sun=el.querySelector(".sun");if(sun){anim(sun,[{opacity:0,transform:"scale(.5) rotate(-40deg)"},{opacity:1,transform:"none"}],{duration:1000,delay:300,easing:OVER,fill:"backwards"});anim(sun,[{transform:"rotate(0)"},{transform:"rotate(360deg)"}],{duration:30000,delay:1300,iterations:Infinity,easing:"linear"});each(el,".sun .ry",function(r,i){anim(r,[{opacity:.3},{opacity:1},{opacity:.3}],{duration:1600,delay:i*60,iterations:Infinity});});}

@@ -2,11 +2,11 @@ import { getDb } from './firebase'
 
 export type MonteurScene = {
   t: string; src: string; prop?: string; l1: string[]; l2: string[]; em: number; ann: string
-  photo?: string; photoOff?: boolean; focus?: string; locked?: boolean; value?: number; items?: string[]; steps?: string[]
+  photo?: string; photoOff?: boolean; focus?: string; iconVariant?: string; surfaceVariant?: string; locked?: boolean; value?: number; items?: string[]; steps?: string[]
 }
 export type MonteurPlan = {
   theme: string; trio: string[]; quote: string; scenes: MonteurScene[]
-  opening?: string; narrative?: string; generated?: boolean; hero?: string; coverPhoto?: string; coverFocus?: string
+  opening?: string; narrative?: string; generated?: boolean; visualRevision?: number; hero?: string; coverPhoto?: string; coverFocus?: string
 }
 export type MonteurProject = {
   plan: MonteurPlan; title: string; body: string; category: string; source: 'ai' | 'curated'

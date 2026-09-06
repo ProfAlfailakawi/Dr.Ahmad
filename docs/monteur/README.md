@@ -41,3 +41,9 @@ Mode: image generation using the built-in image tool; no reference portrait supp
 - `covers/monteur-ethics.png`: portrait conceptual editorial scene, brass balance holding a blue circuit cube and folded-paper human symbol, warm ivory/brass/blue palette, no portrait or text.
 
 These are conceptual illustrations rendered with photographic materials, not documentary photographs. Existing book cover assets remain the original source imagery.
+
+## Typography and composition review
+
+Removed the television-program counter from the fallback credits. Arabic labels now use normal letter spacing, including entrance animations. Supporting headline lines remain at full foreground contrast during reveal. Repeated bottom progress and circular chapter indicators are hidden; the preview retains its top progress bar. Square exports use a dedicated symbol/text scale.
+
+Browser layout audit of the default eleven-chapter storyboard across both styles and all three aspect ratios checked 66 combinations. It detected four square headline overflows before the fix and zero after. This is a sample-storyboard geometry check, not a claim that every possible article is visually perfect. `typography-polish.png` shows the revised Arabic composition.

@@ -68,3 +68,12 @@ covers/monteur-creative-classroom.webp
 Removed the television-program counter from the fallback credits. Arabic labels now use normal letter spacing, including entrance animations. Supporting headline lines remain at full foreground contrast during reveal. Repeated bottom progress and circular chapter indicators are hidden; the preview retains its top progress bar. Square exports use a dedicated symbol/text scale.
 
 Browser layout audit of the default eleven-chapter storyboard across both styles and all three aspect ratios checked 66 combinations. It detected four square headline overflows before the fix and zero after. This is a sample-storyboard geometry check, not a claim that every possible article is visually perfect. `typography-polish.png` shows the revised Arabic composition.
+
+
+## العائلات البصرية ومنع التكرار
+
+- الرموز مرتبة في 10 عائلات متخصصة؛ يختار المحرر العائلة ثم الرمز ثم واحدة من 14 حركة.
+- كل رمز يملك حركة داخلية مستمرة فوق حركته الدلالية الأصلية، بما في ذلك الرموز المركبة.
+- يرفض المونتير تكرار الرمز أو المعالجة الحركية داخل الفيديو نفسه.
+- يستخدم الفيديو حتى ست صور أصلية مختلفة، ولا يعد تغيير الفلتر صورة جديدة.
+- لكل صورة حركة كاميرا مستقلة من 10 حركات، مع منع تكرار حركة الصورة داخل الفيديو.

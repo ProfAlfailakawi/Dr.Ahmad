@@ -10,9 +10,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { useCmsContent } from '../../lib/content'
 import { loadArticleBodies } from '../../lib/article-bodies'
+import { watchMonteurProjects, saveMonteurProject, monteurSourceHash, type MonteurPlan, type MonteurProject } from '../../lib/monteur-library'
 import { arabicCountPhrase, REEL_SCENE_FORMS } from '../../lib/arabic-count.ts'
 
-type Plan = { theme: string; trio: string[]; quote: string; scenes: unknown[] }
+type Plan = MonteurPlan
 type MonteurApi = {
   setText: (text: string, cat?: string) => void
   setArticles: (list: { s: string; t: string; c: string; b: string }[]) => void
@@ -24,17 +25,9 @@ type MonteurApi = {
 }
 declare global { interface Window { Monteur?: { mount: (el: HTMLElement, opts: { embedded?: boolean }) => MonteurApi } } }
 
-const PLANS_KEY = 'monteur:plans:v1'
 const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-50'
 const select = 'max-w-[300px] rounded-full border border-hair bg-canvas px-3 py-2 text-[.76rem] text-ink outline-none focus:border-accent'
-
-function readSavedPlans(): Record<string, Plan> {
-  try { return JSON.parse(localStorage.getItem(PLANS_KEY) || '{}') as Record<string, Plan> } catch { return {} }
-}
-function savePlan(slug: string, plan: Plan) {
-  try { const all = readSavedPlans(); all[slug] = plan; localStorage.setItem(PLANS_KEY, JSON.stringify(all)) } catch { /* التخزين المحلي اختياري */ }
-}
 
 let loading: Promise<void> | null = null
 function loadEngine(): Promise<void> {
@@ -45,7 +38,7 @@ function loadEngine(): Promise<void> {
       const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = '/monteur/monteur.css'; link.dataset.monteur = '1'; document.head.appendChild(link)
     }
     const script = document.createElement('script'); script.src = '/monteur/monteur.js'; script.async = true
-    script.onload = () => resolve(); script.onerror = () => reject(new Error('تعذّر تحميل محرّك المونتير'))
+    script.onload = () => resolve(); script.onerror = () => { loading = null; script.remove(); reject(new Error('تعذّر تحميل محرّك المونتير')) }
     document.head.appendChild(script)
   })
   return loading
@@ -61,6 +54,12 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
   const [slug, setSlug] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [projects, setProjects] = useState<Record<string, MonteurProject>>({})
+
+  useEffect(() => {
+    if (!user) { setProjects({}); return }
+    return watchMonteurProjects(setProjects, () => setMessage('تعذّر تحميل المكتبة السحابية؛ تحقق من الاتصال والصلاحيات.'))
+  }, [user])
 
   useEffect(() => { void loadArticleBodies().then((map) => setBodies(map as Record<string, string>)).catch(() => undefined) }, [])
 
@@ -72,13 +71,17 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
     void loadEngine().then(() => {
       if (cancelled || !host.current || !window.Monteur || api.current) return
       api.current = window.Monteur.mount(host.current, { embedded: true })
-      Object.entries(readSavedPlans()).forEach(([s, plan]) => api.current?.addPlan(s, plan))
       setReady(true)
     }).catch((error) => setMessage(error instanceof Error ? error.message : 'تعذّر تحميل المحرّك'))
     return () => { cancelled = true; api.current?.unmount(); api.current = null }
   }, [])
 
-  useEffect(() => { if (ready && articles.length) api.current?.setArticles(articles.map((a) => ({ s: a.slug, t: a.title, c: a.cat, b: a.body }))) }, [ready, articles])
+  useEffect(() => {
+    if (!ready) return
+    const saved = Object.entries(projects).filter(([s]) => !articles.some((a) => a.slug === s)).map(([s, p]) => ({ s, t: p.title || 'مشروع محفوظ', c: p.category || '', b: p.body || '' }))
+    api.current?.setArticles([...articles.map((a) => ({ s: a.slug, t: a.title, c: a.cat, b: a.body })), ...saved])
+    Object.entries(projects).forEach(([s, p]) => api.current?.addPlan(s, p.plan))
+  }, [ready, articles, projects])
 
   const generateFromText = useCallback(() => {
     const text = `${title.trim()}\n\n${body.trim()}`.trim()
@@ -105,7 +108,8 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
       const data = await response.json().catch(() => null) as { plan?: Plan; error?: string } | null
       if (!response.ok || !data?.plan) throw new Error(data?.error || `تعذّر الاتصال (${response.status})`)
       const key = article ? article.slug : `free-${Date.now()}`
-      savePlan(key, data.plan)
+      await saveMonteurProject(key, { plan: data.plan, title: titleText, body: text, category: article?.cat || '', source: 'ai', sourceHash: await monteurSourceHash(text) })
+      setSlug(key)
       api.current?.addPlan(key, data.plan)
       if (!article) { api.current?.setArticles([...articles.map((a) => ({ s: a.slug, t: a.title, c: a.cat, b: a.body })), { s: key, t: titleText || 'نص جديد', c: '', b: text }]); api.current?.open(key) }
       setMessage(`جاهزة: ${arabicCountPhrase(data.plan.scenes.length, REEL_SCENE_FORMS)} مطابقة للمعنى — تُعرض الآن.`)
@@ -120,7 +124,8 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
         <button type="button" className={primary} disabled={!ready} onClick={generateFromText}>ولّد الفيديو من النص أعلاه</button>
         <select className={select} value={slug} onChange={(event) => openArticle(event.target.value)} aria-label="أو اختر مقالة من الموقع" disabled={!ready}>
           <option value="">— أو اختر مقالة من الموقع —</option>
-          {articles.map((a) => <option key={a.slug} value={a.slug}>{a.title}{a.cat ? ` · ${a.cat}` : ''}</option>)}
+          {articles.map((a) => <option key={a.slug} value={a.slug}>{projects[a.slug]?.source === 'ai' ? '★ ' : ''}{a.title}{a.cat ? ` · ${a.cat}` : ''}</option>)}
+          {Object.entries(projects).filter(([s]) => !articles.some((a) => a.slug === s)).map(([s, p]) => <option key={s} value={s}>★ {p.title || 'مشروع محفوظ'}</option>)}
         </select>
         <button type="button" className={ghost} disabled={!ready || busy} onClick={() => void storyboard()}>{busy ? 'يبني…' : 'لوحة بالذكاء'}</button>
         <button type="button" className={ghost} disabled={!ready} onClick={() => api.current?.play()}>تشغيل</button>

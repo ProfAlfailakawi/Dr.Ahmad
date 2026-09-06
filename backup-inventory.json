@@ -18,7 +18,7 @@
       "analytics_events", "article_highlight_members", "article_highlights",
       "article_quote_counts", "article_quote_votes", "automation_state", "bot_messages",
       "content_history", "content_overrides", "control_center_incidents", "cv_overrides",
-      "journeys", "messages", "myspace_sync", "newsletter_deliveries", "newsletter_sends",
+      "journeys", "messages", "monteur_plans", "myspace_sync", "newsletter_deliveries", "newsletter_sends",
       "passage_highlights", "podcast_dialogues", "podcast_dialogues_kw", "podcast_production",
       "podcast_production_kw", "pronunciation_lexicon",
       "pronunciation_pending", "site_articles", "site_books", "site_cv_files", "site_faqs",

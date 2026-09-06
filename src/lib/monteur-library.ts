@@ -2,15 +2,15 @@ import { getDb } from './firebase'
 
 export type MonteurScene = {
   t: string; src: string; prop?: string; l1: string[]; l2: string[]; em: number; ann: string
-  photo?: string; focus?: string; locked?: boolean; value?: number; items?: string[]; steps?: string[]
+  photo?: string; photoOff?: boolean; focus?: string; locked?: boolean; value?: number; items?: string[]; steps?: string[]
 }
 export type MonteurPlan = {
   theme: string; trio: string[]; quote: string; scenes: MonteurScene[]
-  opening?: string; narrative?: string; generated?: boolean
+  opening?: string; narrative?: string; generated?: boolean; hero?: string; coverPhoto?: string; coverFocus?: string
 }
 export type MonteurProject = {
   plan: MonteurPlan; title: string; body: string; category: string; source: 'ai' | 'curated'
-  sourceHash: string; revision: number; history: { plan: MonteurPlan; savedAt: string }[]
+  sourceHash: string; revision: number; history: { plan: MonteurPlan; savedAt: string; body?: string; title?: string }[]
 }
 
 export async function monteurSourceHash(text: string) {
@@ -57,7 +57,7 @@ export async function saveMonteurProject(slug: string, project: Omit<MonteurProj
     if (expectedRevision !== undefined && (old?.revision || 0) !== expectedRevision) {
       throw new Error('تغيّرت اللوحة في جلسة أخرى؛ افتح أحدث نسخة قبل الحفظ.')
     }
-    const history = old?.plan ? [...(old.history || []), { plan: old.plan, savedAt: new Date().toISOString() }].slice(-8) : []
+    const history = old?.plan ? [...(old.history || []), { plan: old.plan, body: old.body || "", title: old.title || "", savedAt: new Date().toISOString() }].slice(-8) : []
     transaction.set(ref, {
       ...JSON.parse(JSON.stringify(project)), history, revision: (old?.revision || 0) + 1,
       createdAt: old?.createdAt || serverTimestamp(), updatedAt: serverTimestamp(),

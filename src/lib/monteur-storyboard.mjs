@@ -139,3 +139,70 @@ export function acceptStoryboard(raw, body = '') {
   }
   return out
 }
+
+const PROP_HINTS = [
+  ['خصوص|أمن|حما|بيانات', 'shield'], ['أخلاق|عدل|حوكم|مسؤول', 'scale'], ['ذكاء|خوارزم|آلة', 'humanai'],
+  ['معلم|تدريس|صف', 'teacherai'], ['تعلم|تعليم|منهج', 'knowledgebridge'], ['تقويم|تقييم|اختبار', 'assessment'],
+  ['بحث|دليل|تحقق|استقص', 'researchquestion'], ['سؤال|لماذا|كيف', 'question'], ['لعب|تلعيب|نقاط', 'gamedesign'],
+  ['واقع افتراضي|واقع معزز|غامر', 'vrlearning'], ['أسرة|والد|طفل', 'digitalparent'], ['إعلام|خبر|محتوى', 'medialiteracy'],
+  ['تصميم|ابتكار|إبداع', 'designthinking'], ['تعاون|فريق|شراكة', 'teamlearning'], ['مستقبل|تحول|انطلاق', 'rocket'],
+]
+
+function sourceUnits(body) {
+  const compact = String(body || '').replace(/\r/g, '').trim()
+  const units = compact.split(/(?:\n\s*\n+|(?<=[.!؟…])\s+)/u)
+    .map((value) => value.trim()).filter((value) => tok(value).length >= 3)
+  const clauses = units.flatMap((unit) => {
+    if (tok(unit).length <= 32) return [unit]
+    return unit.split(/[،؛:]/).map((value) => value.trim()).filter((value) => tok(value).length >= 3 && tok(value).length <= 32)
+  })
+  if (clauses.length >= 4 || tok(compact).length < 12) return clauses
+  // Dense articles sometimes use one long paragraph. Build contiguous verbal
+  // windows so the editor still receives a visual rhythm of at least four beats.
+  const sourceWords = originalWords(compact)
+  const size = Math.max(3, Math.ceil(sourceWords.length / 4))
+  const windows = Array.from({ length: 4 }, (_, index) => sourceWords.slice(index * size, (index + 1) * size).join(' ')).filter((value) => tok(value).length >= 2)
+  return [...clauses, ...windows].filter((value, index, all) => all.findIndex((item) => normalize(item) === normalize(value)) === index)
+}
+
+function propForSource(src, used) {
+  const normalized = normalize(src)
+  for (const [pattern, prop] of PROP_HINTS) {
+    if (new RegExp(pattern).test(normalized) && !used.has(prop)) return prop
+  }
+  return MONTEUR_PROPS.find((prop) => !used.has(prop)) || 'book'
+}
+
+function headlineForSource(src) {
+  const sourceWords = originalWords(src)
+  const chosen = sourceWords.slice(0, 6)
+  const negation = sourceWords.find((word) => ['لا', 'ليس', 'ليست', 'لن', 'لم'].includes(normalize(word)))
+  if (negation && !chosen.some((word) => normalize(word) === normalize(negation))) chosen[0] = negation
+  const pivot = Math.max(1, Math.ceil(chosen.length / 2))
+  return [chosen.slice(0, pivot), chosen.slice(pivot)]
+}
+
+/**
+ * Gemini may understand the article but paraphrase `src` or omit a required field.
+ * Keep every strictly valid scene, then complete the reel from verbatim source units.
+ * This turns a formatting miss into a usable draft without ever manufacturing a claim.
+ */
+export function completeStoryboard(raw, body = '', minimum = 6, maximum = 8) {
+  const out = acceptStoryboard(raw, body)
+  const usedSources = new Set(out.scenes.map((scene) => normalize(scene.src)))
+  const usedProps = new Set(out.scenes.map((scene) => scene.prop).filter(Boolean))
+  const candidates = sourceUnits(body)
+  for (const src of candidates) {
+    if (out.scenes.length >= Math.min(maximum, Math.max(minimum, candidates.length))) break
+    if (usedSources.has(normalize(src))) continue
+    const [l1, l2] = headlineForSource(src)
+    if (!l1.length || !l2.length) continue
+    const prop = propForSource(src, usedProps)
+    const words = [...l1, ...l2]
+    const negationIndex = words.findIndex((word) => ['لا', 'ليس', 'ليست', 'لن', 'لم'].includes(normalize(word)))
+    out.scenes.push({ t: 'metaphor', prop, src, l1, l2, em: negationIndex >= 0 ? negationIndex : words.length - 1, ann: negationIndex >= 0 ? 'cross' : 'under' })
+    usedSources.add(normalize(src)); usedProps.add(prop)
+  }
+  if (!out.opening && out.scenes[0]) out.opening = [...out.scenes[0].l1, ...out.scenes[0].l2].slice(0, 6).join(' ')
+  return out
+}

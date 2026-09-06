@@ -15,7 +15,7 @@ import { buildMultimodalMeaningCourt } from './src/lib/semantic-court.mjs'
 import { cleanResearchSample } from './src/lib/research-sample.mjs'
 import { labelPassages, pickCorpusPassages, reelCorpus } from './src/server/reel-corpus.mjs'
 import { INVENTION_PROPERTIES, INVENTION_REQUIRED, acceptInventedScenes, conceptsInText, inventionInstruction, inventionPrompt } from './src/lib/reel-invention.mjs'
-import { STORYBOARD_PROPERTIES, STORYBOARD_REQUIRED, acceptStoryboard, sourceContains, storyboardInstruction, storyboardPrompt } from './src/lib/monteur-storyboard.mjs'
+import { STORYBOARD_PROPERTIES, STORYBOARD_REQUIRED, completeStoryboard, sourceContains, storyboardInstruction, storyboardPrompt } from './src/lib/monteur-storyboard.mjs'
 import { getEncyclopediaTranscriptProgress, loadEncyclopediaVideoCatalog, loadEncyclopediaVideoMoment, scheduleEncyclopediaTranscriptWarmup, searchEncyclopediaVideoMoments } from './src/server/encyclopedia-videos.mjs'
 
 // Node لا يقرأ .env تلقائياً. نحمّله محلياً فقط، من دون استبدال متغيرات بيئة النشر.
@@ -6081,7 +6081,10 @@ export function createRequestHandler({
           maxOutputTokens: 4_096,
           temperature: .35,
         })
-        const plan = acceptStoryboard(raw, articleBody)
+        // Recover from structurally imperfect model output using verbatim source
+        // sentences. The model still directs the valid scenes; the source safely
+        // completes the reel instead of sending the editor into a retry loop.
+        const plan = completeStoryboard(raw, sceneSrc || articleBody, sceneSrc ? 1 : 6, sceneSrc ? 1 : 8)
         if (plan.scenes.length < (sceneSrc ? 1 : 4)) throw new HttpError(502, 'لم تخرج لوحة كافية مطابقة للمصدر — أعد المحاولة')
         sendJson(res, 200, { plan: { ...plan, generated: topicMode }, body: articleBody, generated: topicMode })
         return

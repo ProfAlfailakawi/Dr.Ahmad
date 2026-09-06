@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { acceptStoryboard, sourceContains, orderedSourceWords, safeMonteurPhoto, MONTEUR_PROPS } from '../src/lib/monteur-storyboard.mjs'
+import { acceptStoryboard, completeStoryboard, sourceContains, orderedSourceWords, safeMonteurPhoto, MONTEUR_PROPS } from '../src/lib/monteur-storyboard.mjs'
 
 const src = 'المعلم يدمج التكنولوجيا في التعليم ليصنع تجربة تعلم ذات معنى.'
 const scene = { t: 'metaphor', prop: 'teacherai', src, l1: ['المعلم', 'يدمج'], l2: ['التكنولوجيا', 'في', 'التعليم'], em: 0, ann: 'under' }
@@ -25,4 +25,19 @@ assert.equal(safeMonteurPhoto('/covers/monteur-learning.png'), '/covers/monteur-
 for (const url of ['https://other.example/x.jpg', '/covers/../secret.png', '/covers/a.png" onload="alert(1)', '/portrait.jpg', 'javascript:alert(1)']) assert.equal(safeMonteurPhoto(url), '')
 assert.equal(MONTEUR_PROPS.length, 72)
 assert.equal(new Set(MONTEUR_PROPS).size, 72)
+const article = [
+  'المعلم يدمج التكنولوجيا في التعليم ليصنع تجربة تعلم ذات معنى.',
+  'لا تحل الخوارزمية محل القرار التربوي المسؤول.',
+  'تحمي الحوكمة بيانات المتعلمين وخصوصيتهم.',
+  'يبدأ التصميم بسؤال واضح عن حاجة المتعلم.',
+  'يكشف التقويم أثر التجربة في التعلم.',
+  'وتبقى التقنية جسراً يخدم الإنسان.',
+].join('\n\n')
+const recovered = completeStoryboard({ theme: 'ai', trio: [], quote: '', scenes: [{ ...scene, src: 'صياغة اخترعها النموذج وليست في المصدر' }] }, article)
+assert.equal(recovered.scenes.length, 6, 'complete a malformed model response from source units')
+assert.ok(recovered.scenes.every((item) => sourceContains(article, item.src)), 'every recovered source is verbatim')
+assert.equal(new Set(recovered.scenes.map((item) => item.prop)).size, recovered.scenes.length, 'recovered metaphors stay diverse')
+assert.ok(recovered.scenes.find((item) => item.src.startsWith('لا تحل'))?.l1.includes('لا'), 'recovered headline preserves negation')
+const dense = 'يضع المعلم الإنسان في قلب التقنية ويبدأ من حاجة المتعلم ثم يختار الأداة المناسبة ويقيس أثرها في الفهم ويعيد تصميم التجربة على ضوء الدليل التربوي.'
+assert.ok(completeStoryboard({ theme: 'edtech', scenes: [] }, dense, 4).scenes.length >= 4, 'a dense single paragraph still becomes a complete reel')
 console.log('Monteur contract: Source integrity, numeric, ordering, negation, photo and specialist-vocabulary assertions passed.')

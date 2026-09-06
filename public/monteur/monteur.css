@@ -302,6 +302,34 @@ textarea:focus{border-color:var(--accent)}
 .monteur-root .chrome .bot,.monteur-root .story-thread{display:none}
 .monteur-root .scene .h2l .l2{color:var(--si)}
 
+/* Fourteen visibly distinct compositions for every specialist symbol. */
+.monteur-root [class*="icon-v-"]{position:relative;isolation:isolate;border-radius:28%;overflow:visible}
+.monteur-root [class*="icon-v-"]::before,.monteur-root [class*="icon-v-"]::after{content:"";position:absolute;inset:3%;border-radius:inherit;pointer-events:none;z-index:-1}
+.monteur-root .icon-v-halo::before{background:radial-gradient(circle,var(--se) 0 8%,transparent 58%);filter:blur(13px);opacity:.7}
+.monteur-root .icon-v-orbit::before{inset:-8%;border:1px solid color-mix(in srgb,var(--se) 65%,transparent);border-radius:50%;transform:rotate(-18deg) scaleY(.62)}
+.monteur-root .icon-v-orbit::after{inset:8%;border:1px dashed color-mix(in srgb,var(--si) 45%,transparent);border-radius:50%;transform:rotate(36deg) scaleX(.68)}
+.monteur-root .icon-v-portal::before{inset:-4%;border:clamp(4px,1.8cqw,11px) double color-mix(in srgb,var(--se) 72%,transparent);border-radius:48% 48% 12% 12%}
+.monteur-root .icon-v-stage::before{inset:68% -12% -8%;background:radial-gradient(ellipse,var(--se),transparent 68%);filter:blur(6px);transform:perspective(200px) rotateX(65deg)}
+.monteur-root .icon-v-glass::before{inset:-5%;background:linear-gradient(145deg,#fff3,transparent 45%,var(--se) 160%);border:1px solid #fff5;box-shadow:inset 0 0 30px #fff2,0 18px 45px #0002;backdrop-filter:blur(4px)}
+.monteur-root .icon-v-stamp::before{inset:-2%;border:3px solid currentColor;border-radius:18%;box-shadow:7px 7px 0 color-mix(in srgb,var(--se) 65%,transparent);transform:rotate(-3deg)}
+.monteur-root .icon-v-split::before{inset:-5%;background:linear-gradient(90deg,color-mix(in srgb,var(--se) 22%,transparent) 0 48%,transparent 48% 52%,color-mix(in srgb,var(--si) 12%,transparent) 52%);border-radius:50%}
+.monteur-root .icon-v-focus::before{inset:-7%;border:2px solid var(--se);border-radius:50%;clip-path:polygon(0 0,38% 0,38% 4%,62% 4%,62% 0,100% 0,100% 38%,96% 38%,96% 62%,100% 62%,100% 100%,62% 100%,62% 96%,38% 96%,38% 100%,0 100%,0 62%,4% 62%,4% 38%,0 38%)}
+.monteur-root .icon-v-pulse::before{inset:-2%;border:2px solid var(--se);border-radius:50%;animation:iconPulse 2.6s ease-out infinite}
+.monteur-root .icon-v-rays::before{inset:-18%;background:repeating-conic-gradient(from 5deg,color-mix(in srgb,var(--se) 38%,transparent) 0 2deg,transparent 2deg 18deg);mask:radial-gradient(circle,transparent 0 53%,#000 55%)}
+.monteur-root .icon-v-grid::before{inset:-7%;background-image:linear-gradient(#fff1 1px,transparent 1px),linear-gradient(90deg,#fff1 1px,transparent 1px);background-size:14% 14%;border:1px solid #fff2;border-radius:12%}
+.monteur-root .icon-v-echo::before{inset:2%;border:2px solid var(--se);border-radius:50%;box-shadow:0 0 0 12px #fff1,0 0 0 25px color-mix(in srgb,var(--se) 12%,transparent)}
+.monteur-root .icon-v-tilt>svg{transform:perspective(500px) rotateY(-17deg) rotateX(7deg);filter:drop-shadow(18px 12px 9px #0004)}
+.monteur-root .tile-symbol[class*="icon-v-"]::before,.monteur-root .tile-symbol[class*="icon-v-"]::after{inset:7%}
+@keyframes iconPulse{0%{transform:scale(.82);opacity:.75}70%,100%{transform:scale(1.24);opacity:0}}
+
+/* The same UI/data scene receives one of six editorial surfaces. */
+.monteur-root .surface-v-paper .ui,.monteur-root .surface-v-paper .ig{filter:drop-shadow(9px 13px 0 color-mix(in srgb,var(--se) 22%,transparent));transform:rotate(-1deg)}
+.monteur-root .surface-v-glass .ui,.monteur-root .surface-v-glass .ig{border:1px solid #fff5;background:linear-gradient(145deg,#fff2,transparent);box-shadow:inset 0 1px #fff6,0 22px 44px #0003;backdrop-filter:blur(8px)}
+.monteur-root .surface-v-blueprint .ui,.monteur-root .surface-v-blueprint .ig{background-image:linear-gradient(#5ba8ff17 1px,transparent 1px),linear-gradient(90deg,#5ba8ff17 1px,transparent 1px);background-size:18px 18px;border:1px solid #5ba8ff55}
+.monteur-root .surface-v-cinema .ui,.monteur-root .surface-v-cinema .ig{box-shadow:0 28px 75px #0008;border-radius:5px;transform:perspective(600px) rotateY(-4deg)}
+.monteur-root .surface-v-gallery .ui,.monteur-root .surface-v-gallery .ig{border:clamp(5px,1.6cqw,10px) solid #f7f1e5;outline:1px solid #0002;box-shadow:0 20px 35px #0003}
+.monteur-root .surface-v-signal .ui,.monteur-root .surface-v-signal .ig{box-shadow:0 0 0 1px var(--se),0 0 38px color-mix(in srgb,var(--se) 35%,transparent);border-radius:22px}
+
 .monteur-root .screen.square .scene{padding:12% 8% 10%;gap:3cqw}
 .monteur-root .screen.square .scene .prop{width:29cqw;height:29cqw;flex-shrink:0}
 .monteur-root .screen.square .scene .h2l{font-size:6.2cqw;line-height:1.35}

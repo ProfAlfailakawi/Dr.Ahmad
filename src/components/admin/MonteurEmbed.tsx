@@ -139,6 +139,7 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
       if (!response.ok || !data?.plan) throw new Error(data?.error || `تعذّر الاتصال (${response.status})`)
       const previous = !topicMode ? api.current?.project() : null
       if (previous?.slug === slug) previous.plan.scenes.forEach((scene, index) => { if (scene.locked && data.plan && index < data.plan.scenes.length) data.plan.scenes[index] = scene })
+      data.plan.visualRevision = (previous?.plan.visualRevision || 0) + 1
       const next: Draft = { slug: topicMode ? `free-${crypto.randomUUID()}` : slug || `free-${crypto.randomUUID()}`, title: titleText, body: data.body || text, plan: data.plan }
       showDraft(next); markDirty(true)
       await saveDraft(next)
@@ -159,7 +160,7 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
       if (!response.ok || !data.plan?.scenes[0]) throw new Error(data.error || 'تعذّر تجديد المشهد')
       // A delayed response must never modify a different project opened meanwhile.
       if (api.current?.project().slug !== active.slug || api.current?.project().plan.scenes[index]?.src !== scene.src) return
-      api.current?.replaceScene(index, { ...data.plan.scenes[0], photo: scene.photo, focus: scene.focus })
+      api.current?.replaceScene(index, { ...data.plan.scenes[0], photo: scene.photo, focus: scene.focus, iconVariant: scene.iconVariant })
       setMessage('تجدّد المشهد؛ بقية اللقطات محفوظة في المعاينة.')
     } catch (e) { setMessage(e instanceof Error ? e.message : 'تعذّر تجديد المشهد') }
     finally { setBusy(false) }

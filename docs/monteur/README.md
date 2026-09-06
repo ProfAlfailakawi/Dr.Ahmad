@@ -42,6 +42,27 @@ Mode: image generation using the built-in image tool; no reference portrait supp
 
 These are conceptual illustrations rendered with photographic materials, not documentary photographs. Existing book cover assets remain the original source imagery.
 
+## Visual vault expansion
+
+- 72 meaning-matched specialist symbols now have 14 distinct compositions and motion signatures: 1,008 selectable icon treatments. Only 18 are mounted at once for performance.
+- The engine assigns non-repeating icon compositions within a video, rejects a duplicate manual composition, and persists the chosen composition in the Firestore plan.
+- Six editorial surfaces vary mini UI and infographic scenes. Consecutive chapters never use the same surface.
+- Nineteen source images are available: ten conceptual images and nine book covers. Automatic and manual selection prevent the same image from appearing twice in one video.
+- `visualRevision` changes the unpinned visual direction on a full regeneration while locked scenes retain their chosen assets.
+
+Eight new project-bound images were generated with the built-in image tool in `photorealistic-natural` mode and stored as compressed WebP files: teacher/AI architectural portal, digital-parenting overhead still life, immersive classroom, media-literacy macro lens, inclusive-learning model, cinematic gamification path, learning-analytics glass landscape, and creative-classroom suspended still life. Every prompt required a vertical editorial composition, useful caption space, no people, no faces, no portraits, no readable text, no logo, and no watermark. The source PNGs remain in the image tool's generated-images directory; the site consumes the following workspace assets:
+
+```text
+covers/monteur-teacher-ai.webp
+covers/monteur-digital-parenting.webp
+covers/monteur-immersive-learning.webp
+covers/monteur-media-literacy.webp
+covers/monteur-inclusive-learning.webp
+covers/monteur-gamification.webp
+covers/monteur-learning-analytics.webp
+covers/monteur-creative-classroom.webp
+```
+
 ## Typography and composition review
 
 Removed the television-program counter from the fallback credits. Arabic labels now use normal letter spacing, including entrance animations. Supporting headline lines remain at full foreground contrast during reveal. Repeated bottom progress and circular chapter indicators are hidden; the preview retains its top progress bar. Square exports use a dedicated symbol/text scale.

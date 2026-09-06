@@ -258,6 +258,23 @@ textarea:focus{border-color:var(--accent)}
 .monteur-root .icon-family-head button{border:0;background:#eef3f8;color:var(--accent);border-radius:8px;padding:6px 9px;font:inherit;cursor:pointer}
 .monteur-root .icon-family-head small{margin-inline-start:auto;color:var(--soft);font-weight:400}
 .monteur-root .visual-tile.family-tile{border-radius:14px;background:linear-gradient(145deg,#fff,#f5f7f9)}
+
+/* المخرج البصري: توقيع نادر، تبديل المقاييس، وفحص جودة مختصر. */
+.signature-moment{position:absolute;z-index:2;inset:20% 10%;display:grid;place-items:center;pointer-events:none;opacity:0;color:var(--se)}
+.signature-moment b{font:700 clamp(3rem,20cqw,7rem)/1 "El Messiri";text-shadow:0 0 45px color-mix(in srgb,var(--se) 72%,transparent);opacity:.34}
+.signature-moment i{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--se);box-shadow:0 0 24px var(--se)}
+.sig-data-rain{background:repeating-linear-gradient(90deg,transparent 0 13%,color-mix(in srgb,var(--se) 10%,transparent) 13.5% 14%,transparent 14.5% 20%)}
+.sig-world-split::before{content:"";position:absolute;inset:-30% 49%;width:2px;background:linear-gradient(transparent,var(--se),transparent);box-shadow:0 0 34px var(--se)}
+.sig-learning-path::after{content:"";position:absolute;width:68%;height:42%;border:2px solid var(--se);border-inline-start:0;border-bottom:0;border-radius:50%;transform:rotate(-15deg);opacity:.42}
+.scene[data-shot="macro"] .prop{width:min(68%,280px);transform-origin:center}.scene[data-shot="wide"] .prop{width:min(48%,205px)}
+.scene[data-shot="abstract"] .prop{filter:drop-shadow(0 0 36px color-mix(in srgb,var(--se) 45%,transparent))}
+.scene[data-visual-mode="photo"] .prop{width:min(42%,170px);padding:10px;border-radius:50%;background:color-mix(in srgb,var(--sg) 66%,transparent);backdrop-filter:blur(9px)}
+.scene[data-visual-mode="book"] .artc{object-fit:contain;padding:9%;filter:drop-shadow(0 28px 35px rgba(0,0,0,.5))}
+.scene[data-visual-mode="type"] .h2l{font-size:clamp(2rem,11cqw,3.5rem)}
+.quality-card .section-caption strong{font-family:"El Messiri";font-size:1rem;color:var(--ink)}
+.quality-meter{height:6px;border-radius:999px;background:#e8ebef;overflow:hidden}.quality-meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#55738f,#b57238);transition:width .6s ease}
+.quality-card p{margin:10px 0;color:var(--soft);font-size:.72rem;line-height:1.7}
+.quality-card button{width:100%;border:1px solid var(--hair);border-radius:9px;padding:9px;background:#fff;color:var(--accent);font:700 .76rem "Tajawal";cursor:pointer}
 .monteur-root .visual-tile.family-tile:hover{border-color:var(--accent);transform:translateY(-2px)}
 .monteur-root .timeline{max-height:340px;overflow:auto}
 .monteur-root .timeline li{cursor:pointer;border-radius:8px}

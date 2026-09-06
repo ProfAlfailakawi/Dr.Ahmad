@@ -8,17 +8,20 @@
  */
 
 export const MONTEUR_PROPS = [
+  'teacherai', 'learninganalytics', 'digitalcitizen', 'feedback', 'critical', 'inclusive', 'adaptive', 'medialiteracy', 'digitalparent', 'privacy', 'creativeclass', 'gamedesign', 'vrlearning', 'researchquestion', 'assessment', 'lifelong', 'knowledgebridge', 'humanai', 'digitaldivide', 'designthinking', 'studentvoice', 'inquiry', 'teamlearning', 'selflearning',
   'neural', 'robot', 'chip', 'data', 'shield', 'scale', 'lms', 'screen', 'board', 'school', 'gamepad', 'trophy',
   'headset', 'access', 'rocket', 'gear', 'flask', 'atom', 'maker', 'blueprint', 'target', 'puzzle', 'network', 'bulb',
   'brain', 'stairs', 'ladder', 'compass', 'hands', 'family', 'heart', 'chat', 'arabesque', 'globe', 'mic', 'news',
   'magnifier', 'chart', 'book', 'clock', 'hourglass', 'calendar', 'roots', 'seed', 'key', 'door', 'question', 'cross',
 ]
 export const MONTEUR_THEMES = ['ai', 'edtech', 'govern', 'elearn', 'smart', 'game', 'xr', 'assist', 'digital', 'stem', 'design', 'skills', 'lead', 'parent', 'society', 'media', 'research', 'read']
-const PROP_MEANINGS = 'neural(شبكة عصبية/تعلم آلي) robot(روبوت/آلة/أتمتة) chip(معالج/حوسبة/سحابة) data(بيانات/معلومات) shield(حماية/خصوصية/أمن/حوكمة) scale(ميزان/عدل/أخلاق/موازنة) lms(منصة تعلم/عن بعد) screen(شاشة/هاتف/تطبيق) board(سبورة/فصل/معلم/شرح) school(مدرسة/مؤسسة) gamepad(تلعيب/ألعاب/نقاط) trophy(فوز/إنجاز/تفوق) headset(واقع افتراضي/معزز/غمر) access(إتاحة/ذوي الاحتياجات/دمج) rocket(انطلاق/تسريع/تحول/مستقبل) gear(نظام/آلية/منظومة) flask(تجربة/بحث/مختبر) atom(علوم/طاقة/STEM) maker(صناعة/ورشة/بناء يدوي) blueprint(تصميم/خطة/مخطط) target(هدف/غاية/تركيز) puzzle(حل مشكلات/تركيب/تكامل) network(تعاون/تواصل/شبكة علاقات) bulb(فكرة/إبداع/إلهام) brain(تفكير/عقل/ذاكرة/انتباه) stairs(خطوات/مراحل/تعثر) ladder(ترقّي/صعود/تقدم) compass(رؤية/اتجاه/قيادة/قرار) hands(شراكة/تفويض/تكاتف) family(أسرة/أب/أم/طفل) heart(حب/مشاعر/احتواء/دفء) chat(حوار/محادثة/إصغاء) arabesque(هوية/ثقافة/تراث/لغة) globe(عالم/عالمي/دول) mic(إعلام/تلفزيون/صوت/بودكاست) news(صحافة/مقال/خبر/محتوى) magnifier(بحث/تحليل/تدقيق/تقييم) chart(نتائج/نمو/مقارنة/أداء) book(كتاب/قراءة/مكتبة/نص) clock(وقت/ساعة/زمن/سنوات) hourglass(انتظار/صبر/مهلة/تأخير/بطء) calendar(تاريخ/موعد/أمس/غد/شهر) roots(سبب جذري/أصل/أساس) seed(زرع/نمو/تنشئة/ثمرة) key(مفتاح/سر/حل) door(باب/فرصة/بداية) question(سؤال/لماذا/كيف/غموض) cross(نفي/خطأ/وهم/خرافة)'
+const PROP_MEANINGS = 'teacherai(المعلم والذكاء) learninganalytics(تحليل التعلّم) digitalcitizen(المواطنة الرقمية) feedback(تغذية راجعة) critical(تفكير ناقد) inclusive(تعلّم دامج) adaptive(تعلّم تكيفي) medialiteracy(وعي إعلامي) digitalparent(تربية رقمية) privacy(خصوصية البيانات) creativeclass(صف مبدع) gamedesign(تصميم الألعاب) vrlearning(تعلّم غامر) researchquestion(سؤال البحث) assessment(تقويم عادل) lifelong(تعلّم مستمر) knowledgebridge(جسر المعرفة) humanai(الإنسان والآلة) digitaldivide(الفجوة الرقمية) designthinking(تفكير تصميمي) studentvoice(صوت المتعلّم) inquiry(استقصاء) teamlearning(تعلّم تعاوني) selflearning(تعلّم ذاتي) neural(شبكة عصبية/تعلم آلي) robot(روبوت/آلة/أتمتة) chip(معالج/حوسبة/سحابة) data(بيانات/معلومات) shield(حماية/خصوصية/أمن/حوكمة) scale(ميزان/عدل/أخلاق/موازنة) lms(منصة تعلم/عن بعد) screen(شاشة/هاتف/تطبيق) board(سبورة/فصل/معلم/شرح) school(مدرسة/مؤسسة) gamepad(تلعيب/ألعاب/نقاط) trophy(فوز/إنجاز/تفوق) headset(واقع افتراضي/معزز/غمر) access(إتاحة/ذوي الاحتياجات/دمج) rocket(انطلاق/تسريع/تحول/مستقبل) gear(نظام/آلية/منظومة) flask(تجربة/بحث/مختبر) atom(علوم/طاقة/STEM) maker(صناعة/ورشة/بناء يدوي) blueprint(تصميم/خطة/مخطط) target(هدف/غاية/تركيز) puzzle(حل مشكلات/تركيب/تكامل) network(تعاون/تواصل/شبكة علاقات) bulb(فكرة/إبداع/إلهام) brain(تفكير/عقل/ذاكرة/انتباه) stairs(خطوات/مراحل/تعثر) ladder(ترقّي/صعود/تقدم) compass(رؤية/اتجاه/قيادة/قرار) hands(شراكة/تفويض/تكاتف) family(أسرة/أب/أم/طفل) heart(حب/مشاعر/احتواء/دفء) chat(حوار/محادثة/إصغاء) arabesque(هوية/ثقافة/تراث/لغة) globe(عالم/عالمي/دول) mic(إعلام/تلفزيون/صوت/بودكاست) news(صحافة/مقال/خبر/محتوى) magnifier(بحث/تحليل/تدقيق/تقييم) chart(نتائج/نمو/مقارنة/أداء) book(كتاب/قراءة/مكتبة/نص) clock(وقت/ساعة/زمن/سنوات) hourglass(انتظار/صبر/مهلة/تأخير/بطء) calendar(تاريخ/موعد/أمس/غد/شهر) roots(سبب جذري/أصل/أساس) seed(زرع/نمو/تنشئة/ثمرة) key(مفتاح/سر/حل) door(باب/فرصة/بداية) question(سؤال/لماذا/كيف/غموض) cross(نفي/خطأ/وهم/خرافة)'
 
 export const STORYBOARD_PROPERTIES = {
   theme: { type: 'string', description: `one of: ${MONTEUR_THEMES.join(', ')}` },
   trio: { type: 'array', items: { type: 'string' }, description: 'ثلاثة أفعال مضارعة عربية تلخّص موقف المقالة، مثل: يفهم، يوجّه، يحمي' },
+  narrative: { type: 'string', description: 'question | contrast | journey: the rhetorical arc best suited to the meaning' },
+  opening: { type: 'string', description: 'A verbatim phrase from the body, at most 6 words, for the first frame' },
   quote: { type: 'string', description: 'جملة لافتة حرفية من المتن لا تتجاوز ٩ كلمات' },
   scenes: {
     type: 'array',
@@ -28,10 +31,11 @@ export const STORYBOARD_PROPERTIES = {
         t: { type: 'string', description: 'metaphor | counter | list | flow | redirect' },
         prop: { type: 'string', description: `metaphor key from: ${MONTEUR_PROPS.join(' ')}` },
         src: { type: 'string', description: 'الجملة الأصلية حرفياً من المتن، ≤ 28 كلمة' },
-        l1: { type: 'array', items: { type: 'string' }, description: '2–4 كلمات حرفية من src (السطر الأول)' },
-        l2: { type: 'array', items: { type: 'string' }, description: '2–4 كلمات حرفية من src (السطر الثاني)' },
+        l1: { type: 'array', items: { type: 'string' }, description: '1–3 كلمات حرفية من src (السطر الأول)' },
+        l2: { type: 'array', items: { type: 'string' }, description: '1–3 كلمات حرفية من src (السطر الثاني)' },
         em: { type: 'integer', description: 'فهرس الكلمة الأهم عبر l1 ثم l2 (يبدأ من 0)' },
         ann: { type: 'string', description: 'circle (فقط إن كانت الكلمة رقماً) | cross (فقط للنفي) | under | none' },
+        photo: { type: 'string', description: 'Optional existing local /covers/ or /og/ image path supplied in the context. Never invent one.' },
         value: { type: 'number', description: 'للعدّاد فقط: الرقم أو النسبة' },
         items: { type: 'array', items: { type: 'string' }, description: 'للقائمة فقط: 2–4 عبارات حرفية قصيرة' },
         steps: { type: 'array', items: { type: 'string' }, description: 'للتدفق فقط: 2–3 عبارات حرفية' },
@@ -54,63 +58,82 @@ export function storyboardInstruction() {
     '5. em is the 0-based index of the single most important word across l1 then l2. ann is "circle" ONLY if that word contains a digit, "cross" ONLY if it is a negation (ليس/لن/خطأ/وهم), else "under" or "none".',
     '6. theme is one of the listed keys. trio is three Arabic present-tense verbs. quote is a verbatim striking sentence ≤ 9 words (prefer text inside «»).',
     '7. Keep Arabic exactly as written. Output JSON only.',
+    '8. Visual-first: at most 6 words across l1+l2. Preserve negation and meaning. Choose a question, contrast or journey arc. The opening is a short VERBATIM phrase; never invent a quotation, statistic or evidence.',
+    '9. Every counter value and every item/step must occur in src. Preserve reading order and units. Never turn a year or count into a percentage.',
   ].join('\n')
 }
 
 export function storyboardPrompt({ title, category, body }) {
-  return [`العنوان: ${title}`, category ? `تصنيف الموقع: ${category}` : '', 'المتن:', String(body || '').slice(0, 6_000)].filter(Boolean).join('\n')
+  return [`العنوان: ${title}`, category ? `تصنيف الموقع: ${category}` : '', 'المتن:', String(body || '').slice(0, 12_000)].filter(Boolean).join('\n')
 }
 
 const DIGIT = /[0-9٠-٩]/
 const NEG = ['ليس', 'لن', 'خطأ', 'غلط', 'فشل', 'باطل', 'وهم', 'ممنوع', 'خرافة']
-const tok = (s = '') => String(s).replace(/[.،؛:!؟"«»()\-–—]/g, ' ').split(/\s+/).filter(Boolean)
-
-/** يقبل ما وافق العقد ويصلح الصغائر؛ يرفض المشهد المختلَق. */
+const normalize = (s = '') => String(s).normalize('NFC').replace(/[ً-ْـ]/g, '').replace(/\s+/g, ' ').trim()
+const tok = (s = '') => normalize(s).replace(/[.،؛:!؟"«»()\-–—…]/g, ' ').split(/\s+/).filter(Boolean)
+const originalWords = (s = '') => String(s).replace(/[.،؛:!؟"«»()\-–—…]/g, ' ').split(/\s+/).filter(Boolean)
+export function sourceContains(body, excerpt) {
+  const whole = tok(body), part = tok(excerpt)
+  return part.length > 0 && whole.some((_, i) => part.every((word, j) => whole[i + j] === word))
+}
+export function orderedSourceWords(source, words) {
+  const whole = tok(source)
+  let cursor = 0
+  return words.every((word) => {
+    const parts = tok(word)
+    if (parts.length !== 1) return false
+    while (cursor < whole.length && whole[cursor] !== parts[0]) cursor++
+    return cursor++ < whole.length
+  })
+}
+export function safeMonteurPhoto(value) {
+  return typeof value === 'string' && /^\/(?:covers|og)\/[a-zA-Z0-9_-]+\.(?:png|jpe?g|webp|avif)$/.test(value) ? value : ''
+}
+function sourceNumbers(src) {
+  return (String(src).replace(/[٠-٩]/g, (c) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(c))).match(/\d+(?:[.,٫]\d+)?/g) || []).map((n) => Number(n.replace(/[,٫]/g, '.')))
+}
+/** Full-source validation, not prefix matching. Never manufacture a replacement claim. */
 export function acceptStoryboard(raw, body = '') {
-  const out = { theme: MONTEUR_THEMES.includes(raw?.theme) ? raw.theme : 'edtech', trio: [], quote: '', scenes: [] }
+  const out = { theme: MONTEUR_THEMES.includes(raw?.theme) ? raw.theme : 'edtech', trio: [], quote: '', scenes: [], narrative: ['question', 'contrast', 'journey'].includes(raw?.narrative) ? raw.narrative : 'journey', opening: '' }
   out.trio = Array.isArray(raw?.trio) ? raw.trio.map((v) => String(v).trim()).filter(Boolean).slice(0, 3) : []
-  const quote = String(raw?.quote || '').trim()
-  out.quote = quote && tok(quote).length <= 12 ? quote : ''
+  for (const key of ['quote', 'opening']) {
+    const phrase = String(raw?.[key] || '').trim()
+    if (tok(phrase).length <= (key === 'quote' ? 9 : 6) && sourceContains(body, phrase)) out[key] = phrase
+  }
   const used = new Set()
-  const bodyBare = String(body).replace(/\s+/g, ' ')
   for (const s of Array.isArray(raw?.scenes) ? raw.scenes : []) {
     const src = String(s?.src || '').trim()
-    if (!src || tok(src).length > 32) continue
-    /* الجملة يجب أن تكون من المتن (تسامحٌ في التشكيل والمسافات) */
-    const probe = src.replace(/[ً-ْـ]/g, '').replace(/\s+/g, ' ').slice(0, 30)
-    if (probe.length >= 12 && !bodyBare.replace(/[ً-ْـ]/g, '').includes(probe)) continue
-    const srcWords = new Set(tok(src))
-    const l1 = (Array.isArray(s.l1) ? s.l1 : []).map(String).filter((w) => srcWords.has(w)).slice(0, 4)
-    const l2 = (Array.isArray(s.l2) ? s.l2 : []).map(String).filter((w) => srcWords.has(w)).slice(0, 4)
-    if (l1.length + l2.length < 2) continue
-    const n = l1.length + l2.length
-    let em = Number.isInteger(s.em) && s.em >= 0 && s.em < n ? s.em : n - 1
-    const emWord = [...l1, ...l2][em] || ''
+    if (!src || tok(src).length > 32 || !sourceContains(body, src)) continue
+    const l1 = (Array.isArray(s.l1) ? s.l1 : []).map(String).slice(0, 3)
+    const l2 = (Array.isArray(s.l2) ? s.l2 : []).map(String).slice(0, 3)
+    const words = [...l1, ...l2]
+    if (words.length < 2 || !orderedSourceWords(src, words)) continue
+    // A negated claim may not become an affirmative headline.
+    const negations = originalWords(src).filter((w) => ['لا', 'ليس', 'ليست', 'لن', 'لم', 'لست', 'ليسا', 'ليسوا'].includes(normalize(w)))
+    if (negations.some((w) => !words.some((x) => normalize(x) === normalize(w)))) continue
+    const em = Number.isInteger(s.em) && s.em >= 0 && s.em < words.length ? s.em : words.length - 1
+    const emWord = words[em]
     let ann = ['circle', 'cross', 'under', 'none'].includes(s.ann) ? s.ann : 'none'
     if (ann === 'circle' && !DIGIT.test(emWord)) ann = 'under'
-    if (ann === 'cross' && !NEG.some((x) => emWord.startsWith(x))) ann = 'under'
-    let t = ['metaphor', 'counter', 'list', 'flow', 'redirect'].includes(s.t) ? s.t : 'metaphor'
-    let prop = MONTEUR_PROPS.includes(s.prop) && !used.has(s.prop) ? s.prop : null
-    if (t === 'metaphor' && !prop) {
-      prop = MONTEUR_PROPS.find((p) => !used.has(p)) || 'book'
-    }
-    if (prop) used.add(prop)
+    if (ann === 'cross' && !NEG.some((x) => normalize(emWord).startsWith(x))) ann = 'under'
+    const t = ['metaphor', 'counter', 'list', 'flow', 'redirect'].includes(s.t) ? s.t : 'metaphor'
+    const prop = MONTEUR_PROPS.includes(s.prop) ? s.prop : null
+    if (t === 'metaphor' && (!prop || used.has(prop))) continue
     const scene = { t, prop, src, l1, l2, em, ann }
     if (t === 'counter') {
       const value = Number(s.value)
-      if (Number.isFinite(value)) scene.value = value
-      else scene.t = 'metaphor'
+      if (s.value === undefined || s.value === null || !Number.isFinite(value) || !sourceNumbers(src).includes(value)) continue
+      scene.value = value
     }
-    if (t === 'list') {
-      const items = (Array.isArray(s.items) ? s.items : []).map(String).filter(Boolean).slice(0, 4)
-      if (items.length >= 2) scene.items = items
-      else scene.t = 'metaphor'
+    if (t === 'list' || t === 'flow') {
+      const key = t === 'list' ? 'items' : 'steps'
+      const items = (Array.isArray(s[key]) ? s[key] : []).map(String).filter(Boolean).slice(0, t === 'list' ? 4 : 3)
+      if (items.length < 2 || items.some((x) => !sourceContains(src, x)) || !orderedSourceWords(src, items.flatMap(originalWords))) continue
+      scene[key] = items
     }
-    if (t === 'flow') {
-      const steps = (Array.isArray(s.steps) ? s.steps : []).map(String).filter(Boolean).slice(0, 3)
-      if (steps.length >= 2) scene.steps = steps
-      else scene.t = 'metaphor'
-    }
+    const photo = safeMonteurPhoto(s.photo)
+    if (photo) scene.photo = photo
+    if (prop) used.add(prop)
     out.scenes.push(scene)
     if (out.scenes.length >= 8) break
   }

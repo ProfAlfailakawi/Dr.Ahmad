@@ -3,6 +3,8 @@ const BUILD_ID = '__BUILD_ID__'
 const CACHE = `alfailakawi-${BUILD_ID}`
 const CORE = ['/', '/index.html', '/favicon.png', '/icon-192.png', '/icon-512.png', '/maskable-512.png', '/apple-touch-icon.png', '/manifest.webmanifest', '/offline.html']
 const RETIRED_NAVIGATION_PATHS = new Set(['/mylib'])
+/* الأصول المبصومة بهاش في اسمها: assets/Name-a1B2c3D4.js وما شابه. */
+const HASHED = /\/assets\/.+[-.][A-Za-z0-9_]{8,}\.[a-z0-9]+$/i
 
 function retiredPageResponse() {
   return new Response(
@@ -132,7 +134,9 @@ self.addEventListener('fetch', (e) => {
       const cache = await caches.open(CACHE)
       try {
         const preload = e.preloadResponse ? await e.preloadResponse.catch(() => null) : null
-        const response = preload || await fetch(request, { cache: 'no-cache' })
+        /* طلبات التنقل (HTML) دائماً من الشبكة وبـ no-store: الغلاف المخزّن يسمّي
+           حزماً حذفتها النشرة التالية. الكاش احتياطٌ لانقطاع الاتصال لا غير. */
+        const response = preload || await fetch(request, { cache: 'no-store' })
         if (response?.status === 200 && !response.redirected) {
           await cache.put(request, response.clone())
         }
@@ -148,17 +152,23 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // الأصول: الذاكرة أولاً — والتخزين فقط للاستجابات الكاملة (200 لا 206)، وليس الصوت ولا /admin
+  const storeIfFresh = (r) => {
+    if (r && r.status === 200 && !r.redirected && !isAudio && !request.url.includes('/admin')) {
+      const copy = r.clone()
+      caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
+    }
+    return r
+  }
+
+  /* الأصول المبصومة بهاش في اسمها وحدها تُقدَّم من الذاكرة مباشرة: اسمها يتغيّر مع
+     بايتاتها فالنسخة القديمة مستحيلة بالبناء. */
+  if (HASHED.test(pathname)) {
+    e.respondWith(caches.match(request).then((cached) => cached || fetch(request).then(storeIfFresh)))
+    return
+  }
+
+  // ما عداها: الشبكة أولاً، والذاكرة احتياطاً عند انقطاع الاتصال.
   e.respondWith(
-    caches.match(request).then((cached) =>
-      cached ||
-      fetch(request).then((r) => {
-        if (r.status === 200 && !r.redirected && !isAudio && !request.url.includes('/admin')) {
-          const copy = r.clone()
-          caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {})
-        }
-        return r
-      })
-    )
+    fetch(request).then(storeIfFresh).catch(() => caches.match(request).then((cached) => cached || Response.error()))
   )
 })

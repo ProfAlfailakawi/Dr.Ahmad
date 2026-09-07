@@ -1922,7 +1922,12 @@ copyFileSync(firebaseAppletConfig, resolve(DIST, 'firebase-applet-config.json'))
 /* ---------- service worker: إصدار تلقائي + توافق Cloud Run ---------- */
 const sw = resolve(DIST, 'sw.js')
 if (existsSync(sw)) {
-  const id = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 12)
+  /* البصمة الموحّدة التي كتبها scripts/build-stamp.mjs أثناء vite build: عامل الخدمة
+     و/api/version وحزمة الواجهة يجب أن يحملوا المعرّف نفسه، وإلا قارن العميل شيئين
+     مختلفين وظنّ نفسه قديماً إلى الأبد. الطابع الزمني يبقى احتياطاً. */
+  let id = ''
+  try { id = String(JSON.parse(readFileSync(resolve(DIST, 'build-id.json'), 'utf8')).build || '') } catch { id = '' }
+  if (!id) id = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 12)
   const text = readFileSync(sw, 'utf8').replace(/__BUILD_ID__/g, id)
   writeFileSync(sw, text, 'utf8')
 }

@@ -154,6 +154,7 @@ textarea:focus{border-color:var(--accent)}
 .audio-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
 .audio-row button{font-size:.72rem;padding:.4rem .75rem;border-radius:999px;border:1px solid var(--hair);background:transparent;color:var(--soft);cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
 .audio-row button[aria-pressed="true"]{background:var(--ink);color:var(--canvas);border-color:var(--ink)}
+.audio-row select{min-height:34px;max-width:190px;border:1px solid var(--hair);border-radius:999px;background:var(--paper);color:var(--ink);padding:.35rem .7rem;font:inherit;font-size:.7rem;cursor:pointer}
 .audio-row .lbl{font-size:.7rem;color:var(--faint)}
 
 /* ===== صورتك، أغلفتك، عمق 3D، لمعة عدسة ===== */

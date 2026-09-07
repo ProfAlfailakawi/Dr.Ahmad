@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+
+const source = readFileSync(new URL('../public/monteur/monteur.js', import.meta.url), 'utf8')
+const css = readFileSync(new URL('../public/monteur/monteur.css', import.meta.url), 'utf8')
+const energyBody = source.match(/function storyEnergy\(i,total,peak\)\{([^}]+(?:}[^f]|})*)\}\nfunction directStory/)?.[1]
+assert.ok(energyBody, 'story energy function is present')
+const storyEnergy = new Function('i', 'total', 'peak', energyBody)
+const energy = Array.from({ length: 11 }, (_, index) => storyEnergy(index, 11, 6))
+assert.equal(energy[0], 16, 'the opening starts with visual breathing room')
+assert.equal(energy[6], 100, 'the selected climax is the unique maximum')
+assert.equal(energy[10], 28, 'the ending resolves instead of competing with the climax')
+assert.ok(energy.slice(1, 7).every((value, index, values) => index === 0 || value > values[index - 1]), 'energy rises continuously into the climax')
+assert.ok(energy.slice(6).every((value, index, values) => index === 0 || value < values[index - 1]), 'energy releases after the climax')
+assert.match(source, /signatures!==1/, 'quality gate requires one signature climax')
+assert.match(source, /s\.transition===lastTransition/, 'quality gate detects adjacent repeated transitions')
+assert.match(source, /musicLevel=.*s\.tension/s, 'music intensity follows narrative energy')
+assert.match(source, /id=\\"autoDirect\\"/, 'automatic direction repair is visible')
+assert.match(source, /director:function\(\)/, 'browser diagnostics expose the direction result')
+assert.match(css, /\.story-arc i\.peak/, 'the direction map distinguishes the climax')
+console.log('✓ المخرج الإبداعي: تصاعد وذروة واحدة وأثر، مع فحص وإصلاح تلقائي')

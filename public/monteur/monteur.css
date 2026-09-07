@@ -276,6 +276,11 @@ textarea:focus{border-color:var(--accent)}
 .quality-meter{height:6px;border-radius:999px;background:#e8ebef;overflow:hidden}.quality-meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#55738f,#b57238);transition:width .6s ease}
 .quality-card p{margin:10px 0;color:var(--soft);font-size:.72rem;line-height:1.7}
 .quality-card button{width:100%;border:1px solid var(--hair);border-radius:9px;padding:9px;background:#fff;color:var(--accent);font:700 .76rem "Tajawal";cursor:pointer}
+.quality-actions{display:grid;grid-template-columns:1.35fr .8fr;gap:7px}.quality-actions #autoDirect{background:linear-gradient(135deg,#19334b,#b57238);color:#fff;border:0;box-shadow:0 8px 24px #19334b24}
+.story-arc{height:64px;margin:12px 0 4px;display:grid;grid-template-columns:repeat(var(--chapters,12),1fr);align-items:end;gap:3px;position:relative;border-bottom:1px solid #dfe3e9;padding:0 3px 17px}
+.story-arc i{display:block;height:var(--energy);min-height:7px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#7892a8,#d5dde4);position:relative;transition:height .55s cubic-bezier(.2,.8,.2,1)}.story-arc i b{position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,transparent,#ffffff55)}
+.story-arc i.peak{background:linear-gradient(180deg,#f2b36d,#b57238);box-shadow:0 0 15px #b5723866}.story-arc i.peak::before{content:'✦';position:absolute;top:-15px;left:50%;transform:translateX(-50%);color:#b57238;font-size:.66rem}
+.story-arc span,.story-arc strong{position:absolute;bottom:1px;font-size:.55rem;color:var(--soft);font-weight:400}.story-arc span:first-of-type{right:2px}.story-arc span:last-of-type{left:2px}.story-arc strong{left:50%;transform:translateX(-50%);color:#9a5c29;font-weight:700}
 
 /* التحول بين المعاني: الرمز السابق يذوب في بذرة الرمز التالي. */
 .meaning-morph{position:absolute;z-index:2;inset:auto 5% 7% auto;width:34%;aspect-ratio:2.5;display:flex;align-items:center;gap:5%;opacity:.82;pointer-events:none}

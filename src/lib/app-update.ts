@@ -1,12 +1,12 @@
 /*
  * التحديث الذاتي الصامت.
  *
- * المستخدم ليس تقنيًا، ولا يجوز أن يُطلب منه «hard refresh» ولا «امسح الكاش»: هذه صياغة
- * تطلب من إنسان أن يُصلح البرنامج يدويًا. البرنامج هو الذي يُصلح نفسه، بلا إشعار ولا زر.
+ * المستخدم ليس تقنياً، ولا يجوز أن يُطلب منه «hard refresh» ولا «امسح الكاش»: هذه صياغة
+ * تطلب من إنسان أن يُصلح البرنامج يدوياً. البرنامج هو الذي يُصلح نفسه، بلا إشعار ولا زر.
  *
  * أربع طبقات:
  *  1) بصمة إصدار: ثابت `__BUILD_ID__` داخل الحزمة مقابل `GET /api/version` من الخادم.
- *  2) منارة إصدار: نسأل الخادم عند pageshow المستأنَف من الـ bfcache (أكثر الحالات نسيانًا،
+ *  2) منارة إصدار: نسأل الخادم عند pageshow المستأنَف من الـ bfcache (أكثر الحالات نسياناً،
  *     إذ يستأنف كود قديم من الذاكرة بلا شبكة ولا أي حدث)، وعند العودة إلى التبويب، وكل
  *     دقيقتين كشبكة أمان.
  *  3) تحديث صامت ثم تصعيد: update() للعامل ← إفراغ ذاكرة الـ API ← إعادة تحميل واحدة، مع
@@ -48,7 +48,7 @@ let installed = false;
 let lastTypingAt = 0;
 
 /* ------------------------------- تخزين محروس ------------------------------- */
-// التخزين قد يكون محجوبًا (وضع خاص، سياسة متصفح) — لا يجوز أن يُسقط ذلك التحديث كله.
+// التخزين قد يكون محجوباً (وضع خاص، سياسة متصفح) — لا يجوز أن يُسقط ذلك التحديث كله.
 function readLocal(key: string): string | null {
   try { return window.localStorage.getItem(key); } catch { return null; }
 }
@@ -61,8 +61,8 @@ function dropLocal(key: string): void {
 
 /* --------------------------- الطبقة الرابعة: الانشغال --------------------------- */
 /**
- * العنصر معروض فعلًا؟ كثير من الواجهات تُبقي حاويات الحوار في الشجرة وهي مخفية، ولو
- * عددناها انشغالًا لتوقّف التحديث إلى الأبد.
+ * العنصر معروض فعلاً؟ كثير من الواجهات تُبقي حاويات الحوار في الشجرة وهي مخفية، ولو
+ * عددناها انشغالاً لتوقّف التحديث إلى الأبد.
  */
 function isVisible(element: Element): boolean {
   try {
@@ -114,7 +114,7 @@ function watchActivity(): void {
   window.addEventListener('dragstart', start, true);
   window.addEventListener('dragend', end, true);
   window.addEventListener('drop', end, true);
-  // بعض مكتبات السحب تعمل بمؤشّرات لا بأحداث HTML5؛ نُصفّر عند رفع المؤشّر احتياطًا.
+  // بعض مكتبات السحب تعمل بمؤشّرات لا بأحداث HTML5؛ نُصفّر عند رفع المؤشّر احتياطاً.
   window.addEventListener('pointercancel', () => { dragging = 0; }, true);
 }
 
@@ -138,7 +138,7 @@ async function clearApiCaches(): Promise<void> {
   } catch { /* أفضل جهد */ }
 }
 
-/** الـ hard refresh نفسه، منفَّذًا نيابةً عن المستخدم: كل الـ caches + إلغاء العامل. */
+/** الـ hard refresh نفسه، منفَّذاً نيابةً عن المستخدم: كل الـ caches + إلغاء العامل. */
 async function purgeShell(): Promise<void> {
   try {
     if ('caches' in window) {
@@ -166,7 +166,7 @@ async function fetchServerBuild(): Promise<string | null> {
     const data = (await response.json()) as { build?: unknown };
     return typeof data?.build === 'string' && data.build ? data.build : null;
   } catch {
-    return null; // انقطاع الشبكة ليس إصدارًا جديدًا
+    return null; // انقطاع الشبكة ليس إصداراً جديداً
   }
 }
 
@@ -184,14 +184,14 @@ async function applyUpdate(target: string): Promise<void> {
   try {
     if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.getRegistration();
-      // بايتات sw.js تغيّرت مع الإصدار، فهذا الطلب يجلب العامل الجديد فعلًا.
+      // بايتات sw.js تغيّرت مع الإصدار، فهذا الطلب يجلب العامل الجديد فعلاً.
       if (registration) await registration.update();
     }
   } catch { /* أفضل جهد */ }
 
   await clearApiCaches();
 
-  // فحص أخير: قد يكون المستخدم بدأ عملًا أثناء الجلب.
+  // فحص أخير: قد يكون المستخدم بدأ عملاً أثناء الجلب.
   if (pageIsBusy()) {
     updating = false;
     window.setTimeout(() => { void applyUpdate(target); }, BUSY_RETRY_MS);
@@ -212,7 +212,7 @@ function reconcileAfterReload(): boolean {
   if (!target) return false;
 
   if (target === BUILD_ID) {
-    // وصلنا: تُمسح العلامتان حتى يبقى المسار متاحًا للإصدار القادم.
+    // وصلنا: تُمسح العلامتان حتى يبقى المسار متاحاً للإصدار القادم.
     dropLocal(TARGET_KEY);
     dropLocal(HARD_KEY);
     return false;
@@ -249,7 +249,7 @@ function looksLikeStaleChunk(message: string): boolean {
 
 async function recoverFromStaleChunk(): Promise<void> {
   try {
-    // حارس في sessionStorage: بناءٌ معطوب فعلًا يجب ألّا يتحول إلى حلقة لا تنتهي.
+    // حارس في sessionStorage: بناءٌ معطوب فعلاً يجب ألّا يتحول إلى حلقة لا تنتهي.
     if (window.sessionStorage.getItem(CHUNK_KEY)) return;
     window.sessionStorage.setItem(CHUNK_KEY, '1');
   } catch { /* التخزين محجوب — نُكمل بحذر */ }
@@ -257,7 +257,7 @@ async function recoverFromStaleChunk(): Promise<void> {
   window.location.reload();
 }
 
-/** يُستدعى بعد إقلاع ناجح: يمسح حارس التعافي حتى يبقى متاحًا للنشر القادم. */
+/** يُستدعى بعد إقلاع ناجح: يمسح حارس التعافي حتى يبقى متاحاً للنشر القادم. */
 export function markShellHealthy(): void {
   try { window.sessionStorage.removeItem(CHUNK_KEY); } catch { /* تجاهُل */ }
 }
@@ -283,7 +283,7 @@ function installChunkRecovery(): void {
 
 /* ---------------------------------- التركيب ---------------------------------- */
 /**
- * يُركَّب مرة واحدة عند الإقلاع. لا يفعل شيئًا خارج الإنتاج ولا خارج المتصفح.
+ * يُركَّب مرة واحدة عند الإقلاع. لا يفعل شيئاً خارج الإنتاج ولا خارج المتصفح.
  * `chunkRecovery: false` لمن عنده وحدة تعافٍ قائمة من الحزم المفقودة، فلا تُركَّب مرتين.
  */
 export function installAppUpdate(options: { chunkRecovery?: boolean } = {}): void {
@@ -311,7 +311,7 @@ export function installAppUpdate(options: { chunkRecovery?: boolean } = {}): voi
     if (!document.hidden) void checkForUpdate();
   });
 
-  // شبكة أمان بطيئة للتبويب المتروك مفتوحًا أيامًا.
+  // شبكة أمان بطيئة للتبويب المتروك مفتوحاً أياماً.
   window.setInterval(() => { void checkForUpdate(); }, POLL_MS);
 
   // فحص أول بعد الإقلاع: التبويب قد يكون فُتح من نسخة مخزّنة.

@@ -279,6 +279,17 @@ function envNumber(name, fallback, minimum, maximum) {
   return Number.isFinite(value) ? clamp(Math.trunc(value), minimum, maximum) : fallback
 }
 
+let cachedBuildId = ''
+/* بصمة البناء الحالية، تُقرأ مرة واحدة من dist/build-id.json (يكتبها scripts/build-stamp.mjs). */
+function currentBuildId() {
+  if (cachedBuildId) return cachedBuildId
+  try {
+    cachedBuildId = String(JSON.parse(readFileSync(resolve(process.cwd(), 'dist', 'build-id.json'), 'utf8')).build || '')
+  } catch { cachedBuildId = '' }
+  if (!cachedBuildId) cachedBuildId = process.env.BUILD_ID || 'dev'
+  return cachedBuildId
+}
+
 function sendJson(res, status, value, headers = {}) {
   const body = Buffer.from(JSON.stringify(value))
   res.writeHead(status, {
@@ -4754,6 +4765,13 @@ export function createRequestHandler({
         })
         return
       }
+    }
+
+    /* نقطة خفيفة تعرض بصمة البناء الحالية: هي الحقيقة الوحيدة التي يقارنها العميل
+       بثابت الحزمة (__BUILD_ID__). تُكتب في dist/build-id.json عند البناء. */
+    if (url.pathname === '/api/version') {
+      sendJson(res, 200, { build: currentBuildId() }, { 'cache-control': 'no-store, no-cache, must-revalidate' })
+      return
     }
 
     if (await handleWhatsAppRequest(req, res, url, method)) return

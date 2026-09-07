@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 const source = readFileSync(new URL('../public/monteur/monteur.js', import.meta.url), 'utf8')
 const css = readFileSync(new URL('../public/monteur/monteur.css', import.meta.url), 'utf8')
-const energyBody = source.match(/function storyEnergy\(i,total,peak\)\{([^}]+(?:}[^f]|})*)\}\nfunction directStory/)?.[1]
+const energyBody = source.match(/function storyEnergy\(i,total,peak\)\{([^}]+(?:}[^f]|})*)\}\nvar DIRECTION_CUTS/)?.[1]
 assert.ok(energyBody, 'story energy function is present')
 const storyEnergy = new Function('i', 'total', 'peak', energyBody)
 const energy = Array.from({ length: 11 }, (_, index) => storyEnergy(index, 11, 6))

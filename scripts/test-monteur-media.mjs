@@ -11,5 +11,7 @@ assert.match(source, /monteur:last-music:/, 'automatic selection remembers the p
 assert.match(source, /packagePoster/, 'publishing package creates a vertical cover')
 assert.match(source, /packageCaption/, 'publishing package creates concise posting copy')
 assert.match(source, /navigator\.share/, 'publishing package uses the native share sheet when available')
+assert.match(source, /living-cover\.webm/, 'publishing package includes a living cover when supported')
+assert.match(source, /quality\.txt/, 'publishing package includes the post-export review')
 assert.match(source, /MUSIC\[AU\.cur\].*vol|MUSIC\[AU\.cur\]\|\|\{\}\)\.vol/, 'track loudness is respected')
-console.log('✓ مكتبة المونتير الموسيقية وحزمة النشر: 14 مقطوعة مترابطة وتصدير بثلاثة أصول')
+console.log('✓ مكتبة المونتير الموسيقية وحزمة النشر: 14 مقطوعة مترابطة وحزمة نشر ممتدة')

@@ -1,4 +1,6 @@
 import { SocialIcon } from './icons'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useMorphTransition } from './morph'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { site } from '../data'
 import { buildBibTeX, downloadCitationFile, safeCitationFilename } from '../lib/bibtex'
@@ -72,6 +74,7 @@ async function copyText(value: string) {
 
 /** استشهاد عربي جاهز بنمطَي APA وMLA، مع إبقاء الأداة صغيرة حتى يطلبها القارئ. */
 export function CitationCopy({ title, path, iso, date, source, url }: CitationCopyProps) {
+  const morph = useMorphTransition()
   const panelId = useId()
   const timer = useRef<number | undefined>(undefined)
   const [status, setStatus] = useState<CitationStyle | 'error' | null>(null)
@@ -120,14 +123,30 @@ export function CitationCopy({ title, path, iso, date, source, url }: CitationCo
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {(['apa', 'mla', 'bibtex'] as const).map((style) => (
-            <button
+            // الزر نفسه يتّسع ليحمل التأكيد بدل أن يقفز نصّه فجأة.
+            <motion.button
               key={style}
+              layout
+              transition={morph.shell}
+              style={{ borderRadius: 999 }}
               type="button"
               onClick={() => copy(style)}
-              className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+              className={`overflow-hidden border px-4 py-2 text-[.76rem] font-semibold transition-colors ${status === style ? 'border-accent text-accent' : 'border-hair text-ink hover:border-accent hover:text-accent'}`}
             >
-              {status === style ? 'تم النسخ ✓' : `نسخ ${style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}`}
-            </button>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={status === style ? 'copied' : 'idle'}
+                  layout="position"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={morph.face}
+                  className="inline-block whitespace-nowrap"
+                >
+                  {status === style ? 'تم النسخ ✓' : `نسخ ${style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}`}
+                </motion.span>
+              </AnimatePresence>
+            </motion.button>
           ))}
           <button type="button" onClick={() => { try { downloadCitationFile(citations.bibtex, safeCitationFilename(title, 'bib'), 'application/x-bibtex'); setStatus('bibtex') } catch { setStatus('error') } }} className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">تنزيل .bib</button>
         </div>

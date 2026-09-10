@@ -172,6 +172,92 @@ function PathVisual() {
   )
 }
 
+/* ───────────────────────── التقدمة: شتاتٌ يجتمع علامةً ─────────────────────────
+   قبل أول مشهد: رموزٌ صغيرة تمثّل الكتب والأبحاث والمقالات والصوت والأفكار
+   تظهر مبعثرةً، تنجرف بهدوء، ثم تجتمع حلقةً وتذوب في قلبها فتُرسم علامة
+   الموقع الكوفية، ويصعد تحتها سطر الأطروحة. ثم تنتقل العلامة إلى موضعها
+   الطبيعي في رأس المسرح (layoutId) ويبدأ العرض المعتاد.
+   حركةٌ على transform وopacity فقط، وتُتخطى كلياً مع تفضيل تقليل الحركة. */
+
+const PROLOGUE_GLYPHS: ReactNode[] = [
+  /* كتاب */ <g key="book"><path d="M12 5c-2-1.4-4.6-1.8-7-1.6v14.2c2.4-.2 5 .2 7 1.6 2-1.4 4.6-1.8 7-1.6V3.4c-2.4-.2-5 .2-7 1.6z" /><path d="M12 5v14.2" /></g>,
+  /* ورقة بحث */ <g key="paper"><rect x="5.5" y="3.5" width="13" height="17" rx="1.6" /><path d="M9 8.5h6M9 12h6M9 15.5h3.6" /></g>,
+  /* مقالة */ <g key="article"><path d="M4.5 6h15M4.5 10h15M4.5 14h10.5M4.5 18h7" /></g>,
+  /* صوت */ <g key="wave"><path d="M4 10v4M8.5 7v10M13 4.5v15M17.5 8v8M21 10.5v3" /></g>,
+  /* ميكروفون */ <g key="mic"><rect x="9.4" y="3.5" width="5.2" height="10" rx="2.6" /><path d="M6 11.5a6 6 0 0012 0M12 17.5v3" /></g>,
+  /* فكرة */ <g key="idea"><circle cx="12" cy="10" r="4.6" /><path d="M12 2.2v1.6M19 4.6l-1.1 1.1M21.8 10.6h-1.6M5.1 5.7L4 4.6M3.8 10.6H2.2M10.2 17.6h3.6M10.8 20.6h2.4" /></g>,
+  /* اقتباس */ <g key="quote"><path d="M9.5 7.5c-2.4.6-3.8 2.2-3.8 5v4h4.4v-4.4H7.8c.1-1.8.8-2.9 2.3-3.4zM19 7.5c-2.4.6-3.8 2.2-3.8 5v4h4.4v-4.4h-2.3c.1-1.8.8-2.9 2.3-3.4z" /></g>,
+  /* صلة معرفية */ <g key="link"><circle cx="6" cy="6.5" r="2.4" /><circle cx="18" cy="17.5" r="2.4" /><path d="M7.8 8.2l8.4 7.6" /></g>,
+  /* قلم */ <g key="pen"><path d="M5 19l1.2-4.2L16.6 4.4a1.8 1.8 0 012.6 0l.4.4a1.8 1.8 0 010 2.6L9.2 17.8z" /><path d="M14.8 6.2l3 3" /></g>,
+  /* نجمة أرشيف */ <g key="star"><path d="M12 3.5l1.9 6.1 6.1 1.9-6.1 1.9-1.9 6.1-1.9-6.1-6.1-1.9 6.1-1.9z" /></g>,
+  /* سماعة */ <g key="ear"><path d="M4.5 14v-2a7.5 7.5 0 0115 0v2" /><rect x="3.5" y="13.5" width="4" height="6.5" rx="2" /><rect x="16.5" y="13.5" width="4" height="6.5" rx="2" /></g>,
+  /* بوصلة معنى */ <g key="compass"><circle cx="12" cy="12" r="8.2" /><path d="M15.2 8.8l-2 4.4-4.4 2 2-4.4z" /></g>,
+]
+
+function AssemblyPrologue({ onDone }: { onDone: () => void }) {
+  const [marked, setMarked] = useState(false)
+  useEffect(() => {
+    const toMark = window.setTimeout(() => setMarked(true), 2250)
+    const finish = window.setTimeout(onDone, 4450)
+    return () => { window.clearTimeout(toMark); window.clearTimeout(finish) }
+  }, [onDone])
+  const count = PROLOGUE_GLYPHS.length
+  return (
+    <div className="tho-pro" aria-hidden="true">
+      <div className="tho-pro-core">
+        {PROLOGUE_GLYPHS.map((glyph, i) => {
+          // حلقة الوصول: موضع كل رمزٍ النهائي على مدارٍ حول العلامة.
+          const angle = (i / count) * Math.PI * 2 - Math.PI / 2
+          const ringX = Math.cos(angle) * 138
+          const ringY = Math.sin(angle) * 96
+          // شتاتٌ حتميّ (لا عشوائيةَ بين رسمتين): إزاحات مشتقة من الرقم نفسه.
+          const frac = (v: number) => (v - Math.floor(v)) * 2 - 1
+          const sx = ringX + frac(Math.sin(i * 12.9898 + 4.1) * 43758.5453) * 190
+          const sy = ringY + frac(Math.sin(i * 78.233 + 1.7) * 24634.6345) * 150
+          const rot = frac(Math.sin(i * 3.7 + 2.9) * 951.135) * 38
+          return (
+            <motion.span
+              key={i}
+              className="tho-pro-glyph"
+              initial={{ x: sx, y: sy, rotate: rot, scale: 0.55, opacity: 0 }}
+              animate={marked
+                // الذوبان في القلب: الرموز تنجذب إلى المركز وتخفت لتولد العلامة.
+                ? { x: 0, y: 0, rotate: 0, scale: 0.25, opacity: 0 }
+                : { x: [sx, sx * 0.42 + ringX * 0.58, ringX], y: [sy, sy * 0.4 + ringY * 0.6, ringY], rotate: [rot, rot * 0.3, 0], scale: [0.55, 1.06, 1], opacity: [0, 0.95, 0.9] }}
+              transition={marked
+                ? { duration: 0.75, delay: i * 0.018, ease: EASE }
+                : { duration: 2.1, delay: 0.12 + i * 0.055, times: [0, 0.58, 1], ease: EASE }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{glyph}</svg>
+            </motion.span>
+          )
+        })}
+        {marked && (
+          <motion.span
+            className="tho-pro-mark"
+            layoutId="tho-brandmark"
+            initial={{ opacity: 0, scale: 0.82 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
+          >
+            <KuficMark framed drawMs={950} />
+          </motion.span>
+        )}
+      </div>
+      {marked && (
+        <motion.p
+          className="tho-title tho-pro-thesis"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, delay: 0.85, ease: EASE }}
+        >
+          أُبقي الإنسانَ في قلبِ الآلة.
+        </motion.p>
+      )}
+    </div>
+  )
+}
+
 /* ───────────────────────── نصّ العرض ───────────────────────── */
 
 type Act = {
@@ -290,6 +376,8 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
   // دمجُهما كان يجعل مرور الفأرة خارج المسرح يُلغي إيقاف لوحة المفاتيح.
   const [paused, setPaused] = useState(false)
   const [held, setHeld] = useState(false)
+  // التقدمة السينمائية: شتاتُ المعرفة يجتمع علامةً قبل أول مشهد.
+  const [prologue, setPrologue] = useState(true)
   // مع تفضيل تقليل الحركة تُعرض لوحة الأبواب من أول رسمة، فلا يلمع مشهدٌ ثم يختفي.
   const [done, setDone] = useState(
     () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches),
@@ -341,6 +429,8 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
   }, [navigate])
 
   const step = useCallback((delta: number) => {
+    // أي تنقّل يدويّ يطوي التقدمة فوراً — لا تُحبس يدُ الزائر خلف الحركة.
+    setPrologue(false)
     // الرجوع من لوحة الأبواب يعيد آخر مشهد، لا الذي قبله.
     if (done && delta < 0) { setDone(false); return }
     const next = act + delta
@@ -349,15 +439,17 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
     setAct(next < 0 ? 0 : next)
   }, [act, done, total])
 
-  // محرّك التقدّم التلقائي — يتوقّف عند الإيقاف المؤقت وعند لوحة الأبواب.
+  const prologueOn = open && prologue && !reduced && !atThreshold
+
+  // محرّك التقدّم التلقائي — يتوقّف عند التقدمة وعند الإيقاف المؤقت وعند لوحة الأبواب.
   useEffect(() => {
-    if (!open || paused || held || atThreshold || reduced) return
+    if (!open || paused || held || atThreshold || reduced || prologueOn) return
     const timer = window.setTimeout(() => {
       if (act + 1 >= total) setDone(true)
       else setAct(act + 1)
     }, acts[act]?.ms ?? 3800)
     return () => window.clearTimeout(timer)
-  }, [open, paused, held, act, atThreshold, reduced, total, acts])
+  }, [open, paused, held, act, atThreshold, reduced, prologueOn, total, acts])
 
   // قفل التمرير + لوحة المفاتيح + حصر التنقّل داخل المسرح.
   useEffect(() => {
@@ -424,7 +516,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
             <button ref={skipRef} type="button" className="tho-skip" onClick={() => close()}>
               {atThreshold ? 'إغلاق' : 'تخطَّ التقديم'}
             </button>
-            {!reduced && (
+            {!reduced && !prologueOn && (
               <div className="tho-reel" aria-hidden="true">
                 {acts.map((item, index) => (
                   <button
@@ -442,7 +534,13 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
                 ))}
               </div>
             )}
-            <span className="tho-mark"><KuficMark framed /></span>
+            {/* أثناء التقدمة تُحجز فسحة العلامة بشبحٍ خفيّ؛ وعندما تكتمل تنتقل
+                العلامة الكبيرة إلى هذا الموضع الطبيعي بحركة layoutId واحدة. */}
+            <span className="tho-mark" style={prologueOn ? { visibility: 'hidden' } : undefined}>
+              {prologueOn
+                ? <KuficMark framed />
+                : <motion.span layoutId={reduced ? undefined : 'tho-brandmark'} style={{ display: 'flex' }}><KuficMark framed /></motion.span>}
+            </span>
           </header>
 
           {/* المسرح */}
@@ -460,7 +558,18 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
           >
             {/* بلا mode="wait": المشاهد تتلاشى فوق بعضها في خليةٍ واحدة، فالقفز بين الفصول فوريّ لا ينتظر دوره. */}
             <AnimatePresence>
-              {atThreshold ? (
+              {prologueOn ? (
+                <motion.div
+                  key="prologue"
+                  className="tho-scene"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, transition: { duration: 0.3, ease: EASE } }}
+                  transition={{ duration: 0.5, ease: EASE }}
+                >
+                  <AssemblyPrologue onDone={() => setPrologue(false)} />
+                </motion.div>
+              ) : atThreshold ? (
                 <motion.div
                   key="threshold"
                   className="tho-threshold"
@@ -538,7 +647,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
             </AnimatePresence>
           </div>
 
-          {!atThreshold && !reduced && (
+          {!atThreshold && !reduced && !prologueOn && (
             <footer className="tho-hint">
               <button type="button" className="tho-nav" onClick={() => step(-1)} disabled={act === 0} aria-label="المشهد السابق">→</button>
               <span>{coarsePointer ? 'المسه للإيقاف · اسحب للتنقّل' : 'المسافة للإيقاف · الأسهم للتنقّل'}</span>
@@ -707,6 +816,28 @@ const THEATRE_CSS = `
 .tho-again:hover{ color:var(--ivory); }
 
 .tho-root :focus-visible{ outline:2px solid rgb(var(--glow)); outline-offset:3px; border-radius:6px; }
+
+/* ── التقدمة: شتاتٌ يجتمع علامةً ── */
+.tho-pro{ display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.tho-pro-core{
+  position:relative; width:100%;
+  height:clamp(220px,38vh,300px);
+  display:flex; align-items:center; justify-content:center;
+}
+.tho-pro-glyph{
+  position:absolute; top:50%; left:50%; margin:-15px 0 0 -15px;
+  width:30px; height:30px; color:rgb(var(--glow)/.9);
+  will-change:transform,opacity;
+}
+.tho-pro-glyph svg{ width:100%; height:100%; display:block; }
+.tho-pro-glyph:nth-child(3n){ color:var(--ivory); opacity:.92; }
+.tho-pro-glyph:nth-child(4n){ width:24px; height:24px; margin:-12px 0 0 -12px; }
+.tho-pro-mark{ display:flex; color:var(--ivory); }
+.tho-pro-mark svg{ display:block; height:clamp(54px,11vw,80px); width:auto; }
+.tho-pro-thesis{ margin-top:clamp(14px,3vh,26px); }
+@media (max-width:420px){
+  .tho-pro-core{ height:216px; transform:scale(.82); }
+}
 
 /* ── المشاهد المصغّرة ── */
 .tho-frame :is(circle,line,path,polyline,rect,text){ animation-play-state:paused; }

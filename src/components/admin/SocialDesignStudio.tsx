@@ -33,7 +33,9 @@ import {
   seasonIdentityFor,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES, resolvePalette } from '../../lib/social-design-engine'
+import { motion } from 'framer-motion'
+import { EASE as STUDIO_EASE } from '../motion'
 import { dressPlanInWorld, planWorldId, undressPlanFromWorld, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import { analyzeStudioImageFromFile, analyzeStudioImageFromUrl, extractVisualDnaFromFile, type StudioImagePassport, type VisualDna } from '../../lib/visual-dna'
@@ -726,6 +728,122 @@ function Preview({ plan, className = '', livingIcon, arrange }: { plan: Composit
       <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: renderCompositionSvg(plan) }} />
       {showIcon && <LivingMetaphorIcon plan={plan} />}
       {arrange && <MovableWordsLayer plan={plan} />}
+    </div>
+  )
+}
+
+/* ═══════════ لحظة الولادة: مكوّنات التصميم الحقيقية تتجمّع أمام العين ═══════════
+   عند اكتمال التوليد لا نعرض النتيجة قفزةً واحدة: نصوصُ التصميم الفعلية،
+   صورتُه، عيّناتُ لوحته اللونية — تظهر مبعثرةً ثم تنجرف بنعومة إلى مواضعها
+   الحقيقية (المشتقة من geometry الخطة نفسها) حتى تذوب في النتيجة النهائية.
+   الحركة على transform وopacity فقط، تُعرض مرةً واحدة لكل بصمة تصميم جديدة،
+   ولا تعمل إطلاقاً مع تفضيل تقليل الحركة. لا تلمس منطق التوليد ولا التحرير. */
+
+const playedAssemblyFingerprints = new Set<string>()
+const playedCampaignSpreads = new Set<string>()
+const prefersStillness = () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+
+/** شتاتٌ حتميّ: إزاحة ثابتة مشتقة من بصمة الخطة، فلا تختلف بين رسمتين. */
+function assemblyJitter(fingerprint: string, index: number, span: number): number {
+  let hash = 9
+  for (let i = 0; i < fingerprint.length; i++) hash = ((hash << 5) - hash + fingerprint.charCodeAt(i)) | 0
+  const raw = Math.sin(hash * 0.000037 + index * 12.9898) * 43758.5453
+  return ((raw - Math.floor(raw)) * 2 - 1) * span
+}
+
+function DesignAssemblyReveal({ plan, children }: { plan: CompositionPlan; children: ReactNode }) {
+  const [playing, setPlaying] = useState(() => !prefersStillness() && !playedAssemblyFingerprints.has(plan.fingerprint))
+  useEffect(() => {
+    if (!playing) return
+    playedAssemblyFingerprints.add(plan.fingerprint)
+    const timer = window.setTimeout(() => setPlaying(false), 2250)
+    return () => window.clearTimeout(timer)
+  }, [playing, plan.fingerprint])
+  if (!playing) return <>{children}</>
+  const palette = resolvePalette(plan)
+  const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.src)?.src
+  const { titleZone, bodyZone } = plan.geometry
+  const fp = plan.fingerprint
+  const clampPct = (value: number) => `${Math.max(2, Math.min(92, value * 100))}%`
+  // القطع الحقيقية من الخطة المولّدة نفسها: نص، لون، شكل — لا مشهد جاهز.
+  const fragments: { id: string; node: ReactNode; left: string; top: string; width?: string; delay: number }[] = []
+  if (plan.content.kicker) fragments.push({ id: 'kicker', node: <span style={{ color: palette.accent, fontSize: 'clamp(.5rem,1.4vw,.68rem)', fontWeight: 800, letterSpacing: '.08em' }}>{plan.content.kicker}</span>, left: clampPct(titleZone.x), top: clampPct(Math.max(0.03, titleZone.y - 0.09)), delay: 0.05 })
+  fragments.push({ id: 'title', node: <strong className="font-display" style={{ color: palette.ink, fontSize: 'clamp(.95rem,2.6vw,1.7rem)', lineHeight: 1.35, display: 'block' }}>{plan.content.title || plan.content.heroWord || plan.content.original.slice(0, 60)}</strong>, left: clampPct(titleZone.x), top: clampPct(titleZone.y), width: `${Math.min(92, titleZone.width * 100)}%`, delay: 0.14 })
+  const bodyLine = plan.content.subtitle || plan.content.body || plan.content.quote
+  if (bodyLine) fragments.push({ id: 'body', node: <span style={{ color: palette.muted, fontSize: 'clamp(.58rem,1.6vw,.78rem)', lineHeight: 1.9, display: 'block' }}>{bodyLine.slice(0, 120)}</span>, left: clampPct(bodyZone.x), top: clampPct(bodyZone.y), width: `${Math.min(88, bodyZone.width * 100)}%`, delay: 0.26 })
+  if (plan.content.cta) fragments.push({ id: 'cta', node: <span style={{ color: palette.background, background: palette.accent, borderRadius: 999, padding: '.34em 1em', fontSize: 'clamp(.5rem,1.4vw,.66rem)', fontWeight: 700, display: 'inline-block' }}>{plan.content.cta}</span>, left: clampPct(titleZone.x), top: '84%', delay: 0.38 })
+  // عيّنات اللوحة الفعلية: خلفية وحبر ولكنة — تصطف ثم تذوب في التصميم.
+  ;[palette.accent, palette.ink, palette.accentSoft, palette.muted].forEach((swatch, i) => {
+    fragments.push({ id: `swatch-${i}`, node: <span style={{ display: 'block', width: 'clamp(12px,2.6vw,20px)', height: 'clamp(12px,2.6vw,20px)', borderRadius: '50%', background: swatch, boxShadow: `0 0 0 1px ${palette.rule}` }} />, left: `${8 + i * 7}%`, top: '5%', delay: 0.1 + i * 0.06 })
+  })
+  fragments.push({ id: 'rule', node: <span style={{ display: 'block', height: 2, background: palette.accent, borderRadius: 2 }} />, left: clampPct(titleZone.x), top: clampPct(Math.min(0.92, titleZone.y + 0.16)), width: '18%', delay: 0.32 })
+  return (
+    <div className="relative">
+      <motion.div initial={{ opacity: 0, scale: 0.988 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.5, duration: 0.6, ease: STUDIO_EASE }}>
+        {children}
+      </motion.div>
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+        style={{ background: palette.background }}
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ delay: 1.55, duration: 0.65, ease: STUDIO_EASE }}
+      >
+        {heroImage && (
+          <motion.img
+            src={heroImage}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: plan.overlays?.some((item) => item.kind === 'image' && item.imageRole === 'background') ? 0.85 : 0.55, scale: 1 }}
+            transition={{ duration: 1.25, delay: 0.2, ease: STUDIO_EASE }}
+          />
+        )}
+        {fragments.map((fragment, index) => {
+          const dx = assemblyJitter(fp, index * 3 + 1, 130)
+          const dy = assemblyJitter(fp, index * 3 + 2, 95)
+          const rot = assemblyJitter(fp, index * 3 + 3, 9)
+          return (
+            <motion.div
+              key={fragment.id}
+              className="absolute text-right"
+              style={{ insetInlineStart: fragment.left, top: fragment.top, width: fragment.width, willChange: 'transform,opacity' }}
+              initial={{ x: dx, y: dy, rotate: rot, scale: 0.86, opacity: 0 }}
+              animate={{ x: [dx, dx * 0.32, 0], y: [dy, dy * 0.28, 0], rotate: [rot, rot * 0.3, 0], scale: [0.86, 1.02, 1], opacity: [0, 1, 1] }}
+              transition={{ duration: 1.3, delay: fragment.delay, times: [0, 0.62, 1], ease: STUDIO_EASE }}
+            >
+              {fragment.node}
+            </motion.div>
+          )
+        })}
+      </motion.div>
+    </div>
+  )
+}
+
+/* ═══════════ من الاعتماد إلى النشر: التصميم الواحد ينشطر إلى مقاسات الحملة ═══════════
+   بطاقات الحملة تبدأ متراكبةً في موضع البطاقة الأولى (جهة النسخة المعتمدة في
+   اتجاه RTL) ثم تنزلق كلٌّ إلى مقاسها بتتابعٍ هادئ. مرةً واحدة لكل حملة جديدة. */
+function CampaignSpreadStrip({ campaign }: { campaign: SocialCampaign }) {
+  const [spreading] = useState(() => !prefersStillness() && !playedCampaignSpreads.has(campaign.id))
+  useEffect(() => { playedCampaignSpreads.add(campaign.id) }, [campaign.id])
+  return (
+    <div className="flex min-w-max gap-3">
+      {campaign.assets.map((asset, index) => (
+        <motion.article
+          key={asset.id}
+          className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"
+          style={spreading ? { willChange: 'transform,opacity' } : undefined}
+          initial={spreading ? { x: index * 232, scale: 0.9, opacity: 0 } : false}
+          animate={{ x: 0, scale: 1, opacity: 1 }}
+          transition={{ duration: 0.9, delay: 0.06 + index * 0.07, ease: STUDIO_EASE }}
+        >
+          <Preview plan={asset.plan} />
+          <strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong>
+          <p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p>
+        </motion.article>
+      ))}
     </div>
   )
 }
@@ -4274,7 +4392,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       {SIMPLIFIED_STUDIO && stage === 'directions' && (
         <section className={`${card} overflow-hidden`}>
           {approvedPlan ? <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)]">
-            <div className="rounded-[1.65rem] border border-hair bg-canvas p-3 shadow-[0_24px_70px_rgba(15,23,42,.08)]"><Preview plan={approvedPlan} className="w-full" /></div>
+            <div className="rounded-[1.65rem] border border-hair bg-canvas p-3 shadow-[0_24px_70px_rgba(15,23,42,.08)]"><DesignAssemblyReveal plan={approvedPlan}><Preview plan={approvedPlan} className="w-full" /></DesignAssemblyReveal></div>
             <div className="grid content-start gap-4">
               <div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.12em] text-emerald-700">Approved by Zero-Decision</div><h3 className="mt-4 font-display text-3xl font-bold leading-tight text-ink">هذه هي النتيجة التي اعتمدها المخرج.</h3><p className="mt-3 text-[.82rem] leading-loose text-soft">{zeroDecision?.note || 'تم اختيارها بعد مقارنة الجودة وقوة التوقف والقراءة والأصالة وملاءمة الفكرة والجمهور.'}</p></div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-professional-visual-gate="true"><div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center"><strong className="block font-display text-2xl text-emerald-700">{zeroDecision?.professionalScore || professionalReleaseGate(approvedPlan).score}٪</strong><span className="text-[.62rem] text-emerald-800">عين المصمم</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
@@ -4302,7 +4420,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           {approvedPlan ? <>
             <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[.68rem] font-black uppercase tracking-[.15em] text-accent">Publish without noise</p><h3 className="mt-1 font-display text-3xl font-bold text-ink">كل شيء جاهز للنشر من مكان واحد.</h3><p className="mt-2 max-w-2xl text-[.8rem] leading-loose text-soft">النسخة المعتمدة، المقاسات، والحملة السردية. لا خيارات تصميم إضافية هنا؛ فقط القرار النهائي والتنزيل.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void exportPlan(approvedPlan, 'png')}>تنزيل PNG (ثابت)</button>{designVideoSupported() && <button type="button" className={ghost} disabled={videoBusy} title={designHasMotion(approvedPlan) ? 'يسجّل التصميم بأيقونته المتحركة فيديو MP4/WebM' : 'فعّل الأيقونة الحيّة أولاً كي تظهر الحركة'} onClick={() => void exportPlanVideo(approvedPlan)}>{videoBusy ? `يسجّل… ${videoPct}%` : '🎬 فيديو متحرّك'}</button>}<button type="button" className={ghost} onClick={() => void exportAllSizes(approvedPlan)}>كل المقاسات</button></div></div>
             <div className="mt-6 grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]"><div className="rounded-[1.4rem] border border-hair bg-canvas p-3"><Preview plan={approvedPlan} /><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>التحرير</button><button type="button" className={ghost} onClick={() => void exportCompositionSvg(approvedPlan)}>SVG</button><button type="button" className={ghost} onClick={() => exportCompositionPdf(approvedPlan)}>PDF</button></div></div>
-              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{arabicCountPhrase(campaign.assets.length, CAMPAIGN_PIECE_FORMS)}، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-3">{campaign.assets.map((asset) => <article key={asset.id} className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"><Preview plan={asset.plan} /><strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p></article>)}</div></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
+              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{arabicCountPhrase(campaign.assets.length, CAMPAIGN_PIECE_FORMS)}، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><CampaignSpreadStrip campaign={campaign} /></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
           </> : <div className="grid min-h-[340px] place-items-center text-center"><div><h3 className="font-display text-2xl font-bold text-ink">ابدأ بالفكرة أولاً.</h3><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة</button></div></div>}
         </section>
       )}

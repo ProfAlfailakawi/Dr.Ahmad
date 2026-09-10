@@ -23,6 +23,10 @@ const REEL_SAFE_TOP = 160
 const REEL_SAFE_BOTTOM = 340
 const REEL_TEXT_MAX_WIDTH = REEL_WIDTH - REEL_SAFE_LEFT - REEL_SAFE_RIGHT
 const CROSS_FADE = 0.35
+/* كم من المسافة بين موضعَي النصّ يقطعها المشهد أثناء الانتقال — إيحاء لا نقل كامل. */
+const CARRY_PULL = 0.32
+/* تقلّص طفيف يوحي بأن الشكل يبتعد ليعود، لا أنه يومض. */
+const CARRY_SCALE = 0.035
 
 /* ------------------------------- دعم المتصفح ------------------------------- */
 
@@ -478,6 +482,27 @@ function drawSemanticField(ctx: CanvasRenderingContext2D, plan: ReelPlan, progre
 
 /* ------------------------------- رسم المشهد ------------------------------- */
 
+/* منحنى الانتقال: يبدأ سريعاً ويستقرّ بهدوء، كحركة جسم له وزن. */
+function ease(p: number) {
+  const x = Math.max(0, Math.min(1, p))
+  return 1 - Math.pow(1 - x, 3)
+}
+
+/* موضع النصّ الرئيسي في كل نوع مشهد — هو المرساة التي يُحمل إليها الانتقال. */
+function sceneAnchorY(scene: ReelScene) {
+  if (scene.kind === 'close') return REEL_HEIGHT * 0.43
+  if (scene.kind === 'metaphor' && scene.metaphor) return REEL_HEIGHT * 0.68
+  if (scene.kind === 'signature') return REEL_HEIGHT * 0.46 - 30
+  return REEL_HEIGHT * 0.46
+}
+
+/* إزاحة وتحجيم حول مرساة المشهد، فيبقى مركز الحركة عند النصّ لا عند حافة الإطار. */
+function carryTransform(ctx: CanvasRenderingContext2D, anchorY: number, shiftY: number, scale: number) {
+  ctx.translate(REEL_WIDTH / 2, anchorY)
+  ctx.scale(scale, scale)
+  ctx.translate(-REEL_WIDTH / 2, -anchorY + shiftY)
+}
+
 function drawScene(ctx: CanvasRenderingContext2D, stage: Stage, scene: ReelScene, local: number, t: number, dt: number) {
   const plan = stage.plan
   const world = plan.world
@@ -663,15 +688,30 @@ export function drawReelFrame(ctx: CanvasRenderingContext2D, stage: Stage, t: nu
   const scene = plan.scenes[sceneIndex]
   const local = t - start
 
-  drawScene(ctx, stage, scene, local, t, dt)
+  /*
+   * انتقال المشاهد: ليس تلاشياً بين شيئين، بل حملٌ لشيء واحد.
+   * المشهد الخارج ينزلق نحو موضع نصّ المشهد الداخل ويتقلّص قليلاً، والداخل
+   * يصل من الموضع نفسه ويتمدّد إليه — فيقرأ العين انتقالاً واحداً متصلاً
+   * بدل ذوبان صورة في أخرى.
+   */
+  const prev = sceneIndex > 0 && local < CROSS_FADE ? plan.scenes[sceneIndex - 1] : null
+  if (prev) {
+    const p = ease(local / CROSS_FADE)
+    const carry = (sceneAnchorY(scene) - sceneAnchorY(prev)) * CARRY_PULL
 
-  /* عناق المشاهد: بداية المشهد تُرسم فوق ذيل سابقه بشفافية صاعدة. */
-  if (sceneIndex > 0 && local < CROSS_FADE) {
-    const prev = plan.scenes[sceneIndex - 1]
     ctx.save()
-    ctx.globalAlpha = 1 - local / CROSS_FADE
+    ctx.globalAlpha = p
+    carryTransform(ctx, sceneAnchorY(scene), -carry * (1 - p), 1 - CARRY_SCALE * (1 - p))
+    drawScene(ctx, stage, scene, local, t, dt)
+    ctx.restore()
+
+    ctx.save()
+    ctx.globalAlpha = 1 - p
+    carryTransform(ctx, sceneAnchorY(prev), carry * p, 1 - CARRY_SCALE * p)
     drawScene(ctx, stage, prev, prev.seconds - CROSS_FADE + local, t, 0)
     ctx.restore()
+  } else {
+    drawScene(ctx, stage, scene, local, t, dt)
   }
 
   ctx.drawImage(stage.vignette, 0, 0)

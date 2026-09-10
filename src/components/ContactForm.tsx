@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { EASE } from './ui'
+import { MORPH_ID, MorphRing, useMorphTransition } from './morph'
 import { firebaseEnabled, getDb } from '../lib/firebase'
 
 const TOPICS = [
@@ -33,6 +34,7 @@ function contactInsight(topic: TopicKey | null, message: string) {
 
 export function ContactForm({ locale = 'ar' }: { locale?: Locale }) {
   const ui = copy[locale]
+  const morph = useMorphTransition()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [topic, setTopic] = useState<TopicKey | null>(null)
@@ -96,11 +98,24 @@ export function ContactForm({ locale = 'ar' }: { locale?: Locale }) {
     } catch { setErr(ui.failed); setState('error') }
   }
 
+  // زرّ الإرسال نفسه هو الذي يتمدّد ليصير هذه اللوحة — نفس layoutId في الجهتين،
+  // فلا يختفي شيء ولا يظهر شيء جديد، بل يتحوّل العنصر الواحد أمام الزائر.
   if (state === 'done') return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5, ease: EASE }} className="rounded-2xl border border-hair bg-wash p-10 text-center" role="status" aria-live="polite" dir={ui.dir}>
-      <span className="font-display text-[1.6rem] font-semibold text-accent">{ui.success}</span>
-      {reference && <p className="mt-4 inline-block rounded-full border border-accent/30 bg-canvas px-5 py-2 text-[.85rem] font-semibold text-accent" dir="ltr">{reference}</p>}
-      <p className="mt-3 text-[.98rem] font-light leading-relaxed text-soft">{ui.successNote}</p>
+    <motion.div
+      layout
+      layoutId={MORPH_ID.contactSend}
+      transition={morph.shell}
+      style={{ borderRadius: 16 }}
+      className="border border-hair bg-wash p-10 text-center"
+      role="status"
+      aria-live="polite"
+      dir={ui.dir}
+    >
+      <motion.div layout="position" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...morph.face, delay: morph.reduce ? 0 : .18 }}>
+        <span className="font-display text-[1.6rem] font-semibold text-accent">{ui.success}</span>
+        {reference && <p className="mt-4 inline-block rounded-full border border-accent/30 bg-canvas px-5 py-2 text-[.85rem] font-semibold text-accent" dir="ltr">{reference}</p>}
+        <p className="mt-3 text-[.98rem] font-light leading-relaxed text-soft">{ui.successNote}</p>
+      </motion.div>
     </motion.div>
   )
 
@@ -137,7 +152,20 @@ export function ContactForm({ locale = 'ar' }: { locale?: Locale }) {
           <label className="sr-only" htmlFor={`contact-message-${locale}`}>{ui.message}</label>
           <textarea id={`contact-message-${locale}`} name="message" maxLength={3000} value={message} onChange={(event) => { setMessage(event.target.value); setState('idle') }} placeholder={locale === 'ar' ? active.hintAr : active.hintEn} aria-label={ui.message} rows={5} className={`${field} mt-3.5 resize-none leading-[1.9]`} />
           <div className="mt-5 flex flex-wrap items-center gap-4">
-            <button type="submit" disabled={state === 'sending'} className="rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-60">{state === 'sending' ? ui.sending : ui.send}</button>
+            <motion.button
+              layout
+              layoutId={MORPH_ID.contactSend}
+              transition={morph.shell}
+              style={{ borderRadius: 999 }}
+              type="submit"
+              disabled={state === 'sending'}
+              className="bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-90"
+            >
+              <motion.span layout="position" className="inline-flex items-center gap-2.5">
+                {state === 'sending' && <MorphRing />}
+                {state === 'sending' ? ui.sending : ui.send}
+              </motion.span>
+            </motion.button>
             <span className="text-[.86rem] text-soft" role="status" aria-live="polite" aria-atomic="true">{state === 'error' ? err : state === 'sending' ? ui.secure : ''}</span>
           </div>
         </motion.form>

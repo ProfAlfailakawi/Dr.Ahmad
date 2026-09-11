@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
+import GlyphLoader from '../components/GlyphLoader'
 import { useSeo } from '../components/seo'
 import { topKeywordsFor } from '../lib/cms'
 import { buildKnowledgeGraph, graphSearch, graphVocabulary, type KnowledgeKind } from '../lib/knowledge-graph'
@@ -797,6 +798,12 @@ export default function Search() {
                   <button type="button" onClick={chooseReadyQuestion} disabled={!readyQuestions.length} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45">سؤال جاهز</button>
                 </div>
                 {askBookError && <p className="text-[.72rem] leading-relaxed text-accent" role="alert">{askBookError}</p>}
+                {askBookLoading && (
+                  <div className="flex items-center gap-3" aria-busy="true">
+                    <GlyphLoader size={28} label="يجري البحث في متن الكتاب" />
+                    <p className="text-[.72rem] text-soft" aria-hidden="true">يجري البحث في المتن…</p>
+                  </div>
+                )}
               </form>
 
               {askBookAsked && !askBookLoading && askBookReady && askBookMatches.length > 0 && (

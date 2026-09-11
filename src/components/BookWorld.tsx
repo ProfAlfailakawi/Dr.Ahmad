@@ -5,6 +5,7 @@ import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
 import { bookArchiveDate, buildBookWorldTimeline } from '../lib/book-world-timeline'
 import { bookPassageAtPage, bookQuotes, loadBookPassagesFor, quotesForConcept, searchBookPassages, type BookQuote, type BookQuoteMatch } from '../lib/book-quotes'
+import GlyphLoader from './GlyphLoader'
 import { QuoteCite } from './QuoteCite'
 import { QuoteImage } from './QuoteImage'
 import { RESONANCE_FLOOR, loadPassageResonance, recordPassageHighlight } from '../lib/passage-resonance'
@@ -398,7 +399,12 @@ export function BookWorld({
 
             {asked && (
               <div className="mt-4 border-t border-hair pt-4">
-                {!askReady && <p className="text-[.76rem] text-soft">يجري البحث في المتن…</p>}
+                {!askReady && (
+                  <div className="flex items-center gap-3" aria-busy="true">
+                    <GlyphLoader size={28} label="يجري البحث في المتن" />
+                    <p className="text-[.76rem] text-soft" aria-hidden="true">يجري البحث في المتن…</p>
+                  </div>
+                )}
                 {askReady && bookAnswer.length === 0 && (
                   <div className="rounded-xl border border-hair bg-canvas px-4 py-3.5">
                     <p className="text-[.76rem] leading-relaxed text-soft">لم تظهر شواهد كافية داخل هذا الكتاب بعد فحص المعنى والعناوين والمحاور والمقاطع. يمكنك <Link to={`/search?q=${encodeURIComponent(asked)}&tab=all`} className="text-accent">توسيع البحث إلى الأرشيف كله</Link>.</p>

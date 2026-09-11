@@ -344,6 +344,18 @@ console.log('\nDirect homepage + Serenity reading surfaces')
   // فأيّ تغييرٍ هنا يلزمه تغييرٌ هناك وإلا احمرّ البناء بعد أن تخضرّ البوابة.
   ok(homePage.includes('<ThresholdOverture')
     && !app.includes('ConditionalOnboarding'), 'تهيئة الزائر الجديد ThresholdOverture متاحة بجمال واحترافية عالية وبلا إرباك')
+  // حارس دوام «العتبة»: العلم الدائم في localStorage لا sessionStorage — وإلا عاد
+  // التقديم في كل جلسة متصفح جديدة (تحديث/إغلاق تبويب/يوم آخر). الشرط نفسه في
+  // test-all-user-notes.mjs.
+  {
+    const overture = read('src/components/home/ThresholdOverture.tsx')
+    ok(overture.includes('localStorage.getItem(STORAGE_KEY)')
+      && overture.includes('localStorage.setItem(STORAGE_KEY')
+      && !overture.includes('sessionStorage.setItem(STORAGE_KEY'), 'العتبة تُحفظ في localStorage: تُعرض مرة واحدة لكل جهاز لا لكل جلسة')
+    ok(overture.includes("get('intro') === '1'"), 'إعادة عرض العتبة للاختبار تبقى متاحة عبر ?intro=1')
+    ok(overture.includes('sessionStorage.getItem(STORAGE_KEY)')
+      && overture.includes('sessionStorage.removeItem(STORAGE_KEY)'), 'هجرة رفيقة: من شاهد العتبة أيام sessionStorage لا يراها مرة إضافية')
+  }
   ok(articleDetail.includes("reader:serenity-surface")
     && articleDetail.includes("serenitySurface === 'sepia'")
     && articleDetail.includes("serenitySurface === 'dark'")

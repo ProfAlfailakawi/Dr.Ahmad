@@ -20,7 +20,11 @@ import { EASE } from '../motion'
 import KuficMark from '../KuficMark'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, BOOK_PLAIN_FORMS, PAPER_FORMS } from '../../lib/arabic-count.ts'
 
-/* جلسة المتصفح فقط: يعود التقديم كاملاً في كل زيارةٍ جديدة، ولا يتكرر أثناء التنقل داخل الجلسة. */
+/* مرة واحدة لكل جهاز/متصفح: العلم يُحفظ في localStorage فلا يعود التقديم بعد
+   الإغلاق أو الإكمال — لا مع تحديث الصفحة، ولا مع جلسةٍ جديدة، ولا في يومٍ آخر —
+   إلا إن مسح الزائر بيانات الموقع، أو طُلبت الإعادة صراحةً بـ /?intro=1.
+   (المفتاح نفسه بقي v1؛ ما تغيّر هو المخزن: كان sessionStorage خطأً فكان
+   التقديم يعود في كل جلسة، وتُهاجَر قيمة الجلسة القديمة إن وُجدت.) */
 const STORAGE_KEY = 'visitor:threshold-overture:v1'
 
 type Counts = { articles: number; books: number; papers: number; episodes: number }
@@ -411,7 +415,19 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
     let forced = false
     try {
       forced = new URLSearchParams(window.location.search).get('intro') === '1'
-      if (!forced && sessionStorage.getItem(STORAGE_KEY)) return
+      if (!forced) {
+        if (localStorage.getItem(STORAGE_KEY)) return
+        /* هجرة رفيقة: زائرٌ شاهد التقديم أيام كان العلم في sessionStorage
+           لا يراه مرةً إضافية — تُنسخ شهادته إلى localStorage وتُنظَّف الجلسة. */
+        const legacy = sessionStorage.getItem(STORAGE_KEY)
+        if (legacy) {
+          try {
+            localStorage.setItem(STORAGE_KEY, legacy)
+            sessionStorage.removeItem(STORAGE_KEY)
+          } catch { /* إن تعذّر النسخ تبقى قيمة الجلسة حارساً مؤقتاً. */ }
+          return
+        }
+      }
     } catch { /* وضع التصفح الخاص: يُعرض التقديم ولا يُخزَّن. */ }
     /* 420→240: مهلة الفتح تُضاف كاملةً إلى زمن أكبر عنصرٍ في الصفحة. */
     const timer = window.setTimeout(() => setOpen(true), forced ? 60 : 240)
@@ -424,7 +440,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
   }, [open, reduced])
 
   const close = useCallback((path?: string) => {
-    try { sessionStorage.setItem(STORAGE_KEY, String(Date.now())) } catch { /* لا يمنع الإغلاق */ }
+    try { localStorage.setItem(STORAGE_KEY, String(Date.now())) } catch { /* لا يمنع الإغلاق */ }
     setOpen(false)
     if (path) window.setTimeout(() => navigate(path), 260)
   }, [navigate])

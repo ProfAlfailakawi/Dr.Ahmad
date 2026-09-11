@@ -8021,3 +8021,75 @@ html.dark {
   .card-live__chip,
   .card-live__toast { transition: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   «شتاتٌ يجتمع» — المحمّل الدقيق GlyphLoader
+   يرافق src/components/GlyphLoader.tsx. رموز الأرشيف تنجذب مرةً واحدة
+   إلى قلبٍ كوفيّ ثم تخفق بهدوء — لا إعادة تبعثر، ولا شاشة كاملة.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.glyph-loader {
+  display: inline-flex;
+  inline-size: var(--gl-size, 32px);
+  block-size: var(--gl-size, 32px);
+  color: rgb(var(--c-accent, 122 92 60));
+  /* ظهورٌ مؤجَّل: العملية الأقصر من ~250ms لا ترى محمّلاً يومض. */
+  opacity: 0;
+  animation: gl-appear .18s ease-out forwards;
+  animation-delay: var(--gl-delay, 250ms);
+}
+.glyph-loader svg { inline-size: 100%; block-size: 100%; display: block; overflow: visible; }
+@keyframes gl-appear { to { opacity: 1; } }
+
+/* الرموز: تُولد من شتاتها البعيد وتستقرّ على حلقةٍ ضيّقة حول القلب — مرة واحدة. */
+.gl-glyph {
+  opacity: 0;
+  transform: translate(calc(var(--gl-x) * 1.9), calc(var(--gl-y) * 1.9)) scale(.4);
+  animation:
+    gl-converge .9s cubic-bezier(.22, 1, .36, 1) forwards,
+    gl-breathe 2.6s ease-in-out 1.2s infinite;
+  animation-delay: var(--gl-i, 0ms), calc(1.2s + var(--gl-i, 0ms));
+}
+@keyframes gl-converge {
+  0% { opacity: 0; transform: translate(calc(var(--gl-x) * 1.9), calc(var(--gl-y) * 1.9)) scale(.4); }
+  70% { opacity: .9; }
+  100% { opacity: .55; transform: translate(var(--gl-x), var(--gl-y)) scale(.62); }
+}
+/* الخمول: نبضة شفافيةٍ خافتة فقط — لا حركة موضع. */
+@keyframes gl-breathe {
+  0%, 100% { opacity: .55; }
+  50% { opacity: .28; }
+}
+
+/* القلب الكوفيّ: يظهر بعد اكتمال الجمع ثم يخفق كجمرةٍ هادئة. */
+.gl-mark {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(.4);
+  animation:
+    gl-mark-in .55s cubic-bezier(.22, 1, .36, 1) .55s forwards,
+    gl-mark-pulse 2.6s ease-in-out 1.2s infinite;
+}
+@keyframes gl-mark-in {
+  0% { opacity: 0; transform: scale(.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes gl-mark-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .72; transform: scale(.92); }
+}
+
+/* تقليل الحركة: الشكل مكتملٌ من أول رسمة، بنبضة شفافيةٍ رقيقة وحدها. */
+@media (prefers-reduced-motion: reduce) {
+  .gl-glyph {
+    animation: gl-breathe 3s ease-in-out infinite;
+    opacity: .55;
+    transform: translate(var(--gl-x), var(--gl-y)) scale(.62);
+  }
+  .gl-mark {
+    animation: gl-mark-pulse 3s ease-in-out infinite;
+    opacity: 1;
+    transform: none;
+  }
+}

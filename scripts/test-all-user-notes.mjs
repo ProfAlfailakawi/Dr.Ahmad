@@ -265,6 +265,14 @@ check('موسوعة تكنولوجيا التعليم لها بوابة مستق
 // ThresholdOverture خلَف FirstVisitOnboarding. الشرط نفسه يُحرَس في test-site-polish-2026.mjs،
 // فأيّ تغييرٍ هنا يلزمه تغييرٌ هناك وإلا احمرّت البوابة بعد أن يخضرّ البناء.
 check('تهيئة الزائر الجديد ThresholdOverture متاحة بجمال واحترافية عالية وبلا إرباك', homePage.includes('<ThresholdOverture') && !app.includes('ConditionalOnboarding'))
+// حارس دوام «العتبة»: العلم الدائم في localStorage لا sessionStorage (وإلا عادت في كل
+// جلسة)، مع بقاء ?intro=1 للاختبار وهجرة قيمة الجلسة القديمة. الشرط نفسه في test-site-polish-2026.mjs.
+{
+  const overture = read('src/components/home/ThresholdOverture.tsx')
+  check('العتبة تُحفظ في localStorage فتُعرض مرة واحدة لكل جهاز لا لكل جلسة', overture.includes('localStorage.getItem(STORAGE_KEY)') && overture.includes('localStorage.setItem(STORAGE_KEY') && !overture.includes('sessionStorage.setItem(STORAGE_KEY'))
+  check('إعادة عرض العتبة للاختبار تبقى متاحة عبر ?intro=1', overture.includes("get('intro') === '1'"))
+  check('هجرة رفيقة لعلم العتبة من sessionStorage القديم إلى localStorage', overture.includes('sessionStorage.getItem(STORAGE_KEY)') && overture.includes('sessionStorage.removeItem(STORAGE_KEY)'))
+}
 check('الموسوعة تظهر وحدها في أول سطر وبقية الكتب كتابان في كل سطر', publications.includes("right.slug === 'encyclopedia'") && publications.includes("featured ? 'group col-span-2") && publications.includes('grid-cols-2') && !publications.includes('lg:grid-cols-3'))
 check('تفريغ Buzz محلي ثابت يدعم VTT وSRT وJSON والاستئناف والكتابة الذرية', encyclopediaBuzzImporter.includes("SUPPORTED_EXTENSIONS = new Set(['.vtt', '.srt', '.json'])") && encyclopediaBuzzImporter.includes('sourceHash') && encyclopediaBuzzImporter.includes('atomicWriteJson') && encyclopediaBuzzImporter.includes('renameSync'))
 check('الفهرس لا يعلن اكتمال metadata ولا يعرض توقيتاً إلا من segment موثوق', encyclopediaTranscriptData.catalogCount === 169 && Object.keys(encyclopediaTranscriptData.records || {}).length === 169 && encyclopediaTranscriptData.progress.available === Object.values(encyclopediaTranscriptData.records || {}).filter((record) => record.available && Array.isArray(record.segments) && record.segments.length > 0).length && encyclopediaVideoServer.includes('hasExactTiming: exact') && encyclopediaKnowledgeResults.includes('moment.hasExactTiming'))

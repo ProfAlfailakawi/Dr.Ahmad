@@ -128,7 +128,7 @@ function MajlisSpark() {
         {episode.question || episode.title}
       </p>
       <p className="mt-auto flex items-center gap-2 border-t border-hair pt-4 text-[.74rem] text-soft">
-        <span className="truncate">{episode.title}</span>
+        <span className="min-w-0 truncate">{episode.title}</span>
         <span className="ms-auto shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">استمع ←</span>
       </p>
     </Link>

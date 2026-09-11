@@ -133,8 +133,8 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
                 aria-current={index === activeChapter ? 'true' : undefined}
                 className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-[.7rem] transition-colors ${index === activeChapter ? 'border-accent bg-accent/[.08] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
-                <span className="text-[.62rem] opacity-70">{ar(chapter.index)}</span>
-                <span className="truncate">{chapter.title}</span>
+                <span className="shrink-0 text-[.62rem] opacity-70">{ar(chapter.index)}</span>
+                <span className="min-w-0 truncate">{chapter.title}</span>
               </button>
             ))}
           </div>

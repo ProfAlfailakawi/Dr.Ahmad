@@ -7,6 +7,7 @@ import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { MediaSaveButton } from '../components/MySpace'
 import { SocialIcon } from '../components/icons'
+import GlyphLoader from '../components/GlyphLoader'
 import { mergeMediaArchive, formatMediaTime, useArchiveTranscripts } from '../lib/media-archive'
 import { arabicCountPhrase, PASSAGE_FORMS, TIMED_SEGMENT_FORMS } from '../lib/arabic-count.ts'
 
@@ -50,7 +51,7 @@ export default function MediaDetail() {
     return () => audio.removeEventListener('loadedmetadata', seek)
   }, [audioSource, start])
   useSeo({ title: item?.title || 'ظهور إعلامي', path: `/media/${slug}`, description: item?.topics || 'مادة من الأرشيف الإعلامي.' })
-  if (!item && loading) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
+  if (!item && loading) return <Page><div className="px-6 pt-44 text-center text-soft"><GlyphLoader size={32} label="يجهّز المادة الإعلامية…" /></div></Page>
   if (!item) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على المادة.</div></Page>
 
   return <Page className="content-media page-journey">

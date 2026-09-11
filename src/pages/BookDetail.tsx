@@ -8,6 +8,7 @@ import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import tocData from '../data/book-toc-links.json'
 import { SocialIcon } from '../components/icons'
+import GlyphLoader from '../components/GlyphLoader'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { arabicCountPhrase, TITLE_FORMS } from '../lib/arabic-count.ts'
 import { coverSrcSet } from '../lib/cover-image'
@@ -185,7 +186,7 @@ export default function BookDetail() {
   const [searchParams] = useSearchParams()
   const isSearchState = Boolean(searchParams.get('q'))
   useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}`, image: book?.cover, robots: isSearchState ? 'noindex, follow' : undefined })
-  if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
+  if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft"><GlyphLoader size={32} label="يجهّز صفحة الكتاب…" /></div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
 
   const structuredData = {

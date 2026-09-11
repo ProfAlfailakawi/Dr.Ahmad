@@ -39,6 +39,7 @@ import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEn
 import { MovableWordsLayer, MoveWordsToggle } from './MovableWords'
 import { dressPlanInWorld, planWorldId, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
+import GlyphLoader from '../GlyphLoader'
 import {
   buildOpportunityRadar,
   buildPublicationPassportDraft,
@@ -1434,7 +1435,7 @@ function EditorialBoardPanel({
     return (
       <section className={`${card} border-accent/25`} aria-live="polite" data-editorial-board-analyzing="true">
         <p className="text-[.72rem] font-semibold uppercase text-accent">مجلس التحرير</p>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[color:var(--c-hair)]"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
+        <div className="mt-4 text-accent"><GlyphLoader size={28} label="التحليل جارٍ…" /></div>
         <p className="mt-4 font-display text-xl font-semibold text-ink">{EDITORIAL_PROGRESS_LABELS[progress] || 'يبدأ التحليل…'}</p>
         <p className="mt-2 text-[.8rem] leading-relaxed text-soft">كل خطوة هنا مرتبطة بفحص حقيقي؛ لا توجد حركة تحميل وهمية.</p>
       </section>
@@ -4080,7 +4081,7 @@ ${effectivePurpose}`,
       {view === 'write' && (
         <>
         {generating && <section className={`${card} border-accent/30`} aria-live="polite" data-article-generation-state="working">
-          <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--c-hair)]"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
+          <div className="text-accent"><GlyphLoader size={28} label="الكتابة جارية…" /></div>
           <h2 className="mt-4 font-display text-xl font-semibold text-ink">أكتب المقال الآن داخل المحرر.</h2>
           <p className="mt-2 text-[.8rem] leading-relaxed text-soft">انتقلت الفكرة والعنوان وملاحظات مجلس التحرير. سيظهر النص هنا فور اكتمال الكتابة، من دون نقلك إلى أعلى الصفحة.</p>
         </section>}

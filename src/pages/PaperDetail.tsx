@@ -8,6 +8,7 @@ import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
 import { analyzeResearch, type ResearchEvidence } from '../lib/research-intelligence'
 import { useAdminAuth } from '../lib/admin-auth'
+import GlyphLoader from '../components/GlyphLoader'
 import { safeLink } from '../lib/dead-links'
 import { ResearchSectionNavigator, type ResearchLayer } from '../components/ResearchSectionNavigator'
 import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
@@ -121,7 +122,7 @@ export default function PaperDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.hash, p?.slug])
 
-  if (!p && loading) return <Page className="content-research"><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
+  if (!p && loading) return <Page className="content-research"><div className="px-6 pt-44 text-center text-soft"><GlyphLoader size={32} label="يجهّز صفحة البحث…" /></div></Page>
   if (!p) return <Page><div className="px-6 pt-44 text-center text-soft">صفحة البحث غير موجودة.</div></Page>
 
   const prev = papers[index - 1]

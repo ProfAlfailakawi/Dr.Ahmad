@@ -8039,6 +8039,8 @@ html.dark {
   animation-delay: var(--gl-delay, 250ms);
 }
 .glyph-loader svg { inline-size: 100%; block-size: 100%; display: block; overflow: visible; }
+/* النسخة السطرية داخل زرٍّ أو سطر: لون السياق نفسه ومحاذاةٌ وسطية بلا إزاحة. */
+.glyph-loader--inline { color: currentColor; vertical-align: -18%; flex: none; }
 @keyframes gl-appear { to { opacity: 1; } }
 
 /* الرموز: تُولد من شتاتها البعيد وتستقرّ على حلقةٍ ضيّقة حول القلب — مرة واحدة. */

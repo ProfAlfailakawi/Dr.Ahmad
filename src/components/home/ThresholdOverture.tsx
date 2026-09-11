@@ -20,6 +20,7 @@ import { EASE } from '../motion'
 import KuficMark from '../KuficMark'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, BOOK_PLAIN_FORMS, PAPER_FORMS } from '../../lib/arabic-count.ts'
 
+/* جلسة المتصفح فقط: يعود التقديم كاملاً في كل زيارةٍ جديدة، ولا يتكرر أثناء التنقل داخل الجلسة. */
 const STORAGE_KEY = 'visitor:threshold-overture:v1'
 
 type Counts = { articles: number; books: number; papers: number; episodes: number }
@@ -410,7 +411,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
     let forced = false
     try {
       forced = new URLSearchParams(window.location.search).get('intro') === '1'
-      if (!forced && localStorage.getItem(STORAGE_KEY)) return
+      if (!forced && sessionStorage.getItem(STORAGE_KEY)) return
     } catch { /* وضع التصفح الخاص: يُعرض التقديم ولا يُخزَّن. */ }
     /* 420→240: مهلة الفتح تُضاف كاملةً إلى زمن أكبر عنصرٍ في الصفحة. */
     const timer = window.setTimeout(() => setOpen(true), forced ? 60 : 240)
@@ -423,7 +424,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
   }, [open, reduced])
 
   const close = useCallback((path?: string) => {
-    try { localStorage.setItem(STORAGE_KEY, String(Date.now())) } catch { /* لا يمنع الإغلاق */ }
+    try { sessionStorage.setItem(STORAGE_KEY, String(Date.now())) } catch { /* لا يمنع الإغلاق */ }
     setOpen(false)
     if (path) window.setTimeout(() => navigate(path), 260)
   }, [navigate])

@@ -221,7 +221,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
   if (loading) return <div className={card}>لحظة… أجمع المشاهدات.</div>
 
   return (
-    <div className="admin-dashboard grid min-w-0 w-full max-w-full gap-4 overflow-x-hidden sm:gap-5">
+    <div className="admin-dashboard grid min-w-0 w-full max-w-full gap-4 overflow-x-clip sm:gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
         <span className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft">يتحدّث تلقائياً كل دقيقة</span>

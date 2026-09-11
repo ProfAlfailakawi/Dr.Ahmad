@@ -10,6 +10,7 @@
  */
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { UsageAnalytics } from '../components/admin/UsageAnalytics'
+import GlyphLoader from '../components/GlyphLoader'
 import { Page } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { firebaseEnabled, getDb, getFirebaseApp } from '../lib/firebase'
@@ -108,7 +109,7 @@ export default function Admin() {
   if (creativePreview === 'design') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><SocialDesignStudio /></div></Page>
   if (creativePreview === 'dashboard') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><TodayDashboard articles={[]} books={[]} papers={[]} media={[]} onOpen={() => undefined} /></div></Page>
   if (!firebaseEnabled) return <SetupGuide />
-  if (checking) return <Page><div className="px-6 pt-44 text-center text-soft">لحظة…</div></Page>
+  if (checking) return <Page><div className="px-6 pt-44 text-center text-soft"><GlyphLoader size={32} label="يتحقّق من الدخول…" /></div></Page>
   if (!user) return <Login />
   if (!allowed) return <Login blockedEmail={user.email || ''} />
   return <Panel email={user.email || ''} />
@@ -770,7 +771,7 @@ function InboxPanel() {
       </div>
 
       {loading ? (
-        <div className={card}>لحظة… أجلب رسائلك وأراقب الجديد لحظياً.</div>
+        <div className={`${card} flex items-center gap-3`}><GlyphLoader size={24} label="أجلب رسائلك وأراقب الجديد لحظياً" /><span aria-hidden="true">أجلب رسائلك وأراقب الجديد لحظياً…</span></div>
       ) : !items.length ? (
         <div className={`${card} text-center`}>
           <p className="text-[1.05rem] text-ink">صندوقك فارغ حالياً.</p>

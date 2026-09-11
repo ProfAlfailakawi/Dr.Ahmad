@@ -12,6 +12,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type { CSSProperties, ReactNode } from 'react'
 import { EASE_POINTS } from '../lib/design-system'
+import { GlyphLoaderInline } from './GlyphLoader'
 
 /** أسماء التحوّلات المستعملة في الموقع — تُجمَع هنا لمنع التصادم. */
 export const MORPH_ID = {
@@ -85,15 +86,7 @@ export function MorphSurface({
   )
 }
 
-/** حلقة انتظار صغيرة تعيش داخل السطح المتحوّل نفسه. */
+/** مؤشر انتظار صغير يعيش داخل السطح المتحوّل نفسه — «شتاتٌ يجتمع» بنسخته السطرية، لا حلقة دوّارة عامة. */
 export function MorphRing({ className = '' }: { className?: string }) {
-  const reduce = useReducedMotion()
-  return (
-    <motion.span
-      aria-hidden="true"
-      className={`inline-block h-[1.15em] w-[1.15em] rounded-full border-2 border-current/25 border-t-current ${className}`}
-      animate={reduce ? undefined : { rotate: 360 }}
-      transition={reduce ? undefined : { duration: 0.8, ease: 'linear', repeat: Infinity }}
-    />
-  )
+  return <GlyphLoaderInline className={className} />
 }

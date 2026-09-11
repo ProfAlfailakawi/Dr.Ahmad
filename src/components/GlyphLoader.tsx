@@ -28,14 +28,22 @@ export default function GlyphLoader({
   label = 'جارٍ التحميل…',
   delayMs = 250,
   className = '',
-}: { size?: 24 | 28 | 32 | 40 | 48; label?: string; delayMs?: number; className?: string }) {
+  decorative = false,
+}: {
+  size?: 16 | 18 | 24 | 28 | 32 | 40 | 48
+  label?: string
+  delayMs?: number
+  className?: string
+  /** داخل زرٍّ نصُّه يشرح الحالة: الرمز زينةٌ محضة بلا role ولا نصٍّ مكرَّر. */
+  decorative?: boolean
+}) {
   return (
     <span
-      role="status"
+      {...(decorative ? { 'aria-hidden': true as const } : { role: 'status' })}
       className={`glyph-loader ${className}`.trim()}
       style={{ ['--gl-size']: `${size}px`, ['--gl-delay']: `${delayMs}ms` } as CSSProperties}
     >
-      <span className="sr-only">{label}</span>
+      {!decorative && <span className="sr-only">{label}</span>}
       <svg viewBox="0 0 48 48" aria-hidden="true">
         {GLYPHS.map((d, i) => {
           const angle = (i / GLYPHS.length) * Math.PI * 2 - Math.PI / 2
@@ -66,4 +74,12 @@ export default function GlyphLoader({
       </svg>
     </span>
   )
+}
+
+/**
+ * النسخة السطرية: 16–18px بلون السياق (currentColor)، تجلس داخل زرٍّ أو سطرٍ
+ * دون أي إزاحة في التخطيط — بديل الحلقة الدوّارة العامة.
+ */
+export function GlyphLoaderInline({ className = '' }: { className?: string }) {
+  return <GlyphLoader size={18} delayMs={0} decorative className={`glyph-loader--inline ${className}`.trim()} />
 }

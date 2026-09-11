@@ -224,7 +224,6 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
     <div className="admin-dashboard grid min-w-0 w-full max-w-full gap-4 overflow-x-clip sm:gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
-        <span className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft">يتحدّث تلقائياً كل دقيقة</span>
       </div>
       <div className="rail flex gap-2 overflow-x-auto pb-1">
         {([['overview','النظرة العامة'],['content','المحتوى'],['journey','رحلة الزائر'],['details','كل البيانات']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}

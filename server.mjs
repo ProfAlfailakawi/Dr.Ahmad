@@ -1,4 +1,4 @@
-import { createHash, createPublicKey, generateKeyPairSync, sign as signPayload, verify as verifySignature } from 'node:crypto'
+import { createHash, createPublicKey, generateKeyPairSync, sign as signPayload, timingSafeEqual, verify as verifySignature } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { lookup } from 'node:dns/promises'
@@ -5893,7 +5893,13 @@ export function createRequestHandler({
     if (url.pathname === '/api/cron/radar') {
       if (method !== 'POST') throw new HttpError(405, 'Method not allowed')
       const secret = process.env.CRON_SECRET
-      if (!secret || req.headers['x-cron-secret'] !== secret) throw new HttpError(401, 'Unauthorized')
+      const suppliedSecret = Buffer.from(String(req.headers['x-cron-secret'] || ''))
+      const expectedSecret = Buffer.from(String(secret || ''))
+      const cronAuthorized = Boolean(secret)
+        && suppliedSecret.length === expectedSecret.length
+        && suppliedSecret.length > 0
+        && timingSafeEqual(suppliedSecret, expectedSecret)
+      if (!cronAuthorized) throw new HttpError(401, 'Unauthorized')
       const { spawn } = await import('node:child_process')
       const out = await new Promise((resolveRun) => {
         const child = spawn(process.execPath, ['scripts/daily-radar.mjs'], { cwd: process.cwd(), env: process.env, timeout: 120_000 })

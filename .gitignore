@@ -6,6 +6,7 @@ dist
 .env
 .env.local
 .env.*.local
+.env.production
 sa.json
 *service-account*.json
 *firebase-adminsdk*.json

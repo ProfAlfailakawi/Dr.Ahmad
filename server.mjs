@@ -3039,92 +3039,132 @@ export function findBookEvidence(question, limit = 4, corpus = bookEvidenceCorpu
   }))
 }
 
-/* ---------- رصيده المعرفي: كتبه ولقاءاته لا مقالاته وحدها ----------
+/* ---------- رصيده المعرفي: محتوى كتبه ومقالاته ولقاءاته ----------
 
    كان كاتب المقالات يرى من الدكتور مقالاته فقط: يسمع منها الإيقاع، ثم يملأ
-   الفكرة بمعرفة النموذج العامة. والدكتور أستاذ تكنولوجيا التعليم، له تسعة كتب
-   في تخصصه ولقاءاتٌ مفرّغة يشرح فيها مواقفه. هنا يُستخرج لكل فكرة أقربُ ما قاله
-   هو فيها: اقتباساتٌ من كتبه (المنشورة بإذنه، وهي نفسها التي يراها الزوار) ومقاطع
-   من لقاءاته، فيبني المقال على مفاهيمه ومواقفه لا على معرفةٍ عامة. */
-const interviewTranscriptsFile = resolve(process.cwd(), 'src/data/media-archive-transcripts.json')
-const interviewMetaFile = resolve(process.cwd(), 'src/data/media-archive.json')
-let interviewWindowsCache = null
-function interviewWindows() {
-  if (interviewWindowsCache) return interviewWindowsCache
-  interviewWindowsCache = []
-  try {
-    const transcripts = existsSync(interviewTranscriptsFile) ? JSON.parse(readFileSync(interviewTranscriptsFile, 'utf8')) : {}
-    const metaRaw = existsSync(interviewMetaFile) ? JSON.parse(readFileSync(interviewMetaFile, 'utf8')) : []
-    const metaList = Array.isArray(metaRaw) ? metaRaw : (Array.isArray(metaRaw?.items) ? metaRaw.items : (Object.values(metaRaw || {}).find(Array.isArray) || []))
-    const meta = new Map(metaList.map((item) => [item?.id, item]))
-    for (const [id, record] of Object.entries(transcripts || {})) {
-      if (!record?.available || !Array.isArray(record.segments)) continue
-      const info = meta.get(id) || {}
-      const label = [info.program || info.title || 'لقاء', info.outlet, info.date].filter(Boolean).join(' · ')
-      /* نوافذ من نحو سبعين كلمة: التفريغ آليٌّ بلا ترقيم، والمقطع الواحد قد يطول. */
-      const words = record.segments.map((segment) => String(segment?.displayText || segment?.text || '')).join(' ').split(/\s+/).filter(Boolean)
-      for (let start = 0; start < words.length; start += 60) {
-        const text = words.slice(start, start + 70).join(' ')
-        /* التفريغ الآلي يعلق أحياناً فيكرّر العبارة نفسها: نافذةٌ نصفُ كلماتها مكرّر ليست كلاماً. */
-        const tokens = text.split(/\s+/)
-        const grams = tokens.slice(2).map((word, index) => `${tokens[index]} ${tokens[index + 1]} ${word}`)
-        const looping = grams.length && new Set(grams).size / grams.length < .85
-        if (text.length > 120 && new Set(tokens).size / tokens.length >= .62 && !looping) interviewWindowsCache.push({ id, label, text, normalized: normalizeBookEvidence(text) })
-      }
+   الفكرة بمعرفة النموذج العامة. والدكتور أستاذ تكنولوجيا التعليم: له تسعة كتب
+   في تخصصه، و١٤٣ مقالاً، ولقاءاتٌ مفرّغة يشرح فيها مواقفه. هنا فهرسٌ واحد على
+   **المحتوى** لا على العناوين: متون الكتب التسعة كاملة (book-passages، فهرسٌ
+   «للبحث والاستشهاد بإذن المؤلف» لا يُعرض متصلاً)، وفقرات مقالاته، ونوافذ من
+   لقاءاته. البحث بوزن BM25: الكلمة النادرة في رصيده («التلعيب»، «الحوكمة») تقود،
+   والكلمة الشائعة («بين»، «المعلم») لا تجرّ اقتباساً بعيداً. */
+const knowledgeFiles = {
+  passages: resolve(process.cwd(), 'src/data/book-passages.json'),
+  interviews: resolve(process.cwd(), 'src/data/media-archive-transcripts.json'),
+  interviewMeta: resolve(process.cwd(), 'src/data/media-archive.json'),
+}
+const readJsonIfPresent = (file, fallback) => { try { return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : fallback } catch { return fallback } }
+/* جذعٌ تقريبي للمطابقة بالكلمة لا بجزئها: تُنزع السوابق (و ف ب ل ك) وأداة التعريف. */
+const knowledgeStem = (word = '') => word.replace(/^(?:[وفبلك])?(?:ال|لل)(?=\S{2,})/, '').replace(/^[وف](?=\S{3,})/, '')
+/* «الفصل الرابع» فصلُ كتابٍ لا فصلٌ دراسي: الترقيم يُحذف قبل الفهرسة. */
+const stripChapterNumbers = (value = '') => String(value).replace(/الفصل\s+(?:ال)?(?:أول|اول|ثاني|ثالث|رابع|خامس|سادس|سابع|ثامن|تاسع|عاشر|حالي)\S*/g, ' ')
+const knowledgeTerms = (value = '') => bookEvidenceTokens(stripChapterNumbers(value)).map(knowledgeStem).filter((word) => word.length > 2)
+
+function interviewDocuments() {
+  const transcripts = readJsonIfPresent(knowledgeFiles.interviews, {})
+  const metaRaw = readJsonIfPresent(knowledgeFiles.interviewMeta, [])
+  const metaList = Array.isArray(metaRaw) ? metaRaw : (Array.isArray(metaRaw?.items) ? metaRaw.items : (Object.values(metaRaw || {}).find(Array.isArray) || []))
+  const meta = new Map(metaList.map((item) => [item?.id, item]))
+  const documents = []
+  for (const [id, record] of Object.entries(transcripts || {})) {
+    if (!record?.available || !Array.isArray(record.segments)) continue
+    const info = meta.get(id) || {}
+    const label = [info.program || info.title || 'لقاء', info.outlet, info.date].filter(Boolean).join(' · ')
+    /* نوافذ من نحو سبعين كلمة: التفريغ آليٌّ بلا ترقيم، والمقطع الواحد قد يطول. */
+    const words = record.segments.map((segment) => String(segment?.displayText || segment?.text || '')).join(' ').split(/\s+/).filter(Boolean)
+    for (let start = 0; start < words.length; start += 60) {
+      const tokens = words.slice(start, start + 70)
+      const text = tokens.join(' ')
+      /* التفريغ الآلي يعلق أحياناً فيكرّر العبارة نفسها: نافذةٌ تدور على نفسها ليست كلاماً. */
+      const grams = tokens.slice(2).map((word, index) => `${tokens[index]} ${tokens[index + 1]} ${word}`)
+      const looping = grams.length && new Set(grams).size / grams.length < .85
+      if (text.length > 120 && new Set(tokens).size / tokens.length >= .62 && !looping) documents.push({ kind: 'interview', group: id, label, text })
     }
-  } catch { interviewWindowsCache = [] }
-  return interviewWindowsCache
+  }
+  return documents
 }
 
-export function findInterviewEvidence(idea, limit = 2) {
-  const query = [...new Set(bookEvidenceTokens(idea))].slice(0, 16)
-  if (!query.length) return []
-  const rows = []
-  for (const window of interviewWindows()) {
+let knowledgeIndexCache = null
+function knowledgeIndex() {
+  if (knowledgeIndexCache) return knowledgeIndexCache
+  const documents = []
+  for (const book of readJsonIfPresent(knowledgeFiles.passages, { books: [] }).books || []) {
+    for (const passage of book?.passages || []) {
+      if (String(passage?.text || '').length < 80) continue
+      documents.push({ kind: 'book', group: book.slug, label: `${book.title} — ${passage.section || passage.conceptTitle || ''} (ص ${passage.page})`, text: String(passage.text) })
+    }
+  }
+  for (const [slug, body] of archiveBodiesFallback()) {
+    for (const paragraph of String(body).split(/\n\s*\n/).map((part) => part.trim())) {
+      /* فقرةٌ فيها رمزٌ تعبيري أو ماركداون أو نسبةٌ مئوية ليست مادة «معرفتك»: تحمل أرقاماً
+         يُمنع نقلها، وشكلاً ليس شكل مقالاته الغالب. */
+      if (paragraph.split(/\s+/).length < 25 || /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]|[*#]|\d\s*[%٪]|[٠-٩]\s*٪/u.test(paragraph)) continue
+      documents.push({ kind: 'article', group: slug, label: slug, text: paragraph })
+    }
+  }
+  documents.push(...interviewDocuments())
+  const frequency = new Map()
+  let totalLength = 0
+  for (const document of documents) {
+    const terms = knowledgeTerms(document.text)
+    document.length = terms.length
+    document.tf = new Map()
+    for (const term of terms) document.tf.set(term, (document.tf.get(term) || 0) + 1)
+    for (const term of document.tf.keys()) frequency.set(term, (frequency.get(term) || 0) + 1)
+    totalLength += terms.length
+  }
+  knowledgeIndexCache = { documents, frequency, averageLength: totalLength / Math.max(1, documents.length) }
+  return knowledgeIndexCache
+}
+
+/** أقرب ما قاله هو في الفكرة، من كل مصدرٍ على حدة، بتنوّعٍ (مقطعان على الأكثر من الكتاب الواحد). */
+export function domainKnowledge(idea, { books = 4, articles = 2, interviews = 2, exclude = [] } = {}) {
+  const { documents, frequency, averageLength } = knowledgeIndex()
+  const query = [...new Set(knowledgeTerms(idea))].slice(0, 20)
+  const empty = { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [] }
+  if (!query.length || !documents.length) return empty
+  const idf = new Map(query.map((term) => {
+    const df = frequency.get(term) || 0
+    return [term, Math.log(1 + (documents.length - df + .5) / (df + .5))]
+  }))
+  /* كلمتان من الفكرة في المقطع، إلا حين تكون الفكرة كلمةً واحدة. */
+  const needed = Math.min(2, query.filter((term) => frequency.get(term)).length || 1)
+  const skip = new Set(exclude)
+  const scored = []
+  for (const document of documents) {
+    if (skip.has(document.group)) continue
     let matched = 0
     let score = 0
-    for (const word of query) {
-      const hits = window.normalized.split(word).length - 1
-      if (hits > 0) { matched += 1; score += Math.min(4, hits) }
+    for (const term of query) {
+      const tf = document.tf.get(term)
+      if (!tf) continue
+      matched += 1
+      score += idf.get(term) * (tf * 2.2) / (tf + 1.2 * (.25 + .75 * document.length / averageLength))
     }
-    if (matched < Math.min(2, query.length)) continue
-    const stems = new Set(window.normalized.split(' ').map(knowledgeStem))
-    const exact = new Set(query.map(knowledgeStem)).size && [...new Set(query.map(knowledgeStem))].filter((word) => stems.has(word)).length
-    if (exact < Math.min(2, query.length)) continue
-    rows.push({ window, score: score + exact * 4 })
+    if (matched >= needed) scored.push({ document, score })
   }
-  rows.sort((left, right) => right.score - left.score)
-  const perInterview = new Set()
-  const picked = []
-  for (const { window } of rows) {
-    if (perInterview.has(window.id)) continue
-    perInterview.add(window.id)
-    picked.push({ لقاء: window.label, نص: boundedString(window.text, 460) })
-    if (picked.length >= clamp(Number(limit) || 2, 1, 4)) break
+  scored.sort((left, right) => right.score - left.score)
+  /* المقطع الضعيف يُسقط نفسه: ما دون نصف درجة أقرب مقطعٍ في رصيده كله مطابقةٌ
+     عارضة («الرسوم المتحركة» في فكرةٍ عن الطفل والشاشة). */
+  const floor = (scored[0]?.score || 0) * .5
+  const pick = (kind, limit, perGroup) => {
+    const counts = new Map()
+    const picked = []
+    for (const { document, score } of scored) {
+      if (score < floor) break
+      if (document.kind !== kind) continue
+      const count = counts.get(document.group) || 0
+      if (count >= perGroup) continue
+      counts.set(document.group, count + 1)
+      picked.push(document)
+      if (picked.length >= limit) break
+    }
+    return picked
   }
-  return picked
-}
-
-/* جذعٌ تقريبي للمطابقة بالكلمة لا بجزئها: «بين» كانت تطابق «بينه» فيدخل
-   اقتباسٌ لا صلة له. تُنزع السوابق (و ف ب ل ك) وأداة التعريف فقط. */
-const knowledgeStem = (word = '') => word.replace(/^(?:[وفبلك])?(?:ال|لل)(?=\S{2,})/, '').replace(/^[وف](?=\S{3,})/, '')
-
-export function domainKnowledge(idea, { books = 4, interviews = 2 } = {}) {
-  /* شاهد الكتاب للمقال أضيق من شاهد البحث: يكفي البحثَ أن يطابق عنوانُ الفصل،
-     أما المقال فيحتاج اقتباساً يحمل كلمتين من الفكرة في متنه هو، وإلا دخل
-     «الكارتون» في مقالٍ عن الذكاء الاصطناعي. */
-  const query = [...new Set(bookEvidenceTokens(idea).map(knowledgeStem))].filter((word) => word.length > 2)
-  /* «الفصل الرابع» فصلُ كتابٍ لا فصلٌ دراسي: الترقيم يُحذف قبل المطابقة. */
-  const hits = (text) => {
-    const words = new Set(bookEvidenceTokens(String(text).replace(/الفصل\s+(?:ال)?(?:أول|اول|ثاني|ثالث|رابع|خامس|سادس|سابع|ثامن|تاسع|عاشر|حالي)\S*/g, ' ')).map(knowledgeStem))
-    return query.filter((word) => words.has(word)).length
-  }
-  /* كلمتان من الفكرة في متن الاقتباس، أو كلمةٌ واحدة يحملها عنوان فصله أيضاً
-     (اقتباسٌ من فصل «نشأة التلعيب» يذكر التلعيب هو في صميم الفكرة). */
-  const relevant = (item) => hits(item.quote) >= Math.min(2, query.length) || (hits(item.quote) >= 1 && hits(item.title) >= 1)
   return {
-    من_كتبك: findBookEvidence(idea, 6).filter(relevant).slice(0, books).map((item) => ({ مصدر: item.title, نص: item.quote })),
-    من_لقاءاتك: findInterviewEvidence(idea, interviews),
+    من_كتبك: pick('book', books, 2).map((item) => ({ مصدر: item.label, نص: boundedString(item.text, 700) })),
+    من_مقالاتك: pick('article', articles, 1).map((item) => ({ نص: boundedString(item.text, 600) })),
+    من_لقاءاتك: pick('interview', interviews, 1).map((item) => ({ لقاء: item.label, نص: boundedString(item.text, 460) })),
   }
 }
 
@@ -3438,7 +3478,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   const existingTitles = input.existing.map((item) => item.title).filter(Boolean)
   const anchors = rhythmAnchors(input.styleSamples)
   const exemplars = voiceExemplars(input.existing, envNumber('ARTICLE_VOICE_EXEMPLAR_WORDS', 520, 120, 1200))
-  const knowledge = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off' ? { من_كتبك: [], من_لقاءاتك: [] } : domainKnowledge(`${input.idea} ${input.angle || ''}`)
+  /* مقالا نماذج الصوت يُستثنيان من «معرفتك»: هما في الطلب كاملين أصلاً. */
+  const knowledge = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off' ? { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [] } : domainKnowledge(`${input.idea} ${input.angle || ''}`, { exclude: input.existing.filter((item) => String(archiveBodyForSlug(item?.slug) || item?.body || '').split(/\s+/).filter(Boolean).length >= 220).slice(0, 2).map((item) => item?.slug).filter(Boolean) })
   const brief = styleBrief(dna, input.targetWords)
   /* ---------- الميزانية الزمنية: الباب أضيق من المحرك ----------
      السجلّ الحيّ: المقال كُتب مرتين بنجاح (٢٠٠ في ٧٩٫٦ ثم ٦٦٫١ ثانية) ولم يره
@@ -3458,7 +3499,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     '· الحدث الراهن اختياري: اربطه فقط إن كان الارتباط عضوياً. لا تستخدم سوى العنوان والملخص والمصدر والرابط المقدّم.',
     '· العنوان قويّ غير صحفيٍّ مبتذل، والمقتطف بين ٩٠ و١٩٠ حرفاً وبنبرة المقال نفسها.',
     '· «نماذج_صوت» مقالان كاملان من مقالاتك: اسمع منهما النَّفَس وطول الجملة والوقفة «…» والانقلاب «بل» والانتقال بين الفقرات. يُمنع نقل أي عبارةٍ أو مثالٍ أو فكرةٍ منهما؛ المطلوب أن يشبه المقالُ الجديدُ صوتَهما لا كلامَهما.',
-    '· «معرفتك» مقاطع من كتبك التسعة في تكنولوجيا التعليم ومن لقاءاتك (تفريغٌ آليّ قد يحمل كلام المحاور أو نشرة الأخبار؛ خذ منه موقفك أنت فقط): هي رصيدك أنت في تخصصك. ابنِ الحجة على مفاهيمها ومواقفك فيها بكلماتٍ جديدة، ولا تنقل منها جملةً حرفياً، ولا تنقل منها رقماً، ولا تقل «في كتابي» ولا «في لقاءٍ لي». وإن لم يصلك منها شيء فاكتب من فكرتك.',
+    '· «معرفتك» مقاطع من متون كتبك التسعة في تكنولوجيا التعليم ومن فقرات مقالاتك ومن لقاءاتك (تفريغٌ آليّ قد يحمل كلام المحاور أو نشرة الأخبار؛ خذ منه موقفك أنت فقط): هي رصيدك أنت في تخصصك. ابنِ الحجة على مفاهيمها ومواقفك فيها بكلماتٍ جديدة، ولا تنقل منها جملةً حرفياً، ولا تنقل منها رقماً، ولا تقل «في كتابي» ولا «في لقاءٍ لي». وإن لم يصلك منها شيء فاكتب من فكرتك.',
     '· أعد JSON فقط.',
   ].join('\n')
 
@@ -3506,6 +3547,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       معرفتك: {
         من_كتبك: knowledge.من_كتبك.slice(0, 2).map((item) => ({ ...item, نص: item.نص.slice(0, 300) })),
         من_لقاءاتك: knowledge.من_لقاءاتك.slice(0, 1).map((item) => ({ ...item, نص: item.نص.slice(0, 300) })),
+        من_مقالاتك: knowledge.من_مقالاتك.slice(0, 1).map((item) => ({ نص: item.نص.slice(0, 300) })),
       },
       nearestArchive: input.existing.slice(0, 10).map((item) => ({
         title: item.title, excerpt: item.excerpt, body: String(item.body || '').slice(0, 260),
@@ -3547,6 +3589,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     ...input.existing,
     ...knowledge.من_كتبك.map((item) => ({ body: item.نص })),
     ...knowledge.من_لقاءاتك.map((item) => ({ body: item.نص })),
+    ...knowledge.من_مقالاتك.map((item) => ({ body: item.نص })),
   ]
   const evaluate = (draft) => {
     const verdict = judgeStyle(draft.body, dna, {

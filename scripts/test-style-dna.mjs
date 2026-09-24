@@ -197,7 +197,7 @@ const learningFetch = async (url, init) => {
   const exemplarMatch = promptText.match(/"نماذج_صوت":\[\{"عنوان":"[^"]*","نص":"([^"]+)"/)
   if (exemplarMatch) sawExemplar = Math.max(sawExemplar, exemplarMatch[1].split(/\s+/).length)
   /* رصيده المعرفي: اقتباسٌ من كتبه في الفكرة نفسها يصل الكاتب. */
-  if (/"معرفتك":\{"من_كتبك":\[\{"مصدر":"[^"]*الذكاء الاصطناعي/.test(promptText)) sawKnowledge = true
+  if (/"معرفتك":\{"من_كتبك":\[\{"مصدر":"[^"]*الذكاء الاصطناعي/.test(promptText) && /"من_مقالاتك":\[\{"نص":"[^"]*الذكاء الاصطناعي/.test(promptText)) sawKnowledge = true
   /* النموذج الوهميّ لا «يتحسّن» إلا حين تصله أرقام النقص فعلاً. */
   if (instruction.includes('جولة تصحيحٍ إلزامية')) {
     sawCorrections = true
@@ -228,7 +228,7 @@ const weakVerdict = judgeStyle(refineToStyle(weakBody, dna), dna)
 const article = await generatePerfectArticle(input, learningFetch)
 assert.ok(sawCorrections, 'جولة التصحيح وقعت فعلاً')
 assert.ok(sawExemplar >= 200, `النموذج يسمع مقالاً كاملاً من أرشيفه (${sawExemplar} كلمة) لا جملتين`)
-assert.ok(sawKnowledge, 'الكاتب يرى اقتباساتٍ من كتبه في الفكرة نفسها لا مقالاته وحدها')
+assert.ok(sawKnowledge, 'الكاتب يرى من محتوى كتبه ومقالاته ما قاله في الفكرة نفسها')
 assert.equal(typeof article.voiceTouches, 'number', 'لمسة الصوت الأخيرة تُعلن بعدد تعديلاتها')
 assert.ok(cfCalls >= 3, `مرشحان ثم تصحيح (${cfCalls} نداءات)`)
 assert.ok(article.style, 'المقال يعود ومعه بطاقة أسلوبه')

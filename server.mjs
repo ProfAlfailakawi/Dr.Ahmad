@@ -3640,6 +3640,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   ]
   const evaluate = (draft) => {
     const verdict = judgeStyle(draft.body, dna, {
+      /* المسودة من صنع المحرك: تُحاسَب على ما لا يكتبه (الحكاية الشخصية المختلقة). */
+      generated: true,
       /* حارس النقل الحرفي يشمل كتبه ولقاءاته: هي مادةُ فكرٍ لا نصٌّ يُنسخ. */
       archive: knowledgeArchive,
       orthography,

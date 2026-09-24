@@ -834,6 +834,9 @@ export function styleBrief(rawDna, targetWords = 400) {
 
 /* ---------- الحَكَم ---------- */
 
+/* لقاءٌ شخصيّ بضمير المتكلم وحوار: لا يرد في مقالاته منذ ٢٠٢٦، والمحاكاة تكثر منه. */
+const PERSONAL_ANECDOTE_PATTERN = /(?<![\p{L}])(?:و|ف)?(?:سألتُ?ه?ا?|سألتُهم|أتذكّر|أتذكر|حدّثتني|حدثتني|حدّثني|حدثني|قال لي|قالت لي|صديقٌ لي|صديق لي|جارتي|ابنُ أخي|ابن أخي|أعرف رجلاً|أعرف رجلا|زرتُ|التقيتُ)(?![\p{L}])/gu
+
 /* المطابقة بحدود الكلمة: «صيد» داخل «رصيد» و«قصيدة» ليست الكلمة الممنوعة.
    هذا الخطأ وحده كان يرسّب تسعة عشر مقالاً من مقالاته. */
 const bannedPattern = (phrase) => {
@@ -1253,16 +1256,17 @@ export function judgeStyle(body, rawDna, options = {}) {
       ? `الإيقاع يشبه نصّ آلةٍ تحاكيه (${Math.round(trace.probability * 100)}٪): ${trace.reasons.slice(0, 3).map((item) => item.fix).join('؛ ')}. لا تُكثر من علاماته؛ اكتب بعاداته الخفية.`
       : '')
 
-  /* ١٣ — النظافة الطباعية (قاطع). */
+  /* ١٣ — النظافة الطباعية (قاطع). الشرطة «—» ليست منها: هو يكتبها (٦ من ٤٨ مقالاً منذ
+     ٢٠٢٥، «البشر—لا الروبوتات—كانوا»)، ولا نصَّ آلياً يحملها لأن الصقل يحوّلها فاصلة؛
+     فكانت القاعدة لا تُسقط إلا مقالاته هو (٥٥٪ بدل ٩٠٪). */
   const artifacts = []
-  if (/—/.test(text)) artifacts.push('الشرطة الاعتراضية —')
   if (/^\s*#{1,6}\s/m.test(text)) artifacts.push('عناوين ماركداون')
   if (/^\s*[-*•]\s/m.test(text)) artifacts.push('تعداد نقطي')
   if (/^\s*\d+[.)]\s/m.test(text)) artifacts.push('تعداد رقمي')
   if (/\*\*|__/.test(text)) artifacts.push('تشديد ماركداون')
   if (/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(text)) artifacts.push('رموز تعبيرية')
   add('typography', 'النظافة الطباعية', artifacts.length ? 0 : 1, 5,
-    artifacts.join(' · ') || 'نظيف', 'بلا شرطة ولا تعداد ولا ماركداون',
+    artifacts.join(' · ') || 'نظيف', 'بلا تعداد ولا ماركداون ولا رموز',
     artifacts.length ? `احذف: ${artifacts.join(' · ')}؛ لا تظهر في أي مقالٍ له.` : '')
   if (artifacts.length) fatal.push(`آثار قوالب آلية: ${artifacts.join(' · ')}`)
 
@@ -1275,6 +1279,23 @@ export function judgeStyle(body, rawDna, options = {}) {
     allBanned.length ? `احذف هذه العبارات وأعد صياغة مواضعها: ${allBanned.join(' · ')}.` : '')
   if (bannedHits.length) fatal.push(`عبارات نموذجٍ آليّ: ${bannedHits.join(' · ')}`)
   if (voiceHits.length) fatal.push(`صوتٌ ليس صوته: ${voiceHits.join(' · ')}`)
+
+  /* ١٤ب — صوته اليوم: كلماتٌ غابت عن آخر عشرين مقالاً له، وحكاياتٌ شخصية مختلقة
+     («سألتُ»، «حدثتني»، «أعرف رجلاً») — أوضح ما فضح المحاكاة أمام حَكَمين أعميين،
+     وصفرٌ منها في مقالاته الأربعة عشر في ٢٠٢٦. ليس قاطعاً (ما يكتبه بيده لا يُمنع)،
+     لكنه يُنقص الدرجة ويسلّم الكاتب الآلي أمر إصلاحٍ محدداً. */
+  const retiredHits = hasBanned(text, (dna.recent?.retired || []).filter((word) => word !== 'لكنّ'))
+  /* الحكاية الشخصية تُحاسَب في المسودة المولَّدة وحدها: ما يرويه هو من حياته حقيقيٌّ له
+     («حين أختبرُ مدرسةَ بناتي»)، وما يرويه النموذج بضمير المتكلم مختلقٌ بالضرورة. */
+  const anecdoteHits = options.generated ? [...new Set((text.match(PERSONAL_ANECDOTE_PATTERN) || []).map((hit) => hit.trim()))].slice(0, 4) : []
+  if (dna.recent || anecdoteHits.length) {
+    add('currentVoice', 'صوته اليوم', retiredHits.length || anecdoteHits.length ? Math.max(0, 1 - .5 * (retiredHits.length + anecdoteHits.length)) : 1, 8,
+      [...retiredHits, ...anecdoteHits].join(' · ') || 'نظيف', 'صفر',
+      [
+        retiredHits.length ? `احذف ما غاب عن مقالاته الأخيرة كلها: ${retiredHits.map((word) => `«${word}»`).join(' · ')}.` : '',
+        anecdoteHits.length ? `احذف الحكاية الشخصية المختلقة (${anecdoteHits.map((hit) => `«${hit}»`).join(' · ')}): لا يكتب في مقالاته الحديثة حواراً مع طالبٍ أو معلمٍ أو قريب. اجعلها مشهداً عامّاً بلا «أنا» (تظهر النتيجة، يتغيّر شكل البيت…).` : '',
+      ].filter(Boolean).join(' '))
+  }
 
   /* ١٥ — الإملاء بشهادة أرشيفه (قاطع حين يكون المرجع حاضراً). */
   const orthoIndex = options.orthography || null

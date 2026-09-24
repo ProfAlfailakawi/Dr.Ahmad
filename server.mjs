@@ -3129,7 +3129,8 @@ function knowledgeIndex() {
      نسب إليها فيها معنى. سبعون بالمئة من مقالاته في ٢٠٢٦ تستشهد هكذا، والكاتب كان
      ممنوعاً من كل استشهاد؛ هذا البنك يعطيه ما استشهد به هو وحده، فلا يخترع شيئاً. */
   for (const [slug, body] of archiveBodiesFallback()) {
-    for (const citation of citationsOf(body)) documents.push({ kind: 'citation', group: citation.key, slug, label: citation.key, text: citation.paragraph, claim: citation.sentence })
+    /* «Howard وآخرين (2021)» و«Howard et al. (2021)» مرجعٌ واحد. */
+    for (const citation of citationsOf(body)) documents.push({ kind: 'citation', group: citation.key.replace(/\s*(?:وآخرين|وآخرون)/u, ' et al.'), slug, label: citation.key, text: citation.paragraph, claim: citation.sentence })
   }
   const frequency = new Map()
   let totalLength = 0

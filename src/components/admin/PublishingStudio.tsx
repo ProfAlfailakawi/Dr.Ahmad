@@ -2870,9 +2870,9 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   )
   const liveStyleVerdict = useMemo(
     () => wordCount(settledBody) >= 120
-      ? judgeStyle(settledBody, styleDna, { archive: comparisonArchive, sources: archiveTexts, orthography })
+      ? judgeStyle(settledBody, styleDna, { archive: comparisonArchive, sources: archiveTexts, orthography, generated: Boolean(bundle.generatedBy) })
       : null,
-    [settledBody, styleDna, archiveTexts, comparisonArchive, orthography],
+    [settledBody, styleDna, archiveTexts, comparisonArchive, orthography, bundle.generatedBy],
   )
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []

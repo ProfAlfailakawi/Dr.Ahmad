@@ -102,6 +102,8 @@ export declare function judgeStyle(
     sources?: ({ body?: string; title?: string; summary?: string; excerpt?: string } | string)[]
     orthography?: Map<string, number> | null
     threshold?: number
+    /* المسودة من صنع المحرك: تُحاسَب على الحكاية الشخصية المختلقة، وما يكتبه هو لا. */
+    generated?: boolean
   },
 ): StyleVerdict
 

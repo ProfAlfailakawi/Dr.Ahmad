@@ -43,9 +43,13 @@ const IDEAS = [
   'القراءة العميقة تحمي عقل الطالب من الكسل المعرفي',
   'حين نعلّم أبناءنا أن يسألوا قبل أن يحفظوا نصنع جيلاً يفكّر بعمق ويختار بوعي',
 ]
-const decode = (value) => value.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+/* فكّ الكيانات بترتيبٍ واحد (&amp; آخراً) كي لا يُفكّ النص مرتين. */
+const ENTITIES = { '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&amp;': '&' }
+const decode = (value) => value.replace(/&(?:lt|gt|quot|#39|amp);/g, (entity) => ENTITIES[entity])
+/* نص العنصر بلا وسومه الداخلية (tspan): نجمع ما بين الوسوم بدل حذفها بتعبيرٍ واحد. */
+const textContent = (inner) => inner.split(/<[^>]*>/).join('')
 const normalize = (value) => value.replace(/[ً-ْـ…]/g, '').split(/\s+/).filter(Boolean)
-const drawnText = (svg) => [...svg.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/g)].map((match) => decode(match[1].replace(/<[^>]+>/g, ''))).join(' ')
+const drawnText = (svg) => [...svg.matchAll(/<text\b[^>]*>([\s\S]*?)<\/text>/g)].map((match) => decode(textContent(match[1]))).join(' ')
 /** كل كلمات الفكرة مرسومة، وبترتيبها (تسلسلٌ جزئي داخل النص المرسوم). */
 function missingWords(idea, svg) {
   const drawn = normalize(svg.includes('<text') ? drawnText(svg) : svg)

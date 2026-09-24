@@ -19,7 +19,7 @@ import { LiveDirector } from './LiveDirector'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 /* بصمة الأسلوب: المسطرة نفسها التي يقيس بها الخادم — الملف .mjs عمداً كي
    يستورده server.mjs بلا ترجمة، فلا يمدح أحدهما ما يرفضه الآخر. */
-import { buildOrthographyIndex, extractVoiceSignature, judgeStyle, locateIssues, measureStyleDna, refineToStyle, withVoiceMemory, type StyleVerdict } from '../../lib/style-dna.mjs'
+import { MACHINE_TRACE, buildOrthographyIndex, extractVoiceSignature, judgeStyle, locateIssues, measureStyleDna, refineToStyle, withVoiceMemory, type StyleVerdict } from '../../lib/style-dna.mjs'
 import { createIdeaDna } from '../../lib/idea-dna'
 import { buildKnowledgeGraph, graphSearch } from '../../lib/knowledge-graph'
 import { buildEditorialBoardDecision, editorialScoreLabel, type EditorialArchiveMaterial, type EditorialAudienceEvidence, type EditorialBoardDecision, type EditorialCalibrationProfile, type EditorialPortfolioEvidence, type EditorialSourceType } from '../../lib/editorial-board'
@@ -2886,8 +2886,15 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
 
      فالحجب الآن لما ولّده المحرك وحده. وما يكتبه الدكتور بيده يُقاس ويُعرض
      ولا يُمنع أبداً — أسلوبه هو تعريف أسلوبه. */
+  /* وأثر الآلة فوق عتبته يوقف نشر المسودة المولَّدة كالعيوب القاطعة: بدونه كانت
+     مسودةٌ «غير جاهزة» تعبر البوابة لأن البوابة لا ترى إلا fatal. */
   const styleBlockers = useMemo(
-    () => bundle.generatedBy ? (liveStyleVerdict?.fatal || []) : [],
+    () => bundle.generatedBy
+      ? [
+          ...(liveStyleVerdict?.fatal || []),
+          ...((liveStyleVerdict?.machineProbability ?? 0) >= MACHINE_TRACE.threshold ? [`أثر آلة ${Math.round((liveStyleVerdict?.machineProbability ?? 0) * 100)}٪`] : []),
+        ]
+      : [],
     [liveStyleVerdict, bundle.generatedBy],
   )
   const gate = useMemo(() => qualityGate(bundle, richArticles, targetWords, skipOriginality, liveStyleVerdict?.score ?? null, styleBlockers), [bundle, richArticles, skipOriginality, targetWords, liveStyleVerdict, styleBlockers])

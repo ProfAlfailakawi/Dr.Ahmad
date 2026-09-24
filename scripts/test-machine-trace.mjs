@@ -39,5 +39,8 @@ assert.ok(auc(own.map(natural), generic.map(natural)) >= .95, 'ويفصلها ع
 const flagged = [...generic, ...imitate].filter((verdict) => verdict.machineProbability >= S.MACHINE_TRACE.threshold)
 assert.ok(flagged.length >= 20, `أثر الآلة يرصد معظم النصوص الآلية (${flagged.length}/32)`)
 assert.ok(flagged.every((verdict) => verdict.corrections.some((line) => line.includes('يشبه نصّ آلةٍ'))), 'ومعه أمر تصحيح بالعادات الخفية')
+/* الحدّ يُطبَّق بالدقة التي يُعرض بها: ما يُعرض ≥٨٥٪ يُسقف عند ٧٤ فعلاً. */
+const strong = [...own, ...generic, ...imitate].filter((verdict) => verdict.machineProbability >= S.MACHINE_TRACE.strong)
+assert.ok(strong.every((verdict) => verdict.score <= 74 && !verdict.ready), 'كل ما يُعرض فوق الحدّ القوي مسقوفٌ وغير جاهز')
 
 console.log(`أثر الآلة: المحاكاة الجاهزة ${Math.round(rate(imitate) * 100)}٪ (كانت ٩٤٪) · مقالاته ${Math.round(rate(own) * 100)}٪ · AUC الطبيعية مع المحاكاة ${naturalImitate.toFixed(3)} ✓`)

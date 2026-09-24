@@ -1156,8 +1156,10 @@ export function judgeStyle(body, rawDna, options = {}) {
   /* حدّان: فوق العتبة (٠٫٧٥) لا يُعدّ النص جاهزاً؛ وفوق ٠٫٨٥ — دليلٌ قويّ —
      تُسقف الدرجة. الفاصل بينهما يحمي مقالاته هو من سقفٍ لا تستحقه: الصقل رفع
      احتمال مقالٍ واحدٍ له من ٠٫٧٤ إلى ٠٫٨٢. */
-  const machineLike = trace.probability >= MACHINE_TRACE.threshold
-  const machineStrong = trace.probability >= MACHINE_TRACE.strong
+  /* يُصنَّف بالدقة نفسها التي يُعرض بها: نصٌّ يُعرض «٨٥٪» يُسقف فعلاً. */
+  const machineProbability = Math.round(trace.probability * 100) / 100
+  const machineLike = machineProbability >= MACHINE_TRACE.threshold
+  const machineStrong = machineProbability >= MACHINE_TRACE.strong
   const capped = overlap.length ? Math.min(raw, 45) : (fatal.length ? Math.min(raw, 55) : machineStrong ? Math.min(raw, 74) : raw)
   const score = clampNumber(capped, 0, 100)
 
@@ -1168,7 +1170,7 @@ export function judgeStyle(body, rawDna, options = {}) {
        يسقف الدرجة وحده. الرقمان معاً يقولان الحقيقة كاملة. */
     raw,
     ready: score >= (options.threshold || STYLE_THRESHOLD_FALLBACK) && !fatal.length && !machineLike,
-    machineProbability: Math.round(trace.probability * 100) / 100,
+    machineProbability,
     checks,
     corrections: fixes.filter(Boolean),
     fatal,

@@ -64,6 +64,8 @@ export interface StyleVerdict {
   corrections: string[]
   fatal: string[]
   metrics: StyleMetrics
+  /** احتمال أن يكون النص آلياً وفق «أثر الآلة» (٠–١). */
+  machineProbability?: number
 }
 
 export declare const BANNED_PHRASES: string[]
@@ -102,6 +104,18 @@ export declare function judgeStyle(
     threshold?: number
   },
 ): StyleVerdict
+
+export declare const MACHINE_TRACE: {
+  version: number
+  intercept: number
+  threshold: number
+  strong: number
+  features: { key: string; label: string; w: number; mu: number; sd: number }[]
+}
+export declare function machineTrace(metrics: Partial<StyleMetrics> | Record<string, unknown>): {
+  probability: number
+  reasons: { key: string; label: string; fix: string }[]
+}
 
 export declare const STYLE_THRESHOLD_FALLBACK: number
 

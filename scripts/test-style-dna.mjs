@@ -569,7 +569,8 @@ assert.ok(dna.hinges.length >= 10 && dna.hinges.includes('بل'), 'ومفاصل 
 const calibration = calibrateStyle(archive, dna, { orthography: mimicOrtho })
 assert.ok(calibration.measured && calibration.sampleSize === archive.length, `المعايرة على أرشيفه كله (${calibration.sampleSize})`)
 assert.ok(calibration.threshold >= 70 && calibration.threshold <= 85, `العتبة المعايَرة ${calibration.threshold}٪ داخل حدّيها`)
-const styleFit = archive.filter((item) => judgeStyle(item.body, dna).raw >= calibration.threshold).length / archive.length
+/* تُقاس المقالات بالشروط نفسها التي عويِرت بها العتبة (معجم الإملاء حاضر)؛ القياس بشرطين مختلفين كان يحرّك النسبة مع كل وزنٍ جديد. */
+const styleFit = archive.filter((item) => judgeStyle(item.body, dna, { orthography: mimicOrtho }).raw >= calibration.threshold).length / archive.length
 assert.ok(styleFit >= .88, `تسعة أعشار مقالاته تعبر العتبة أسلوباً (${(styleFit * 100).toFixed(0)}٪) — وما دونها يسقط بالبوابات القاطعة لا بالمسطرة`)
 const genericRank = percentileRank(calibration.raw, genericVerdict.raw)
 assert.ok(genericRank <= 5, `مقال النموذج العام أدنى من ٩٥٪ من مقالاته (رتبته ${genericRank})`)

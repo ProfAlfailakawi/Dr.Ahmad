@@ -153,7 +153,10 @@ delete process.env.GEMINI_API_KEY
 delete process.env.GOOGLE_API_KEY
 process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account'
 process.env.CLOUDFLARE_API_TOKEN = 'test-token'
-const { generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
+const { domainKnowledge, generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
+/* الزاوية ترجّح ولا تُقصي: فكرةٌ بكلمةٍ واحدة مميّزة تجد متونها مهما كانت الزاوية. */
+const gamified = domainKnowledge('التلعيب', { angle: 'القيادة لا الاستبدال' })
+assert.ok(gamified.من_كتبك.some((item) => item.مصدر.includes('التلعيب')), 'مقاطع كتاب التلعيب تصل رغم زاويةٍ لا تذكره')
 
 /* نصّان مصطنعان للاختبار: أحدهما بلغة النماذج، والآخر بإيقاعه. كُتبا هنا
    عمداً (لا مقتطفان من أرشيفه) كي يعبرا حارس النقل الحرفي. */

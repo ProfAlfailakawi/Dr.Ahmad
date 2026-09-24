@@ -3118,17 +3118,22 @@ function knowledgeIndex() {
 }
 
 /** أقرب ما قاله هو في الفكرة، من كل مصدرٍ على حدة، بتنوّعٍ (مقطعان على الأكثر من الكتاب الواحد). */
-export function domainKnowledge(idea, { books = 4, articles = 2, interviews = 2, exclude = [] } = {}) {
+export function domainKnowledge(idea, { angle = '', books = 4, articles = 2, interviews = 2, exclude = [] } = {}) {
   const { documents, frequency, averageLength } = knowledgeIndex()
-  const query = [...new Set(knowledgeTerms(idea))].slice(0, 20)
+  /* الفكرة وحدها تشترط المطابقة؛ الزاوية ترجّح ولا تُقصي: «التلعيب» بزاوية «القيادة
+     لا الاستبدال» كانت تُسقط كل مقاطع التلعيب لأن كلمة الزاوية ليست فيها. */
+  const ideaTerms = [...new Set(knowledgeTerms(idea))].slice(0, 16)
+  const angleTerms = [...new Set(knowledgeTerms(angle))].filter((term) => !ideaTerms.includes(term)).slice(0, 8)
+  const query = [...ideaTerms, ...angleTerms]
   const empty = { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [] }
-  if (!query.length || !documents.length) return empty
+  if (!ideaTerms.length || !documents.length) return empty
+  const angleSet = new Set(angleTerms)
   const idf = new Map(query.map((term) => {
     const df = frequency.get(term) || 0
     return [term, Math.log(1 + (documents.length - df + .5) / (df + .5))]
   }))
   /* كلمتان من الفكرة في المقطع، إلا حين تكون الفكرة كلمةً واحدة. */
-  const needed = Math.min(2, query.filter((term) => frequency.get(term)).length || 1)
+  const needed = Math.min(2, ideaTerms.filter((term) => frequency.get(term)).length || 1)
   const skip = new Set(exclude)
   const scored = []
   for (const document of documents) {
@@ -3138,8 +3143,9 @@ export function domainKnowledge(idea, { books = 4, articles = 2, interviews = 2,
     for (const term of query) {
       const tf = document.tf.get(term)
       if (!tf) continue
-      matched += 1
-      score += idf.get(term) * (tf * 2.2) / (tf + 1.2 * (.25 + .75 * document.length / averageLength))
+      const weight = angleSet.has(term) ? .5 : 1
+      if (weight === 1) matched += 1
+      score += weight * idf.get(term) * (tf * 2.2) / (tf + 1.2 * (.25 + .75 * document.length / averageLength))
     }
     if (matched >= needed) scored.push({ document, score })
   }
@@ -3479,7 +3485,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   const anchors = rhythmAnchors(input.styleSamples)
   const exemplars = voiceExemplars(input.existing, envNumber('ARTICLE_VOICE_EXEMPLAR_WORDS', 520, 120, 1200))
   /* مقالا نماذج الصوت يُستثنيان من «معرفتك»: هما في الطلب كاملين أصلاً. */
-  const knowledge = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off' ? { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [] } : domainKnowledge(`${input.idea} ${input.angle || ''}`, { exclude: input.existing.filter((item) => String(archiveBodyForSlug(item?.slug) || item?.body || '').split(/\s+/).filter(Boolean).length >= 220).slice(0, 2).map((item) => item?.slug).filter(Boolean) })
+  const knowledge = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off' ? { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [] } : domainKnowledge(input.idea, { angle: input.angle || '', exclude: input.existing.filter((item) => String(archiveBodyForSlug(item?.slug) || item?.body || '').split(/\s+/).filter(Boolean).length >= 220).slice(0, 2).map((item) => item?.slug).filter(Boolean) })
   const brief = styleBrief(dna, input.targetWords)
   /* ---------- الميزانية الزمنية: الباب أضيق من المحرك ----------
      السجلّ الحيّ: المقال كُتب مرتين بنجاح (٢٠٠ في ٧٩٫٦ ثم ٦٦٫١ ثانية) ولم يره

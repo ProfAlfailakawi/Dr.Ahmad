@@ -8095,3 +8095,37 @@ html.dark {
     transform: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   «ولادة التصميم» — يرافق src/components/admin/design-birth.ts
+   الأيقونة الحيّة هي الختم: تحضر بعد أن تحطّ الأسطر لا قبلها. وزرّ
+   «شاهد ولادته» لا يظهر إلا لمن يمرّ فوق اللوحة أو يصل إليه بلوحة المفاتيح.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.design-birth [data-living-icon] {
+  transition: opacity .65s var(--E), scale .65s var(--E);
+}
+/* الغياب فوريّ (مع إعادة المشهد تختفي الأسطر في اللحظة نفسها)، والعودة متدرّجة. */
+.design-birth[data-birth="playing"] [data-living-icon] {
+  opacity: 0;
+  scale: .82;
+  pointer-events: none;
+  transition-duration: 0s;
+}
+.design-birth[data-birth="playing"] { cursor: pointer; }
+
+.design-birth-replay {
+  opacity: 0;
+  translate: 0 4px;
+  transition: opacity .3s var(--E), translate .3s var(--E), color .2s var(--E), border-color .2s var(--E);
+}
+.design-birth:hover .design-birth-replay,
+.design-birth-replay:focus-visible { opacity: 1; translate: 0 0; }
+/* اللمس بلا مرور: الزرّ حاضرٌ دائماً بخفوتٍ يليق بأداةٍ ثانوية. */
+@media (hover: none) {
+  .design-birth-replay { opacity: .86; translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .design-birth [data-living-icon] { transition: none; }
+}

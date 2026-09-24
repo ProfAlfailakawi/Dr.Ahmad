@@ -250,7 +250,7 @@ async function computePlacement(plan: CompositionPlan): Promise<Placement> {
   return { hide: false, top: best.cy - iconH / 2, left: best.cx - iconW / 2, size: sizePct }
 }
 
-export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
+export function LivingMetaphorIcon({ plan, still = false }: { plan: CompositionPlan; still?: boolean }) {
   const [motion] = useLivingIconMotion()
   const [placement, setPlacement] = useState<Placement | null>(null)
   const [manual, setManual] = useState<ManualPos | null>(() => readManualPos(plan))
@@ -287,6 +287,9 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
     writeEffectivePlacement(plan, { top: placement.top, left: placement.left, size: placement.size, hidden: placement.hide })
   }, [plan, placement])
 
+  /* حلقة الرسم لا تدور إلا حين تُرى: خارج الشاشة أو في تبويبٍ خفيّ تتوقّف تماماً
+     وتستأنف قبل دخولها المشهد بقليل (rootMargin). وفي القوائم (still) تقف على
+     إطارها المكتمل وتحيا تحت المؤشر فقط — تبدأ من طورها المكتمل فلا تومض فارغة. */
   useEffect(() => {
     if (!placement || placement.hide) return
     const canvas = canvasRef.current
@@ -299,10 +302,13 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
     canvas.width = S
     canvas.height = S
     let raf = 0
-    const started = performance.now()
+    let started = performance.now()
+    let onScreen = true
+    let hovered = false
     const paint = { ink: colors.ink, dim: colors.dim, accent: colors.accent, accent2: colors.accent2, danger: colors.danger }
-    const frame = () => {
-      const t = animate ? (performance.now() - started) / 1000 : 0.9
+    const live = () => animate && onScreen && !document.hidden && (!still || hovered)
+    const draw = (moving: boolean) => {
+      const t = moving ? (performance.now() - started) / 1000 : 0.9
       ctx.clearRect(0, 0, S, S)
       ctx.save()
       ctx.beginPath(); ctx.arc(S / 2, S / 2, S * 0.46, 0, Math.PI * 2)
@@ -314,7 +320,7 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
       ctx.strokeStyle = colors.accent
       ctx.stroke()
       ctx.restore()
-      if (animate) {
+      if (moving) {
         /* مدارٌ واضح لكن هادئ يجعل الحركة مقروءة حتى حين تكون الاستعارة نفسها
            ساكنة في طورها المكتمل؛ كان الثبات الطويل يوهم أن الأيقونة صورة. */
         const angle = t * .82
@@ -332,15 +338,45 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
         ctx.beginPath(); ctx.arc(S / 2 + Math.cos(angle) * radius, S / 2 + Math.sin(angle) * radius, 4.5, 0, Math.PI * 2); ctx.fill()
         ctx.restore()
       }
-      const cycle = animate ? t % 6 : 3
-      const prog = !animate ? 1 : cycle < 2.1 ? Math.min(1, cycle / 2.1) : cycle < 4.8 ? 1 : Math.max(0, 1 - (cycle - 4.8) / 1.2)
-      const breathe = animate ? .97 + .03 * Math.sin(t * 1.6) : 1
+      const cycle = moving ? t % 6 : 3
+      const prog = !moving ? 1 : cycle < 2.1 ? Math.min(1, cycle / 2.1) : cycle < 4.8 ? 1 : Math.max(0, 1 - (cycle - 4.8) / 1.2)
+      const breathe = moving ? .97 + .03 * Math.sin(t * 1.6) : 1
       paintMetaphor(ctx, metaphor, S / 2, S / 2, S * 0.6 * breathe, t, prog, paint)
-      if (animate) raf = requestAnimationFrame(frame)
     }
+    const frame = () => {
+      raf = 0
+      const moving = live()
+      draw(moving)
+      if (moving) raf = requestAnimationFrame(frame)
+    }
+    const wake = () => { if (!raf && live()) raf = requestAnimationFrame(frame) }
     frame()
-    return () => cancelAnimationFrame(raf)
-  }, [metaphor, colors, placement, motion])
+
+    const io = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(([entry]) => {
+      onScreen = Boolean(entry?.isIntersecting)
+      wake()
+    }, { rootMargin: '120px' })
+    io?.observe(canvas)
+    document.addEventListener('visibilitychange', wake)
+
+    const surface = still && animate ? wrapRef.current?.parentElement : null
+    const enter = () => { hovered = true; started = performance.now() - 2100; wake() }
+    const leave = () => {
+      hovered = false
+      if (raf) { cancelAnimationFrame(raf); raf = 0 }
+      draw(false)
+    }
+    surface?.addEventListener('pointerenter', enter)
+    surface?.addEventListener('pointerleave', leave)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      io?.disconnect()
+      document.removeEventListener('visibilitychange', wake)
+      surface?.removeEventListener('pointerenter', enter)
+      surface?.removeEventListener('pointerleave', leave)
+    }
+  }, [metaphor, colors, placement, motion, still])
 
   /* السحب للتحريك، وسحب الزاوية للتكبير — بوحدات نسبية تُحفظ لكل تصميم. */
   const drag = (event: React.PointerEvent, mode: 'move' | 'resize') => {
@@ -391,6 +427,7 @@ export function LivingMetaphorIcon({ plan }: { plan: CompositionPlan }) {
   return (
     <div
       ref={wrapRef}
+      data-living-icon=""
       className="group absolute z-10 aspect-square max-w-[160px] min-w-14 cursor-move touch-none"
       style={{ top: `${(placement.top * 100).toFixed(2)}%`, left: `${(placement.left * 100).toFixed(2)}%`, width: `${placement.size}%` }}
       onPointerDown={(event) => drag(event, 'move')}

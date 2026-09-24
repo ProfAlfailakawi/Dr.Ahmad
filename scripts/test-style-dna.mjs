@@ -21,7 +21,7 @@ const {
   BANNED_PHRASES, arabicCountPhrase, articleMetrics, calibrateStyle, countWords, judgeNaturalness, judgeStyle, measureStyleDna, percentileRank,
   PROOFREAD_INSTRUCTION, acceptProofread, bareText, buildOrthographyIndex, deriveExcerpt,
   extractVoiceSignature, liftPauses, locateIssues, orthographySlips, polishTypography, refineToStyle,
-  styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
+  sentencesOf, styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
 } = await import(resolve(root, 'src/lib/style-dna.mjs'))
 
 const bodies = JSON.parse(readFileSync(resolve(root, 'src/data/bodies.json'), 'utf8'))
@@ -145,15 +145,19 @@ const brief = styleBrief(dna, 400)
 for (const needle of ['وسيطها', 'نقاط الحذف', '…بل', 'صيدة', 'ممنوع']) {
   assert.ok(brief.includes(needle), `الوصفة تذكر «${needle}»`)
 }
-/* العادات الخفية بأرقامها من أرشيفه: الفقرة المعلّقة بـ«…» والواو وتفاوت الجمل. */
-assert.match(brief, /عاداته الخفية[^\n]*يختم \d+٪ من فقراته بوقفة «…»[^\n]*تبدأ بالواو[^\n]*متفاوتة/, 'الوصفة تنقل عاداته الخفية مقيسةً')
 
 /* ─── ٤) المحرك يتعلّم من أرقام الحَكَم ─── */
 delete process.env.GEMINI_API_KEY
 delete process.env.GOOGLE_API_KEY
 process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account'
 process.env.CLOUDFLARE_API_TOKEN = 'test-token'
-const { domainKnowledge, generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
+const { citationsOf, domainKnowledge, generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
+/* بنك المراجع: يلتقط استشهاداته كما كتبها، وبزمنٍ خطّي (CodeQL: النمط المتداخل كان يتراجع أُسّياً). */
+assert.deepEqual(citationsOf('وإذا أضفنا منظور Ryan وDeci (2000) في نظرية الدافعية الذاتية، تتضح الصورة.').map((item) => item.key), ['Ryan وDeci (2000)'])
+assert.deepEqual(citationsOf('هذا ما أشارت إليه أعمال حديثة مثل Lawrence et al. (2021) وFairlamb et al. (2022).').map((item) => item.key), ['Lawrence et al. (2021)'])
+const redosStarted = Date.now()
+citationsOf(`A'&A${"'andA".repeat(5000)}x (2019)`)
+assert.ok(Date.now() - redosStarted < 250, `استخراج المراجع خطّيّ (${Date.now() - redosStarted} ms)`)
 /* الزاوية ترجّح ولا تُقصي: فكرةٌ بكلمةٍ واحدة مميّزة تجد متونها مهما كانت الزاوية. */
 const gamified = domainKnowledge('التلعيب', { angle: 'القيادة لا الاستبدال' })
 assert.ok(gamified.من_كتبك.some((item) => item.مصدر.includes('التلعيب')), 'مقاطع كتاب التلعيب تصل رغم زاويةٍ لا تذكره')
@@ -318,6 +322,16 @@ assert.ok(medianOf(recent, eraDna) > medianOf(recent, flatDna), `الترجيح 
 /* والأهم: ما يُملى على المحرك تغيّر فعلاً نحو صوته اليوم */
 const flatBrief = styleBrief(flatDna, 400)
 const eraBrief = styleBrief(eraDna, 400)
+/* عاداته الخفية كما هي اليوم: الواو وتفاوت الجمل — لا «الفقرة المختومة بـ«…»» التي
+   كانت عادته قبل ٢٠٢٢ (١٠٠٪) وصارت صفراً في ٢٠٢٦. */
+assert.match(eraBrief, /عاداته الخفية[^\n]*تبدأ بالواو[^\n]*متفاوتة/, 'الوصفة تنقل عاداته الخفية مقيسةً')
+assert.doesNotMatch(eraBrief, /يختم \d+٪ من فقراته بوقفة/, 'ولا تأمر بعادةٍ تركها')
+/* «…» مدىً من صوته اليوم لا حدٌّ أدنى من صوت ٢٠١٧، وطباعتها كما يكتبها الآن. */
+const pauseRange = eraBrief.match(/نقاط الحذف «…»: بين (\d+) و(\d+)/)
+assert.ok(pauseRange && Number(pauseRange[2]) <= 10, `مدى الوقفات من صوته اليوم (${pauseRange?.[1]}–${pauseRange?.[2]})`)
+assert.ok(eraDna.marks.ellipsisTightRate >= .9 && eraBrief.includes('عاجزون…بل'), 'الوقفة تلتصق بما بعدها كما في مقالاته الأحدث')
+assert.equal(refineToStyle('يبتسم… لكن شيئاً لا يتحرّك.', eraDna), 'يبتسم…لكن شيئاً لا يتحرّك.', 'والصقل يتبع طباعته الحالية')
+assert.equal(sentencesOf('يبتسم…لكن شيئاً لا يتحرّك. هل نستعدّ؟').length, 3, 'والوقفة الملتصقة فاصلُ جملة كالمنفصلة')
 const numberIn = (brief, needle) => Number((brief.split('\n').find((line) => line.includes(needle)) || '').match(/\d+/)?.[0] || 0)
 assert.ok(numberIn(eraBrief, 'الأسئلة البلاغية') > numberIn(flatBrief, 'الأسئلة البلاغية'), 'الأسئلة ارتفعت — وهي علامته اليوم')
 assert.ok(numberIn(eraBrief, 'نقاط الحذف') < numberIn(flatBrief, 'نقاط الحذف'), 'الوقفات انخفضت — وهي علامته القديمة')

@@ -47,6 +47,7 @@ function WorldCard({world,idea,active,favorite,compare,onFavorite,onCompare,onDr
     const layer=motionRef.current
     if(!layer||!live||!visible)return
     if(typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches)return
+    layer.style.transition=''
     const started=performance.now()
     const motion=world.motionDna[0]
     const tick=(now:number)=>{
@@ -58,7 +59,14 @@ function WorldCard({world,idea,active,favorite,compare,onFavorite,onCompare,onDr
       rafRef.current=requestAnimationFrame(tick)
     }
     rafRef.current=requestAnimationFrame(tick)
-    return()=>cancelAnimationFrame(rafRef.current)
+    /* مغادرة المؤشر: الطبقة كانت تتجمّد على آخر إطار فيبقى وهجٌ باهت على كل بطاقة
+       مُرَّ فوقها؛ الآن تنطفئ بهدوء إلى سكونها (opacity-0) بالمنحنى الموحّد. */
+    return()=>{
+      cancelAnimationFrame(rafRef.current)
+      layer.style.transition='opacity .45s cubic-bezier(.2,.7,.2,1), transform .45s cubic-bezier(.2,.7,.2,1)'
+      layer.style.opacity=''
+      layer.style.transform=''
+    }
   },[live,visible,world.motionDna])
   return <article ref={ref} onMouseEnter={()=>setLive(true)} onMouseLeave={()=>setLive(false)} onFocus={()=>setLive(true)} onBlur={()=>setLive(false)} className={`group relative overflow-hidden rounded-xl border transition ${active?'ring-2 ring-sky-300/70':''}`} style={{background:wp.background,borderColor:active?wp.accent:wp.rule}}>
     <div className="absolute left-2 top-2 z-20 flex gap-1"><button type="button" className={tiny} onClick={onFavorite} aria-label="حفظ المفضلة">{favorite?'★':'☆'}</button><button type="button" className={tiny} onClick={onCompare} aria-pressed={compare} aria-label="أضف للمقارنة">⇄</button></div>

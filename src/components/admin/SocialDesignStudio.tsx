@@ -33,9 +33,10 @@ import {
   seasonIdentityFor,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES, resolvePalette } from '../../lib/social-design-engine'
-import { motion } from 'framer-motion'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
+import { motion, useReducedMotion } from 'framer-motion'
 import { EASE as STUDIO_EASE } from '../motion'
+import { DesignBirthStage } from './DesignBirthStage'
 import { dressPlanInWorld, planWorldId, undressPlanFromWorld, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import { analyzeStudioImageFromFile, analyzeStudioImageFromUrl, extractVisualDnaFromFile, type StudioImagePassport, type VisualDna } from '../../lib/visual-dna'
@@ -571,8 +572,15 @@ function RemoteVisualThumbnail({ src, alt, className }: { src: string; alt: stri
   return <img src={src} alt={alt} className={className} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
 }
 
+/* شريط المراحل: حبرُ المرحلة الفعّالة لا يقفز — ينزلق من مرحلةٍ إلى أخرى كالقلم على
+   السطر (layoutId مشترك، بالمنحنى الموحّد)، والنص يتبدّل لونه معه. ومع تقليل الحركة
+   ينتقل الحبر فوراً بلا انزلاق. */
 function StageRail({ stage, onChange }: { stage: StudioStage; onChange: (stage: StudioStage) => void }) {
-  return <nav aria-label="مراحل استوديو التصميم" className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><ol className="flex min-w-max gap-2 rounded-[1.4rem] border border-hair bg-canvas/80 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]">{STUDIO_STAGES.map((item) => <li key={item.id}><button type="button" onClick={() => onChange(item.id)} className={`group min-w-[145px] rounded-[1.1rem] px-4 py-3 text-right transition-all duration-300 ${stage === item.id ? 'bg-ink text-white shadow-[0_12px_30px_rgba(15,23,42,.16)]' : 'text-soft hover:bg-paper hover:text-ink'}`}><span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[.58rem] font-black tracking-[.08em] ${stage === item.id ? 'bg-white/14 text-white' : 'border border-hair bg-paper text-accent'}`}>{item.number}</span><strong className="mt-2 block text-[.82rem]">{item.label}</strong><span className={`mt-1 block text-[.62rem] ${stage === item.id ? 'text-white/65' : 'text-soft'}`}>{item.description}</span></button></li>)}</ol></nav>
+  const still = useReducedMotion()
+  return <nav aria-label="مراحل استوديو التصميم" className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><ol className="flex min-w-max gap-2 rounded-[1.4rem] border border-hair bg-canvas/80 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]">{STUDIO_STAGES.map((item) => {
+    const active = stage === item.id
+    return <li key={item.id}><button type="button" onClick={() => onChange(item.id)} aria-current={active ? 'step' : undefined} className={`group relative min-w-[145px] rounded-[1.1rem] px-4 py-3 text-right transition-colors duration-300 ease-[cubic-bezier(.2,.7,.2,1)] ${active ? 'text-white' : 'text-soft hover:bg-paper hover:text-ink'}`}>{active && <motion.span layoutId="studio-stage-ink" aria-hidden="true" className="absolute inset-0 rounded-[1.1rem] bg-ink shadow-[0_12px_30px_rgba(15,23,42,.16)]" transition={{ duration: still ? 0 : 0.55, ease: STUDIO_EASE }} />}<span className="relative block"><span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[.58rem] font-black tracking-[.08em] transition-colors duration-300 ease-[cubic-bezier(.2,.7,.2,1)] ${active ? 'bg-white/[.14] text-white' : 'border border-hair bg-paper text-accent'}`}>{item.number}</span><strong className="mt-2 block text-[.82rem]">{item.label}</strong><span className={`mt-1 block text-[.62rem] transition-colors duration-300 ease-[cubic-bezier(.2,.7,.2,1)] ${active ? 'text-white/65' : 'text-soft'}`}>{item.description}</span></span></button></li>
+  })}</ol></nav>
 }
 
 const toneLabels: Record<ContentTone | 'auto', string> = {
@@ -717,7 +725,9 @@ function storeTasteLedger(ledger: TasteSignalLedger) {
   try { window.localStorage.setItem(TASTE_LEDGER_KEY, JSON.stringify(ledger)) } catch { /* الذاكرة اختيارية ولا تعطل التصدير */ }
 }
 
-function Preview({ plan, className = '', livingIcon, arrange }: { plan: CompositionPlan; className?: string; livingIcon?: boolean; arrange?: boolean }) {
+/** `livingStill`: في القوائم تقف الأيقونة الحيّة على إطارها المكتمل وتحيا تحت المؤشر
+    فقط — عشرون بطاقة لا تعني عشرين حلقة رسمٍ تدور معاً. */
+function Preview({ plan, className = '', livingIcon, livingStill, arrange }: { plan: CompositionPlan; className?: string; livingIcon?: boolean; livingStill?: boolean; arrange?: boolean }) {
   const [enabledPref] = useLivingIconEnabled()
   const showIcon = livingIcon ?? enabledPref
   return (
@@ -726,101 +736,14 @@ function Preview({ plan, className = '', livingIcon, arrange }: { plan: Composit
       style={{ aspectRatio: `${plan.format.width} / ${plan.format.height}` }}
     >
       <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: renderCompositionSvg(plan) }} />
-      {showIcon && <LivingMetaphorIcon plan={plan} />}
+      {showIcon && <LivingMetaphorIcon plan={plan} still={livingStill} />}
       {arrange && <MovableWordsLayer plan={plan} />}
     </div>
   )
 }
 
-/* ═══════════ لحظة الولادة: مكوّنات التصميم الحقيقية تتجمّع أمام العين ═══════════
-   عند اكتمال التوليد لا نعرض النتيجة قفزةً واحدة: نصوصُ التصميم الفعلية،
-   صورتُه، عيّناتُ لوحته اللونية — تظهر مبعثرةً ثم تنجرف بنعومة إلى مواضعها
-   الحقيقية (المشتقة من geometry الخطة نفسها) حتى تذوب في النتيجة النهائية.
-   الحركة على transform وopacity فقط، تُعرض مرةً واحدة لكل بصمة تصميم جديدة،
-   ولا تعمل إطلاقاً مع تفضيل تقليل الحركة. لا تلمس منطق التوليد ولا التحرير. */
-
-const playedAssemblyFingerprints = new Set<string>()
 const playedCampaignSpreads = new Set<string>()
 const prefersStillness = () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
-
-/** شتاتٌ حتميّ: إزاحة ثابتة مشتقة من بصمة الخطة، فلا تختلف بين رسمتين. */
-function assemblyJitter(fingerprint: string, index: number, span: number): number {
-  let hash = 9
-  for (let i = 0; i < fingerprint.length; i++) hash = ((hash << 5) - hash + fingerprint.charCodeAt(i)) | 0
-  const raw = Math.sin(hash * 0.000037 + index * 12.9898) * 43758.5453
-  return ((raw - Math.floor(raw)) * 2 - 1) * span
-}
-
-function DesignAssemblyReveal({ plan, children }: { plan: CompositionPlan; children: ReactNode }) {
-  const [playing, setPlaying] = useState(() => !prefersStillness() && !playedAssemblyFingerprints.has(plan.fingerprint))
-  useEffect(() => {
-    if (!playing) return
-    playedAssemblyFingerprints.add(plan.fingerprint)
-    const timer = window.setTimeout(() => setPlaying(false), 2250)
-    return () => window.clearTimeout(timer)
-  }, [playing, plan.fingerprint])
-  if (!playing) return <>{children}</>
-  const palette = resolvePalette(plan)
-  const heroImage = plan.overlays?.find((item) => item.kind === 'image' && item.src)?.src
-  const { titleZone, bodyZone } = plan.geometry
-  const fp = plan.fingerprint
-  const clampPct = (value: number) => `${Math.max(2, Math.min(92, value * 100))}%`
-  // القطع الحقيقية من الخطة المولّدة نفسها: نص، لون، شكل — لا مشهد جاهز.
-  const fragments: { id: string; node: ReactNode; left: string; top: string; width?: string; delay: number }[] = []
-  if (plan.content.kicker) fragments.push({ id: 'kicker', node: <span style={{ color: palette.accent, fontSize: 'clamp(.5rem,1.4vw,.68rem)', fontWeight: 800, letterSpacing: '.08em' }}>{plan.content.kicker}</span>, left: clampPct(titleZone.x), top: clampPct(Math.max(0.03, titleZone.y - 0.09)), delay: 0.05 })
-  fragments.push({ id: 'title', node: <strong className="font-display" style={{ color: palette.ink, fontSize: 'clamp(.95rem,2.6vw,1.7rem)', lineHeight: 1.35, display: 'block' }}>{plan.content.title || plan.content.heroWord || plan.content.original.slice(0, 60)}</strong>, left: clampPct(titleZone.x), top: clampPct(titleZone.y), width: `${Math.min(92, titleZone.width * 100)}%`, delay: 0.14 })
-  const bodyLine = plan.content.subtitle || plan.content.body || plan.content.quote
-  if (bodyLine) fragments.push({ id: 'body', node: <span style={{ color: palette.muted, fontSize: 'clamp(.58rem,1.6vw,.78rem)', lineHeight: 1.9, display: 'block' }}>{bodyLine.slice(0, 120)}</span>, left: clampPct(bodyZone.x), top: clampPct(bodyZone.y), width: `${Math.min(88, bodyZone.width * 100)}%`, delay: 0.26 })
-  if (plan.content.cta) fragments.push({ id: 'cta', node: <span style={{ color: palette.background, background: palette.accent, borderRadius: 999, padding: '.34em 1em', fontSize: 'clamp(.5rem,1.4vw,.66rem)', fontWeight: 700, display: 'inline-block' }}>{plan.content.cta}</span>, left: clampPct(titleZone.x), top: '84%', delay: 0.38 })
-  // عيّنات اللوحة الفعلية: خلفية وحبر ولكنة — تصطف ثم تذوب في التصميم.
-  ;[palette.accent, palette.ink, palette.accentSoft, palette.muted].forEach((swatch, i) => {
-    fragments.push({ id: `swatch-${i}`, node: <span style={{ display: 'block', width: 'clamp(12px,2.6vw,20px)', height: 'clamp(12px,2.6vw,20px)', borderRadius: '50%', background: swatch, boxShadow: `0 0 0 1px ${palette.rule}` }} />, left: `${8 + i * 7}%`, top: '5%', delay: 0.1 + i * 0.06 })
-  })
-  fragments.push({ id: 'rule', node: <span style={{ display: 'block', height: 2, background: palette.accent, borderRadius: 2 }} />, left: clampPct(titleZone.x), top: clampPct(Math.min(0.92, titleZone.y + 0.16)), width: '18%', delay: 0.32 })
-  return (
-    <div className="relative">
-      <motion.div initial={{ opacity: 0, scale: 0.988 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.5, duration: 0.6, ease: STUDIO_EASE }}>
-        {children}
-      </motion.div>
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
-        style={{ background: palette.background }}
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ delay: 1.55, duration: 0.65, ease: STUDIO_EASE }}
-      >
-        {heroImage && (
-          <motion.img
-            src={heroImage}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: plan.overlays?.some((item) => item.kind === 'image' && item.imageRole === 'background') ? 0.85 : 0.55, scale: 1 }}
-            transition={{ duration: 1.25, delay: 0.2, ease: STUDIO_EASE }}
-          />
-        )}
-        {fragments.map((fragment, index) => {
-          const dx = assemblyJitter(fp, index * 3 + 1, 130)
-          const dy = assemblyJitter(fp, index * 3 + 2, 95)
-          const rot = assemblyJitter(fp, index * 3 + 3, 9)
-          return (
-            <motion.div
-              key={fragment.id}
-              className="absolute text-right"
-              style={{ insetInlineStart: fragment.left, top: fragment.top, width: fragment.width, willChange: 'transform,opacity' }}
-              initial={{ x: dx, y: dy, rotate: rot, scale: 0.86, opacity: 0 }}
-              animate={{ x: [dx, dx * 0.32, 0], y: [dy, dy * 0.28, 0], rotate: [rot, rot * 0.3, 0], scale: [0.86, 1.02, 1], opacity: [0, 1, 1] }}
-              transition={{ duration: 1.3, delay: fragment.delay, times: [0, 0.62, 1], ease: STUDIO_EASE }}
-            >
-              {fragment.node}
-            </motion.div>
-          )
-        })}
-      </motion.div>
-    </div>
-  )
-}
 
 /* ═══════════ من الاعتماد إلى النشر: التصميم الواحد ينشطر إلى مقاسات الحملة ═══════════
    بطاقات الحملة تبدأ متراكبةً في موضع البطاقة الأولى (جهة النسخة المعتمدة في
@@ -839,7 +762,7 @@ function CampaignSpreadStrip({ campaign }: { campaign: SocialCampaign }) {
           animate={{ x: 0, scale: 1, opacity: 1 }}
           transition={{ duration: 0.9, delay: 0.06 + index * 0.07, ease: STUDIO_EASE }}
         >
-          <Preview plan={asset.plan} />
+          <Preview plan={asset.plan} livingStill />
           <strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong>
           <p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p>
         </motion.article>
@@ -4392,7 +4315,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       {SIMPLIFIED_STUDIO && stage === 'directions' && (
         <section className={`${card} overflow-hidden`}>
           {approvedPlan ? <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)]">
-            <div className="rounded-[1.65rem] border border-hair bg-canvas p-3 shadow-[0_24px_70px_rgba(15,23,42,.08)]"><DesignAssemblyReveal plan={approvedPlan}><Preview plan={approvedPlan} className="w-full" /></DesignAssemblyReveal></div>
+            <div className="rounded-[1.65rem] border border-hair bg-canvas p-3 shadow-[0_24px_70px_rgba(15,23,42,.08)]"><DesignBirthStage fingerprint={approvedPlan.fingerprint}><Preview plan={approvedPlan} className="w-full" /></DesignBirthStage></div>
             <div className="grid content-start gap-4">
               <div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.12em] text-emerald-700">Approved by Zero-Decision</div><h3 className="mt-4 font-display text-3xl font-bold leading-tight text-ink">هذه هي النتيجة التي اعتمدها المخرج.</h3><p className="mt-3 text-[.82rem] leading-loose text-soft">{zeroDecision?.note || 'تم اختيارها بعد مقارنة الجودة وقوة التوقف والقراءة والأصالة وملاءمة الفكرة والجمهور.'}</p></div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-professional-visual-gate="true"><div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center"><strong className="block font-display text-2xl text-emerald-700">{zeroDecision?.professionalScore || professionalReleaseGate(approvedPlan).score}٪</strong><span className="text-[.62rem] text-emerald-800">عين المصمم</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
@@ -4467,13 +4390,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             {artDirections.map((direction, index) => <article key={direction.id} className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[.62rem] font-bold text-accent">الرؤية {index + 1}</span><h4 className="mt-1 text-[.9rem] font-bold text-ink">{direction.title}</h4></div><span className="rounded-full bg-paper px-2 py-1 text-[.62rem] font-semibold text-accent">قرب الهوية {direction.identityFit}٪</span></div><p className="mt-2 text-[.72rem] leading-relaxed text-soft">{direction.description}</p><dl className="mt-3 grid gap-2"><div><dt className="text-[.6rem] font-semibold text-soft">الشعور</dt><dd className="text-[.68rem] text-ink">{direction.feeling}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الصورة المطلوبة</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.imageNeed}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الخطر</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.risk}</dd></div></dl><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => generate({ tone: direction.tone, platform: direction.platform, preferLayout: direction.preferLayout })}>أعد بناء هذه الرؤية</button></article>)}
           </div>
           {autopilotPack.length > 0 && <div className="mt-4 grid gap-3 xl:grid-cols-5 md:grid-cols-2"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 xl:col-span-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Creative Director Autopilot</p><h4 className="mt-1 text-[1rem] font-bold text-ink">خمس نهايات لا خمس محاولات عشوائية.</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">الطيار الآلي يبني خمس نسخ نهائية: آمنة، تحريرية، فاخرة، عالية التوقف، ونسخة دليل — ثم يختار منها الأجدر بالعرض، ويستطيع الآن تصدير أفضل 3 نهائيات بضغطة واحدة.</p></div><div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-accent/20 bg-white/70 px-3 py-1.5 text-[.66rem] font-semibold text-accent">الأفضل الآن {autopilotPack[0]?.label || '—'} · {autopilotPack[0]?.worldScore || 0}٪</span><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'تنزيل أفضل 3'}</button></div></div></div>{autopilotPack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.76rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.worldScore}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-2 flex flex-wrap gap-1.5 text-[.58rem] text-soft"><span className="rounded-full border border-hair px-2 py-1">جودة {item.qualityScore}٪</span><span className="rounded-full border border-hair px-2 py-1">توقف {item.stopScore}٪</span></div><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => { setSelected(item.plan); setStage('edit') }}>افتح هذه النسخة</button></article>)}</div>}
-          {releasePack.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 md:col-span-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Absolute Release Pack</p><h4 className="mt-1 text-[1rem] font-bold text-ink">ثلاث نسخ لا يحتاج بعدها الفريق إلى سؤال: ماذا ننشر؟</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">هذه الحزمة ليست تبديلاً سطحياً؛ كل نسخة بُنيت لوظيفة نشر مختلفة: المرجع الرسمي، النسخة الأكثر أماناً، والنسخة الأعلى قابلية للتوقف والانتشار.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يعيد بناء الحزمة…' : 'أعد بناء الحزمة'}</button><button type="button" className={primary} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل Final / Safer / Viral'}</button></div></div></div>{releasePack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><button type="button" className="block w-full text-right" onClick={() => { setSelected(item.plan); setStage('edit') }}><Preview plan={item.plan} /></button><div className="pt-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.8rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.score}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(item.plan); setStage('edit') }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(item.plan, 'png')}>PNG</button></div></div></article>)}</div>}
+          {releasePack.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 md:col-span-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Absolute Release Pack</p><h4 className="mt-1 text-[1rem] font-bold text-ink">ثلاث نسخ لا يحتاج بعدها الفريق إلى سؤال: ماذا ننشر؟</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">هذه الحزمة ليست تبديلاً سطحياً؛ كل نسخة بُنيت لوظيفة نشر مختلفة: المرجع الرسمي، النسخة الأكثر أماناً، والنسخة الأعلى قابلية للتوقف والانتشار.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يعيد بناء الحزمة…' : 'أعد بناء الحزمة'}</button><button type="button" className={primary} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل Final / Safer / Viral'}</button></div></div></div>{releasePack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><button type="button" className="block w-full text-right" onClick={() => { setSelected(item.plan); setStage('edit') }}><Preview plan={item.plan} livingStill /></button><div className="pt-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.8rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.score}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(item.plan); setStage('edit') }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(item.plan, 'png')}>PNG</button></div></div></article>)}</div>}
           {zeroDecision && <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-emerald-700">Zero-Decision Mode</p><h4 className="mt-1 text-[1rem] font-bold text-ink">النظام حسم قرار النشر بدلاً عنك.</h4><p className="mt-1 max-w-3xl text-[.74rem] leading-relaxed text-soft">{zeroDecision.note}</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">النسخة المعتمدة: {zeroDecision.approved.label}</span><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">درجة النسخة {zeroDecision.approved.score}٪</span><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">الحملة {zeroDecision.campaignQuality}٪</span></div></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => { setSelected(zeroDecision.approved.plan); setStage('edit') }}>افتح النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportPlan(zeroDecision.approved.plan, 'png')}>تنزيل النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل الحزمة كاملة'}</button><span className={`rounded-full px-3 py-2 text-[.66rem] font-semibold ${zeroDecision.campaignReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{zeroDecision.campaignReady ? 'الحملة جاهزة مبدئياً' : 'الحملة تحتاج مراجعة نهائية'}</span></div></section>}
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-hair bg-canvas p-3"><span className="me-auto text-[.68rem] font-semibold text-soft">مفاتيح إبداع غير عادية:</span><button type="button" className={ghost} onClick={() => { setNotice('أبتعد عن تاريخك البصري بمقدار مضبوط مع إبقاء الهوية.'); generate({ tone: 'bold', preferLayout: 'quiet-orbit' }) }}>اكسر ذوقي بذكاء</button><button type="button" className={ghost} onClick={() => generate({ tone: 'human', density: 'minimal', preferLayout: 'human-note' })}>لا تجعلها تبدو مصممة</button><button type="button" className={ghost} onClick={() => generate({ tone: 'deep', density: 'minimal', preferLayout: 'cinematic-window' })}>التصميم الصامت</button></div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {plans.map((plan) => (
               <article key={plan.id} className="group grid content-start gap-3 rounded-[1.4rem] border border-hair bg-canvas p-3 transition hover:-translate-y-1 hover:border-accent/40 hover:shadow-lg">
-                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(plan) }} aria-label={`افتح ${plan.directionLabel}`}><Preview plan={plan} /></button>
+                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(plan) }} aria-label={`افتح ${plan.directionLabel}`}><Preview plan={plan} livingStill /></button>
                 <div className="px-1 pb-1">
                   <div className="flex items-start justify-between gap-3"><div><strong className="block text-[.82rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.68rem] text-soft">{plan.format.label}</span></div><div className="flex flex-col items-end gap-1"><span className="rounded-full bg-paper px-2 py-1 text-[.64rem] font-semibold text-accent">تقييم داخلي {plan.quality?.score || 0}٪</span><span className="text-[.62rem] text-soft">{Math.round(plan.novelty * 100)}٪ جديد</span></div></div>
                   <p className="mt-2 line-clamp-2 text-[.72rem] leading-relaxed text-soft">{plan.rationale.join(' · ')}</p>
@@ -4508,7 +4431,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {campaign.assets.map((asset) => (
               <article key={asset.id} className="rounded-[1.4rem] border border-hair bg-canvas p-3">
-                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(asset.plan) }}><Preview plan={asset.plan} /></button>
+                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(asset.plan) }}><Preview plan={asset.plan} livingStill /></button>
                 <div className="px-1 pt-3"><strong className="block text-[.8rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{asset.purpose}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setStage('edit'); setSelected(asset.plan) }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(asset.plan, 'png')}>PNG</button></div></div>
               </article>
             ))}
@@ -4520,7 +4443,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         <section className={card} aria-labelledby="saved-social-designs-title">
           <div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">Saved directions</p><h3 id="saved-social-designs-title" className="mt-1 font-display text-2xl font-bold text-ink">نسخك المختارة</h3></div><button type="button" className={ghost} onClick={() => setShowSaved(false)}>إخفاء</button></div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {savedPlans.map((plan) => <button key={plan.fingerprint} type="button" onClick={() => { setStage('edit'); setSelected(plan) }} className="rounded-[1.3rem] border border-hair bg-canvas p-3 text-right transition hover:border-accent/40 hover:shadow-lg"><Preview plan={plan} /><strong className="mt-3 block text-[.78rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.66rem] text-soft">{plan.format.label}</span></button>)}
+            {savedPlans.map((plan) => <button key={plan.fingerprint} type="button" onClick={() => { setStage('edit'); setSelected(plan) }} className="rounded-[1.3rem] border border-hair bg-canvas p-3 text-right transition hover:border-accent/40 hover:shadow-lg"><Preview plan={plan} livingStill /><strong className="mt-3 block text-[.78rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.66rem] text-soft">{plan.format.label}</span></button>)}
           </div>
         </section>
       )}

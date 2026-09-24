@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGzip } from 'node:zlib'
 import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
-import { PROOFREAD_INSTRUCTION, acceptProofread, arabicCountPhrase, articleMetrics, buildOrthographyIndex, deriveExcerpt, DEVICE_FORMS, FILE_FORMS, judgeStyle, orthographySlips, PROBLEM_FORMS, refineToStyle, resolveStyleDna, RULE_FORMS, styleBrief, styleReportLines, SUBSCRIBER_FORMS, VERIFIED_FILE_FORMS, WARNING_FORMS, withVoiceMemory, WORD_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from './src/lib/style-dna.mjs'
+import { PROOFREAD_INSTRUCTION, acceptProofread, arabicCountPhrase, articleMetrics, buildOrthographyIndex, citationSpans, deriveExcerpt, DEVICE_FORMS, FILE_FORMS, judgeStyle, orthographySlips, PROBLEM_FORMS, refineToStyle, resolveStyleDna, RULE_FORMS, styleBrief, styleReportLines, SUBSCRIBER_FORMS, VERIFIED_FILE_FORMS, WARNING_FORMS, withVoiceMemory, WORD_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from './src/lib/style-dna.mjs'
 import { buildMimicLexicon, mimicVoice } from './src/lib/style-mimic.mjs'
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
@@ -3084,41 +3084,21 @@ function interviewDocuments() {
   return documents
 }
 
-/* «Ryan وDeci (2000)»، «Carol Dweck (2006)»، «Howard et al. (2021)»، «Yusefzadeh وآخرين (2019)».
-   بلا تعبيرٍ نمطيٍّ متداخل: CodeQL نبّه إلى أن النمط الواحد الجامع يتراجع أُسّياً
-   (٢٤ تكراراً = ٢٫٧ ثانية). السنة بين قوسين تُلتقط، ثم يُمشى إلى الوراء كلمةً كلمة
-   على أسماء لاتينية وروابطها — خطّيٌّ ومحدودٌ بثماني كلمات. */
-const CITATION_YEAR = /\(\s*((?:19|20)\d{2})\s*\)/gu
-const CITATION_NAME_TOKEN = /^و?(?:[A-Z][A-Za-z'’.-]*|et|al\.?|and|&|van|der|de|وآخرين|وآخرون)$/u
-function citationName(before = '') {
-  const tokens = before.trimEnd().split(/\s+/).slice(-8)
-  const name = []
-  for (let index = tokens.length - 1; index >= 0; index -= 1) {
-    if (!CITATION_NAME_TOKEN.test(tokens[index])) break
-    name.unshift(tokens[index])
-  }
-  while (name.length && !/^و?[A-Z]/u.test(name[0])) name.shift()
-  return name.length ? name.join(' ') : ''
-}
 export function citationsOf(body = '') {
   const found = []
   for (const paragraph of String(body).split(/\n\s*\n/)) {
-    /* «et al.» ليست نهاية جملة: تُحمى قبل التقطيع. */
+    /* «et al.» ليست نهاية جملة: تُحمى قبل التقطيع ثم تُعاد. */
     const text = paragraph.replace(/\s+/g, ' ').replace(/et al\./g, 'et al').trim()
     const sentences = text.split(/(?<=[.!؟])\s+/)
     sentences.forEach((sentence, index) => {
-      let match = null
-      for (const year of sentence.matchAll(CITATION_YEAR)) {
-        const name = citationName(sentence.slice(0, year.index))
-        if (name) { match = [null, name, year[1]]; break }
-      }
-      if (!match) return
+      const span = citationSpans(sentence)[0]
+      if (!span) return
       /* الفقرة كلها للمطابقة (فيها موضوع الاستشهاد)، والجملة للكاتب (فيها ما نسبه إليه).
          «هذا ما أشارت إليه أعمال Lawrence…» تحيل إلى ما قبلها: تُضمّ الجملة السابقة. */
       const referential = /^(?:و?(?:هذا|هذه|وهو|وهي|ذلك)\s)/u.test(sentence) || sentence.split(/\s+/).length < 14
       const claim = (referential && index > 0 ? `${sentences[index - 1]} ${sentence}` : sentence).trim()
       const restore = (value) => value.replace(/et al(?!\.)/g, 'et al.')
-      found.push({ key: restore(`${match[1].replace(/\s+/g, ' ').trim()} (${match[2]})`), sentence: restore(claim).slice(0, 420), paragraph: text })
+      found.push({ key: restore(span.keys[0]), sentence: restore(claim).slice(0, 420), paragraph: text })
     })
   }
   return found

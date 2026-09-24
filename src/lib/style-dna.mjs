@@ -679,46 +679,56 @@ function closingTaxonomy(texts) {
 
 /* بصمةٌ احتياطية بالأرقام المقيسة فعلاً على أرشيفه، تُستعمل حين يتعذّر تمرير
    الأرشيف (طلبٌ قديم من واجهةٍ لم تُحدَّث بعد). ليست تخميناً: هذه مخرجات
-   measureStyleDna على ١٤٣ مقالاً بتاريخ ١ أغسطس ٢٠٢٦. */
+   measureStyleDna على ١٤٣ مقالاً مؤرّخاً بتاريخ ٢٤ سبتمبر ٢٠٢٦ (يُعاد توليدها بـ
+   scripts/generate-fallback-style-dna.mjs كلما تغيّر القياس). */
 export const FALLBACK_STYLE_DNA = {
-  version: 3,
+  version: 2,
   sampleSize: 143,
   totalWords: 53431,
-  article: { p10: 329, p25: 355, median: 385, p75: 406, p90: 442, mean: 380 },
-  sentence: { mean: 9.9, median: 9, p10: 3, p90: 18, shortRate: 51, longRate: 11 },
-  paragraph: { mean: 33, median: 45, p25: 9, p75: 62, p90: 73, singleSentenceRate: 24, twoSentenceRate: 29, perArticle: 16, perArticleMedian: 8, perArticleP75: 19 },
-  marks: { ellipsisPer100: 5.3, ellipsisPerArticle: 20, questionsPerArticle: 4.4, guillemetsPer100: .5, semicolonPer100: .3, emDashPer100: 0, shaddaPer100: 1.7, commaPer100: 3.5, ellipsisTightRate: 0 },
+  article: { p10: 340, p25: 357, median: 374, p75: 409, p90: 437, mean: 382 },
+  sentence: { mean: 9.7, median: 10, p10: 2, p90: 15, shortRate: 52, longRate: 10 },
+  paragraph: { mean: 33, median: 34, p25: 9, p75: 52, p90: 73, singleSentenceRate: 21, twoSentenceRate: 31, perArticle: 17, perArticleMedian: 11, perArticleP75: 22 },
+  marks: { ellipsisPer100: 3.2, ellipsisPerArticle: 12, questionsPerArticle: 5.1, guillemetsPer100: .5, semicolonPer100: .3, emDashPer100: 0, shaddaPer100: 1.7, commaPer100: 3.5, ellipsisTightRate: 1 },
   moves: {
-    antithesisPer100: .9, negationAntithesisPer100: .2, collectivePer100: 1.7,
-    articlesWithEllipsis: 94, articlesWithAntithesis: 60, articlesWithQuestion: 79, articlesWithGuillemets: 43,
+    antithesisPer100: 1.2, negationAntithesisPer100: .2, collectivePer100: 1.7, articlesWithEllipsis: 94, articlesWithAntithesis: 60, articlesWithQuestion: 79, articlesWithGuillemets: 43,
   },
   openers: [
     { word: 'في', count: 120 }, { word: 'إن', count: 61 }, { word: 'هل', count: 53 },
     { word: 'نحن', count: 29 }, { word: 'أما', count: 25 }, { word: 'بل', count: 25 },
-    { word: 'نعم', count: 24 }, { word: 'لكن', count: 22 }, { word: 'دعونا', count: 18 },
+    { word: 'نعم', count: 24 }, { word: 'لكن', count: 22 }, { word: 'فيا', count: 22 },
   ],
-  closings: { questionRate: 8, antithesisRate: 8, appealRate: 4 },
+  closings: { questionRate: 10, antithesisRate: 30, appealRate: 5 },
   /* مفاصله بعد الفاصلة، مقيسةً على أرشيفه (measureHinges). */
   hinges: ['بل', 'لا', 'وأن', 'ولا', 'أو', 'لكنه', 'ثم', 'من', 'لكن', 'أن', 'حتى', 'تبين', 'حيث', 'لأن', 'وهذا', 'وفي', 'لم', 'كما', 'الذي', 'وقد', 'فإن', 'بينما', 'يصبح', 'وهي', 'لكنها', 'دون'],
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
-  era: { halfLifeYears: 3, weightedSample: 266, recentArticles: 27 },
-  /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته الـ١٤٣ منفردة، **مرجَّحةً
-     بالحقبة** (نصف عمرٍ ثلاث سنوات) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
+  era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
+  /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'] },
+  /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
+     (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
-    words: { p03: 278, p15: 340, p35: 363, p50: 385, p65: 394, p85: 430, p97: 452 },
-    ellipsisPer100: { p03: 0, p15: .8, p35: 1.7, p50: 4.9, p65: 6, p85: 11.7, p97: 14.5 },
-    antithesis: { p03: 0, p15: 0, p35: 2, p50: 3, p65: 5, p85: 6, p97: 11 },
-    antithesisPer100: { p03: 0, p15: 0, p35: .5, p50: .9, p65: 1.2, p85: 1.7, p97: 2.7 },
-    questions: { p03: 0, p15: 0, p35: 2, p50: 3, p65: 4, p85: 10, p97: 13 },
-    collective: { p03: 0, p15: 1, p35: 4, p50: 5, p65: 8, p85: 11, p97: 16 },
-    medianSentence: { p03: 5, p15: 6, p35: 7, p50: 9, p65: 11, p85: 17, p97: 25 },
-    shortRate: { p03: 11, p15: 20, p35: 40, p50: 54, p65: 68, p85: 76, p97: 85 },
-    medianParagraph: { p03: 8, p15: 10, p35: 26, p50: 45, p65: 54, p85: 69, p97: 86 },
-    longSentenceRate: { p03: 0, p15: 0, p35: 3, p50: 5, p65: 12, p85: 21, p97: 47 },
-    firstSentenceWords: { p03: 2, p15: 4, p35: 7, p50: 9, p65: 11, p85: 18, p97: 50 },
+    words: { p03: 307, p15: 343, p35: 362, p50: 374, p65: 397, p85: 430, p97: 452 },
+    ellipsisPer100: { p03: 0, p15: .5, p35: 1.1, p50: 1.7, p65: 4.1, p85: 6, p97: 12.6 },
+    antithesis: { p03: 0, p15: 2, p35: 4, p50: 5, p65: 5, p85: 7, p97: 11 },
+    questions: { p03: 0, p15: 1, p35: 3, p50: 4, p65: 5, p85: 11, p97: 13 },
+    collective: { p03: 1, p15: 3, p35: 5, p50: 7, p65: 11, p85: 13, p97: 18 },
+    medianSentence: { p03: 5, p15: 5, p35: 8, p50: 10, p65: 11, p85: 14, p97: 21 },
+    shortRate: { p03: 12, p15: 31, p35: 42, p50: 46, p65: 63, p85: 78, p97: 85 },
+    medianParagraph: { p03: 8, p15: 10, p35: 22, p50: 34, p65: 47, p85: 56, p97: 73 },
+    longSentenceRate: { p03: 0, p15: 2, p35: 4, p50: 9, p65: 12, p85: 17, p97: 35 },
+    firstSentenceWords: { p03: 2, p15: 4, p35: 6, p50: 7, p65: 10, p85: 16, p97: 20 },
+    antithesisPer100: { p03: 0, p15: .6, p35: 1, p50: 1.2, p65: 1.4, p85: 1.8, p97: 2.7 },
     duplicateSentenceRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 0, p97: 0 },
     duplicateGramRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 0, p97: 0 },
-    lexicalDiversity: { p03: 65.9, p15: 69.1, p35: 71, p50: 72.9, p65: 74.5, p85: 76.7, p97: 80.1 },
+    lexicalDiversity: { p03: 66.8, p15: 69.4, p35: 71.1, p50: 73.2, p65: 74.6, p85: 77.5, p97: 80.1 },
+    commaPer100: { p03: 0, p15: 4.2, p35: 5.9, p50: 6.3, p65: 7.1, p85: 8.1, p97: 9.9 },
+    colonPer100: { p03: 0, p15: .8, p35: 1.4, p50: 1.7, p65: 2, p85: 2.4, p97: 3.6 },
+    questionsPer100: { p03: 0, p15: .3, p35: .8, p50: 1.1, p65: 1.5, p85: 2.7, p97: 3.3 },
+    collectivePer100: { p03: .2, p15: .8, p35: 1.3, p50: 1.9, p65: 2.8, p85: 3.5, p97: 4.7 },
+    wawStartRate: { p03: 7, p15: 10, p35: 14, p50: 18, p65: 20, p85: 30, p97: 50 },
+    sentenceSpread: { p03: 54, p15: 58, p35: 63, p50: 67, p65: 77, p85: 88, p97: 96 },
+    ellipsisEndRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 5, p97: 100 },
+    faStartRate: { p03: 0, p15: 3, p35: 7, p50: 9, p65: 11, p85: 14, p97: 22 },
   },
   banned: BANNED_PHRASES,
   bannedVoice: BANNED_VOICE,
@@ -991,25 +1001,79 @@ export function unsupportedClaims(body, sources = []) {
   return claims
 }
 
+/* ---------- الاستشهاد: «Ryan وDeci (2000)» و«(Tang et al., 2023)» ----------
+
+   مقالاته الحديثة تستشهد بالصيغتين. يُلتقط الاستشهاد بلا تعبيرٍ نمطيٍّ متداخل
+   (CodeQL نبّه إلى تراجعٍ أُسّي في نمطٍ جامع): السنة بين قوسين وحدها، ثم يُمشى
+   إلى الوراء كلمةً كلمة على الاسم؛ أو قوسٌ محدود الطول يُفحص جزءاً جزءاً. خطّيّ. */
+const CITATION_YEAR_PAREN = /\(\s*((?:19|20)\d{2})[a-z]?\s*\)/gu
+const CITATION_PAREN = /\(([^()\n]{3,160})\)/gu
+const CITATION_NAME_TOKEN = /^و?(?:[A-Z][A-Za-z'’.-]*|et|al\.?|and|&|van|der|de|وآخرين|وآخرون)$/u
+function citationNameBefore(before = '') {
+  const tokens = [...String(before).matchAll(/\S+/gu)]
+  const picked = []
+  for (let index = tokens.length - 1; index >= 0 && picked.length < 8; index -= 1) {
+    if (!CITATION_NAME_TOKEN.test(tokens[index][0])) break
+    picked.unshift(tokens[index])
+  }
+  while (picked.length && !/^و?[A-Z]/u.test(picked[0][0])) picked.shift()
+  return picked.length ? { name: picked.map((token) => token[0]).join(' '), start: picked[0].index } : null
+}
+/** مواضع الاستشهادات في النص: [{ start, end, keys }] — «الاسم (السنة)» لكلٍّ منها. */
+export function citationSpans(text = '') {
+  const value = String(text)
+  const spans = []
+  for (const match of value.matchAll(CITATION_YEAR_PAREN)) {
+    const windowStart = Math.max(0, match.index - 160)
+    const found = citationNameBefore(value.slice(windowStart, match.index))
+    if (found) spans.push({ start: windowStart + found.start, end: match.index + match[0].length, keys: [`${found.name} (${match[1]})`] })
+  }
+  for (const match of value.matchAll(CITATION_PAREN)) {
+    const keys = []
+    for (const part of match[1].split(/[;؛]/u)) {
+      const trimmed = part.trim()
+      const year = trimmed.match(/(?:19|20)\d{2}[a-z]?$/u)
+      if (!year) continue
+      const name = trimmed.slice(0, year.index).replace(/[\s,،]+$/u, '')
+      const tokens = name.split(/\s+/u).filter(Boolean)
+      if (!tokens.length || tokens.length > 8 || !/^و?[A-Z]/u.test(tokens[0]) || !tokens.every((token) => CITATION_NAME_TOKEN.test(token.replace(/[,،]$/u, '')))) continue
+      keys.push(`${name} (${year[0].slice(0, 4)})`)
+    }
+    if (keys.length) spans.push({ start: match.index, end: match.index + match[0].length, keys })
+  }
+  return spans.sort((left, right) => left.start - right.start)
+}
+/** النص بلا بيانات الاستشهاد (الاسم والسنة): ما يُقارَن في حارس النقل الحرفي. */
+export function withoutCitations(text = '') {
+  let out = ''
+  let cursor = 0
+  for (const span of citationSpans(text)) {
+    if (span.start < cursor) continue
+    out += `${String(text).slice(cursor, span.start)} `
+    cursor = span.end
+  }
+  return out + String(text).slice(cursor)
+}
+
 /* تداخلٌ حرفي مع الأرشيف: ستّ كلماتٍ متتالية متطابقة = نقلٌ لا محاكاة. */
 export function verbatimOverlap(body, archiveTexts, size = 6) {
-  const target = bareText(String(body)).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+  /* الاستشهاد ليس صياغةً تُنسخ: اسم الباحث وسنته يُزالان من الطرفين قبل المقارنة،
+     وتبقى الأرقام والكلمات اللاتينية الأخرى محسوبة («128 دراسة» المنقولة تُرصد). */
+  const target = bareText(withoutCitations(String(body))).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
   if (target.length < size) return []
   const targetKey = target.join(' ')
   const seen = new Set()
   for (const source of (archiveTexts || [])) {
     /* النصّ يطابق نفسه: فتحُ مقالٍ منشور في الاستوديو كان يُتّهم بالنقل عنه
        هو. أي مصدرٍ يحتوي النصّ المفحوص كاملاً يُستثنى من المقارنة. */
-    const raw = bareText(String(source?.body ?? source ?? '')).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean).join(' ')
+    const sourceText = withoutCitations(String(source?.body ?? source ?? ''))
+    const raw = bareText(sourceText).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean).join(' ')
     if (raw === targetKey || (raw.length > 40 && raw.includes(targetKey))) continue
-    const tokens = bareText(String(source?.body ?? source ?? '')).replace(/[^\p{L}\p{N}\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+    const tokens = raw.split(' ')
     for (let index = 0; index + size <= tokens.length; index += 1) seen.add(tokens.slice(index, index + size).join(' '))
   }
   const hits = []
   for (let index = 0; index + size <= target.length; index += 1) {
-    /* اسم الباحث وسنته ليسا صياغةً تُنسخ: «Ryan وDeci 2000 في نظرية الدافعية» تتكرر
-       بالضرورة حين يُستشهد بالمرجع نفسه. السلسلة التي فيها حرفٌ لاتيني أو رقم تُترك. */
-    if (target.slice(index, index + size).some((token) => /[A-Za-z0-9٠-٩]/.test(token))) continue
     const gram = target.slice(index, index + size).join(' ')
     if (seen.has(gram)) hits.push(gram)
     if (hits.length >= 8) break

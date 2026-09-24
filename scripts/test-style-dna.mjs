@@ -155,6 +155,10 @@ const { citationsOf, domainKnowledge, generatePerfectArticle } = await import(re
 /* بنك المراجع: يلتقط استشهاداته كما كتبها، وبزمنٍ خطّي (CodeQL: النمط المتداخل كان يتراجع أُسّياً). */
 assert.deepEqual(citationsOf('وإذا أضفنا منظور Ryan وDeci (2000) في نظرية الدافعية الذاتية، تتضح الصورة.').map((item) => item.key), ['Ryan وDeci (2000)'])
 assert.deepEqual(citationsOf('هذا ما أشارت إليه أعمال حديثة مثل Lawrence et al. (2021) وFairlamb et al. (2022).').map((item) => item.key), ['Lawrence et al. (2021)'])
+assert.deepEqual(citationsOf('ويؤكد ذلك تحليلٌ حديث (Tang et al., 2023؛ Zheng, 2024) عن أثر الشاشات في الانتباه لدى الأطفال في المدرسة.').map((item) => item.key), ['Tang et al. (2023)'], 'والصيغة الأخرى بين قوسين بفاصلة')
+/* الحارس الحرفي: اسم الباحث وسنته ليسا نقلاً، لكن الرقم المنقول مع جملته نقل. */
+assert.deepEqual(verbatimOverlap('نعود إلى Ryan وDeci (2000) في نظرية الدافعية الذاتية لنفهم الطالب', ['وإذا أضفنا منظور Ryan وDeci (2000) في نظرية الدافعية الذاتية، تتضح الصورة أكثر']), [], 'الاستشهاد بالمرجع نفسه ليس نقلاً')
+assert.ok(verbatimOverlap('وجدت مراجعة شملت 128 دراسة أن المكافآت تضعف الدافعية الداخلية', ['المراجعة التي راجعت 128 دراسة أن المكافآت تضعف الدافعية الداخلية عند الطالب']).length > 0, 'والجملة المنقولة برقمها تُرصد')
 const redosStarted = Date.now()
 citationsOf(`A'&A${"'andA".repeat(5000)}x (2019)`)
 assert.ok(Date.now() - redosStarted < 250, `استخراج المراجع خطّيّ (${Date.now() - redosStarted} ms)`)
@@ -332,6 +336,12 @@ assert.ok(pauseRange && Number(pauseRange[2]) <= 10, `مدى الوقفات من
 assert.ok(eraDna.marks.ellipsisTightRate >= .9 && eraBrief.includes('عاجزون…بل'), 'الوقفة تلتصق بما بعدها كما في مقالاته الأحدث')
 assert.equal(refineToStyle('يبتسم… لكن شيئاً لا يتحرّك.', eraDna), 'يبتسم…لكن شيئاً لا يتحرّك.', 'والصقل يتبع طباعته الحالية')
 assert.equal(sentencesOf('يبتسم…لكن شيئاً لا يتحرّك. هل نستعدّ؟').length, 3, 'والوقفة الملتصقة فاصلُ جملة كالمنفصلة')
+/* البصمة الاحتياطية (طلبٌ بلا بصمة) تُقاس بالطريقة نفسها: لا تُعيد صوت ٢٠١٧. */
+const fallbackBrief = styleBrief(null, 400)
+const fallbackRange = fallbackBrief.match(/نقاط الحذف «…»: بين (\d+) و(\d+)/)
+const eraRange = eraBrief.match(/نقاط الحذف «…»: بين (\d+) و(\d+)/)
+assert.ok(fallbackRange && Math.abs(Number(fallbackRange[2]) - Number(eraRange[2])) <= 2, `البصمة الاحتياطية بقياس اليوم (${fallbackRange?.[1]}–${fallbackRange?.[2]} مقابل ${eraRange?.[1]}–${eraRange?.[2]})`)
+assert.equal(refineToStyle('يبتسم… لكن شيئاً لا يتحرّك.', null), 'يبتسم…لكن شيئاً لا يتحرّك.', 'وطباعتها طباعته اليوم')
 const numberIn = (brief, needle) => Number((brief.split('\n').find((line) => line.includes(needle)) || '').match(/\d+/)?.[0] || 0)
 assert.ok(numberIn(eraBrief, 'الأسئلة البلاغية') > numberIn(flatBrief, 'الأسئلة البلاغية'), 'الأسئلة ارتفعت — وهي علامته اليوم')
 assert.ok(numberIn(eraBrief, 'نقاط الحذف') < numberIn(flatBrief, 'نقاط الحذف'), 'الوقفات انخفضت — وهي علامته القديمة')

@@ -43,6 +43,7 @@ COPY src/lib/research-sample.mjs /app/src/lib/research-sample.mjs
 COPY src/lib/semantic-court.mjs /app/src/lib/semantic-court.mjs
 COPY src/lib/sovereign-publishing.mjs /app/src/lib/sovereign-publishing.mjs
 COPY src/lib/style-dna.mjs /app/src/lib/style-dna.mjs
+COPY src/lib/style-mimic.mjs /app/src/lib/style-mimic.mjs
 COPY src/server/admin-communications.mjs /app/src/server/admin-communications.mjs
 COPY src/server/encyclopedia-videos.mjs /app/src/server/encyclopedia-videos.mjs
 COPY src/server/reel-corpus.mjs /app/src/server/reel-corpus.mjs

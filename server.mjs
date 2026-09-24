@@ -3084,8 +3084,22 @@ function interviewDocuments() {
   return documents
 }
 
-/* «Ryan وDeci (2000)»، «Carol Dweck (2006)»، «Howard et al. (2021)»، «Yusefzadeh وآخرين (2019)». */
-const CITATION_PATTERN = /((?:van der |de )?[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][A-Za-z'’.-]+)*(?:\s*(?:et al\.?|وآخرين|وآخرون|and|&)(?:\s*[A-Z][A-Za-z'’.-]+)?)*(?:\s*و\s*(?:van der )?[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][A-Za-z'’.-]+)*)*)\s*\(\s*((?:19|20)\d{2})\s*\)/u
+/* «Ryan وDeci (2000)»، «Carol Dweck (2006)»، «Howard et al. (2021)»، «Yusefzadeh وآخرين (2019)».
+   بلا تعبيرٍ نمطيٍّ متداخل: CodeQL نبّه إلى أن النمط الواحد الجامع يتراجع أُسّياً
+   (٢٤ تكراراً = ٢٫٧ ثانية). السنة بين قوسين تُلتقط، ثم يُمشى إلى الوراء كلمةً كلمة
+   على أسماء لاتينية وروابطها — خطّيٌّ ومحدودٌ بثماني كلمات. */
+const CITATION_YEAR = /\(\s*((?:19|20)\d{2})\s*\)/gu
+const CITATION_NAME_TOKEN = /^و?(?:[A-Z][A-Za-z'’.-]*|et|al\.?|and|&|van|der|de|وآخرين|وآخرون)$/u
+function citationName(before = '') {
+  const tokens = before.trimEnd().split(/\s+/).slice(-8)
+  const name = []
+  for (let index = tokens.length - 1; index >= 0; index -= 1) {
+    if (!CITATION_NAME_TOKEN.test(tokens[index])) break
+    name.unshift(tokens[index])
+  }
+  while (name.length && !/^و?[A-Z]/u.test(name[0])) name.shift()
+  return name.length ? name.join(' ') : ''
+}
 export function citationsOf(body = '') {
   const found = []
   for (const paragraph of String(body).split(/\n\s*\n/)) {
@@ -3093,7 +3107,11 @@ export function citationsOf(body = '') {
     const text = paragraph.replace(/\s+/g, ' ').replace(/et al\./g, 'et al').trim()
     const sentences = text.split(/(?<=[.!؟])\s+/)
     sentences.forEach((sentence, index) => {
-      const match = sentence.match(CITATION_PATTERN)
+      let match = null
+      for (const year of sentence.matchAll(CITATION_YEAR)) {
+        const name = citationName(sentence.slice(0, year.index))
+        if (name) { match = [null, name, year[1]]; break }
+      }
       if (!match) return
       /* الفقرة كلها للمطابقة (فيها موضوع الاستشهاد)، والجملة للكاتب (فيها ما نسبه إليه).
          «هذا ما أشارت إليه أعمال Lawrence…» تحيل إلى ما قبلها: تُضمّ الجملة السابقة. */

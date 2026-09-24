@@ -151,7 +151,13 @@ delete process.env.GEMINI_API_KEY
 delete process.env.GOOGLE_API_KEY
 process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account'
 process.env.CLOUDFLARE_API_TOKEN = 'test-token'
-const { domainKnowledge, generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
+const { citationsOf, domainKnowledge, generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
+/* بنك المراجع: يلتقط استشهاداته كما كتبها، وبزمنٍ خطّي (CodeQL: النمط المتداخل كان يتراجع أُسّياً). */
+assert.deepEqual(citationsOf('وإذا أضفنا منظور Ryan وDeci (2000) في نظرية الدافعية الذاتية، تتضح الصورة.').map((item) => item.key), ['Ryan وDeci (2000)'])
+assert.deepEqual(citationsOf('هذا ما أشارت إليه أعمال حديثة مثل Lawrence et al. (2021) وFairlamb et al. (2022).').map((item) => item.key), ['Lawrence et al. (2021)'])
+const redosStarted = Date.now()
+citationsOf(`A'&A${"'andA".repeat(5000)}x (2019)`)
+assert.ok(Date.now() - redosStarted < 250, `استخراج المراجع خطّيّ (${Date.now() - redosStarted} ms)`)
 /* الزاوية ترجّح ولا تُقصي: فكرةٌ بكلمةٍ واحدة مميّزة تجد متونها مهما كانت الزاوية. */
 const gamified = domainKnowledge('التلعيب', { angle: 'القيادة لا الاستبدال' })
 assert.ok(gamified.من_كتبك.some((item) => item.مصدر.includes('التلعيب')), 'مقاطع كتاب التلعيب تصل رغم زاويةٍ لا تذكره')

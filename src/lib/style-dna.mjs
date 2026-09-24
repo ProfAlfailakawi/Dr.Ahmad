@@ -1132,7 +1132,7 @@ export function judgeStyle(body, rawDna, options = {}) {
        تعديلاً ناجحاً، فيظنّ أن شيئاً لم يحدث — والحقيقة أن التحفّظ القاطع
        يسقف الدرجة وحده. الرقمان معاً يقولان الحقيقة كاملة. */
     raw,
-    ready: score >= (options.threshold || 80) && !fatal.length,
+    ready: score >= (options.threshold || STYLE_THRESHOLD_FALLBACK) && !fatal.length,
     checks,
     corrections: fixes.filter(Boolean),
     fatal,
@@ -1140,6 +1140,94 @@ export function judgeStyle(body, rawDna, options = {}) {
   }
 }
 
+
+/* ---------- المعايرة على أرشيفه ----------
+
+   العتبة الثابتة (٨٠) كانت رقماً من الذوق لا من القياس. هنا تُشتقّ من توزيع
+   درجاته هو: الحدّ الذي يعبره تسعة أعشار مقالاته أسلوباً. ومعها موقعُ أي نصٍّ
+   بين مقالاته — «أعلى من ٦٠٪ من مقالاتك» أصدق من «٨٢٪» مجردة.
+
+   ملاحظةٌ منهجية: المقالات تُحاكم ببصمةٍ هي منها (قياسٌ داخل العيّنة). ترك
+   كل مقالٍ خارج بصمته يكلّف نحو ٣٦ ثانية في المتصفح، وأثرُ مقالٍ واحدٍ في
+   مئيناتٍ من ١٤٣ مقالاً ضئيل؛ فالانحياز صغيرٌ ومعروف الاتجاه (تفاؤلٌ طفيف). */
+export const STYLE_THRESHOLD_FALLBACK = 80
+const THRESHOLD_FLOOR = 70
+const THRESHOLD_CEILING = 85
+const CALIBRATION_MIN_SAMPLE = 20
+
+/* مؤشر «الطبيعية»: أعراض الآلة وحدها — التركيب المكسور والعبارات الدخيلة
+   والقوالب والتكرار — لا مطابقة الإيقاع. سلامة التركيب أثقلها: نصٌّ بجملٍ
+   مكسورة قد يكون إيقاعه مضبوطاً، وهو بالضبط ما تُنتجه آلةٌ تحسِّن الأرقام. */
+export function naturalnessScore(verdict) {
+  if (!verdict || !verdict.checks?.length) return 0
+  const grade = (key) => verdict.checks.find((check) => check.key === key)?.grade ?? 1
+  const penalty =
+    (1 - grade('wellFormed')) * 34
+    + (1 - grade('banned')) * 28
+    + (1 - grade('typography')) * 20
+    + (1 - grade('repetition')) * 24
+    + (1 - grade('lexicalDiversity')) * 14
+    + (1 - grade('longSentences')) * 7
+    + Math.min(12, (verdict.metrics?.duplicateGramRate || 0) * 2)
+  return Math.round(clampNumber(100 - penalty, 0, 100))
+}
+
+/* نسبة مقالاته التي تقع دون هذه القيمة (التعادل نصفه). */
+export function percentileRank(sorted, value) {
+  const list = Array.isArray(sorted) ? sorted : []
+  if (!list.length || !Number.isFinite(value)) return null
+  let below = 0
+  let equal = 0
+  for (const item of list) {
+    if (item < value) below += 1
+    else if (item === value) equal += 1
+  }
+  return Math.round((below + equal / 2) / list.length * 100)
+}
+
+export function calibrateStyle(articles, rawDna, options = {}) {
+  const dna = resolveStyleDna(rawDna)
+  const raws = []
+  const naturals = []
+  for (const body of bodiesOf(articles)) {
+    const verdict = judgeStyle(body, dna, { orthography: options.orthography })
+    if (!verdict.checks.length) continue
+    raws.push(verdict.raw)
+    naturals.push(naturalnessScore(verdict))
+  }
+  raws.sort((left, right) => left - right)
+  naturals.sort((left, right) => left - right)
+  const measured = raws.length >= CALIBRATION_MIN_SAMPLE
+  return {
+    measured,
+    sampleSize: raws.length,
+    raw: raws,
+    naturalness: naturals,
+    /* أرشيفٌ أصغر من أن تُقرأ مئيناته: نعود إلى العتبة المعروفة لا إلى رقمٍ عشوائي. */
+    threshold: measured
+      ? clampNumber(percentile(raws, .1), THRESHOLD_FLOOR, THRESHOLD_CEILING)
+      : STYLE_THRESHOLD_FALLBACK,
+    median: raws.length ? percentile(raws, .5) : null,
+    /* حدّا الطبيعية من مقالاته: ما فوق عُشره الأدنى طبيعيٌّ بشهادته، وما دون
+       أدنى ٣٪ منها لم يكتب مثله قط. */
+    naturalFloor: measured ? percentile(naturals, .1) : 86,
+    machineFloor: measured ? percentile(naturals, .03) : 68,
+  }
+}
+
+/* حكم الطبيعية بمسطرته هو لا بعتبتين من الذوق. */
+export function judgeNaturalness(verdict, calibration) {
+  if (!verdict || !verdict.checks?.length) {
+    return { score: 0, rank: null, level: 'empty', label: 'بانتظار النص', note: 'هذا مؤشر أسلوبي، وليس كاشف ذكاء اصطناعي.' }
+  }
+  const score = naturalnessScore(verdict)
+  const naturalFloor = calibration?.naturalFloor ?? 86
+  const machineFloor = calibration?.machineFloor ?? 68
+  const rank = calibration?.naturalness?.length ? percentileRank(calibration.naturalness, score) : null
+  if (score >= naturalFloor) return { score, rank, level: 'natural', label: 'طبيعي أسلوبياً', note: 'في مدى مقالاتك: لا تظهر في البنية علامات آلية بارزة.' }
+  if (score >= machineFloor) return { score, rank, level: 'touch', label: 'يحتاج لمسة بشرية', note: 'دون تسعة أعشار مقالاتك: انتظامٌ أو صياغاتٌ تستحق المراجعة.' }
+  return { score, rank, level: 'machine', label: 'آثار صياغة آلية', note: 'أدنى من أي مقالٍ تقريباً كتبته: العبارات أو التكرار أو القالب أوضح من صوتك.' }
+}
 
 /* ---------- الصقل الحتمي ---------- */
 

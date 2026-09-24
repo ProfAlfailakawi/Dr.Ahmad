@@ -23,6 +23,7 @@ import {
   type SocialCampaign,
 } from './social-design-engine'
 import { currentSeason, seasonStrokePath } from './seasons'
+import { LIGHT, mix } from './design-system'
 
 /* ------------------------------------------------------------------ */
 /*     تفضيلات الإخراج: ختم الهوية ولمسة الموسم — للمعاينة والتصدير معاً    */
@@ -57,10 +58,12 @@ export function seasonIdentityFor(date = new Date()): SeasonIdentity {
   const month = date.getMonth()
   const year = date.getFullYear()
   const table: Array<{ id: string; label: string; tint: string }> = [
-    { id: 'winter', label: 'شتاء', tint: '#3F6C8E' },
-    { id: 'spring', label: 'ربيع', tint: '#5C7F63' },
-    { id: 'summer', label: 'صيف', tint: '#B08343' },
-    { id: 'autumn', label: 'خريف', tint: '#8A5B4B' },
+    /* ألوان المواسم مشتقّة من الهوية لا مكتوبة: الأزرق شتاءً، والأزرق العميق
+       ربيعاً، والجمر صيفاً، وجمرٌ ممزوج بالحبر خريفاً. */
+    { id: 'winter', label: 'شتاء', tint: LIGHT.accent },
+    { id: 'spring', label: 'ربيع', tint: LIGHT.accentDeep },
+    { id: 'summer', label: 'صيف', tint: LIGHT.ember },
+    { id: 'autumn', label: 'خريف', tint: mix(LIGHT.ember, LIGHT.ink, .3) },
   ]
   const index = month <= 1 || month === 11 ? 0 : month <= 4 ? 1 : month <= 7 ? 2 : 3
   const season = table[index]
@@ -164,9 +167,9 @@ const arabicIndex = (value: number) => value < 10 ? `0${value}` : String(value)
    يصير كسر السطر مبنياً على الخط المحمّل نفسه لا على عدّ الحروف. */
 let measureContext: CanvasRenderingContext2D | null | undefined
 const measureCache = new Map<string, number>()
-function measuredUnits(value: string, family = 'Tajawal') {
+function measuredUnits(value: string, family = 'Tajawal', weight = 500) {
   const cleanValue = String(value || '')
-  const cacheKey = `${family}:${cleanValue}`
+  const cacheKey = `${family}:${weight}:${cleanValue}`
   const cached = measureCache.get(cacheKey)
   if (cached != null) return cached
   if (measureContext === undefined) {
@@ -178,9 +181,16 @@ function measuredUnits(value: string, family = 'Tajawal') {
   if (measureContext) {
     /* العائلة ذات الكلمتين («El Messiri») بلا اقتباس تجعل مختصر font غير صالح،
        فيُهمل الإسناد صامتاً ويبقى القياس على خطٍّ سابق. الاقتباس شرط صحة. */
-    measureContext.font = `500 100px ${fontStack(family)}`
+    const font = `${weight} 100px ${fontStack(family)}`
+    measureContext.font = font
     measureContext.direction = hasArabic(cleanValue) ? 'rtl' : 'ltr'
-    const measured = measureContext.measureText(cleanValue).width / 55.5
+    const raw = measureContext.measureText(cleanValue).width / 55.5
+    /* قياسٌ قبل تحميل الخط يقيس خطاً احتياطياً أضيق؛ كان يُخزَّن فيبقى خاطئاً إلى
+       الأبد، فيخرج سطرٌ من اللوحة. لا نخزّن إلا بعد التحميل، وحتى ذلك نحتاط. */
+    let loaded = true
+    try { loaded = typeof document === 'undefined' || !document.fonts || document.fonts.check(font, cleanValue) } catch { loaded = true }
+    if (!loaded) return raw * 1.14
+    const measured = raw
     measureCache.set(cacheKey, measured)
     if (measureCache.size > 1200) measureCache.clear()
     return measured
@@ -198,6 +208,17 @@ function textUnits(value: string, family?: string) { return measuredUnits(value,
 
 /** عرض بالبكسل وفق القياس الفعلي حين يكون Canvas متاحاً. */
 const lineWidthPx = (line: string, size: number, family?: string) => measuredUnits(line, family || 'Tajawal') * size * .555
+/** العرض بالوزن الذي يُرسم به فعلاً: El Messiri بوزن ٧٠٠ أعرض من ٥٠٠، وكان
+    القياس بوزن ٥٠٠ يسمح لسطرٍ عريض أن يخرج من حدّ اللوحة. */
+const drawnWidthPx = (line: string, size: number, family: string, weight: number) =>
+  measuredUnits(line, family, resolveWeight(family, weight)) * size * .555
+
+/** هل رُسم العنوان كاملاً؟ الالتفاف يقطع بـ«…» حين تنفد الأسطر — وهذا حذفٌ لا يُقبل. */
+function titleComplete(lines: string[], full: string) {
+  const drawn = words(lines.join(' ').replace(/…$/, ''))
+  const source = words(String(full || '').replace(/…$/, ''))
+  return drawn.length === source.length && drawn.every((word, index) => word === source[index])
+}
 
 /** موازنة ديناميكية: تفحص نقاط القطع الممكنة وتختار أقل تفاوت بين الأسطر،
     مع عقوبة واضحة للسطر اليتيم والفيضان. */
@@ -252,9 +273,9 @@ function wrap(value: string, maxUnits: number, maxLines: number, family?: string
 }
 
 /** حجم خط يجعل الأسطر تتنفس داخل منطقة محددة بلا فيضان. */
-function fitted(lines: string[], base: number, zoneWidth: number, maxHeight: number, lineHeight: number, minimumScale = .5, family?: string) {
+function fitted(lines: string[], base: number, zoneWidth: number, maxHeight: number, lineHeight: number, minimumScale = .5, family?: string, weight = 500) {
   if (!lines.length) return base
-  const widest = Math.max(...lines.map((line) => lineWidthPx(line, base, family)), 1)
+  const widest = Math.max(...lines.map((line) => measuredUnits(line, family || 'Tajawal', resolveWeight(family || 'Tajawal', weight)) * base * .555), 1)
   const estimatedHeight = base * (1.02 + Math.max(0, lines.length - 1) * lineHeight)
   const scale = Math.min(1, zoneWidth / widest, maxHeight / Math.max(1, estimatedHeight))
   return base * Math.max(minimumScale, scale)
@@ -538,8 +559,23 @@ function fitTitle(s: Scene, zoneWidth: number, opts: { base?: number; maxLines?:
   const base = (opts.base ?? s.min * .066 * TYPOGRAPHY_MODES[s.plan.typography].titleScale) * sparseBoost
   const maxUnits = Math.max(8, zoneWidth / (base * .555))
   const lines = wrap(s.titleText, maxUnits, maxLines, s.displayFamily)
-  const size = fitted(lines, base, zoneWidth, s.h * (s.isWide ? .42 : .38), s.titleLineHeight, opts.minScale ?? .5, s.displayFamily)
-  return { lines, size }
+  const size = fitted(lines, base, zoneWidth, s.h * (s.isWide ? .42 : .38), s.titleLineHeight, opts.minScale ?? .5, s.displayFamily, 700)
+  if (titleComplete(lines, s.titleText)) return { lines, size }
+  /* لا تُحذف كلمةٌ من العنوان أبداً: الالتفاف كان يقطع بـ«…» حين تنفد الأسطر.
+     نصغّر الخط ونزيد سطراً حتى يتسع العنوان كله، ولا نهبط تحت الحدّ الأدنى
+     المقيس على لوحة ١٠٨٠ (TITLE_MIN_SIZE). */
+  const floor = TITLE_MIN_SIZE * s.min / 1080
+  for (let extra = 0; extra <= 3; extra += 1) {
+    for (let factor = .92; factor >= .3; factor -= .08) {
+      const tryBase = Math.max(floor, base * factor)
+      const tryLines = wrap(s.titleText, Math.max(8, zoneWidth / (tryBase * .555)), maxLines + extra, s.displayFamily)
+      if (!titleComplete(tryLines, s.titleText)) { if (tryBase === floor) break; continue }
+      const trySize = Math.max(floor, fitted(tryLines, tryBase, zoneWidth, s.h * (s.isWide ? .5 : .46), s.titleLineHeight, .3, s.displayFamily, 700))
+      return { lines: tryLines, size: trySize }
+    }
+  }
+  const all = wrap(s.titleText, Math.max(8, zoneWidth / (floor * .555)), 12, s.displayFamily)
+  return { lines: titleComplete(all, s.titleText) ? all : [s.titleText], size: floor }
 }
 
 function fitBody(s: Scene, zoneWidth: number, opts: { base?: number; maxLines?: number; text?: string } = {}) {
@@ -668,7 +704,7 @@ function titleInk(s: Scene): string {
 
 /** لون اللمسة: ذهبٌ معدنيّ في عوالم الفخامة، وإلا لون الهوية الصلب. */
 function accentInk(s: Scene): string {
-  return s.palette.atmo?.foil ? `url(#${s.uid}-foil)` : s.palette.accent
+  return s.palette.atmo?.foil ? `url(#${s.uid}-foil)` : s.palette.highlight || s.palette.accent
 }
 
 function backdrop(s: Scene, options: { glow?: 'top-left' | 'top-right' | 'bottom' | 'center' | 'none'; grain?: boolean } = {}) {
@@ -784,9 +820,10 @@ function identityFooter(s: Scene, options: { mode?: 'standard' | 'center' | 'non
   const { palette: p, w, h, min } = s
   const mode = options.mode ?? 'standard'
   if (mode === 'none') return ''
-  const y = options.y ?? h - s.safeY * .92
   const nameSize = Math.max(15, min * .0225)
   const domainSize = Math.max(11, min * .0165)
+  /* حافة الأمان: لا يقترب نازلُ حرفٍ من حافة اللوحة لأقل من EDGE_SAFE. */
+  const y = Math.min(options.y ?? h - s.safeY * .92, footerBaselineLimit(s, nameSize))
   /* nameless: للمشاهد التي ترسم الاسم داخل تكوينها — التذييل نطاقٌ فقط،
      فلا يتكرر اسم الدكتور مرتين في التصميم الواحد (ملاحظته بالحرف) */
   if (mode === 'center') {
@@ -802,11 +839,37 @@ function identityFooter(s: Scene, options: { mode?: 'standard' | 'center' | 'non
     ${s.source ? textBlock({ lines: [s.source], x: options.nameless ? w - s.safeX : s.safeX, y, size: domainSize, fill: p.muted, weight: 500, anchor: options.nameless ? 'end' : 'start', family: 'Tajawal', letterSpacing: 2 }) : ''}`
 }
 
+/* ── حدود النص الحقيقية ──
+   مقيسةٌ بـ getBBox على الخطين بعد تحميلهما (لكل وحدة من حجم الخط): El Messiri
+   يعلو خط القاعدة ١٫٠٢ وينزل تحته ٠٫٥٤، وTajawal ‎٠٫٦٥/٠٫٣٧. الخطوط الأخرى
+   تُعامل بأوسع الحدّين كي لا يقع التداخل بسبب تقديرٍ متفائل. */
+export const EDGE_SAFE = 48
+export const FOOTER_GAP = 24
+export const TITLE_MIN_SIZE = 56
+const fontExtent = (family?: string) => family === 'Tajawal'
+  ? { ascent: .65, descent: .37 }
+  : family === 'El Messiri' ? { ascent: 1.02, descent: .54 } : { ascent: 1.05, descent: .6 }
+
+function footerBaselineLimit(s: Scene, nameSize: number) {
+  return s.h - EDGE_SAFE - nameSize * fontExtent('Tajawal').descent
+}
+
+/** أعلى نقطة يبلغها التذييل (المسطرة أو الاسم): منطقةٌ محجوزة لا يدخلها العنوان. */
+export function footerTopOf(s: Scene, mode: 'standard' | 'center' = 'standard') {
+  const nameSize = Math.max(15, s.min * .0225)
+  const y = Math.min(s.h - s.safeY * .92, footerBaselineLimit(s, nameSize))
+  /* الاسم يحوي نقطةً ورموزاً قد تُرسم بخطٍّ احتياطيٍّ أعلى — قيس ٠٫٨٢ فاحتطنا بـ٠٫٨٥. */
+  if (mode === 'center') return y - s.min * .036 - nameSize * .85
+  return y - nameSize * 1.55
+}
+
 /** النطاق الرأسي المتاح للمحتوى فوق سطر الهوية. */
 function contentBand(s: Scene, options: { top?: number; bottom?: number } = {}) {
   return {
     top: options.top ?? s.safeY + s.h * .02,
-    bottom: options.bottom ?? s.h - s.safeY - s.min * .075,
+    /* الرصّة تنتهي قبل التذييل بالفجوة المحجوزة؛ و«ارتفاع الكتلة» يُقدَّر حتى خط
+       القاعدة تقريباً، فنحجز نازل الحرف الأخير (٠٫٤٥ من حجمٍ نموذجي) فوقها. */
+    bottom: options.bottom ?? Math.min(s.h - s.safeY - s.min * .075, footerTopOf(s, 'center') - FOOTER_GAP - s.min * .03),
   }
 }
 
@@ -1051,7 +1114,7 @@ const paintEditorialAxis: Painter = (s) => {
 const paintHeroWord: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const hero = s.hero || words(s.titleText)[0] || ''
-  const heroSize = Math.min(min * .3, (w * .92) / Math.max(1, textUnits(hero) * .555))
+  const heroSize = Math.min(min * .3, (w - s.safeX * 2) / Math.max(1, measuredUnits(hero, s.displayFamily, resolveWeight(s.displayFamily, 700)) * .555 * 1.03))
   const title = fitTitle(s, w * .78, { base: min * .064 })
   const body = fitBody(s, w * .62, { maxLines: 2 })
   const engraved = textBlock({ lines: [hero], x: w / 2, y: h * (s.isTall ? .3 : .32), size: heroSize, fill: 'none', anchor: 'middle', family: s.displayFamily, weight: 700 })
@@ -1074,15 +1137,21 @@ const paintQuoteStage: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const quoteText = s.plan.content.quote || s.titleText
   const zoneW = w - s.safeX * 2 - w * .06
-  const base = min * (s.sparse ? .062 : .056)
-  const lines = wrap(quoteText, Math.max(8, zoneW / (base * .555)), s.isWide ? 4 : 6)
+  let base = min * (s.sparse ? .062 : .056)
+  let lines = wrap(quoteText, Math.max(8, zoneW / (base * .555)), s.isWide ? 4 : 6)
+  /* الاقتباس يُرسم كاملاً: نصغّر الخط حتى يتسع بدل القصّ بـ«…». */
+  for (let guard = 0; guard < 8 && !titleComplete(lines, quoteText); guard += 1) {
+    base *= .88
+    lines = wrap(quoteText, Math.max(8, zoneW / (base * .555)), (s.isWide ? 4 : 6) + Math.min(2, guard))
+  }
   const size = fitted(lines, base, zoneW, h * .46, 1.66, .5)
   const markSize = min * .3
   const quoteItem: StackItem = {
     h: blockHeight(lines, size, 1.66),
     gap: min * .06,
     draw: (top) => [
-      `<text x="${round(w - s.safeX * .82)}" y="${round(top - min * .01)}" fill="${p.accent}" opacity=".16" font-family="${esc(fontStack(s.displayFamily))}" font-weight="700" font-size="${round(markSize)}" text-anchor="end">”</text>`,
+      /* اتجاهٌ صريح: كان يرث RTL فتنقلب «end» إلى الحافة اليسرى وتخرج العلامة من اللوحة. */
+      `<text x="${round(w - s.safeX)}" y="${round(top - min * .01)}" fill="${p.accent}" opacity=".16" font-family="${esc(fontStack(s.displayFamily))}" font-weight="700" font-size="${round(markSize)}" text-anchor="end" direction="ltr">”</text>`,
       textBlock({ lines, x: w - s.safeX, y: top + size * .82, size, fill: titleInk(s), weight: 500, family: s.displayFamily, lineHeight: 1.58 }),
     ].join(''),
   }
@@ -1231,7 +1300,9 @@ const paintKnowledgeMap: Painter = (s) => {
   const { list: keywords, fromTitle } = mapKeywords(s)
   /* حين تُشتقّ العُقد من العنوان نفسه (لا مفاهيم مستقلة) نُسقط سطر العنوان
      المكرّر ونترك الخريطة تنطق الفكرة مرة واحدة — علاج تكرار العنوان. */
-  const showTitleHeading = !fromTitle
+  /* كان العنوان يُخفى حين تُشتقّ العقد منه، فلا يظهر منه إلا أربع كلمات. قاعدة
+     الدكتور: لا تُحذف كلمةٌ من العنوان أبداً — فالعنوان يُكتب كاملاً دائماً. */
+  const showTitleHeading = fromTitle || !fromTitle
   const titleH = showTitleHeading ? blockHeight(title.lines, title.size, s.titleLineHeight) : 0
   const hero = s.hero || words(s.titleText)[0] || '·'
   const band = contentBand(s)
@@ -1329,6 +1400,20 @@ const paintChapterStack: Painter = (s) => {
 }
 
 /** 10 — النافذة السينمائية: أشرطة عرض ولوح عنوان عالي التباين. */
+/** الوسم فوق صورة: لوحٌ بلون أرضية الهوية تحته يضمن تباين ٤٫٥:١ على الأقل مهما
+    كانت الصورة تحته — كان الوسم الذهبي فوق الرمادي يكاد لا يُقرأ. */
+function kickerOnPlate(s: Scene, options: { x: number; baseline: number; size: number; anchor: 'end' | 'start' }) {
+  const { palette: p, min } = s
+  if (!s.kicker) return ''
+  const width = lineWidthPx(s.kicker, options.size, 'Tajawal')
+  const padX = min * .014
+  const extent = fontExtent('Tajawal')
+  const left = options.anchor === 'end' ? options.x - width - padX : options.x - padX
+  const plateTop = options.baseline - options.size * extent.ascent - min * .006
+  const plateH = options.size * (extent.ascent + extent.descent) + min * .012
+  return `<rect x="${round(left)}" y="${round(plateTop)}" width="${round(width + padX * 2)}" height="${round(plateH)}" rx="${round(plateH / 2)}" fill="${p.background}" opacity=".94"/>${textBlock({ lines: [s.kicker], x: options.x, y: options.baseline, size: options.size, fill: p.isDark ? p.accent : (p.id === 'brand-paper' ? LIGHT.accentDeep : p.accent), weight: 700, anchor: options.anchor, family: 'Tajawal' })}`
+}
+
 const paintCinematicWindow: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
   const heroImage = s.plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
@@ -1336,7 +1421,14 @@ const paintCinematicWindow: Painter = (s) => {
     const zone = heroImage.textZone || 'right'
     const horizontalZone = zone === 'right' || zone === 'left'
     const rightSide = zone !== 'left'
-    const contentW = w * (horizontalZone ? (s.isWide ? .52 : .64) : .78)
+    const frame = heroImage.frameBox
+    const frameGap = min * .035
+    const titleXFor = horizontalZone ? (rightSide ? w - s.safeX : s.safeX) : w - s.safeX
+    /* إطارٌ مرسومٌ في الصورة: النص كله خارجه — لا يعبر حافته أفقياً ولا رأسياً. */
+    const frameLimitW = frame && horizontalZone
+      ? (rightSide ? titleXFor - (frame.x + frame.width) * w : frame.x * w - titleXFor) - frameGap
+      : Infinity
+    const contentW = Math.max(w * .3, Math.min(w * (horizontalZone ? (s.isWide ? .52 : .64) : .78), frameLimitW))
     const imageLayout = s.plan.layout
     const variant = imageLayout === 'hero-word'
       ? 'monument'
@@ -1358,24 +1450,95 @@ const paintCinematicWindow: Painter = (s) => {
           : variant === 'marquee'
             ? min * .078
             : min * (s.isTall ? .062 : .072)
-    const title = fitTitle(s, contentW, { base: titleBase, maxLines: variant === 'monument' ? 3 : s.isTall ? 4 : 3 })
-    const body = fitBody(s, contentW, { maxLines: variant === 'ledger' ? 4 : variant === 'quiet' ? 3 : s.isTall ? 3 : 2 })
-    const titleH = blockHeight(title.lines, title.size, s.titleLineHeight)
-    const bodyH = blockHeight(body.lines, body.size, 1.64)
-    const titleX = horizontalZone ? (rightSide ? w - s.safeX : s.safeX) : w - s.safeX
+    const titleMaxLines = variant === 'monument' ? 3 : s.isTall ? 4 : 3
+    const titleWeight = variant === 'quiet' ? 600 : 700
+    /* الحدّ الأدنى ٥٦ وحدة على لوحة ١٠٨٠، ويتناسب مع اللوحات الأصغر. */
+    const minTitle = TITLE_MIN_SIZE * min / 1080
+    const footerMode = variant === 'quiet' ? 'center' as const : 'standard' as const
+    const titleX = titleXFor
     const anchor = horizontalZone ? (rightSide ? 'end' as const : 'start' as const) : 'end' as const
-    const top = zone === 'bottom'
+    const baseTop = zone === 'bottom'
       ? h * (variant === 'monument' ? .54 : .5)
       : zone === 'top'
         ? h * .16
         : h * (variant === 'quiet' ? .31 : .24)
+    /* تحت الإطار حين يكون النص أسفله؛ وإلا فالنص يجاوره فلا يمسّ حافته. */
+    const frameFloor = frame && zone === 'bottom' ? (frame.y + frame.height) * h + frameGap : -Infinity
+    /* علامة الاقتباس في التنويع الهادئ ترتفع فوق الوسم بمقدارٍ ثابت: تُحسب كي لا تمسّ الإطار. */
+    /* طبقتان: العادية، ثم «المضغوطة» حين يضيق المكان — تُسقط علامة الاقتباس
+       الزخرفية وتقرّب العنوان من وسمه، قبل أن يُمسّ حجم العنوان أو كلماته. */
+    let compact = false
+    const ornamentLift = () => (variant === 'quiet' && !compact ? min * (.12 * 1.02 - .06) : 0)
+    const floorOf = () => Math.max(EDGE_SAFE + min * .02, frameFloor) + ornamentLift()
+    const offsetOf = () => (variant === 'monument' ? min * .035 : min * (compact ? .05 : .085))
+    let topFloor = floorOf()
+    let titleOffset = offsetOf()
+    const extent = fontExtent(s.displayFamily)
+    /* منطقة التذييل محجوزة: آخر سطرٍ من العنوان ينتهي قبلها بـ FOOTER_GAP على
+       الأقل. إن لم تتسع الأسطر صغُر الخط (حتى minTitle) ثم ضاق التباعد،
+       ثم يُتنازل عن المتن قبل العنوان؛ ولا تُحذف كلمةٌ من العنوان أبداً. */
+    /* ٤ وحدات احتياط: حدود الخط الصغير تُقرَّب إلى البكسل فتعلو قليلاً عن الحساب. */
+    const ceiling = footerTopOf(s, footerMode) - FOOTER_GAP - 4
+    const body0 = fitBody(s, contentW, { maxLines: variant === 'ledger' ? 4 : variant === 'quiet' ? 3 : s.isTall ? 3 : 2 })
+    const measure = (size: number, lineHeight: number, lines: string[], bodyLines: string[], bodySize: number, top: number) => {
+      const tTop = top + titleOffset
+      const titleBottom = tTop + size * .82 + (lines.length - 1) * size * lineHeight + size * extent.descent
+      const bodyH = bodyLines.length ? blockHeight(bodyLines, bodySize, 1.64) + bodySize * .4 : 0
+      const bodyBottom = bodyLines.length ? titleBottom + min * .065 + bodyH : titleBottom
+      const ctaBottom = s.cta ? bodyBottom + min * .06 + min * .022 + Math.max(13, min * .021) * .4 : bodyBottom
+      return { tTop, titleBottom, bottom: ctaBottom }
+    }
+    let chosen: { lines: string[]; size: number; lineHeight: number; body: typeof body0; top: number } | null = null
+    const baseLine = s.titleLineHeight
+    const tries: { base: number; lineHeight: number }[] = []
+    for (let factor = 1; factor >= .3; factor -= .06) {
+      tries.push({ base: titleBase * factor, lineHeight: baseLine })
+    }
+    for (const lineHeight of [baseLine * .94, baseLine * .88, Math.max(1, baseLine * .82)]) tries.push({ base: minTitle, lineHeight })
+    search: for (const tier of [false, true]) {
+    compact = tier
+    topFloor = floorOf()
+    titleOffset = offsetOf()
+    for (const bodyMode of ['full', 'none'] as const) {
+      const body = bodyMode === 'full' ? body0 : { lines: [] as string[], size: body0.size }
+      for (const attempt of tries) {
+        const fit = fitTitle(s, contentW, { base: Math.max(minTitle, attempt.base), maxLines: titleMaxLines + 2, minScale: .3 })
+        if (!titleComplete(fit.lines, s.titleText)) continue
+        const size = Math.max(minTitle, Math.min(fit.size, attempt.base))
+        const widest = Math.max(...fit.lines.map((line) => drawnWidthPx(line, size, s.displayFamily, titleWeight)), 0)
+        /* هامش ٤٪ لأن القياس قد يسبق تحميل الخط تماماً. */
+        if (widest * 1.04 > contentW) continue
+        /* إن فاض من الأسفل ارفع الكتلة كلها ما دام أعلاها فوق الإطار وحافة الأمان. */
+        let top = Math.max(baseTop, topFloor)
+        const first = measure(size, attempt.lineHeight, fit.lines, body.lines, body.size, top)
+        if (first.bottom > ceiling) top = Math.max(topFloor, top - (first.bottom - ceiling))
+        const result = measure(size, attempt.lineHeight, fit.lines, body.lines, body.size, top)
+        if (result.bottom <= ceiling && result.tTop - size * (extent.ascent - .82) >= topFloor - titleOffset) {
+          chosen = { lines: fit.lines, size, lineHeight: attempt.lineHeight, body, top }
+          break search
+        }
+      }
+    }
+    }
+    if (!chosen) {
+      /* ملاذ أخير لا يحذف كلمة: أصغر خطٍّ مسموح، وأضيق تباعد، وبلا متن. */
+      const units = Math.max(4, contentW / (minTitle * .555 * 1.08))
+      const lines = wrap(s.titleText, units, 12, s.displayFamily)
+      chosen = { lines: titleComplete(lines, s.titleText) ? lines : [s.titleText], size: minTitle, lineHeight: 1, body: { lines: [], size: body0.size }, top: topFloor }
+    }
+    const title = { lines: chosen.lines, size: chosen.size }
+    const body = chosen.body
+    const titleLineHeight = chosen.lineHeight
+    const top = chosen.top
+    const titleH = blockHeight(title.lines, title.size, titleLineHeight)
+    const bodyH = blockHeight(body.lines, body.size, 1.64)
     const lineX = anchor === 'end' ? titleX + min * .018 : titleX - min * .018
     const kickerSize = Math.max(13, min * .021)
     const kickerW = Math.min(contentW * .58, lineWidthPx(s.kicker, kickerSize) + min * .08)
     const kickerX = anchor === 'end' ? titleX - kickerW : titleX
     const kickerTextX = kickerX + kickerW / 2
-    const titleTop = top + (variant === 'monument' ? min * .035 : min * .085)
-    const bodyTop = titleTop + titleH + min * .065
+    const titleTop = top + titleOffset
+    const bodyTop = titleTop + title.size * .82 + (title.lines.length - 1) * title.size * titleLineHeight + title.size * extent.descent + min * .065 - body.size * .82 + body.size * .65
     const ctaTop = bodyTop + bodyH + min * .06
     const textInk = p.isDark ? '#F7F5EF' : p.ink
     const textMuted = p.isDark ? 'rgba(247,245,239,.82)' : p.muted
@@ -1385,10 +1548,10 @@ const paintCinematicWindow: Painter = (s) => {
       y: titleTop + title.size * .82,
       size: title.size,
       fill: textInk,
-      weight: variant === 'quiet' ? 600 : 700,
+      weight: titleWeight,
       anchor,
       family: s.displayFamily,
-      lineHeight: s.titleLineHeight,
+      lineHeight: titleLineHeight,
       emphasisWord: s.hero,
       emphasisFill: accentInk(s),
     })
@@ -1406,7 +1569,7 @@ const paintCinematicWindow: Painter = (s) => {
     const ornament = variant === 'monument'
       ? `<circle cx="${round(anchor === 'end' ? titleX - contentW + min * .04 : titleX + contentW - min * .04)}" cy="${round(titleTop + min * .04)}" r="${round(min * .034)}" fill="none" stroke="${p.accent}" stroke-width="${round(min * .006)}" opacity=".9"/>`
       : variant === 'quiet'
-        ? textBlock({ lines: ['”'], x: anchor === 'end' ? titleX : titleX + min * .09, y: titleTop - min * .025, size: min * .12, fill: p.accent, weight: 700, anchor, family: s.displayFamily, opacity: .82 })
+        ? compact ? '' : textBlock({ lines: ['”'], x: anchor === 'end' ? titleX : titleX + min * .09, y: titleTop - min * .025, size: min * .12, fill: p.accent, weight: 700, anchor, family: s.displayFamily, opacity: .82 })
         : variant === 'ledger'
           ? `${textBlock({ lines: ['01'], x: anchor === 'end' ? titleX - contentW : titleX + contentW, y: top + min * .035, size: min * .058, fill: p.accent, weight: 700, anchor: anchor === 'end' ? 'start' : 'end', family: 'Tajawal', opacity: .82 })}<line x1="${round(anchor === 'end' ? titleX - contentW : titleX)}" y1="${round(top + min * .06)}" x2="${round(anchor === 'end' ? titleX : titleX + contentW)}" y2="${round(top + min * .06)}" stroke="${p.rule}" stroke-width="1.2" opacity=".8"/>`
           : variant === 'marquee' || variant === 'cinematic'
@@ -1416,13 +1579,13 @@ const paintCinematicWindow: Painter = (s) => {
     return {
       markup: [
         ornament,
-        showKickerPill ? textBlock({ lines: [s.kicker], x: kickerTextX, y: top + min * .038, size: kickerSize, fill: '#F7F5EF', weight: 700, anchor: 'middle', family: 'Tajawal' }) : variant === 'ledger' || variant === 'monument' ? '' : textBlock({ lines: [s.kicker], x: titleX, y: top + min * .025, size: kickerSize, fill: p.accent, weight: 700, anchor, family: 'Tajawal' }),
+        showKickerPill ? textBlock({ lines: [s.kicker], x: kickerTextX, y: top + min * .038, size: kickerSize, fill: '#F7F5EF', weight: 700, anchor: 'middle', family: 'Tajawal' }) : variant === 'ledger' || variant === 'monument' ? '' : kickerOnPlate(s, { x: titleX, baseline: top + min * .025, size: kickerSize, anchor }),
         titleMarkup,
         bodyMarkup,
         s.cta ? textBlock({ lines: [s.cta], x: titleX, y: ctaTop + min * .022, size: Math.max(13, min * .021), fill: p.accent, weight: 700, anchor, family: 'Tajawal' }) : '',
         s.slides > 1 ? textBlock({ lines: [`01/${String(s.slides).padStart(2, '0')}`], x: s.safeX, y: s.safeY * .72, size: Math.max(12, min * .019), fill: 'rgba(247,245,239,.74)', weight: 600, anchor: 'start', family: 'Tajawal' }) : '',
         s.slides > 1 ? carouselItem(s, { gap: 0 }).draw(h - s.safeY - min * .1) : '',
-        identityFooter(s, { mode: variant === 'quiet' ? 'center' : 'standard' }),
+        identityFooter(s, { mode: footerMode }),
       ].join(''),
     }
   }
@@ -1457,8 +1620,9 @@ const paintCinematicWindow: Painter = (s) => {
       `<rect x="0" y="${round(h - barH)}" width="${w}" height="${round(barH)}" fill="${ink}"/>`,
       textBlock({ lines: [s.kicker], x: w - s.safeX, y: barH * .64, size: Math.max(13, min * .02), fill: 'rgba(247,245,239,.92)', weight: 700, family: 'Tajawal' }),
       stack,
-      s.author ? textBlock({ lines: [s.author], x: w - s.safeX, y: h - barH * .36, size: Math.max(13, min * .02), fill: 'rgba(247,245,239,.9)', weight: 600, family: 'Tajawal' }) : '',
-      s.source ? textBlock({ lines: [s.source], x: s.safeX, y: h - barH * .36, size: Math.max(11, min * .015), fill: 'rgba(247,245,239,.62)', weight: 500, anchor: 'start', family: 'Tajawal', letterSpacing: 1.8 }) : '',
+      /* داخل الشريط السينمائي، ولكن فوق حافة الأمان: لا ينزل حرفٌ دون EDGE_SAFE. */
+      s.author ? textBlock({ lines: [s.author], x: w - s.safeX, y: Math.min(h - barH * .36, h - EDGE_SAFE - Math.max(13, min * .02) * .5), size: Math.max(13, min * .02), fill: 'rgba(247,245,239,.9)', weight: 600, family: 'Tajawal' }) : '',
+      s.source ? textBlock({ lines: [s.source], x: s.safeX, y: Math.min(h - barH * .36, h - EDGE_SAFE - Math.max(13, min * .02) * .5), size: Math.max(11, min * .015), fill: 'rgba(247,245,239,.62)', weight: 500, anchor: 'start', family: 'Tajawal', letterSpacing: 1.8 }) : '',
     ].join(''),
   }
 }
@@ -1890,7 +2054,8 @@ const paintInkVeil: Painter = (s) => {
   const seed = uid.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
   const filterId = `${uid}-inkbleed`
   const defs = `<filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="${round(.008 + (seed % 5) * .002)}" numOctaves="2" seed="${seed % 97}" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="${round(min * .015)}"/></filter>`
-  const heroSize = Math.min(min * .5, (w * 1.02) / Math.max(1, textUnits(hero) * .555))
+  /* الكلمة الشبحية داخل حدود الأمان لا تنزف خارج اللوحة: تُقاس بخطها ووزنها الفعليين. */
+  const heroSize = Math.min(min * .5, (w - s.safeX * 2) / Math.max(1, measuredUnits(hero, s.displayFamily, resolveWeight(s.displayFamily, 800)) * .555 * 1.03))
   const inkWord = `<g filter="url(#${filterId})" opacity="${p.isDark ? .22 : .12}">${textBlock({ lines: [hero], x: w / 2, y: h * (s.isTall ? .33 : .39), size: heroSize, fill: p.ink, anchor: 'middle', family: s.displayFamily, weight: 800 })}</g>`
   const drops = [
     `<circle cx="${round(w * (.14 + (seed % 7) * .09))}" cy="${round(h * .14)}" r="${round(min * .011)}" fill="${p.accent}" filter="url(#${filterId})" opacity=".5"/>`,
@@ -2132,26 +2297,44 @@ const paintMagazineColumns: Painter = (s) => {
 const paintTypePoster: Painter = (s) => {
   const { palette: p, w, h, min } = s
   const zone = w - s.safeX * 2
-  const source = words(s.titleText).slice(0, 7)
+  /* كلمةٌ في كل سطر حتى سبعة أسطر؛ وما زاد يُجمَع كلمتين أو أكثر في السطر بدل
+     أن يُقصّ — كان `slice(0, 7)` يُسقط «المعرفي» من «…من الكسل المعرفي». */
+  const titleWords = words(s.titleText)
+  const groupLines = (list: string[], maxLines: number) => {
+    if (list.length <= maxLines) return list
+    const out: string[] = []
+    let index = 0
+    for (let line = 0; line < maxLines; line += 1) {
+      const take = Math.ceil((list.length - index) / (maxLines - line))
+      out.push(list.slice(index, index + take).join(' '))
+      index += take
+    }
+    return out
+  }
+  const source = groupLines(titleWords, 7)
   const heroKey = normalizeForCompare(s.hero)
-  /* كل سطرٍ يُقاس ليملأ العرض: هذا ما يجعل الكتلة تبدو منحوتةً لا مركّبة. */
-  const lines = source.length ? source : words(s.bodyText).slice(0, 5)
-  const raw = lines.map((word) => clamp(zone / Math.max(1, textUnits(word) * .555), min * .045, min * .19))
+  /* كل سطرٍ يُقاس ليملأ العرض: هذا ما يجعل الكتلة تبدو منحوتةً لا مركّبة.
+     القياس بخط العرض ووزنه الفعليين، وإلا خرج السطر العريض من اللوحة. */
+  const lines = source.length ? source : groupLines(words(s.bodyText), 5)
+  const posterWeight = resolveWeight(s.displayFamily, 800)
+  const raw = lines.map((line) => clamp(zone / Math.max(1, measuredUnits(line, s.displayFamily, posterWeight) * .555 * 1.03), min * .03, min * .19))
   const ctaBlock = ctaItem(s, { align: 'center' })
   /* الكتلة كلها تُقاس قبل الرسم وتُصغَّر بنسبةٍ واحدة إن تجاوزت الحيّز — بلا
      ذلك كان آخر سطرٍ يخرج من أسفل اللوحة (لقطة المعاينة الأولى). */
   const headroom = s.safeY + min * .075
-  const available = h - headroom - s.safeY - min * .09 - (ctaBlock.h ? ctaBlock.h + min * .06 : 0)
-  const rawH = raw.reduce((sum, size) => sum + size * 1.06, 0)
+  /* الحدّ السفلي هو أعلى التذييل ناقص الفجوة المحجوزة، لا تقديرٌ ثابت. */
+  const floorY = footerTopOf(s, 'center') - FOOTER_GAP - 4
+  const available = floorY - headroom - (ctaBlock.h ? ctaBlock.h + min * .06 : 0)
+  const rawH = raw.reduce((sum, size) => sum + size * 1.06, 0) + (raw[raw.length - 1] || 0) * .34
   const shrink = rawH > available ? available / rawH : 1
   const sizes = raw.map((size) => size * shrink)
   const totalH = rawH * shrink
   const footprint = totalH + (ctaBlock.h ? ctaBlock.h + min * .06 : 0)
-  let y = Math.max(headroom, headroom + (h - headroom - s.safeY - min * .09 - footprint) * .42)
+  let y = Math.max(headroom, headroom + (floorY - headroom - footprint) * .42)
   const stack = lines.map((word, index) => {
     const size = sizes[index]
     const isHero = heroKey && normalizeForCompare(word) === heroKey
-    const markup = textBlock({ lines: [word], x: w / 2, y: y + size * .84, size, fill: isHero ? accentInk(s) : titleInk(s), weight: 800, anchor: 'middle', family: s.displayFamily })
+    const markup = textBlock({ lines: [word], x: w / 2, y: y + size * .84, size, fill: isHero ? accentInk(s) : titleInk(s), weight: 800, anchor: 'middle', family: s.displayFamily, emphasisWord: word.includes(' ') ? s.hero : undefined, emphasisFill: accentInk(s) })
     y += size * 1.06
     return markup
   }).join('')

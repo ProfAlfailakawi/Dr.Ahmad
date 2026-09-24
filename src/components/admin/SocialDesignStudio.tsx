@@ -20,6 +20,7 @@ import {
   type SocialPlatform,
   type SocialCampaign,
 } from '../../lib/social-design-engine'
+import { LIGHT as IDENTITY_LIGHT, mix as mixColor } from '../../lib/design-system'
 import {
   downloadCompositionRaster,
   downloadCompositionSvg,
@@ -33,7 +34,7 @@ import {
   seasonIdentityFor,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, identityPalette, PALETTES } from '../../lib/social-design-engine'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EASE as STUDIO_EASE } from '../motion'
 import { DesignBirthStage } from './DesignBirthStage'
@@ -148,6 +149,9 @@ type ZeroDecisionSummary = {
   visualOrigin: StudioVisualOrigin
 }
 
+const LOCAL_RESERVE_OWNER = 'تكوين أصلي مولد داخل المتصفح'
+const LOCAL_RESERVE_NOTICE = 'تعذّرت خدمة الصور مؤقتاً فاستُخدم المولّد المحلي.'
+
 type StudioImageMetadata = {
   source?: string
   owner?: string
@@ -179,6 +183,8 @@ type StudioImageMetadata = {
   targetHeight?: number
   nativeAspect?: boolean
   formatId?: string
+  /** إطارٌ مرسوم داخل الصورة (نسب) يمرَّر للعارض كي لا يركب العنوان حافته. */
+  frameBox?: PlanOverlay['frameBox']
 }
 
 type GeneratedStudioImage = {
@@ -2383,12 +2389,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
     const textZone = options.textZone || (Number(options.candidateIndex || 0) % 3 === 0 ? 'right' : Number(options.candidateIndex || 0) % 3 === 1 ? 'bottom' : 'left')
     const direction = (seed + Number(options.candidateIndex || 0)) % 5
+    /* خمس تنويعات كلها من الهوية: الأزرق أساساً والجمر إبرازاً والحبر ميداناً.
+       كانت هنا ألوانٌ دخيلة (عنابي وفيروزي وبنفسجي) تتسرّب إلى التصميم كله. */
+    const I = IDENTITY_LIGHT
     const palettes = [
-      { paper: '#F2EBDD', wash: '#E5D5BD', field: '#251E1A', glow: '#C8683D', accent: '#D0522B', line: '#3D3028' },
-      { paper: '#E9EDF0', wash: '#CBD7DC', field: '#071C2B', glow: '#18A7A0', accent: '#116A85', line: '#142B38' },
-      { paper: '#F3F0E8', wash: '#D9D3C7', field: '#17202B', glow: '#4169E1', accent: '#DD3F31', line: '#202328' },
-      { paper: '#ECE9DF', wash: '#CED1BF', field: '#1D2A24', glow: '#9DAA6B', accent: '#697449', line: '#29352D' },
-      { paper: '#ECE9E5', wash: '#D1D1D3', field: '#17171B', glow: '#7555D9', accent: '#4931A6', line: '#222127' },
+      { paper: I.canvas, wash: I.accentSoft, field: I.ink, glow: I.ember, accent: I.ember, line: I.accentDeep },
+      { paper: I.canvas, wash: I.accentSoft, field: mixColor(I.ink, I.accentDeep, .35), glow: I.accent, accent: I.accent, line: I.accentDeep },
+      { paper: I.wash, wash: mixColor(I.wash, I.accent, .14), field: I.ink, glow: I.accent, accent: I.ember, line: I.accentDeep },
+      { paper: I.canvas, wash: mixColor(I.canvas, I.ember, .14), field: mixColor(I.ink, I.ember, .18), glow: I.ember, accent: I.accentDeep, line: I.ink },
+      { paper: I.wash, wash: I.accentSoft, field: mixColor(I.ink, I.accent, .22), glow: mixColor(I.accent, I.canvas, .25), accent: I.accent, line: I.ink },
     ] as const
     const palette = palettes[direction]
     const pageWash = ctx.createLinearGradient(0, 0, width, height)
@@ -2417,7 +2426,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const frameX = textZone === 'right' ? margin : textZone === 'left' ? width * .47 : margin
     const frameY = margin
     const frameW = textZone === 'bottom' ? width - margin * 2 : width * .47
-    const frameH = textZone === 'bottom' ? height * .57 : height - margin * 2
+    /* حين يكون النص أسفل الإطار يقصر الإطار كي يتسع العنوان تحته كاملاً. */
+    const frameH = textZone === 'bottom' ? height * .47 : height - margin * 2
     const frameR = Math.min(width, height) * .032
 
     ctx.save()
@@ -2526,7 +2536,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
     const railX1 = textZone === 'right' ? width * .64 : textZone === 'left' ? width * .08 : margin
     const railX2 = textZone === 'right' ? width - margin : textZone === 'left' ? width * .4 : width - margin
-    const railY = textZone === 'bottom' ? height * .69 : margin
+    /* خط السكة كان يعبر منطقة العنوان (‎.69h‎)؛ صار ملاصقاً لأسفل الإطار. */
+    const railY = textZone === 'bottom' ? frameY + frameH + height * .03 : margin
     ctx.strokeStyle = `${palette.accent}B8`
     ctx.lineWidth = Math.max(2, Math.min(width, height) * .002)
     ctx.beginPath()
@@ -2585,7 +2596,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       passport,
       metadata: {
         source: 'مولد الأصول التحريرية داخل الاستوديو',
-        owner: 'تكوين أصلي مولد داخل المتصفح',
+        owner: LOCAL_RESERVE_OWNER,
         license: 'أصل تحريري مولد محلياً — بلا صورة مخزون أو قالب سابق',
         description: creativeBrief.issue,
         visualWorld: options.preferredWorld || 'local-reserve',
@@ -2597,7 +2608,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         conceptLabel: visualSearchPlan.glossaryLabel,
         semanticScene: creativeBrief.visualReason,
         relevanceScore: 84,
-        relevanceReason: `استُخدم مولد احتياطي محلي لأن خدمة الصور تعذّرت: ${options.reason}`,
+        /* رسالة الخطأ الخام («HTTP 504»…) للسجل لا للدكتور. */
+        relevanceReason: LOCAL_RESERVE_NOTICE,
         generationAttempts: 4,
         semanticVerified: true,
         criticSource: 'browser-editorial-generator',
@@ -2612,6 +2624,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         targetHeight: height,
         nativeAspect: true,
         formatId: targetFormat.id,
+        frameBox: textZone === 'bottom'
+          ? { x: frameX / width, y: frameY / height, width: frameW / width, height: (railY + marker) / height - frameY / height }
+          : { x: frameX / width, y: frameY / height, width: frameW / width, height: frameH / height },
       },
       prompt: visualSearchPlan.generationPrompt,
       model: 'browser-original-editorial',
@@ -2821,12 +2836,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       textZone: zone,
       vignette,
       readabilityShade,
+      ...(metadata?.frameBox ? { frameBox: metadata.frameBox } : {}),
     }
     const next = {
       ...plan,
       layout,
       palette,
-      paletteOverride: imagePalette,
+      /* ألوان التصميم من الهوية وحدها (أزرق · جمر · حبر)؛ الصورة تحدد الفاتح
+         والداكن فقط لا الألوان — كانت لوحتها المستخرجة تُدخل ألواناً دخيلة. */
+      paletteOverride: identityPalette(darkSurface),
       density: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'minimal' : plan.density,
       content: { ...plan.content, source: /dr-?alfailakawi\.com/i.test(plan.content.source || '') ? '' : plan.content.source },
       framing: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'cinematic-crop' : 'open-canvas',
@@ -3495,7 +3513,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             })
           } catch (error) {
             if (!shouldUseLocalReserveFallback(error)) throw error
-            setNotice('لم أجتز فاحص الصورة عبر الخدمة بعد أربعة تكوينات مختلفة؛ أنتقل تلقائياً إلى أصل تحريري جديد داخل الاستوديو، من دون إعادة تصميم قديم.')
+            const rejectedBySemantics = /semantic_rejected|visual_rejected|تعذّر اعتماد الصورة|HTTP 422/i.test(error instanceof Error ? error.message : String(error || ''))
+            setNotice(rejectedBySemantics
+              ? 'لم أجتز فاحص الصورة عبر الخدمة بعد أربعة تكوينات مختلفة؛ أنتقل تلقائياً إلى أصل تحريري جديد داخل الاستوديو، من دون إعادة تصميم قديم.'
+              : LOCAL_RESERVE_NOTICE)
             generated = await buildLocalReserveImage({
               reason: error instanceof Error ? error.message : 'external-generator-unavailable',
               candidateIndex: serial,
@@ -3957,6 +3978,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const approvedImageSource = approvedHero?.sourceUrl || imageSource
   const approvedImageOwner = approvedHero?.owner || imageOwner
   const approvedImageLicense = approvedHero?.license || imageLicense
+  /* المولّد الاحتياطي ليس «AI GENERATED»: الشارة تقول ما حدث فعلاً. */
+  const approvedIsLocalReserve = approvedVisualOrigin === 'generated' && approvedImageOwner === LOCAL_RESERVE_OWNER
   const zeroDecisionSteps: { id: ZeroDecisionPhase; label: string; note: string }[] = [
     { id: 'understand', label: 'فهم المعنى', note: domainUnderstanding.recognizedTerms.length ? `${domainUnderstanding.recognizedTerms.slice(0, 3).map((item) => item.canonicalAr).join(' + ')} · ${domainUnderstanding.confidence}٪` : 'القضية والجمهور والأثر' },
     { id: 'prompt', label: 'إخراج الفكرة', note: visualMode === 'generate' ? 'برومبت فني أصلي ومختلف' : 'عبارات بحث تحريرية ذكية' },
@@ -4320,8 +4343,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <div><div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.12em] text-accent-deep">Approved by Zero-Decision</div><h3 className="mt-4 font-display text-3xl font-bold leading-tight text-ink">هذه هي النتيجة التي اعتمدها المخرج.</h3><p className="mt-3 text-[.82rem] leading-loose text-soft">{zeroDecision?.note || 'تم اختيارها بعد مقارنة الجودة وقوة التوقف والقراءة والأصالة وملاءمة الفكرة والجمهور.'}</p></div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-professional-visual-gate="true"><div className="rounded-2xl border border-accent/20 bg-accent/5 px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent-deep">{zeroDecision?.professionalScore || professionalReleaseGate(approvedPlan).score}٪</strong><span className="text-[.62rem] text-accent-deep">عين المصمم</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
               <div className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.66rem] font-bold text-accent">لماذا هذه النسخة؟</p><ul className="mt-2 grid gap-1.5">{approvedPlan.rationale.slice(0,4).map((line) => <li key={line} className="text-[.7rem] leading-relaxed text-ink/80">• {line}</li>)}</ul></div>
-              <div className={`overflow-hidden rounded-2xl border p-4 ${approvedVisualOrigin === 'generated' ? 'border-accent/20 bg-[linear-gradient(135deg,rgba(124,58,237,.07),rgba(255,255,255,.7))]' : approvedVisualOrigin === 'ready' ? 'border-accent/25 bg-[linear-gradient(135deg,rgba(62,92,120,.07),rgba(255,255,255,.7))]' : 'border-hair bg-canvas'}`}>
-                <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">هوية الصورة</p><h4 className="mt-1 text-[.88rem] font-bold text-ink">{approvedVisualOrigin === 'generated' ? 'مولدة من الصفر بالذكاء الاصطناعي' : approvedVisualOrigin === 'ready' ? 'صورة جاهزة منتقاة وموثقة' : 'تكوين بصري بلا صورة'}</h4><p className="mt-1.5 text-[.66rem] leading-relaxed text-soft">{approvedImageOwner || 'لا يوجد مالك خارجي'} · {approvedImageLicense || 'لا يوجد ترخيص خارجي'}</p></div><span className={`rounded-full px-3 py-1.5 text-[.6rem] font-black ${approvedVisualOrigin === 'generated' ? 'bg-accent/10 text-accent-deep' : approvedVisualOrigin === 'ready' ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{approvedVisualOrigin === 'generated' ? 'AI GENERATED' : approvedVisualOrigin === 'ready' ? 'READY SOURCE' : 'TYPOGRAPHIC'}</span></div>
+              <div className={`overflow-hidden rounded-2xl border p-4 ${approvedVisualOrigin === 'generated' ? 'border-accent/20 bg-[linear-gradient(135deg,rgb(var(--c-accent)/.07),rgb(var(--c-canvas)/.7))]' : approvedVisualOrigin === 'ready' ? 'border-accent/25 bg-[linear-gradient(135deg,rgb(var(--c-accent)/.07),rgb(var(--c-canvas)/.7))]' : 'border-hair bg-canvas'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">هوية الصورة</p><h4 className="mt-1 text-[.88rem] font-bold text-ink">{approvedIsLocalReserve ? 'تكوين محلي احتياطي' : approvedVisualOrigin === 'generated' ? 'مولدة من الصفر بالذكاء الاصطناعي' : approvedVisualOrigin === 'ready' ? 'صورة جاهزة منتقاة وموثقة' : 'تكوين بصري بلا صورة'}</h4><p className="mt-1.5 text-[.66rem] leading-relaxed text-soft">{approvedImageOwner || 'لا يوجد مالك خارجي'} · {approvedImageLicense || 'لا يوجد ترخيص خارجي'}</p></div><span className={`rounded-full px-3 py-1.5 text-[.6rem] font-black ${approvedVisualOrigin === 'generated' ? 'bg-accent/10 text-accent-deep' : approvedVisualOrigin === 'ready' ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{approvedIsLocalReserve ? 'تكوين محلي احتياطي' : approvedVisualOrigin === 'generated' ? 'AI GENERATED' : approvedVisualOrigin === 'ready' ? 'READY SOURCE' : 'TYPOGRAPHIC'}</span></div>
                 {approvedVisualOrigin === 'generated' && <div className="mt-3 grid gap-2 rounded-xl border border-accent/20 bg-white/55 px-3 py-2.5 text-[.62rem] text-soft sm:grid-cols-2"><span><strong className="text-ink">البصمة الفنية:</strong> {generatedVisualWorld || 'يحددها المخرج لكل فكرة'}</span><span><strong className="text-ink">مطابقة المعنى:</strong> {generatedRelevanceScore == null ? 'فحص بصري داخلي' : `${generatedRelevanceScore}٪`}</span>{generatedRelevanceReason && <span className="sm:col-span-2"><strong className="text-ink">حكم المطابقة:</strong> {generatedRelevanceReason}</span>}<span className="sm:col-span-2 text-[.56rem]">بيانات النموذج والمصدر محفوظة في جواز التصميم ولا تُطبع داخل الصورة.</span></div>}
                 {approvedImageSource && <p dir="ltr" className="mt-3 truncate text-left text-[.58rem] text-accent">{approvedImageSource}</p>}
               </div>

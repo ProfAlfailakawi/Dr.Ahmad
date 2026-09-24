@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGzip } from 'node:zlib'
 import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
-import { PROOFREAD_INSTRUCTION, acceptProofread, arabicCountPhrase, articleMetrics, buildOrthographyIndex, deriveExcerpt, DEVICE_FORMS, FILE_FORMS, judgeStyle, orthographySlips, PROBLEM_FORMS, refineToStyle, resolveStyleDna, RULE_FORMS, styleBrief, styleReportLines, SUBSCRIBER_FORMS, VERIFIED_FILE_FORMS, WARNING_FORMS, withVoiceMemory, WORD_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from './src/lib/style-dna.mjs'
+import { PROOFREAD_INSTRUCTION, acceptProofread, arabicCountPhrase, articleMetrics, buildOrthographyIndex, citationSpans, deriveExcerpt, DEVICE_FORMS, FILE_FORMS, judgeStyle, orthographySlips, PROBLEM_FORMS, refineToStyle, resolveStyleDna, RULE_FORMS, styleBrief, styleReportLines, SUBSCRIBER_FORMS, VERIFIED_FILE_FORMS, WARNING_FORMS, withVoiceMemory, WORD_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from './src/lib/style-dna.mjs'
 import { buildMimicLexicon, mimicVoice } from './src/lib/style-mimic.mjs'
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
@@ -3084,41 +3084,21 @@ function interviewDocuments() {
   return documents
 }
 
-/* «Ryan وDeci (2000)»، «Carol Dweck (2006)»، «Howard et al. (2021)»، «Yusefzadeh وآخرين (2019)».
-   بلا تعبيرٍ نمطيٍّ متداخل: CodeQL نبّه إلى أن النمط الواحد الجامع يتراجع أُسّياً
-   (٢٤ تكراراً = ٢٫٧ ثانية). السنة بين قوسين تُلتقط، ثم يُمشى إلى الوراء كلمةً كلمة
-   على أسماء لاتينية وروابطها — خطّيٌّ ومحدودٌ بثماني كلمات. */
-const CITATION_YEAR = /\(\s*((?:19|20)\d{2})\s*\)/gu
-const CITATION_NAME_TOKEN = /^و?(?:[A-Z][A-Za-z'’.-]*|et|al\.?|and|&|van|der|de|وآخرين|وآخرون)$/u
-function citationName(before = '') {
-  const tokens = before.trimEnd().split(/\s+/).slice(-8)
-  const name = []
-  for (let index = tokens.length - 1; index >= 0; index -= 1) {
-    if (!CITATION_NAME_TOKEN.test(tokens[index])) break
-    name.unshift(tokens[index])
-  }
-  while (name.length && !/^و?[A-Z]/u.test(name[0])) name.shift()
-  return name.length ? name.join(' ') : ''
-}
 export function citationsOf(body = '') {
   const found = []
   for (const paragraph of String(body).split(/\n\s*\n/)) {
-    /* «et al.» ليست نهاية جملة: تُحمى قبل التقطيع. */
+    /* «et al.» ليست نهاية جملة: تُحمى قبل التقطيع ثم تُعاد. */
     const text = paragraph.replace(/\s+/g, ' ').replace(/et al\./g, 'et al').trim()
     const sentences = text.split(/(?<=[.!؟])\s+/)
     sentences.forEach((sentence, index) => {
-      let match = null
-      for (const year of sentence.matchAll(CITATION_YEAR)) {
-        const name = citationName(sentence.slice(0, year.index))
-        if (name) { match = [null, name, year[1]]; break }
-      }
-      if (!match) return
+      const span = citationSpans(sentence)[0]
+      if (!span) return
       /* الفقرة كلها للمطابقة (فيها موضوع الاستشهاد)، والجملة للكاتب (فيها ما نسبه إليه).
          «هذا ما أشارت إليه أعمال Lawrence…» تحيل إلى ما قبلها: تُضمّ الجملة السابقة. */
       const referential = /^(?:و?(?:هذا|هذه|وهو|وهي|ذلك)\s)/u.test(sentence) || sentence.split(/\s+/).length < 14
       const claim = (referential && index > 0 ? `${sentences[index - 1]} ${sentence}` : sentence).trim()
       const restore = (value) => value.replace(/et al(?!\.)/g, 'et al.')
-      found.push({ key: restore(`${match[1].replace(/\s+/g, ' ').trim()} (${match[2]})`), sentence: restore(claim).slice(0, 420), paragraph: text })
+      found.push({ key: restore(span.keys[0]), sentence: restore(claim).slice(0, 420), paragraph: text })
     })
   }
   return found
@@ -3425,36 +3405,43 @@ const articleOutputTokens = (targetWords = 400) => clamp(Math.ceil(targetWords *
 
    المقال كان يخرج بالشكل نفسه كل مرة لأن التعليمات واحدة كل مرة. هذه ستّ
    بنياتٍ يكتب بها فعلاً؛ تدور بين الطلبات فلا يتشابه مقالان متتاليان. */
+/* ٢٤ سبتمبر ٢٠٢٦ — حَكَمان أعميان ميّزا مقالاته من محاكاتها في عشرة أزواج من عشرة،
+   وأغلب ما فضح المحاكاة كان من صنع هذه الخطط نفسها: «جرّب ثلاث إجاباتٍ شائعة… ثم
+   الإجابة الأصعب» صارت قالباً يتكرر حرفياً عبر المقالات، و«قولٌ سمعه من طالب»
+   صارت حكاياتٍ شخصية مختلقة بحوار («سألتُ»، «حدثتني معلمةٌ») لا يكتبها في مقالاته
+   منذ ٢٠٢٥ (صفرٌ من ٤٨)، و«اختم بدعوةٍ قابلة للتنفيذ اليوم» صارت واجباً منزلياً
+   («جرّب هذا الأسبوع»)، ومثالُ «نركض كثيراً، ونسمّي الركض التزاماً» — وهو سطرٌ من
+   مقالٍ له — صار افتتاحاً يُستنسخ. الخطط الآن تصف الحركة لا الجمل، ولا تقتبس منه. */
 const ARTICLE_FAMILIES = [
   {
     id: 'scene',
     label: 'المشهد اليومي',
-    plan: 'افتح بمشهدٍ محسوس واحد داخل صفٍّ أو بيتٍ أو ممرّ مدرسة، في جملتين قصيرتين بلا تمهيد. ثم اكشف ما ينكشف في المشهد. ثم انتقل من الحادثة إلى المعيار. واختم بسؤالٍ يعيد القارئ إلى المشهد نفسه بعينٍ أخرى.',
+    plan: 'افتح بمشهدٍ عامٍّ يعرفه كل بيتٍ أو صفٍّ كويتي، بصيغة المضارع وبلا بطلٍ مسمّى ولا «أنا» (تظهر النتيجة، تتغيّر ملامح البيت ليلة الامتحان…). ثم اكشف ما يخفيه المشهد. ثم انتقل منه إلى المعيار التربوي، وإن كان في «من_مراجعك» ما يسنده فاستشهد به. واختم بجملةٍ مكثّفة تقلب الفكرة أو بسؤالٍ للقارئ.',
   },
   {
     id: 'negation',
     label: 'النفي المزدوج',
-    plan: 'افتح بنفيٍ يقلب التوقّع: «ليست المشكلة في كذا…بل في كذا». ثم فكّك الوهم الشائع خطوةً خطوة. ثم ضع البديل. واختم بانقلابٍ أخير بـ«بل».',
+    plan: 'افتح بنفيٍ يقلب التوقّع («ليست المشكلة في…بل في…»). ثم فكّك الفهم الشائع بحجةٍ ومعيار لا بحكاية. ثم ضع البديل وما يسنده. واختم بانقلابٍ مكثّف.',
   },
   {
     id: 'we',
     label: 'الضمير الجمعي',
-    plan: 'افتح بعادةٍ جماعية نمارسها ونسمّيها باسمٍ جميل («نركض كثيراً، ونسمّي الركض التزاماً»). ثم اكشف ثمنها الصامت. ثم اسأل من المستفيد. واختم بدعوةٍ صغيرة قابلة للتنفيذ اليوم.',
+    plan: 'افتح بعادةٍ نمارسها نحن دون أن ننتبه لثمنها، بصوت «نحن» وأفعال الجماعة. ثم اكشف ما تخفيه هذه العادة في أبنائنا ومدارسنا. ثم ضعها في ضوء معيارٍ تربويّ أو دراسةٍ من «من_مراجعك» إن وُجدت. واختم بسؤالٍ للقارئ أو بجملةٍ تقلب الفكرة، لا بنصيحةٍ عملية.',
   },
   {
     id: 'question',
     label: 'السؤال المعلّق',
-    plan: 'افتح بسؤالٍ قصيرٍ في سطرٍ واحد. ثم جرّب ثلاث إجاباتٍ شائعة وأسقط كلاً منها بجملةٍ قصيرة. ثم قدّم الإجابة الأصعب. واختم بسؤالٍ أعمق من الأول.',
+    plan: 'افتح بسؤالٍ يطرحه الواقع نفسه. ثم ناقش الجواب السهل الذي يريحنا وبيّن لماذا لا يكفي، في فقرةٍ واحدة لا في قائمة اعتراضات. ثم قدّم فهماً أعمق مسنوداً بمعيارٍ أو مرجع. واختم بسؤالٍ يوجّهه إلى القارئ نفسه.',
   },
   {
     id: 'testimony',
-    label: 'الشهادة القريبة',
-    plan: 'افتح بموقفٍ إنسانيّ قريب: قولٌ سمعه من طالبٍ أو معلمٍ أو أب، بين «…» وبكلماته هو. ثم قف عند الجملة التي أوجعت. ثم اقرأ ما وراءها تربوياً. واختم بما ينبغي أن يسمعه ذلك الإنسان.',
+    label: 'العبارة الشائعة',
+    plan: 'افتح بعبارةٍ يتداولها الناس في البيوت والمدارس، بين «…» كما تُقال فعلاً (وقد تكون كويتيةً)، لا بحكايةٍ عن شخصٍ بعينه. ثم افحص ما تكشفه العبارة عنّا. ثم اقرأ ما وراءها تربوياً بحجةٍ ومعيار. واختم بما ينبغي أن نقوله بدلاً منها.',
   },
   {
     id: 'paradox',
     label: 'المفارقة الموثّقة',
-    plan: 'افتح بواقعةٍ أو رقمٍ من السياق الراهن المرفق حصراً. ثم اكشف المفارقة التي يخفيها الرقم. ثم ضع المعيار الإنساني في مقابله. واختم بانقلابٍ يعيد ترتيب الأولوية. لا تخترع رقماً؛ إن لم يصلك رقمٌ موثوق فاكتب المفارقة بلا رقم.',
+    plan: 'افتح بواقعةٍ من السياق الراهن المرفق أو بدراسةٍ من «من_مراجعك» حصراً. ثم اكشف المفارقة التي تخفيها. ثم ضع المعيار الإنساني في مقابلها. واختم بانقلابٍ يعيد ترتيب الأولوية. لا تخترع رقماً ولا دراسة؛ إن لم يصلك سندٌ موثوق فاكتب المفارقة بلا رقم.',
   },
 ]
 
@@ -3551,7 +3538,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     'قواعد المضمون:',
     `· ${input.skipOriginality ? 'الكاتب صرّح أن المادة أصلية له؛ التشابه مع أرشيفه إشارة مراجعة لا مانع قبول، لكن لا تكرر عنواناً منشوراً حرفياً.' : 'ممنوع تكرار فكرة مركزية أو عنوان أو بناء حجاجي من القائمة المنشورة. إذا كانت الفكرة قريبة، ابتكر زاوية جديدة واضحة.'}`,
     '· الأرشيف المرفق مادةُ إيقاعٍ ومعرفةٍ فقط. يُمنع منعاً باتاً نقل أي عبارة منه، ويُمنع أن يشير المقال إلى مقالٍ سابق لك أو أن يقول «كتبتُ من قبل».',
-    '· وظّف قصةً أو موقفاً إنسانياً حياً واحداً على الأقل. والإحصائية أو الاستشهاد من الأرشيف أو من السياق الراهن المرفق حصراً؛ يُمنع منعاً باتاً اختراع رقمٍ أو دراسةٍ أو اسم مصدر. إن غاب السند الحقيقي فاكتب الفكرة قوية بلا رقم.',
+    '· الحجة عنده مشهدٌ عامٌّ يعرفه القارئ، ثم معيار، ثم دليل. لا تخترع حكايةً شخصية ولا حواراً مع طالبٍ أو معلمٍ أو قريب («سألتُ»، «أتذكّر»، «حدثتني»، «صديقٌ لي»، «أعرف رجلاً»): لا يكتبها في مقالاته الحديثة، وهي أوضح ما يفضح المحاكاة. والإحصائية أو الاستشهاد من «من_مراجعك» أو من السياق الراهن المرفق حصراً؛ يُمنع منعاً باتاً اختراع رقمٍ أو دراسةٍ أو اسم مصدر، ويُمنع التلميح إلى أبحاثٍ مجهولة («تُثبت الدراسات»، «يقول علم النفس»). إن غاب السند الحقيقي فاكتب الحجة من المشهد والمعيار.',
+    '· تكتب مقالك الأسبوعي لقرّاء كويتيين: المشاهد من البيت والمدرسة والمجتمع في الكويت، وقد تمرّ عبارةٌ كويتية كما يقولها الناس بين «…». لا تعابير شامية أو مصرية.',
     '· الحدث الراهن اختياري: اربطه فقط إن كان الارتباط عضوياً. لا تستخدم سوى العنوان والملخص والمصدر والرابط المقدّم.',
     '· العنوان قويّ غير صحفيٍّ مبتذل، والمقتطف بين ٩٠ و١٩٠ حرفاً وبنبرة المقال نفسها.',
     '· «نماذج_صوت» مقالان كاملان من مقالاتك: اسمع منهما النَّفَس وطول الجملة والوقفة «…» والانقلاب «بل» والانتقال بين الفقرات. يُمنع نقل أي عبارةٍ أو مثالٍ أو فكرةٍ منهما؛ المطلوب أن يشبه المقالُ الجديدُ صوتَهما لا كلامَهما.',
@@ -3748,7 +3736,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     if (best.lengthOff > wordTolerance) {
       orders.push(best.words > input.targetWords
         ? `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: احذف الجمل التفسيرية الزائدة وكل عبارةٍ تعيد ما قيل، ولا تحذف المشهد ولا الخاتمة.`
-        : `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: أضف مشهداً صغيراً أو موقفاً إنسانياً جديداً. ممنوع بلوغ العدد بتكرار جملةٍ سبقت أو بإعادة صياغتها.`)
+        : `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: أضف فقرةً تعمّق الحجة: مثالاً عامّاً من واقع البيت أو المدرسة، أو دليلاً من «من_مراجعك». لا حكايةً شخصية ولا حواراً مختلقاً، ولا تكرار جملةٍ سبقت أو إعادة صياغتها.`)
     }
 
     const revision = await callGeminiStructured({

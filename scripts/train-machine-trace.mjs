@@ -22,6 +22,7 @@ const fixture = JSON.parse(readFileSync(resolve(root, 'scripts/fixtures/style-ma
 const args = process.argv.slice(2)
 /* --keys=a,b,c يجرّب مجموعة مقاييس غير المعتمدة دون تعديل المكتبة. */
 const keysArg = args.find((arg) => arg.startsWith('--keys='))
+const l2Arg = Number((args.find((arg) => arg.startsWith('--l2=')) || '').slice(5)) || 3
 const extra = args.filter((arg) => !arg.startsWith('--')).flatMap((file, index) => {
   const raw = JSON.parse(readFileSync(resolve(file), 'utf8'))
   return (Array.isArray(raw) ? raw : raw.texts).map((item) => ({ ...item, set: item.set || `extra-${index + 1}` }))
@@ -34,7 +35,7 @@ const X = [...archive.map(vec), ...machine.map((item) => vec(item.body))]
 const y = [...archive.map(() => 0), ...machine.map(() => 1)]
 const group = [...archive.map(() => 'own'), ...machine.map((item) => item.set)]
 
-function train(rows, labels, l2 = 1) {
+function train(rows, labels, l2 = l2Arg) {
   const d = rows[0].length
   const mu = Array(d).fill(0), sd = Array(d).fill(0)
   for (const row of rows) row.forEach((value, i) => { mu[i] += value / rows.length })

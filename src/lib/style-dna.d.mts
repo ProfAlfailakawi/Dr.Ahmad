@@ -103,6 +103,38 @@ export declare function judgeStyle(
   },
 ): StyleVerdict
 
+export declare const STYLE_THRESHOLD_FALLBACK: number
+
+export interface StyleCalibration {
+  measured: boolean
+  sampleSize: number
+  /* درجات مقالاته قبل السقف، مرتّبةً تصاعدياً. */
+  raw: number[]
+  naturalness: number[]
+  threshold: number
+  median: number | null
+  naturalFloor: number
+  machineFloor: number
+}
+
+export interface NaturalnessVerdict {
+  score: number
+  /* نسبة مقالاته التي تقع دون هذا النص طبيعيةً. */
+  rank: number | null
+  level: 'empty' | 'natural' | 'touch' | 'machine'
+  label: string
+  note: string
+}
+
+export declare function naturalnessScore(verdict: StyleVerdict | null): number
+export declare function percentileRank(sorted: number[], value: number): number | null
+export declare function calibrateStyle(
+  articles: ({ body?: string } | string)[],
+  dna: StyleDna | null,
+  options?: { orthography?: Map<string, number> | null },
+): StyleCalibration
+export declare function judgeNaturalness(verdict: StyleVerdict | null, calibration?: StyleCalibration | null): NaturalnessVerdict
+
 export declare function unsupportedClaims(
   body: string,
   sources?: ({ body?: string; title?: string; summary?: string; excerpt?: string } | string)[],

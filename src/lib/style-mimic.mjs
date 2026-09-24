@@ -174,6 +174,9 @@ const ANCHORS = {
    في مطلع الفقرة تعريفاً مدرسياً ترد ثلاث مرات فقط. ولو قِسناها مجردةً
    لحَمَينا العيبَ الذي جاء الفاحص لأجله. وكذلك «أرى» سبعُ مراتٍ فعلاً
    للرؤية، و«أرى أنّ» مرتان — والمقصود الثانية. */
+/* فاءُ جوابٍ تلي الرابط المحذوف مباشرةً؛ تُحذف معه وإلا بقيت معلّقة. */
+const DANGLING_FA = `(?:ف(?=إنّ?(?![${AR}])))?`
+
 export function contextSource(candidate) {
   const body = flexBody(candidate.phrase)
   switch (candidate.kind) {
@@ -387,7 +390,10 @@ export function mimicVoice(text, rawDna, options = {}) {
        البوابة فالحذف — ولا يُترك الحشو لأن البديل تعثّر. */
     for (const rule of rulesOf('connector')) {
       if (rule.swap) working = applyRule(working, rule.source, (match) => `${match[1] || ''}${rule.swap}، `, rule, log)
-      working = applyRule(working, rule.source, (match) => match[1] || '', rule, log)
+      /* فاءُ الجواب تسقط مع رابطها: «بالإضافة إلى ذلك، فإنّ سهولة…» كانت تصير
+         «فإنّ سهولة…» — فاءٌ معلّقة لا شرط قبلها ولا رابط. تُستهلك الفاء في
+         الحذف نفسه فتبقى «إنّ» سليمةً في مطلع جملتها. */
+      working = applyRule(working, `${rule.source}${DANGLING_FA}`, (match) => match[1] || '', rule, log)
     }
 
     /* ٤ ــ الظرف المنفوخ داخل الجملة: «في وقتنا الحاضر» ← «اليوم» (٥٧ مرة عنده). */
@@ -483,6 +489,88 @@ export function mimicVoice(text, rawDna, options = {}) {
       ? ''
       : 'لم تُوجد عبارةٌ دخيلة تستحق الحذف؛ اقتصر العمل على الوقفات والإيقاع.',
   }
+}
+
+/* ---------- ٥) مراجعة التعديلات واحداً واحداً ----------
+
+   المحاكاة تطبّق تعديلاتها متتابعةً، فلا يمكن «إلغاء القاعدة الثالثة» وحدها
+   بإعادة تشغيلها. البديل الصادق: فرقٌ على مستوى الكلمة بين النص قبلها وبعدها،
+   مقسومٌ إلى مقاطع، يقبل الدكتور منها ما يشاء ويردّ ما يشاء. الكلمة تحمل
+   مسافتها اللاحقة، فتغيّر الفاصلة إلى وقفةٍ أو الجملة إلى فقرتين مقطعٌ كغيره. */
+const DIFF_CELL_LIMIT = 8_000_000
+const diffTokens = (text) => String(text || '').match(/\S+\s*|\s+/g) || []
+
+export function diffHunks(before, after) {
+  const a = diffTokens(before)
+  const b = diffTokens(after)
+  let head = 0
+  while (head < a.length && head < b.length && a[head] === b[head]) head += 1
+  let tail = 0
+  while (tail < a.length - head && tail < b.length - head && a[a.length - 1 - tail] === b[b.length - 1 - tail]) tail += 1
+  const aMid = a.slice(head, a.length - tail)
+  const bMid = b.slice(head, b.length - tail)
+  const n = aMid.length
+  const m = bMid.length
+  if (!n && !m) return []
+  const whole = () => [{ id: 0, from: aMid.join(''), to: bMid.join(''), aStart: head, aEnd: head + n, bStart: head, bEnd: head + m }]
+  /* نصٌّ أطول من أن تتسع له ذاكرة المقارنة: مقطعٌ واحد صادق خيرٌ من تجميد الصفحة. */
+  if ((n + 1) * (m + 1) > DIFF_CELL_LIMIT) return whole()
+  const width = m + 1
+  const table = new Uint32Array((n + 1) * width)
+  for (let i = n - 1; i >= 0; i -= 1) {
+    for (let j = m - 1; j >= 0; j -= 1) {
+      table[i * width + j] = aMid[i] === bMid[j]
+        ? table[(i + 1) * width + j + 1] + 1
+        : Math.max(table[(i + 1) * width + j], table[i * width + j + 1])
+    }
+  }
+  const hunks = []
+  let i = 0
+  let j = 0
+  let open = null
+  const close = () => {
+    if (!open) return
+    hunks.push({
+      id: hunks.length,
+      from: aMid.slice(open.i, i).join(''),
+      to: bMid.slice(open.j, j).join(''),
+      aStart: head + open.i,
+      aEnd: head + i,
+      bStart: head + open.j,
+      bEnd: head + j,
+    })
+    open = null
+  }
+  while (i < n || j < m) {
+    if (i < n && j < m && aMid[i] === bMid[j]) {
+      close()
+      i += 1
+      j += 1
+    } else {
+      if (!open) open = { i, j }
+      if (j < m && (i >= n || table[i * width + j + 1] >= table[(i + 1) * width + j])) j += 1
+      else i += 1
+    }
+  }
+  close()
+  return hunks
+}
+
+/* يبني النص من «بعد» مع ردّ المقاطع المرفوضة إلى أصلها. */
+export function composeReviewed(before, after, hunks, rejected = []) {
+  const refused = new Set(rejected)
+  if (!refused.size) return String(after || '')
+  const a = diffTokens(before)
+  const b = diffTokens(after)
+  const out = []
+  let cursor = 0
+  for (const hunk of [...(hunks || [])].sort((left, right) => left.bStart - right.bStart)) {
+    out.push(...b.slice(cursor, hunk.bStart))
+    out.push(...(refused.has(hunk.id) ? a.slice(hunk.aStart, hunk.aEnd) : b.slice(hunk.bStart, hunk.bEnd)))
+    cursor = hunk.bEnd
+  }
+  out.push(...b.slice(cursor))
+  return out.join('')
 }
 
 export { wellFormedness }

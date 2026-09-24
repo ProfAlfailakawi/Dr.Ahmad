@@ -18,7 +18,7 @@ import { resolve } from 'node:path'
 
 const root = process.cwd()
 const {
-  BANNED_PHRASES, articleMetrics, countWords, judgeStyle, measureStyleDna,
+  BANNED_PHRASES, arabicCountPhrase, articleMetrics, calibrateStyle, countWords, judgeNaturalness, judgeStyle, measureStyleDna, percentileRank,
   PROOFREAD_INSTRUCTION, acceptProofread, bareText, buildOrthographyIndex, deriveExcerpt,
   extractVoiceSignature, liftPauses, locateIssues, orthographySlips, polishTypography, refineToStyle,
   styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
@@ -448,7 +448,7 @@ assert.match(gcloudignore, /!src\/lib\/style-dna\.mjs/, 'الوحدة مشمول
 
 /* ─── ٦) محاكاة الصوت: لا تمسخ، ولا تحقن، ولا تُنقِص ─── */
 const {
-  MIMIC_CANDIDATES, OWN_FLOOR, buildMimicLexicon, contextSource, flexPattern, gateEdit, mimicVoice, wellFormedness,
+  MIMIC_CANDIDATES, OWN_FLOOR, buildMimicLexicon, composeReviewed, contextSource, diffHunks, flexPattern, gateEdit, mimicVoice, wellFormedness,
 } = await import(resolve(root, 'src/lib/style-mimic.mjs'))
 
 /* السبب الجذري موثَّقاً كاختبارِ انحدار: `\b` في جافاسكربت لا ترى الحرف
@@ -558,6 +558,46 @@ for (const verb of ['نتعامل', 'نعمل', 'نتساءل', 'نريد']) {
 assert.ok(!dna.collectiveVerbs.includes('نظام'), 'و«نظام» ليست فعلاً')
 assert.ok(dna.hinges.length >= 10 && dna.hinges.includes('بل'), 'ومفاصل الكسر مقيسةٌ من مواضع فاصلته')
 
-console.log(`حَكَم الأسلوب: خضراء ✓  ·  مقالاته وسيط ${median}٪ (متوسط ${average.toFixed(1)}٪، عبور ${(passRate * 100).toFixed(0)}٪)`)
+/* ─── ٦) المعايرة على أرشيفه: العتبة وحدود الطبيعية تُشتقّ من مقالاته ─── */
+const calibration = calibrateStyle(archive, dna, { orthography: mimicOrtho })
+assert.ok(calibration.measured && calibration.sampleSize === archive.length, `المعايرة على أرشيفه كله (${calibration.sampleSize})`)
+assert.ok(calibration.threshold >= 70 && calibration.threshold <= 85, `العتبة المعايَرة ${calibration.threshold}٪ داخل حدّيها`)
+const styleFit = archive.filter((item) => judgeStyle(item.body, dna).raw >= calibration.threshold).length / archive.length
+assert.ok(styleFit >= .88, `تسعة أعشار مقالاته تعبر العتبة أسلوباً (${(styleFit * 100).toFixed(0)}٪) — وما دونها يسقط بالبوابات القاطعة لا بالمسطرة`)
+const genericRank = percentileRank(calibration.raw, genericVerdict.raw)
+assert.ok(genericRank <= 5, `مقال النموذج العام أدنى من ٩٥٪ من مقالاته (رتبته ${genericRank})`)
+assert.equal(percentileRank([], 50), null, 'ولا رتبة بلا توزيع')
+assert.equal(percentileRank([10, 20, 30, 40], 25), 50, 'والرتبة نسبةُ ما دونها')
+const genericNatural = judgeNaturalness(judgeStyle(generic, dna, { orthography: mimicOrtho }), calibration)
+assert.equal(genericNatural.level, 'machine', `طبيعية النموذج العام ${genericNatural.score}٪ تُصنَّف آثار صياغة آلية (العتبتان كانتا تسمّيانها «لمسة بشرية»)`)
+const ownNatural = archive.filter((item) => judgeNaturalness(judgeStyle(item.body, dna, { orthography: mimicOrtho }), calibration).level === 'natural').length / archive.length
+assert.ok(ownNatural >= .88, `ومقالاته طبيعيةٌ بمسطرتها (${(ownNatural * 100).toFixed(0)}٪)`)
+assert.ok(calibrateStyle(archive.slice(0, 5), dna).threshold === 80, 'وأرشيفٌ أصغر من أن يُعايَر يعود إلى العتبة المعروفة')
+
+/* ─── ٧) فاءُ الجواب لا تبقى معلّقة بعد حذف رابطها ─── */
+assert.doesNotMatch(mimicked.text, /(?:^|[.؟!…]\s+)فإن(?![\p{L}\p{M}])/mu, '«بالإضافة إلى ذلك، فإن…» لا تصير «فإن…» معلّقة')
+assert.match(mimicked.text, /(?:^|[.؟!…]\s+)إن سهولة/mu, 'بل «إن سهولة…» سليمة')
+
+/* ─── ٨) المراجعة المقطعية: كل تعديلٍ يُقبل أو يُردّ وحده ─── */
+const reviewHunks = diffHunks(generic, mimicked.text)
+assert.ok(reviewHunks.length >= mimicked.changes.length - 2, `المقاطع تغطي التعديلات (${reviewHunks.length})`)
+assert.equal(composeReviewed(generic, mimicked.text, reviewHunks, []), mimicked.text, 'قبول الكل = المحاكاة')
+assert.equal(composeReviewed(generic, mimicked.text, reviewHunks, reviewHunks.map((hunk) => hunk.id)), generic, 'ردّ الكل = الأصل حرفاً')
+const oneBack = composeReviewed(generic, mimicked.text, reviewHunks, [reviewHunks[0].id])
+assert.ok(oneBack.includes(reviewHunks[0].from.trim()) && oneBack !== mimicked.text, 'ردّ مقطعٍ واحد يعيده وحده')
+assert.deepEqual(diffHunks('نص واحد', 'نص واحد'), [], 'ولا مقاطع بلا فرق')
+for (const item of archive.slice(0, 40)) {
+  const result = mimicVoice(item.body, dna, { orthography: mimicOrtho, lexicon })
+  const pieces = diffHunks(item.body, result.text)
+  assert.equal(composeReviewed(item.body, result.text, pieces, pieces.map((hunk) => hunk.id)), item.body, 'الردّ الكامل يعيد مقاله حرفاً')
+}
+assert.match(checker, /data-mimic-review="true"/, 'والمراجعة المقطعية معروضة')
+assert.match(checker, /calibrateStyle/, 'والفاحص يعايِر عتبته من أرشيفه')
+assert.doesNotMatch(checker, /143/, 'ولا عددَ مقالاتٍ مكتوباً باليد في الفاحص')
+
+const CHANGE_COUNT_FORMS = { one: 'تعديل واحد', two: 'تعديلين', few: 'تعديلات', many: 'تعديلاً' }
+const PLACE_COUNT_FORMS = { one: 'موضع واحد', two: 'موضعين', few: 'مواضع', many: 'موضعاً' }
+console.log(`حَكَم الأسلوب: خضراء ✓  ·  مقالاته وسيط ${median}٪ (متوسط ${average.toFixed(1)}٪، عبور ${(passRate * 100).toFixed(0)}٪ بالبوابات، ${(styleFit * 100).toFixed(0)}٪ أسلوباً)`)
+console.log(`المعايرة: العتبة ${calibration.threshold}٪ · الطبيعية ≥ ${calibration.naturalFloor}٪ (آلية دون ${calibration.machineFloor}٪) · النموذج العام في الرتبة ${genericRank} وطبيعيته ${genericNatural.score}٪`)
 console.log(`الفرز: نموذج عام ${genericVerdict.score}٪ · القالب القديم ${legacyVerdict.score}٪ · المسلَّم بعد التصحيح ${article.style.score}٪`)
-console.log(`المحاكاة: ${lexicon.rules.length} قاعدة مأذونة و${lexicon.guarded.length} محميّة · على مسودة نموذج ${mimicked.before.raw}٪ ← ${mimicked.after.raw}٪ بـ${mimicked.changes.length} تعديلاً و${mimicked.pending.length} موضعاً رُفع للدكتور · وعلى مقالاته: صفر انخفاض وصفر كسر وصفر تذبذب`)
+console.log(`المحاكاة: ${lexicon.rules.length} قاعدة مأذونة و${lexicon.guarded.length} محميّة · على مسودة نموذج ${mimicked.before.raw}٪ ← ${mimicked.after.raw}٪ بـ${arabicCountPhrase(mimicked.changes.length, CHANGE_COUNT_FORMS)} و${arabicCountPhrase(mimicked.pending.length, PLACE_COUNT_FORMS)} رُفعت للدكتور · ${arabicCountPhrase(reviewHunks.length, { one: 'مقطع', two: 'مقطعان', few: 'مقاطع', many: 'مقطعاً' })} للمراجعة · وعلى مقالاته: صفر انخفاض وصفر كسر وصفر تذبذب`)

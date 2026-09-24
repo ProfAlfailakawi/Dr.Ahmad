@@ -517,3 +517,8 @@ textarea:focus{border-color:var(--accent)}
   .monteur-root .gate-orb{transition:none}
   .monteur-root .play,.monteur-root .go,.monteur-root .visual-tile,.monteur-root .mini .seg button,.monteur-root .story-arc i,.monteur-root .quality-meter i{transition:none}
 }
+
+/* صفّ تصنيفات المكتبة يتمرّر أفقياً: طرفه الأيسر (نهاية السطر العربي) يذوب بقناعٍ شفاف
+   فيُفهم أن وراءه المزيد — قناعٌ لا لون، فلا تدرّج مرئيّ على الواجهة. والتمرير يلتقط كل رقاقة. */
+.monteur-root .icon-categories{-webkit-mask-image:linear-gradient(to left,transparent,#000 36px);mask-image:linear-gradient(to left,transparent,#000 36px);padding-inline-end:28px;scroll-snap-type:x proximity;scroll-padding-inline:4px}
+.monteur-root .icon-categories>*{scroll-snap-align:start;flex:none}

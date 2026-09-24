@@ -234,8 +234,32 @@ export function AdminMobileSubnav({ tab, onSelect }: { tab: AdminTab; onSelect: 
 
 export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const area = areaOfTab(tab)
+  /* ارتفاع الشريط الثابت (مع مسافته عن الحافة) يُنشر متغيّراً: الصفحة تترك له
+     مسافةً سفلية، والمشغّل العمودي في الريل يُحدّ به فلا يغطي الشريطُ غلافه. */
+  const navRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const root = document.documentElement
+    const publish = () => {
+      const rect = nav.getBoundingClientRect()
+      const reserved = rect.height > 0 ? Math.ceil(window.innerHeight - rect.top) : 0
+      root.style.setProperty('--admin-dock-h', `${Math.max(0, reserved)}px`)
+    }
+    publish()
+    root.dataset.adminDock = 'true'
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(publish) : null
+    observer?.observe(nav)
+    window.addEventListener('resize', publish)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', publish)
+      root.style.removeProperty('--admin-dock-h')
+      delete root.dataset.adminDock
+    }
+  }, [])
   return (
-    <nav aria-label="تنقل مجالات لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur lg:hidden">
+    <nav ref={navRef} aria-label="تنقل مجالات لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur lg:hidden">
       <div className="grid min-w-0 grid-cols-4 gap-1.5">
         {ADMIN_GROUPS.map((group) => {
           const active = area === group.area

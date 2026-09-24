@@ -851,7 +851,9 @@ const fontExtent = (family?: string) => family === 'Tajawal'
   : family === 'El Messiri' ? { ascent: 1.02, descent: .54 } : { ascent: 1.05, descent: .6 }
 
 function footerBaselineLimit(s: Scene, nameSize: number) {
-  return s.h - EDGE_SAFE - nameSize * fontExtent('Tajawal').descent
+  /* الاسم يحوي نقطةً ورموزاً قد تُرسم بخطٍّ احتياطيٍّ أعمق نزولاً من Tajawal؛
+     قيس تجاوزاً بثلاث وحدات بمعامل ٠٫٣٧، فاحتطنا بـ٠٫٦. */
+  return s.h - EDGE_SAFE - nameSize * .6
 }
 
 /** أعلى نقطة يبلغها التذييل (المسطرة أو الاسم): منطقةٌ محجوزة لا يدخلها العنوان. */

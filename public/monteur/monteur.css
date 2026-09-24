@@ -522,3 +522,58 @@ textarea:focus{border-color:var(--accent)}
    فيُفهم أن وراءه المزيد — قناعٌ لا لون، فلا تدرّج مرئيّ على الواجهة. والتمرير يلتقط كل رقاقة. */
 .monteur-root .icon-categories{-webkit-mask-image:linear-gradient(to left,transparent,#000 36px);mask-image:linear-gradient(to left,transparent,#000 36px);padding-inline-end:28px;scroll-snap-type:x proximity;scroll-padding-inline:4px}
 .monteur-root .icon-categories>*{scroll-snap-align:start;flex:none}
+/* ── مراجعة ٢٤ سبتمبر ٢٠٢٦ ──
+   ٢٠) الغلاف قبل التشغيل: الطبقة الداكنة خفّت وتركّزت خلف زر التشغيل وحده، فلا
+   تُعتم العنوان؛ والعنوان أبيض فوق هالةٍ داكنة خاصة به تضمن تباين ٤٫٥:١ فوق أي صورة. */
+.monteur-root .gate{background:radial-gradient(62% 36% at 50% 46%,rgba(21,22,26,.42) 0%,rgba(21,22,26,.16) 62%,rgba(21,22,26,0) 100%)}
+.monteur-root .scene.cover .hero-copy{isolation:isolate}
+.monteur-root .scene.cover .hero-copy::before{content:"";position:absolute;inset:-14% -8%;z-index:-1;pointer-events:none;background:radial-gradient(closest-side,rgba(21,22,26,.62),rgba(21,22,26,.32) 62%,rgba(21,22,26,0))}
+.monteur-root .scene.cover .h2l,.monteur-root .scene.cover .h2l .w{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6),0 2px 14px rgba(0,0,0,.4)}
+/* ٢١) المشغّل لا يتجاوز ارتفاع الشاشة ناقص الشريط السفلي الثابت و٣٢ بكسل؛
+   يُحدّ عرضه فيبقى التناسب (٩:١٦) كما هو. */
+.monteur-root .screen{max-width:min(var(--maxw,390px),calc((100dvh - var(--admin-dock-h,0px) - 32px) * (var(--ar,9/16))))}
+
+/* ١١) حدٌّ أدنى ١٢ بكسل لنصوص واجهة المونتير خارج لوحة الفيديو (أزرار، وسوم، مدد،
+   بطاقات المكتبة). ما داخل الشاشة يتدرّج مع حجمها ولا يُمسّ. */
+.monteur-root .eyebrow,
+.monteur-root .addon,
+.monteur-root .lib span,
+.monteur-root .tag,
+.monteur-root .mini span,
+.monteur-root .mini button,
+.monteur-root .samples button,
+.monteur-root .timeline .nm small,
+.monteur-root .timeline .dur,
+.monteur-root .list .it i,
+.monteur-root .gate small,
+.monteur-root .credits .hd,
+.monteur-root .credits .stats span,
+.monteur-root .audio-row button,
+.monteur-root .audio-row select,
+.monteur-root .audio-row .lbl,
+.monteur-root .ig .lbl,
+.monteur-root #directorNotice,
+.monteur-root .editor-heading,
+.monteur-root .field-label,
+.monteur-root .editor-actions button,
+.monteur-root .editor-heading button,
+.monteur-root .editor-actions select,
+.monteur-root .vault-tabs button,
+.monteur-root #libraryMore,
+.monteur-root .visual-tile,
+.monteur-root .visual-tile small,
+.monteur-root .icon-categories button,
+.monteur-root .icon-family-head,
+.monteur-root .quality-card p,
+.monteur-root .story-arc i.peak::before,
+.monteur-root .story-arc span,
+.monteur-root .story-arc strong,
+.monteur-root .director-cuts button,
+.monteur-root .director-cuts button small,
+.monteur-root .time,
+.monteur-root .mini .mgroup>span,
+.monteur-root .audio-row #tgMusic,
+.monteur-root .audio-row #tgSfx,
+.monteur-root .visual-tile.family-tile{font-size:.75rem}
+.monteur-root .mgroup .seg button,.monteur-root .director-cuts button span,.monteur-root .director-cuts button small{font-size:.75rem}
+html .monteur-root .director-cuts button small{font-size:.75rem !important}

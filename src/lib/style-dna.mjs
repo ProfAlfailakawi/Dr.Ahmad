@@ -502,6 +502,27 @@ export function articleMetrics(body, options = {}) {
       const sd = Math.sqrt(sentenceWords.reduce((sum, value) => sum + (value - mean) ** 2, 0) / sentenceWords.length)
       return Math.round(sd / Math.max(1, mean) * 100)
     })(),
+    /* عاداتٌ خفية أخرى وجدها القياس في ٢٤ سبتمبر ٢٠٢٦ على مسودات الاستوديو:
+       الفقرة التي تنتهي بوقفة «…»، وطول الكلمة، وأداة التعريف، والجملة التي
+       تبدأ بالفاء، والفقرة التي تنتهي بسؤال، وأدوات النفي، و«إنّ/أنّ»، وتكرار
+       الكلمة الأولى في الجمل. */
+    ellipsisEndRate: Math.round(paragraphs.filter((part) => /…[»"]?\s*$/u.test(part.trim())).length / Math.max(1, paragraphs.length) * 100),
+    questionEndRate: Math.round(paragraphs.filter((part) => /[؟?][»"]?\s*$/u.test(part.trim())).length / Math.max(1, paragraphs.length) * 100),
+    wordLength: (() => {
+      const tokens = bare.split(/\s+/).filter((word) => /[\u0621-\u064A]/u.test(word))
+      return round1(tokens.reduce((sum, word) => sum + word.replace(/[^\u0621-\u064A]/gu, '').length, 0) / Math.max(1, tokens.length))
+    })(),
+    definiteRate: (() => {
+      const tokens = bare.split(/\s+/).filter((word) => /[\u0621-\u064A]/u.test(word))
+      return Math.round(tokens.filter((word) => /^[«"(]*(?:[وفبلك])?(?:ال|لل)/u.test(word)).length / Math.max(1, tokens.length) * 100)
+    })(),
+    faStartRate: Math.round(sentences.filter((sentence) => /^[\s«"(]*ف/u.test(sentence)).length / Math.max(1, sentences.length) * 100),
+    negationPer100: round1(occurrences(bare, /(?:^|[\s«"(])(?:و|ف)?(?:ما|لا|لم|لن|ليس|ليست)(?=[\s،.؟!…»]|$)/gu) / Math.max(1, words) * 100),
+    innaPer100: round1(occurrences(bare, /(?:^|[\s«"(])(?:و|ف|ل)?(?:ان|إن|أن)(?=[\s،]|$)/gu) / Math.max(1, words) * 100),
+    openerRepeatRate: (() => {
+      const openers = sentences.map((sentence) => bareText(sentence).trim().split(/\s+/)[0]).filter(Boolean)
+      return Math.round((openers.length - new Set(openers).size) / Math.max(1, openers.length) * 100)
+    })(),
     ...repetitionShape(text),
   }
 }
@@ -529,6 +550,8 @@ function perArticleBands(rows, weights = []) {
     collectivePer100: bandOf(column('collectivePer100')),
     wawStartRate: bandOf(column('wawStartRate')),
     sentenceSpread: bandOf(column('sentenceSpread')),
+    ellipsisEndRate: bandOf(column('ellipsisEndRate')),
+    faStartRate: bandOf(column('faStartRate')),
   }
 }
 
@@ -705,6 +728,20 @@ export function styleBrief(rawDna, targetWords = 400) {
     '١٤) لا تبلغ الأرقام المطلوبة بالحشو: الوقفات والانقلابات والأسئلة تأتي داخل أفكارٍ جديدة، لا بإلصاقها على جملٍ مُعادة.',
     (dna.voiceMemory || []).length ? `★) عباراتٌ رفضها الدكتور بنفسه وقال «هذه ليست أنا» — ممنوعةٌ منعاً باتاً هي وأشباهها: ${dna.voiceMemory.slice(0, 12).map((item) => `«${item}»`).join(' · ')}.` : '',
     openers.length ? `١٥) يبدأ جمله وفقراته بهذه الكلمات أكثر من غيرها — استعمل بعضها في مواضعها الطبيعية: ${openers.join(' · ')}.` : '',
+    (() => {
+      /* عاداتٌ خفية مقيسة: لا يذكرها أحدٌ حين يصف أسلوبه، ولا يلتقطها المحاكي —
+         ومسودات الاستوديو خالفتها كلها (قياس ٢٤ سبتمبر ٢٠٢٦). */
+      const band = dna.perArticle || {}
+      const endRate = band.ellipsisEndRate?.p50
+      const waw = band.wawStartRate?.p50
+      const spread = band.sentenceSpread?.p50
+      const lines = [
+        Number.isFinite(endRate) && endRate >= 30 ? `يختم ${endRate}٪ من فقراته بوقفة «…»، فالفقرة عنده تنتهي معلّقةً لا مغلقةً بنقطة` : '',
+        Number.isFinite(waw) && waw >= 15 ? `نحو ${waw}٪ من جمله تبدأ بالواو («ونحن…»، «وحين…»)` : '',
+        Number.isFinite(spread) && spread >= 40 ? 'أطوال جمله متفاوتة بحدّة: جملةٌ من ثلاث كلمات بجوار جملةٍ من عشرين؛ الجمل المتساوية الطول بصمة آلة' : '',
+      ].filter(Boolean)
+      return lines.length ? `١٦) عاداته الخفية، ولا يلتقطها المحاكي فتفضحه: ${lines.join('؛ ')}.` : ''
+    })(),
   ].filter(Boolean).join('\n')
 }
 

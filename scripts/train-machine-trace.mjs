@@ -5,7 +5,7 @@
  * الاستعمال:
  *   node scripts/train-machine-trace.mjs [ملف-نصوص-آلية-إضافي.json …]
  *
- * كل ملفٍ إضافي مصفوفة {"mode": "generic"|"imitate", "body": "…"} — أفضلها مسودات
+ * كل ملفٍ إضافي مصفوفة {"set"?: "…", "body": "…"} (أو {texts: […]}) — أفضلها مسودات
  * الاستوديو الحقيقية (Gemini/Qwen) التي رفضها الدكتور أو علّم عليها «ليست أنا».
  * يطبع: AUC بالتحقق المتقاطع (٥ طيّات)، وAUC مع مجموعةٍ كاملة لم يرها التدريب،
  * ثم سطر PARAMS بالمعاملات الجديدة لتُنسخ إلى MACHINE_TRACE يدوياً بعد المراجعة.
@@ -19,10 +19,16 @@ const bodies = JSON.parse(readFileSync(resolve(root, 'src/data/bodies.json'), 'u
 const archive = Object.values(bodies).filter((body) => typeof body === 'string' && body.trim().length > 200)
 const dna = S.measureStyleDna(archive)
 const fixture = JSON.parse(readFileSync(resolve(root, 'scripts/fixtures/style-machine-texts.json'), 'utf8')).texts
-const extra = process.argv.slice(2).flatMap((file, index) => JSON.parse(readFileSync(resolve(file), 'utf8')).map((item) => ({ ...item, set: `extra-${index + 1}` })))
+const args = process.argv.slice(2)
+/* --keys=a,b,c يجرّب مجموعة مقاييس غير المعتمدة دون تعديل المكتبة. */
+const keysArg = args.find((arg) => arg.startsWith('--keys='))
+const extra = args.filter((arg) => !arg.startsWith('--')).flatMap((file, index) => {
+  const raw = JSON.parse(readFileSync(resolve(file), 'utf8'))
+  return (Array.isArray(raw) ? raw : raw.texts).map((item) => ({ ...item, set: item.set || `extra-${index + 1}` }))
+})
 const machine = [...fixture, ...extra].filter((item) => S.countWords(item.body) >= 120)
 
-const KEYS = S.MACHINE_TRACE.features.map((feature) => feature.key)
+const KEYS = keysArg ? keysArg.slice(7).split(',') : S.MACHINE_TRACE.features.map((feature) => feature.key)
 const vec = (text) => { const metrics = S.articleMetrics(text, { collective: dna.collectiveVerbs }); return KEYS.map((key) => Number(metrics[key]) || 0) }
 const X = [...archive.map(vec), ...machine.map((item) => vec(item.body))]
 const y = [...archive.map(() => 0), ...machine.map(() => 1)]

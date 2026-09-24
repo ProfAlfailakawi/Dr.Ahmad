@@ -145,6 +145,8 @@ const brief = styleBrief(dna, 400)
 for (const needle of ['وسيطها', 'نقاط الحذف', '…بل', 'صيدة', 'ممنوع']) {
   assert.ok(brief.includes(needle), `الوصفة تذكر «${needle}»`)
 }
+/* العادات الخفية بأرقامها من أرشيفه: الفقرة المعلّقة بـ«…» والواو وتفاوت الجمل. */
+assert.match(brief, /عاداته الخفية[^\n]*يختم \d+٪ من فقراته بوقفة «…»[^\n]*تبدأ بالواو[^\n]*متفاوتة/, 'الوصفة تنقل عاداته الخفية مقيسةً')
 
 /* ─── ٤) المحرك يتعلّم من أرقام الحَكَم ─── */
 delete process.env.GEMINI_API_KEY
@@ -179,6 +181,7 @@ const strongBody = [
 let cfCalls = 0
 let sawCorrections = false
 let sawExemplar = 0
+let sawKnowledge = false
 const makeResponse = (body) => ({
   ok: true, status: 200,
   json: async () => ({ result: { response: JSON.stringify({
@@ -195,6 +198,8 @@ const learningFetch = async (url, init) => {
   /* نموذج الصوت: مقالٌ حقيقي يجري أكثر من مئتي كلمة، لا جملتان من مطلعه. */
   const exemplarMatch = promptText.match(/"نماذج_صوت":\[\{"عنوان":"[^"]*","نص":"([^"]+)"/)
   if (exemplarMatch) sawExemplar = Math.max(sawExemplar, exemplarMatch[1].split(/\s+/).length)
+  /* رصيده المعرفي: اقتباسٌ من كتبه في الفكرة نفسها يصل الكاتب. */
+  if (/"معرفتك":\{"من_كتبك":\[\{"مصدر":"[^"]*الذكاء الاصطناعي/.test(promptText)) sawKnowledge = true
   /* النموذج الوهميّ لا «يتحسّن» إلا حين تصله أرقام النقص فعلاً. */
   if (instruction.includes('جولة تصحيحٍ إلزامية')) {
     sawCorrections = true
@@ -225,6 +230,7 @@ const weakVerdict = judgeStyle(refineToStyle(weakBody, dna), dna)
 const article = await generatePerfectArticle(input, learningFetch)
 assert.ok(sawCorrections, 'جولة التصحيح وقعت فعلاً')
 assert.ok(sawExemplar >= 200, `النموذج يسمع مقالاً كاملاً من أرشيفه (${sawExemplar} كلمة) لا جملتين`)
+assert.ok(sawKnowledge, 'الكاتب يرى اقتباساتٍ من كتبه في الفكرة نفسها لا مقالاته وحدها')
 assert.equal(typeof article.voiceTouches, 'number', 'لمسة الصوت الأخيرة تُعلن بعدد تعديلاتها')
 assert.ok(cfCalls >= 3, `مرشحان ثم تصحيح (${cfCalls} نداءات)`)
 assert.ok(article.style, 'المقال يعود ومعه بطاقة أسلوبه')

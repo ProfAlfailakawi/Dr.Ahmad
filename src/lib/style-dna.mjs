@@ -502,6 +502,27 @@ export function articleMetrics(body, options = {}) {
       const sd = Math.sqrt(sentenceWords.reduce((sum, value) => sum + (value - mean) ** 2, 0) / sentenceWords.length)
       return Math.round(sd / Math.max(1, mean) * 100)
     })(),
+    /* عاداتٌ خفية أخرى وجدها القياس في ٢٤ سبتمبر ٢٠٢٦ على مسودات الاستوديو:
+       الفقرة التي تنتهي بوقفة «…»، وطول الكلمة، وأداة التعريف، والجملة التي
+       تبدأ بالفاء، والفقرة التي تنتهي بسؤال، وأدوات النفي، و«إنّ/أنّ»، وتكرار
+       الكلمة الأولى في الجمل. */
+    ellipsisEndRate: Math.round(paragraphs.filter((part) => /…[»"]?\s*$/u.test(part.trim())).length / Math.max(1, paragraphs.length) * 100),
+    questionEndRate: Math.round(paragraphs.filter((part) => /[؟?][»"]?\s*$/u.test(part.trim())).length / Math.max(1, paragraphs.length) * 100),
+    wordLength: (() => {
+      const tokens = bare.split(/\s+/).filter((word) => /[\u0621-\u064A]/u.test(word))
+      return round1(tokens.reduce((sum, word) => sum + word.replace(/[^\u0621-\u064A]/gu, '').length, 0) / Math.max(1, tokens.length))
+    })(),
+    definiteRate: (() => {
+      const tokens = bare.split(/\s+/).filter((word) => /[\u0621-\u064A]/u.test(word))
+      return Math.round(tokens.filter((word) => /^[«"(]*(?:[وفبلك])?(?:ال|لل)/u.test(word)).length / Math.max(1, tokens.length) * 100)
+    })(),
+    faStartRate: Math.round(sentences.filter((sentence) => /^[\s«"(]*ف/u.test(sentence)).length / Math.max(1, sentences.length) * 100),
+    negationPer100: round1(occurrences(bare, /(?:^|[\s«"(])(?:و|ف)?(?:ما|لا|لم|لن|ليس|ليست)(?=[\s،.؟!…»]|$)/gu) / Math.max(1, words) * 100),
+    innaPer100: round1(occurrences(bare, /(?:^|[\s«"(])(?:و|ف|ل)?(?:ان|إن|أن)(?=[\s،]|$)/gu) / Math.max(1, words) * 100),
+    openerRepeatRate: (() => {
+      const openers = sentences.map((sentence) => bareText(sentence).trim().split(/\s+/)[0]).filter(Boolean)
+      return Math.round((openers.length - new Set(openers).size) / Math.max(1, openers.length) * 100)
+    })(),
     ...repetitionShape(text),
   }
 }
@@ -529,6 +550,8 @@ function perArticleBands(rows, weights = []) {
     collectivePer100: bandOf(column('collectivePer100')),
     wawStartRate: bandOf(column('wawStartRate')),
     sentenceSpread: bandOf(column('sentenceSpread')),
+    ellipsisEndRate: bandOf(column('ellipsisEndRate')),
+    faStartRate: bandOf(column('faStartRate')),
   }
 }
 
@@ -705,6 +728,20 @@ export function styleBrief(rawDna, targetWords = 400) {
     '١٤) لا تبلغ الأرقام المطلوبة بالحشو: الوقفات والانقلابات والأسئلة تأتي داخل أفكارٍ جديدة، لا بإلصاقها على جملٍ مُعادة.',
     (dna.voiceMemory || []).length ? `★) عباراتٌ رفضها الدكتور بنفسه وقال «هذه ليست أنا» — ممنوعةٌ منعاً باتاً هي وأشباهها: ${dna.voiceMemory.slice(0, 12).map((item) => `«${item}»`).join(' · ')}.` : '',
     openers.length ? `١٥) يبدأ جمله وفقراته بهذه الكلمات أكثر من غيرها — استعمل بعضها في مواضعها الطبيعية: ${openers.join(' · ')}.` : '',
+    (() => {
+      /* عاداتٌ خفية مقيسة: لا يذكرها أحدٌ حين يصف أسلوبه، ولا يلتقطها المحاكي —
+         ومسودات الاستوديو خالفتها كلها (قياس ٢٤ سبتمبر ٢٠٢٦). */
+      const band = dna.perArticle || {}
+      const endRate = band.ellipsisEndRate?.p50
+      const waw = band.wawStartRate?.p50
+      const spread = band.sentenceSpread?.p50
+      const lines = [
+        Number.isFinite(endRate) && endRate >= 30 ? `يختم ${endRate}٪ من فقراته بوقفة «…»، فالفقرة عنده تنتهي معلّقةً لا مغلقةً بنقطة` : '',
+        Number.isFinite(waw) && waw >= 15 ? `نحو ${waw}٪ من جمله تبدأ بالواو («ونحن…»، «وحين…»)` : '',
+        Number.isFinite(spread) && spread >= 40 ? 'أطوال جمله متفاوتة بحدّة: جملةٌ من ثلاث كلمات بجوار جملةٍ من عشرين؛ الجمل المتساوية الطول بصمة آلة' : '',
+      ].filter(Boolean)
+      return lines.length ? `١٦) عاداته الخفية، ولا يلتقطها المحاكي فتفضحه: ${lines.join('؛ ')}.` : ''
+    })(),
   ].filter(Boolean).join('\n')
 }
 
@@ -1181,33 +1218,58 @@ export function judgeStyle(body, rawDna, options = {}) {
 
 /* ---------- أثر الآلة: نموذجٌ معايَرٌ على بيانات لا على الذوق ----------
 
-   بُني في ٢٤ سبتمبر ٢٠٢٦: انحدارٌ لوجستيّ منتظم على ١٣ مقياساً من articleMetrics،
-   دُرّب على مقالاته الـ١٤٣ مقابل ٣٢ نصاً آلياً (١٦ بأسلوب النموذج المعتاد، و١٦
-   محاكاةً متعمّدة لأسلوبه بعد قراءة مقتطفاتٍ حقيقية منه). التحقق المتقاطع (٥
-   طيّات): AUC ‏٠٫٩٩ مع النص الآلي المعتاد و٠٫٩٥–٠٫٩٦ مع المحاكاة؛ ومع مجموعة
-   محاكاةٍ كاملة لم يرها التدريب ٠٫٨٧–٠٫٩٢. العتبة تُبقي ٩٥٪ من مقالاته دونها.
-   حدوده: النصوص الآلية من عائلة نماذج واحدة؛ يُعاد تدريبه كلما توفرت مسودات
-   الاستوديو الحقيقية (Gemini/Qwen) — scripts/test-machine-trace.mjs يحرس أداءه. */
+   الإصدار ٢ (٢٤ سبتمبر ٢٠٢٦): انحدارٌ لوجستيّ منتظم (L2=3) على ١٤ مقياساً من
+   articleMetrics، دُرّب على مقالاته الـ١٤٣ مقابل ٦٤ نصاً آلياً في ثماني مجموعات:
+   ١٦ بأسلوب النموذج المعتاد، و١٦ محاكاةً متعمّدة بعد قراءة مقتطفاتٍ منه، و١٦
+   مسودةً بتعليمات الاستوديو الفعلية (الوصفة الرقمية ومقالان من أرشيفه)، و١٦ في
+   تخصصه (تكنولوجيا التعليم) مع اقتباساتٍ من كتبه ولقاءاته — كتبتها نماذج مختلفة
+   الحجم. الإصدار ١ لم يرَ مسودات الاستوديو فعبرته ١٣ من ٣٢ منها «جاهزة».
+   AUC مع مجموعةٍ كاملة لم يرها التدريب (كلٌّ على حدة): ٠٫٩٤–١٫٠٠ (كان
+   ٠٫٨٧–٠٫٩٢). المقياس الجديد: نسبة الفقرات المختومة بوقفة «…» — عادته في ٨٦٪
+   من فقرات المقال الوسيط، ونادراً ما يفعلها النموذج. العتبة تُبقي ٩٥٪ من مقالاته
+   دونها بالتحقق المتقاطع. حدوده: كل النصوص الآلية من عائلة نماذج واحدة؛ يُعاد
+   تدريبه بمسودات Gemini/Qwen الحقيقية متى توفرت (scripts/train-machine-trace.mjs). */
 export const MACHINE_TRACE = {
-  version: 1,
-  intercept: -2.3928,
-  threshold: 0.75,
+  version: 2,
+  intercept: -1.3554,
+  threshold: 0.74,
   strong: 0.85,
   features: [
-    { key: 'ellipsisPer100', label: 'الوقفات «…»', w: -3.3076, mu: 6.3303, sd: 5.1349 },
-    { key: 'antithesisPer100', label: '«بل»', w: -0.3704, mu: 0.5943, sd: 0.694 },
-    { key: 'questionsPer100', label: 'الأسئلة', w: 0.3875, mu: 0.7914, sd: 0.9199 },
-    { key: 'collectivePer100', label: 'الضمير الجمعي', w: 0.1364, mu: 1.6714, sd: 1.2322 },
-    { key: 'commaPer100', label: 'الفواصل', w: 0.197, mu: 3.8063, sd: 3.1872 },
-    { key: 'colonPer100', label: 'النقطتان والفاصلة المنقوطة', w: -1.3127, mu: 0.7989, sd: 0.8391 },
-    { key: 'wawStartRate', label: 'الجمل المبدوءة بالواو', w: 0.0028, mu: 33.52, sd: 15.3007 },
-    { key: 'sentenceSpread', label: 'تفاوت أطوال الجمل', w: -1.5136, mu: 64.3486, sd: 18.2399 },
-    { key: 'shortRate', label: 'الجمل القصيرة', w: 0.8264, mu: 51.2629, sd: 24.128 },
-    { key: 'medianSentence', label: 'طول الجملة', w: -0.6503, mu: 11.3314, sd: 8.6734 },
-    { key: 'lexicalDiversity', label: 'تنوّع المفردات', w: 0.5638, mu: 73.1811, sd: 3.8529 },
-    { key: 'singleRate', label: 'فقرات الجملة الواحدة', w: -0.7449, mu: 15.4, sd: 22.8193 },
-    { key: 'medianParagraph', label: 'طول الفقرة', w: -0.5998, mu: 52.0857, sd: 32.5457 },
+    { key: 'ellipsisPer100', label: 'الوقفات «…»', w: -1.3654, mu: 5.9121, sd: 4.863 },
+    { key: 'antithesisPer100', label: '«بل»', w: -0.3524, mu: 0.6251, sd: 0.6718 },
+    { key: 'questionsPer100', label: 'الأسئلة', w: 0.1913, mu: 0.8546, sd: 0.9043 },
+    { key: 'collectivePer100', label: 'الضمير الجمعي', w: 0.038, mu: 1.7594, sd: 1.233 },
+    { key: 'commaPer100', label: 'الفواصل', w: -0.4512, mu: 3.5855, sd: 3.0281 },
+    { key: 'colonPer100', label: 'النقطتان والفاصلة المنقوطة', w: -0.6482, mu: 0.8734, sd: 0.8476 },
+    { key: 'wawStartRate', label: 'الجمل المبدوءة بالواو', w: -0.2584, mu: 30.3768, sd: 16.4032 },
+    { key: 'sentenceSpread', label: 'تفاوت أطوال الجمل', w: -1.3752, mu: 61.6763, sd: 18.2713 },
+    { key: 'shortRate', label: 'الجمل القصيرة', w: 0.684, mu: 54.0193, sd: 23.9492 },
+    { key: 'medianSentence', label: 'طول الجملة', w: -0.3143, mu: 10.7536, sd: 8.1242 },
+    { key: 'lexicalDiversity', label: 'تنوّع المفردات', w: 0.2654, mu: 73.1188, sd: 3.8513 },
+    { key: 'singleRate', label: 'فقرات الجملة الواحدة', w: -0.7444, mu: 13.6087, sd: 21.5596 },
+    { key: 'medianParagraph', label: 'طول الفقرة', w: -0.3725, mu: 50.1981, sd: 30.4189 },
+    { key: 'ellipsisEndRate', label: 'الفقرات المختومة بوقفة «…»', w: -1.6151, mu: 41.401, sd: 46.9218 },
   ],
+}
+
+/* أوامر إصلاحٍ تُنفَّذ لا أوصافٌ تُقرأ: جولة التصحيح بالوصف («الفقرات المختومة
+   بوقفة أقل من عادته») لم تُنزل أثر الآلة في محاكاة ٢٤ سبتمبر ٢٠٢٦ (٠٫٩٤ ← ٠٫٩٤)،
+   لأن الكاتب الآلي يفهم «أقل» فيزيد العلامات عدداً. لكل مقياسٍ واتجاهٍ فعلٌ محدد. */
+const MACHINE_TRACE_ACTIONS = {
+  ellipsisPer100: { less: 'ضع وقفة «…» حيث يتعلّق المعنى قبل انقلابه، لا زخرفةً', more: 'احذف الوقفات «…» التي لا يتعلّق قبلها معنى' },
+  antithesisPer100: { less: 'اجعل انقلاباً حقيقياً واحداً بـ«ليس… بل»', more: 'احذف «بل» من كل موضعٍ ليس انقلاباً حقيقياً' },
+  questionsPer100: { less: 'حوّل جملةً تقريرية إلى سؤالٍ معلّق', more: 'حوّل الأسئلة المتتابعة إلى جملٍ تقريرية، وأبقِ سؤالاً أو سؤالين' },
+  collectivePer100: { less: 'تكلّم بصوت «نحن» في موضعٍ أو موضعين', more: 'خفّف «نحن» و«علينا»؛ دعِ الوصف يتكلّم' },
+  commaPer100: { less: 'صِل الجمل المتقاربة بالفاصلة بدل تقطيعها', more: 'قسّم الجمل المثقلة بالفواصل' },
+  colonPer100: { less: 'قدّم فكرةً بنقطتين حيث يليها تفسيرها', more: 'احذف النقطتين والفاصلة المنقوطة وصِل بالواو' },
+  wawStartRate: { less: 'ابدأ نحو ثلث جملك بالواو («ونحن…»، «وحين…»)', more: 'نوّع بدايات الجمل بدل الواو' },
+  sentenceSpread: { less: 'نوّع أطوال الجمل بحدّة: جملةٌ من ثلاث كلمات بجوار جملةٍ من عشرين', more: 'قرّب أطوال الجمل قليلاً' },
+  shortRate: { less: 'قسّم بعض الجمل الطويلة', more: 'صِل الجمل القصيرة المتتابعة بالواو والفاصلة؛ التقطيع المتواصل بصمة آلة' },
+  medianSentence: { less: 'أطِل الجملة الوسطى بعطفٍ أو حال', more: 'قصّر الجمل المركّبة' },
+  lexicalDiversity: { less: 'نوّع مفرداتك', more: 'لا تبحث عن مرادفٍ جديد في كل جملة؛ كرّر الكلمة المفتاحية كما يفعل' },
+  singleRate: { less: 'اجعل فقرةً أو فقرتين من جملةٍ واحدة', more: 'ادمج فقرات الجملة الواحدة في ما قبلها' },
+  medianParagraph: { less: 'ادمج الفقرات القصيرة: فقرته الوسطى نحو خمسين كلمة', more: 'قسّم الفقرات الطويلة' },
+  ellipsisEndRate: { less: 'اختم نحو نصف فقراتك بوقفة «…» بدل النقطة، فالفقرة عنده تنتهي معلّقة', more: 'اختم بعض الفقرات بنقطة' },
 }
 
 /** احتمال أن يكون النص آلياً، ومعه المقاييس التي دفعته أكثر من غيرها وإصلاحها. */
@@ -1227,7 +1289,7 @@ export function machineTrace(metrics) {
       return {
         key: item.key,
         label: `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته`,
-        fix: `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته (${Math.round(item.value * 10) / 10}، ومتوسطه ${Math.round(item.mu * 10) / 10})`,
+        fix: `${MACHINE_TRACE_ACTIONS[item.key]?.[more ? 'more' : 'less'] || `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته`} (${item.label}: ${Math.round(item.value * 10) / 10}، وعادته ${Math.round(item.mu * 10) / 10})`,
       }
     })
   return { probability, reasons }

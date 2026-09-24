@@ -794,7 +794,9 @@ export function styleBrief(rawDna, targetWords = 400) {
     recent.askYourselfShare >= .2 ? `بعد «فاسأل نفسك:» يوجّه سؤالاً إلى القارئ (${Math.round(recent.askYourselfShare * 100)}٪ من مقالاته الأخيرة)` : '',
     recent.perhapsBeginsShare >= .2 ? `أو يفتح أفقاً بـ«وربما يبدأ… يوم…» (${Math.round(recent.perhapsBeginsShare * 100)}٪)` : '',
   ].filter(Boolean).join(' ')
-  const closingMovesLine = closingMoves ? ` وفي مقالاته الأخيرة كثيراً ما يختم هكذا: ${closingMoves}.` : ''
+  /* نسبٌ لا أمر: التوقيعة المكررة في كل مقالٍ قالب. الخادم يوزّع الختام على المقالات بهذه
+     النسب ويحدّده في خطة كل مقال. */
+  const closingMovesLine = closingMoves ? ` وتتوزّع خواتيم مقالاته الأخيرة هكذا: ${closingMoves}؛ ولا يختم بطريقةٍ واحدة كل مرة، وختام هذا المقال محدّدٌ في خطة بنائه.` : ''
   return [
     `بصمة الكاتب مقيسةٌ رقمياً من ${arabicCountPhrase(dna.sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
     `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,

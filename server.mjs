@@ -3548,6 +3548,20 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     '· أعد JSON فقط.',
   ].join('\n')
 
+  /* الختام يُوزَّع على المقالات بنسبه هو لا بتكراره: «فاسأل نفسك:» ختمت ٤٠٪ من آخر
+     عشرين مقالاً له، و«وربما يبدأ…» ٣٠٪، والباقي انقلابٌ أو جملةٌ مكثّفة. كاتبٌ آليّ
+     قيل له «كثيراً ما يختم بـ…» ختم بها خمسة مقالاتٍ من خمسة، فصارت التوقيعة قالباً.
+     يُختار ختام كل مقالٍ ببصمة فكرته ورقم جولته، فيأتي التوزيع على نسبه عبر المقالات. */
+  const closingFor = (family) => {
+    const recent = resolveStyleDna(input.styleDna).recent || {}
+    const ask = Math.round((recent.askYourselfShare || 0) * 100)
+    const perhaps = Math.round((recent.perhapsBeginsShare || 0) * 100)
+    const roll = (familyFingerprint(`${input.idea}|${family.id}`) + (Number(input.variation) || 0) * 37) % 100
+    if (roll < ask) return 'الختام في هذا المقال: سؤالٌ توجّهه إلى القارئ نفسه بعد «فاسأل نفسك:»، ثم جملةٌ قصيرة مكثّفة إن شئت.'
+    if (roll < ask + perhaps) return 'الختام في هذا المقال: جملةٌ تفتح أفقاً تبدأ «وربما يبدأ… يوم…».'
+    return 'الختام في هذا المقال: انقلابٌ مكثّف (كثيراً بـ«…بل») أو جملةٌ تقلب الفكرة. لا تستعمل فيه «فاسأل نفسك» ولا «وربما يبدأ».'
+  }
+
   const instructionFor = (family) => [
     identity,
     '',
@@ -3555,6 +3569,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     '',
     `بناء هذا المقال — ${family.label}:`,
     family.plan,
+    closingFor(family),
     '',
     contentRules,
   ].join('\n')

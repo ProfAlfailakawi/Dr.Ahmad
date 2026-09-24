@@ -1420,7 +1420,14 @@ const paintCinematicWindow: Painter = (s) => {
   const { palette: p, w, h, min, uid } = s
   const heroImage = s.plan.overlays?.find((item) => item.kind === 'image' && item.imageRole === 'background' && item.src)
   if (heroImage) {
-    const zone = heroImage.textZone || 'right'
+    /* الإطار المرسوم في الصورة يحدد منطقة النص لا العكس: الحملة تدوّر منطقة النص
+       بين المقاسات وتنسخ الإطار كما هو، فكان إطارٌ جانبيّ يُعامَل كإطارٍ علويّ
+       فيهبط العنوان تحت اللوحة. الإطار العريض ← النص تحته، والجانبي ← النص في
+       الجهة المقابلة. */
+    const frameZone = heroImage.frameBox
+      ? (heroImage.frameBox.width >= .7 ? 'bottom' as const : heroImage.frameBox.x + heroImage.frameBox.width / 2 < .5 ? 'right' as const : 'left' as const)
+      : null
+    const zone = frameZone || heroImage.textZone || 'right'
     const horizontalZone = zone === 'right' || zone === 'left'
     const rightSide = zone !== 'left'
     const frame = heroImage.frameBox

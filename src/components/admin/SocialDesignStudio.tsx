@@ -3594,7 +3594,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           if (hop.fromReady) throw error
           setVisualFailure('')
           setNotice('تعذّر توليد الصورة الأصلية الآن، فانتقلت تلقائياً إلى صورة جاهزة موثقة المصدر — المشهد يكتمل بلا توقف.')
-          return runZeroDecisionMode('ready', { fromGenerate: true })
+          /* ننتظر المسار البديل كاملاً: بلا await كان finally هنا يرفع علامة الانشغال
+             بينما البديل ما زال يعمل، فتعود إعادة التحميل ممكنةً وسط التوليد. */
+          return await runZeroDecisionMode('ready', { fromGenerate: true })
         }
         const uniqueGenerated = new Map<string, GeneratedStudioImage>()
         for (const generated of generatedSet) {
@@ -3684,7 +3686,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           if (!hop.fromGenerate) {
             setVisualFailure('')
             setNotice('لم أجد صورة جاهزة تليق بالفكرة من المصادر الموثقة، فأنتقل تلقائياً إلى توليد مشهد أصلي من الصفر — المشهد يكتمل بلا توقف.')
-            return runZeroDecisionMode('generate', { fromReady: true })
+            /* ننتظر المسار البديل كاملاً: بلا await كان finally هنا يرفع علامة الانشغال
+             بينما البديل ما زال يعمل، فتعود إعادة التحميل ممكنةً وسط التوليد. */
+          return await runZeroDecisionMode('generate', { fromReady: true })
           }
           const failure = 'لم أجد صورة جاهزة صالحة وموثقة لهذه الفكرة ضمن المهلة. لم أستبدلها بصورة مولدة أو بتصميم قديم.'
           setVisualOrigin('none')

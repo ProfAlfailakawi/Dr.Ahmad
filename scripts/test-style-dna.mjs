@@ -377,7 +377,7 @@ assert.match(studio, /'\/api\/ai\/article-paragraph'/, 'وزرّ إصلاح ال
 /* ─── يُحاكَم المحرك ولا يُحاكَم الكاتب ─── */
 /* عتبةٌ حاجبة على الأسلوب كانت ترسّب ٢١٪ من مقالاته المنشورة، ثم اتضح أن
    قوائم المنع كلها تحجب ٢٨٪ منها. هذا الفحص يمنع عودة أي حجبٍ على نصّه. */
-assert.match(studio, /bundle\.generatedBy \? \(liveStyleVerdict\?\.fatal \|\| \[\]\) : \[\]/, 'الحجب لما ولّده المحرك وحده')
+assert.match(studio, /bundle\.generatedBy\s*\?\s*\[\s*\.\.\.\(liveStyleVerdict\?\.fatal \|\| \[\]\),[\s\S]{0,260}?MACHINE_TRACE\.threshold[\s\S]{0,160}?\]\s*:\s*\[\]/, 'الحجب لما ولّده المحرك وحده — وأثر الآلة فوق عتبته يحجبه')
 assert.match(studio, /key: 'style-ai'[^\n]*ok: true/, 'درجة المطابقة تُخبر ولا تحجب')
 assert.doesNotMatch(studio, /styleScore >= 72/, 'ولا عتبة حاجبة على الأسلوب')
 
@@ -569,7 +569,8 @@ assert.ok(dna.hinges.length >= 10 && dna.hinges.includes('بل'), 'ومفاصل 
 const calibration = calibrateStyle(archive, dna, { orthography: mimicOrtho })
 assert.ok(calibration.measured && calibration.sampleSize === archive.length, `المعايرة على أرشيفه كله (${calibration.sampleSize})`)
 assert.ok(calibration.threshold >= 70 && calibration.threshold <= 85, `العتبة المعايَرة ${calibration.threshold}٪ داخل حدّيها`)
-const styleFit = archive.filter((item) => judgeStyle(item.body, dna).raw >= calibration.threshold).length / archive.length
+/* تُقاس المقالات بالشروط نفسها التي عويِرت بها العتبة (معجم الإملاء حاضر)؛ القياس بشرطين مختلفين كان يحرّك النسبة مع كل وزنٍ جديد. */
+const styleFit = archive.filter((item) => judgeStyle(item.body, dna, { orthography: mimicOrtho }).raw >= calibration.threshold).length / archive.length
 assert.ok(styleFit >= .88, `تسعة أعشار مقالاته تعبر العتبة أسلوباً (${(styleFit * 100).toFixed(0)}٪) — وما دونها يسقط بالبوابات القاطعة لا بالمسطرة`)
 const genericRank = percentileRank(calibration.raw, genericVerdict.raw)
 assert.ok(genericRank <= 5, `مقال النموذج العام أدنى من ٩٥٪ من مقالاته (رتبته ${genericRank})`)

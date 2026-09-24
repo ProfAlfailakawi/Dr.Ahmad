@@ -490,6 +490,18 @@ export function articleMetrics(body, options = {}) {
     singleRate: Math.round(paragraphSentences.filter((value) => value === 1).length / Math.max(1, paragraphSentences.length) * 100),
     firstSentenceWords: countWords(sentences[0] || ''),
     lastSentence: sentences[sentences.length - 1] || '',
+    /* البصمة الدقيقة: عاداتٌ لا يتحكّم فيها الكاتب عمداً، فلا يقلّدها المحاكي. */
+    commaPer100: round1(occurrences(text, /،/g) / Math.max(1, words) * 100),
+    colonPer100: round1(occurrences(text, /[:؛]/g) / Math.max(1, words) * 100),
+    questionsPer100: round1(occurrences(text, /؟/g) / Math.max(1, words) * 100),
+    collectivePer100: round1(occurrences(bare, collectivePattern(options.collective)) / Math.max(1, words) * 100),
+    wawStartRate: Math.round(sentences.filter((sentence) => /^[\s«"(]*و/u.test(sentence)).length / Math.max(1, sentences.length) * 100),
+    sentenceSpread: (() => {
+      if (sentenceWords.length < 2) return 0
+      const mean = sentenceWords.reduce((sum, value) => sum + value, 0) / sentenceWords.length
+      const sd = Math.sqrt(sentenceWords.reduce((sum, value) => sum + (value - mean) ** 2, 0) / sentenceWords.length)
+      return Math.round(sd / Math.max(1, mean) * 100)
+    })(),
     ...repetitionShape(text),
   }
 }
@@ -511,6 +523,12 @@ function perArticleBands(rows, weights = []) {
     duplicateSentenceRate: bandOf(column('duplicateSentenceRate')),
     duplicateGramRate: bandOf(column('duplicateGramRate')),
     lexicalDiversity: bandOf(column('lexicalDiversity')),
+    commaPer100: bandOf(column('commaPer100')),
+    colonPer100: bandOf(column('colonPer100')),
+    questionsPer100: bandOf(column('questionsPer100')),
+    collectivePer100: bandOf(column('collectivePer100')),
+    wawStartRate: bandOf(column('wawStartRate')),
+    sentenceSpread: bandOf(column('sentenceSpread')),
   }
 }
 
@@ -1044,6 +1062,16 @@ export function judgeStyle(body, rawDna, options = {}) {
     fatal.push(`تنوّع المفردات ${metrics.lexicalDiversity}٪ — دون أي مقالٍ له`)
   }
 
+  /* ١٢ب — أثر الآلة: نموذجٌ إحصائيٌّ صغير معايَرٌ على بيانات (انظر MACHINE_TRACE).
+     المحاكي الجيد كان ينال ٩٢٪ وسيطاً ويعبر ٩٤٪ منه — أعلى من الدكتور نفسه —
+     لأن المقاييس السابقة تكافئ «الأكثر». هذا المقياس يرى التركيبة لا العلامة. */
+  const trace = machineTrace(metrics)
+  add('machineTrace', 'أثر الآلة', clampNumber(1 - (trace.probability - .5) / .4, 0, 1), 12,
+    `${Math.round(trace.probability * 100)}٪${trace.reasons.length ? ' · ' + trace.reasons.slice(0, 2).map((item) => item.label).join(' · ') : ''}`, `دون ${Math.round(MACHINE_TRACE.threshold * 100)}٪`,
+    trace.reasons.length
+      ? `الإيقاع يشبه نصّ آلةٍ تحاكيه (${Math.round(trace.probability * 100)}٪): ${trace.reasons.slice(0, 3).map((item) => item.fix).join('؛ ')}. لا تُكثر من علاماته؛ اكتب بعاداته الخفية.`
+      : '')
+
   /* ١٣ — النظافة الطباعية (قاطع). */
   const artifacts = []
   if (/—/.test(text)) artifacts.push('الشرطة الاعتراضية —')
@@ -1123,7 +1151,16 @@ export function judgeStyle(body, rawDna, options = {}) {
   /* التحفّظ القاطع يسقف الدرجة مهما أحسن النص في بقية المقاييس. بلا هذا السقف
      كان نصٌّ يلفّ على نفسه ينال ٦٩٪ لأنه أتقن الوقفات والانقلابات والأسئلة —
      وهي عين طريقة النموذج في «تحقيق الأرقام» بلا كتابة. */
-  const capped = overlap.length ? Math.min(raw, 45) : (fatal.length ? Math.min(raw, 55) : raw)
+  /* أثر الآلة فوق عتبته لا يُسلَّم نصاً «داخل مدى أسلوبه» مهما أتقن علاماته:
+     تُسقف الدرجة دون العتبة فيدخل الكاتبُ الآليُّ جولة تصحيحٍ بأوامر محددة. */
+  /* حدّان: فوق العتبة (٠٫٧٥) لا يُعدّ النص جاهزاً؛ وفوق ٠٫٨٥ — دليلٌ قويّ —
+     تُسقف الدرجة. الفاصل بينهما يحمي مقالاته هو من سقفٍ لا تستحقه: الصقل رفع
+     احتمال مقالٍ واحدٍ له من ٠٫٧٤ إلى ٠٫٨٢. */
+  /* يُصنَّف بالدقة نفسها التي يُعرض بها: نصٌّ يُعرض «٨٥٪» يُسقف فعلاً. */
+  const machineProbability = Math.round(trace.probability * 100) / 100
+  const machineLike = machineProbability >= MACHINE_TRACE.threshold
+  const machineStrong = machineProbability >= MACHINE_TRACE.strong
+  const capped = overlap.length ? Math.min(raw, 45) : (fatal.length ? Math.min(raw, 55) : machineStrong ? Math.min(raw, 74) : raw)
   const score = clampNumber(capped, 0, 100)
 
   return {
@@ -1132,7 +1169,8 @@ export function judgeStyle(body, rawDna, options = {}) {
        تعديلاً ناجحاً، فيظنّ أن شيئاً لم يحدث — والحقيقة أن التحفّظ القاطع
        يسقف الدرجة وحده. الرقمان معاً يقولان الحقيقة كاملة. */
     raw,
-    ready: score >= (options.threshold || STYLE_THRESHOLD_FALLBACK) && !fatal.length,
+    ready: score >= (options.threshold || STYLE_THRESHOLD_FALLBACK) && !fatal.length && !machineLike,
+    machineProbability,
     checks,
     corrections: fixes.filter(Boolean),
     fatal,
@@ -1140,6 +1178,60 @@ export function judgeStyle(body, rawDna, options = {}) {
   }
 }
 
+
+/* ---------- أثر الآلة: نموذجٌ معايَرٌ على بيانات لا على الذوق ----------
+
+   بُني في ٢٤ سبتمبر ٢٠٢٦: انحدارٌ لوجستيّ منتظم على ١٣ مقياساً من articleMetrics،
+   دُرّب على مقالاته الـ١٤٣ مقابل ٣٢ نصاً آلياً (١٦ بأسلوب النموذج المعتاد، و١٦
+   محاكاةً متعمّدة لأسلوبه بعد قراءة مقتطفاتٍ حقيقية منه). التحقق المتقاطع (٥
+   طيّات): AUC ‏٠٫٩٩ مع النص الآلي المعتاد و٠٫٩٥–٠٫٩٦ مع المحاكاة؛ ومع مجموعة
+   محاكاةٍ كاملة لم يرها التدريب ٠٫٨٧–٠٫٩٢. العتبة تُبقي ٩٥٪ من مقالاته دونها.
+   حدوده: النصوص الآلية من عائلة نماذج واحدة؛ يُعاد تدريبه كلما توفرت مسودات
+   الاستوديو الحقيقية (Gemini/Qwen) — scripts/test-machine-trace.mjs يحرس أداءه. */
+export const MACHINE_TRACE = {
+  version: 1,
+  intercept: -2.3928,
+  threshold: 0.75,
+  strong: 0.85,
+  features: [
+    { key: 'ellipsisPer100', label: 'الوقفات «…»', w: -3.3076, mu: 6.3303, sd: 5.1349 },
+    { key: 'antithesisPer100', label: '«بل»', w: -0.3704, mu: 0.5943, sd: 0.694 },
+    { key: 'questionsPer100', label: 'الأسئلة', w: 0.3875, mu: 0.7914, sd: 0.9199 },
+    { key: 'collectivePer100', label: 'الضمير الجمعي', w: 0.1364, mu: 1.6714, sd: 1.2322 },
+    { key: 'commaPer100', label: 'الفواصل', w: 0.197, mu: 3.8063, sd: 3.1872 },
+    { key: 'colonPer100', label: 'النقطتان والفاصلة المنقوطة', w: -1.3127, mu: 0.7989, sd: 0.8391 },
+    { key: 'wawStartRate', label: 'الجمل المبدوءة بالواو', w: 0.0028, mu: 33.52, sd: 15.3007 },
+    { key: 'sentenceSpread', label: 'تفاوت أطوال الجمل', w: -1.5136, mu: 64.3486, sd: 18.2399 },
+    { key: 'shortRate', label: 'الجمل القصيرة', w: 0.8264, mu: 51.2629, sd: 24.128 },
+    { key: 'medianSentence', label: 'طول الجملة', w: -0.6503, mu: 11.3314, sd: 8.6734 },
+    { key: 'lexicalDiversity', label: 'تنوّع المفردات', w: 0.5638, mu: 73.1811, sd: 3.8529 },
+    { key: 'singleRate', label: 'فقرات الجملة الواحدة', w: -0.7449, mu: 15.4, sd: 22.8193 },
+    { key: 'medianParagraph', label: 'طول الفقرة', w: -0.5998, mu: 52.0857, sd: 32.5457 },
+  ],
+}
+
+/** احتمال أن يكون النص آلياً، ومعه المقاييس التي دفعته أكثر من غيرها وإصلاحها. */
+export function machineTrace(metrics) {
+  let logit = MACHINE_TRACE.intercept
+  const parts = MACHINE_TRACE.features.map((feature) => {
+    const value = Number(metrics?.[feature.key]) || 0
+    const z = (value - feature.mu) / feature.sd
+    const contribution = z * feature.w
+    logit += contribution
+    return { ...feature, value, z, contribution }
+  })
+  const probability = 1 / (1 + Math.exp(-logit))
+  const reasons = parts.filter((item) => item.contribution > .35).sort((left, right) => right.contribution - left.contribution)
+    .map((item) => {
+      const more = item.z > 0
+      return {
+        key: item.key,
+        label: `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته`,
+        fix: `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته (${Math.round(item.value * 10) / 10}، ومتوسطه ${Math.round(item.mu * 10) / 10})`,
+      }
+    })
+  return { probability, reasons }
+}
 
 /* ---------- المعايرة على أرشيفه ----------
 
@@ -1169,7 +1261,10 @@ export function naturalnessScore(verdict) {
     + (1 - grade('lexicalDiversity')) * 14
     + (1 - grade('longSentences')) * 7
     + Math.min(12, (verdict.metrics?.duplicateGramRate || 0) * 2)
-  return Math.round(clampNumber(100 - penalty, 0, 100))
+  /* أثر الآلة يدخل الطبيعية مباشرةً: فوق نصف الاحتمال يُخصم حتى ٤٥ نقطة. */
+  const trace = machineTrace(verdict.metrics)
+  const machinePenalty = Math.max(0, trace.probability - .5) / .5 * 45
+  return Math.round(clampNumber(100 - penalty - machinePenalty, 0, 100))
 }
 
 /* نسبة مقالاته التي تقع دون هذه القيمة (التعادل نصفه). */

@@ -115,10 +115,13 @@ export const wordsOf = (value = '') => String(value).trim().split(/\s+/).filter(
 export const countWords = (value = '') => wordsOf(value).length
 
 /* الجملة عنده تنتهي بنقطة أو تعجّب أو سؤال أو «…» — ونقاط الحذف عنده وقفةٌ
-   حقيقية لا زخرفة، فتُعدّ فاصلاً. */
+   حقيقية لا زخرفة، فتُعدّ فاصلاً. وفي ٢٠٢٦ صارت «…» تلتصق بما بعدها
+   («يبتسم…لكن»): ٦٠ موضعاً من ٦٠. كان التقطيع يشترط مسافةً بعدها، فتلتحم
+   جملتان في مقالاته الحديثة وحدها ويبدو وسيط جملته ١٦ كلمة لا ١١. الوقفة
+   فاصلٌ بمسافةٍ أو بدونها. */
 export const sentencesOf = (value = '') => String(value)
   .replace(/\s+/g, ' ')
-  .split(/(?<=[.!؟…])\s+/)
+  .split(/(?<=[.!؟…])\s+|(?<=…)(?=[\p{L}«])/u)
   .map((part) => part.trim())
   .filter(Boolean)
 
@@ -135,6 +138,7 @@ export const paragraphsOf = (value = '') => String(value)
 const percentile = (sorted, ratio) => sorted.length ? sorted[Math.min(sorted.length - 1, Math.max(0, Math.floor(sorted.length * ratio)))] : 0
 const mean = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
 const round1 = (value) => Math.round(value * 10) / 10
+const round2 = (value) => Math.round(value * 100) / 100
 const clampNumber = (value, low, high) => Math.min(high, Math.max(low, value))
 const occurrences = (text, pattern) => (String(text).match(pattern) || []).length
 
@@ -228,12 +232,32 @@ const bodiesOf = (articles) => (Array.isArray(articles) ? articles : [])
      وسيط الفقرة              ٦٥ ← ٢٢ كلمة
 
    البصمة الشاملة كانت تُحاكم مقالاته الحديثة بـ٨٥٪ بينما تستحق ٩٠٪ ببصمة
-   حقبتها — أي أن المحرك كان يُملي عليه صوت ٢٠١٧. الترجيح بنصف عمرٍ ثلاث
-   سنوات: المقال الأحدث يزن أربعة أضعاف الأقدم، والأرشيف كله يبقى حاضراً. */
-const ERA_HALF_LIFE_YEARS = 3
-const ERA_MAX_WEIGHT = 4
+   حقبتها — أي أن المحرك كان يُملي عليه صوت ٢٠١٧.
 
-function eraWeights(articles) {
+   ٢٤ سبتمبر ٢٠٢٦: نصف العمر ثلاث سنوات (وزنٌ أقصى ٤) لم يكفِ. ٩٥ مقالاً قديماً
+   بوزن ١ ظلّت ثلث البصمة، فخرجت الوصفة هجيناً لا يشبه أيّ حقبة: «اكتب «…» ١٢
+   مرة على الأقل» وهو اليوم يكتبها أربعاً أو خمساً. وحَكَمٌ أعمى قارن مقالاته
+   الحديثة بمقالاتٍ كُتبت بتلك الوصفة. نصف العمر الآن ستة أشهر ووزنٌ أقصى ٣٢:
+   أقرب الإعدادات إلى صوته في ٢٠٢٥-٢٠٢٦ في كل مقياس (وسيط الجملة ١٠ وهو فيها
+   ١١-١٢، والوقفات ١٫٧ لكل مئة وهي فيها ١٫١-١٫٥، والواو ١٨٪ وهي فيها ١٦-١٨٪).
+   والأرشيف كله يبقى حاضراً بوزنٍ أدنى، وتتبع البصمة صوته كلما نشر جديداً. */
+const ERA_HALF_LIFE_YEARS = 0.5
+const ERA_MAX_WEIGHT = 32
+
+function ellipsisTightRate(articles) {
+  const dated = articles.filter((item) => typeof item !== 'string' && /^\d{4}/.test(String(item?.iso || item?.date || '')))
+  const latest = (dated.length >= 5 ? [...dated].sort((a, b) => String(b.iso || b.date).localeCompare(String(a.iso || a.date))).slice(0, 10) : articles)
+  let tight = 0
+  let spaced = 0
+  for (const item of latest) {
+    const text = String(typeof item === 'string' ? item : item?.body || '')
+    tight += occurrences(text, /…(?=[\p{L}«])/gu)
+    spaced += occurrences(text, /…[ \t]+(?=[\p{L}«])/gu)
+  }
+  return tight + spaced ? round2(tight / (tight + spaced)) : 0
+}
+
+export function eraWeights(articles) {
   const stamps = articles.map((item) => {
     const iso = typeof item === 'string' ? '' : String(item?.iso || item?.date || '')
     const year = Number(String(iso).slice(0, 4))
@@ -324,6 +348,10 @@ export function measureStyleDna(articles) {
       emDashPer100: per100(occurrences(corpus, /—/g)),
       shaddaPer100: per100(occurrences(corpus, /ّ/g)),
       commaPer100: per100(occurrences(corpus, /،/g)),
+      /* طباعةٌ لا إيقاع: تُقاس على أحدث عشرة مقالاتٍ مؤرّخة لا على الأرشيف كله —
+         العادة الطباعية تتبدّل دفعةً واحدة ولا تتدرّج. في ٢٠٢٦ صارت «…» تلتصق بما
+         بعدها في ٦٠ موضعاً من ٦٠ («يبتسم…لكن»)، بعد سنواتٍ من «يبتسم… لكن». */
+      ellipsisTightRate: ellipsisTightRate(kept),
     },
     moves: {
       antithesisPer100: round1(wMean(rows.map((row) => row.antithesisPer100), weights)),
@@ -631,7 +659,7 @@ export const FALLBACK_STYLE_DNA = {
   article: { p10: 329, p25: 355, median: 385, p75: 406, p90: 442, mean: 380 },
   sentence: { mean: 9.9, median: 9, p10: 3, p90: 18, shortRate: 51, longRate: 11 },
   paragraph: { mean: 33, median: 45, p25: 9, p75: 62, p90: 73, singleSentenceRate: 24, twoSentenceRate: 29, perArticle: 16, perArticleMedian: 8, perArticleP75: 19 },
-  marks: { ellipsisPer100: 5.3, ellipsisPerArticle: 20, questionsPerArticle: 4.4, guillemetsPer100: .5, semicolonPer100: .3, emDashPer100: 0, shaddaPer100: 1.7, commaPer100: 3.5 },
+  marks: { ellipsisPer100: 5.3, ellipsisPerArticle: 20, questionsPerArticle: 4.4, guillemetsPer100: .5, semicolonPer100: .3, emDashPer100: 0, shaddaPer100: 1.7, commaPer100: 3.5, ellipsisTightRate: 0 },
   moves: {
     antithesisPer100: .9, negationAntithesisPer100: .2, collectivePer100: 1.7,
     articlesWithEllipsis: 94, articlesWithAntithesis: 60, articlesWithQuestion: 79, articlesWithGuillemets: 43,
@@ -703,23 +731,35 @@ export const resolveStyleDna = (dna) => {
    ثماني كلمات» و«ثماني وقفات … على الأقل». */
 export function styleBrief(rawDna, targetWords = 400) {
   const dna = resolveStyleDna(rawDna)
-  const ellipsis = Math.max(6, Math.round(dna.marks.ellipsisPer100 * targetWords / 100 * .55))
-  const antithesis = Math.max(2, Math.round(dna.moves.antithesisPer100 * targetWords / 100))
-  const questions = Math.max(2, Math.round(dna.marks.questionsPerArticle * .8))
+  /* مدىً لا حدٌّ أدنى: «استعملها ١٢ مرة على الأقل» كان يدفع النموذج إلى ضعف عادته
+     اليوم (أربعٌ أو خمس)، وحَكَمٌ أعمى كشف المحاكاة بكثرة الوقفات. المدى من مئينات
+     مقالاته المرجّحة بالحقبة (p35–p65) مضروبةً في طول المقال المطلوب. */
+  const perWords = (value) => (Number(value) || 0) * targetWords / 100
+  const band = (key, fallback) => dna.perArticle?.[key] || { p35: fallback * .7, p50: fallback, p65: fallback * 1.3, p85: fallback * 1.6 }
+  const ellipsisBand = band('ellipsisPer100', dna.marks.ellipsisPer100)
+  const ellipsisLow = Math.max(2, Math.round(perWords(ellipsisBand.p35)))
+  const ellipsisHigh = Math.max(ellipsisLow + 2, Math.round(perWords(ellipsisBand.p50) * 1.3))
+  const questionBand = band('questionsPer100', dna.marks.questionsPerArticle / Math.max(1, (dna.article.median || 386) / 100))
+  const questionsLow = Math.max(2, Math.round(perWords(questionBand.p35)))
+  const questionsHigh = Math.max(questionsLow + 1, Math.round(perWords(questionBand.p65)))
+  const antithesis = Math.max(2, Math.round(perWords(band('antithesisPer100', dna.moves.antithesisPer100).p65)))
+  const tightEllipsis = (dna.marks?.ellipsisTightRate || 0) >= .6
+  const pauseExample = tightEllipsis ? '«لأنهم عاجزون…بل لأن أحداً أقنعهم»' : '«لأنهم عاجزون… بل لأن أحداً أقنعهم»'
   const scale = targetWords / Math.max(200, dna.article.median || 386)
-  const paragraphsLow = Math.max(6, Math.round((dna.paragraph.perArticleMedian || 7) * scale))
-  const paragraphsHigh = Math.max(paragraphsLow + 3, Math.round((dna.paragraph.perArticleP75 || 10) * scale))
+  const paragraphs = Math.max(6, Math.round((dna.paragraph.perArticleMedian || 7) * scale))
+  const paragraphsLow = Math.max(5, Math.round(paragraphs * .75))
+  const paragraphsHigh = Math.max(paragraphs + 2, Math.round((dna.paragraph.perArticleP75 || 10) * scale))
   const openers = (dna.openers || []).map((item) => item.word).filter((word) => word.length >= 2).slice(0, 10)
   return [
     `بصمة الكاتب مقيسةٌ رقمياً من ${arabicCountPhrase(dna.sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
     `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
-    `٢) نقاط الحذف «…» علامته الأولى: استعملها ${arabicCountPhrase(ellipsis, OCCURRENCE_FORMS)} على الأقل، وقفةً قبل الانقلاب لا زخرفةً. تلتصق بما قبلها وتليها مسافة: «لأنهم عاجزون… بل لأن أحداً أقنعهم».`,
+    `٢) نقاط الحذف «…»: بين ${ellipsisLow} و${arabicCountPhrase(ellipsisHigh, OCCURRENCE_FORMS)} في المقال كله لا أكثر، وقفةً قبل الانقلاب لا زخرفةً؛ الإكثار منها بصمة محاكاةٍ لا بصمته. ${tightEllipsis ? 'تلتصق بما قبلها وبما بعدها بلا مسافة' : 'تلتصق بما قبلها وتليها مسافة'}: ${pauseExample}.`,
     `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
-    `٤) الفقرات من ${paragraphsLow} إلى ${arabicCountPhrase(paragraphsHigh, PARAGRAPH_AFTER_PREPOSITION_FORMS)} متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`,
-    `٥) الأسئلة البلاغية ${questions} على الأقل، موزّعة لا متراكمة، وواحدٌ منها يصلح خاتمة.`,
+    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`,
+    `٥) الأسئلة البلاغية بين ${questionsLow} و${questionsHigh}، موزّعة لا متراكمة، وواحدٌ منها يصلح خاتمة.`,
     `٦) الصوت جمعيّ: «نحن» و«دعونا» و«علينا» و«نعيش». ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
     `٧) الاقتباس داخل النص بين «…» لا بعلامات لاتينية. ممنوع: الشرطة الاعتراضية —، والعناوين الفرعية، والتعداد النقطي أو الرقمي، والرموز التعبيرية، وعلامات ماركداون.`,
-    `٨) الطول شرطُ قبولٍ لا اقتراح: ${arabicCountPhrase(targetWords, WORD_FORMS)}. النص الأقصر من ${arabicCountPhrase(Math.round(targetWords * .85), WORD_FORMS)} يُرفض ويُعاد. اكتب ${arabicCountPhrase(Math.max(7, Math.round(targetWords / 45)), PARAGRAPH_FORMS)}، كل فقرة أربعين إلى خمسين كلمة — عُدَّها قبل الإخراج. لا تختم قبل بلوغ العدد.`,
+    `٨) الطول شرطُ قبولٍ لا اقتراح: ${arabicCountPhrase(targetWords, WORD_FORMS)}. النص الأقصر من ${arabicCountPhrase(Math.round(targetWords * .85), WORD_FORMS)} يُرفض ويُعاد. اكتب نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} بنحو ${arabicCountPhrase(Math.round(targetWords / paragraphs), WORD_FORMS)} للفقرة في المتوسط — عُدَّها قبل الإخراج. لا تختم قبل بلوغ العدد.`,
     `٩) الخاتمة تنقلب أو تسأل، ولا تلخّص: ${dna.closings.questionRate}٪ من خواتيمه سؤال و${dna.closings.antithesisRate}٪ انقلابٌ بـ«بل». ممنوع «في الختام» و«خلاصة القول» وكل عبارةٍ تعلن أنها خاتمة.`,
     `١٠) الافتتاح مشهدٌ أو نفيٌ أو ضميرٌ جمعي، في جملةٍ لا تتجاوز ${arabicCountPhrase(Math.max(16, dna.sentence.p90), WORD_FORMS)}. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
     `١١) عباراتٌ محظورة لأنها غائبةٌ تماماً عن أرشيفه: ${(dna.banned || BANNED_PHRASES).filter((phrase) => phrase !== 'صيدة' && phrase !== 'صيد').slice(0, 24).join(' · ')}.`,
@@ -930,6 +970,9 @@ export function verbatimOverlap(body, archiveTexts, size = 6) {
   }
   const hits = []
   for (let index = 0; index + size <= target.length; index += 1) {
+    /* اسم الباحث وسنته ليسا صياغةً تُنسخ: «Ryan وDeci 2000 في نظرية الدافعية» تتكرر
+       بالضرورة حين يُستشهد بالمرجع نفسه. السلسلة التي فيها حرفٌ لاتيني أو رقم تُترك. */
+    if (target.slice(index, index + size).some((token) => /[A-Za-z0-9٠-٩]/.test(token))) continue
     const gram = target.slice(index, index + size).join(' ')
     if (seen.has(gram)) hits.push(gram)
     if (hits.length >= 8) break
@@ -1102,7 +1145,7 @@ export function judgeStyle(body, rawDna, options = {}) {
   /* ١٢ب — أثر الآلة: نموذجٌ إحصائيٌّ صغير معايَرٌ على بيانات (انظر MACHINE_TRACE).
      المحاكي الجيد كان ينال ٩٢٪ وسيطاً ويعبر ٩٤٪ منه — أعلى من الدكتور نفسه —
      لأن المقاييس السابقة تكافئ «الأكثر». هذا المقياس يرى التركيبة لا العلامة. */
-  const trace = machineTrace(metrics)
+  const trace = machineTrace(metrics, dna)
   add('machineTrace', 'أثر الآلة', clampNumber(1 - (trace.probability - .5) / .4, 0, 1), 12,
     `${Math.round(trace.probability * 100)}٪${trace.reasons.length ? ' · ' + trace.reasons.slice(0, 2).map((item) => item.label).join(' · ') : ''}`, `دون ${Math.round(MACHINE_TRACE.threshold * 100)}٪`,
     trace.reasons.length
@@ -1218,37 +1261,36 @@ export function judgeStyle(body, rawDna, options = {}) {
 
 /* ---------- أثر الآلة: نموذجٌ معايَرٌ على بيانات لا على الذوق ----------
 
-   الإصدار ٢ (٢٤ سبتمبر ٢٠٢٦): انحدارٌ لوجستيّ منتظم (L2=3) على ١٤ مقياساً من
-   articleMetrics، دُرّب على مقالاته الـ١٤٣ مقابل ٦٤ نصاً آلياً في ثماني مجموعات:
-   ١٦ بأسلوب النموذج المعتاد، و١٦ محاكاةً متعمّدة بعد قراءة مقتطفاتٍ منه، و١٦
-   مسودةً بتعليمات الاستوديو الفعلية (الوصفة الرقمية ومقالان من أرشيفه)، و١٦ في
-   تخصصه (تكنولوجيا التعليم) مع اقتباساتٍ من كتبه ولقاءاته — كتبتها نماذج مختلفة
-   الحجم. الإصدار ١ لم يرَ مسودات الاستوديو فعبرته ١٣ من ٣٢ منها «جاهزة».
-   AUC مع مجموعةٍ كاملة لم يرها التدريب (كلٌّ على حدة): ٠٫٩٤–١٫٠٠ (كان
-   ٠٫٨٧–٠٫٩٢). المقياس الجديد: نسبة الفقرات المختومة بوقفة «…» — عادته في ٨٦٪
-   من فقرات المقال الوسيط، ونادراً ما يفعلها النموذج. العتبة تُبقي ٩٥٪ من مقالاته
-   دونها بالتحقق المتقاطع. حدوده: كل النصوص الآلية من عائلة نماذج واحدة؛ يُعاد
-   تدريبه بمسودات Gemini/Qwen الحقيقية متى توفرت (scripts/train-machine-trace.mjs). */
+   الإصدار ٣ (٢٤ سبتمبر ٢٠٢٦): «مقالاته» في التدريب مرجّحةٌ بالحقبة بأوزان البصمة
+   نفسها (نصف عمرٍ ستة أشهر)، والعتبة تُبقي ٩٥٪ من مقالاته **منذ ٢٠٢٥** دونها.
+   الإصدار ٢ درّب على الأرشيف بلا ترجيح فتعلّم أن «الفقرة المختومة بـ«…»» علامة
+   الإنسان — وهي عادته قبل ٢٠٢٢ (١٠٠٪ من فقراته حينها، وصفرٌ في ٢٠٢٦) — فصار يأمر
+   الكاتب بعادةٍ تركها ويرتاب في مقالاته الحديثة. ذلك المقياس حُذف. والتقطيع صار
+   يعدّ «…» الملتصقة فاصلاً (عادته في ٢٠٢٦)، فتُقاس جمله الحديثة كما هي.
+   ١٣ مقياساً، انحدارٌ لوجستيّ منتظم (L2=3)، ٦٤ نصاً آلياً في ثماني مجموعات.
+   AUC مع مجموعةٍ كاملة لم يرها التدريب، مقابل مقالاته منذ ٢٠٢٥: ٠٫٩١–١٫٠٠.
+   الإنذار الكاذب بالتحقق المتقاطع: صفرٌ من ٣٤ مقالاً في ٢٠٢٥، و٣ من ١٤ في ٢٠٢٦
+   (والنموذج الكامل لا يرفع أياً منها فوق العتبة). حدوده: النصوص الآلية من عائلة
+   نماذج واحدة؛ يُعاد تدريبه بمسودات Gemini/Qwen الحقيقية (scripts/train-machine-trace.mjs). */
 export const MACHINE_TRACE = {
-  version: 2,
-  intercept: -1.3554,
-  threshold: 0.74,
-  strong: 0.85,
+  version: 3,
+  intercept: -0.5408,
+  threshold: 0.78,
+  strong: 0.88,
   features: [
-    { key: 'ellipsisPer100', label: 'الوقفات «…»', w: -1.3654, mu: 5.9121, sd: 4.863 },
-    { key: 'antithesisPer100', label: '«بل»', w: -0.3524, mu: 0.6251, sd: 0.6718 },
-    { key: 'questionsPer100', label: 'الأسئلة', w: 0.1913, mu: 0.8546, sd: 0.9043 },
-    { key: 'collectivePer100', label: 'الضمير الجمعي', w: 0.038, mu: 1.7594, sd: 1.233 },
-    { key: 'commaPer100', label: 'الفواصل', w: -0.4512, mu: 3.5855, sd: 3.0281 },
-    { key: 'colonPer100', label: 'النقطتان والفاصلة المنقوطة', w: -0.6482, mu: 0.8734, sd: 0.8476 },
-    { key: 'wawStartRate', label: 'الجمل المبدوءة بالواو', w: -0.2584, mu: 30.3768, sd: 16.4032 },
-    { key: 'sentenceSpread', label: 'تفاوت أطوال الجمل', w: -1.3752, mu: 61.6763, sd: 18.2713 },
-    { key: 'shortRate', label: 'الجمل القصيرة', w: 0.684, mu: 54.0193, sd: 23.9492 },
-    { key: 'medianSentence', label: 'طول الجملة', w: -0.3143, mu: 10.7536, sd: 8.1242 },
-    { key: 'lexicalDiversity', label: 'تنوّع المفردات', w: 0.2654, mu: 73.1188, sd: 3.8513 },
-    { key: 'singleRate', label: 'فقرات الجملة الواحدة', w: -0.7444, mu: 13.6087, sd: 21.5596 },
-    { key: 'medianParagraph', label: 'طول الفقرة', w: -0.3725, mu: 50.1981, sd: 30.4189 },
-    { key: 'ellipsisEndRate', label: 'الفقرات المختومة بوقفة «…»', w: -1.6151, mu: 41.401, sd: 46.9218 },
+    { key: 'ellipsisPer100', label: 'الوقفات «…»', w: -1.743, mu: 5.9121, sd: 4.863 },
+    { key: 'antithesisPer100', label: '«بل»', w: -0.5601, mu: 0.6251, sd: 0.6718 },
+    { key: 'questionsPer100', label: 'الأسئلة', w: 0.2898, mu: 0.8546, sd: 0.9043 },
+    { key: 'collectivePer100', label: 'الضمير الجمعي', w: 0.0086, mu: 1.7594, sd: 1.233 },
+    { key: 'commaPer100', label: 'الفواصل', w: -0.7091, mu: 3.5855, sd: 3.0281 },
+    { key: 'colonPer100', label: 'النقطتان والفاصلة المنقوطة', w: -0.8083, mu: 0.8734, sd: 0.8476 },
+    { key: 'wawStartRate', label: 'الجمل المبدوءة بالواو', w: -0.0504, mu: 30.3285, sd: 16.3411 },
+    { key: 'sentenceSpread', label: 'تفاوت أطوال الجمل', w: -1.9418, mu: 63.1014, sd: 18.0861 },
+    { key: 'shortRate', label: 'الجمل القصيرة', w: 0.9226, mu: 56.2367, sd: 22.7532 },
+    { key: 'medianSentence', label: 'طول الجملة', w: -0.2406, mu: 10.3333, sd: 7.9752 },
+    { key: 'lexicalDiversity', label: 'تنوّع المفردات', w: 0.1449, mu: 73.1188, sd: 3.8513 },
+    { key: 'singleRate', label: 'فقرات الجملة الواحدة', w: -0.5483, mu: 11.628, sd: 19.267 },
+    { key: 'medianParagraph', label: 'طول الفقرة', w: -0.4126, mu: 50.1981, sd: 30.4189 },
   ],
 }
 
@@ -1273,7 +1315,13 @@ const MACHINE_TRACE_ACTIONS = {
 }
 
 /** احتمال أن يكون النص آلياً، ومعه المقاييس التي دفعته أكثر من غيرها وإصلاحها. */
-export function machineTrace(metrics) {
+export function machineTrace(metrics, rawDna = null) {
+  /* «عادته» في أمر الإصلاح وسيطُه هو المرجّح بالحقبة من البصمة، لا متوسط العيّنة
+     المختلطة (مقالاته والنصوص الآلية معاً) الذي كان يُعرض خطأً على أنه عادته. */
+  const habitOf = (key, fallback) => {
+    const band = rawDna && typeof rawDna === 'object' ? rawDna.perArticle?.[key] : null
+    return typeof band?.p50 === 'number' ? band.p50 : fallback
+  }
   let logit = MACHINE_TRACE.intercept
   const parts = MACHINE_TRACE.features.map((feature) => {
     const value = Number(metrics?.[feature.key]) || 0
@@ -1289,7 +1337,7 @@ export function machineTrace(metrics) {
       return {
         key: item.key,
         label: `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته`,
-        fix: `${MACHINE_TRACE_ACTIONS[item.key]?.[more ? 'more' : 'less'] || `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته`} (${item.label}: ${Math.round(item.value * 10) / 10}، وعادته ${Math.round(item.mu * 10) / 10})`,
+        fix: `${MACHINE_TRACE_ACTIONS[item.key]?.[more ? 'more' : 'less'] || `${item.label} ${more ? 'أكثر' : 'أقل'} من عادته`} (${item.label}: ${Math.round(item.value * 10) / 10}، وعادته ${Math.round(habitOf(item.key, item.mu) * 10) / 10})`,
       }
     })
   return { probability, reasons }
@@ -1389,7 +1437,7 @@ export function judgeNaturalness(verdict, calibration) {
 /* ---------- الصقل الحتمي ---------- */
 
 /* طباعةٌ فقط: لا تُضاف كلمةٌ ولا تُحذف. ما يفعله هنا هو ما يفعله هو بيده. */
-export function polishTypography(value = '') {
+export function polishTypography(value = '', options = {}) {
   if (value === null || value === undefined) return ''
   let text = String(value)
     .replace(/\r\n?/g, '\n')
@@ -1411,9 +1459,11 @@ export function polishTypography(value = '') {
     .replace(/\n{3,}/g, '\n\n')
   /* تباعد «…» مقيسٌ على ٣٩٦٣ موضعاً في أرشيفه: ٩٦٪ منها بلا مسافةٍ قبلها،
      و٨٢٪ بمسافةٍ بعدها. أي «الواقع… بل» لا «الواقع …بل» ولا «الواقع…بل». */
+  /* ومنذ ٢٠٢٦ تلتصق بما بعدها أيضاً («الواقع…بل»): تتبع الطباعةُ عادته الحالية
+     المقيسة في البصمة (ellipsisTightRate)، لا عادةً سابقة. */
   text = text
     .replace(/[ \t]+…/g, '…')
-    .replace(/…[ \t]*(?=[^\s،.؛؟!»\n])/g, '… ')
+    .replace(/…[ \t]*(?=[^\s،.؛؟!»\n])/g, options.tightEllipsis ? '…' : '… ')
   return text.split('\n').map((line) => line.trim()).join('\n').trim()
 }
 
@@ -1444,6 +1494,7 @@ export function liftPauses(value = '', rawDna) {
   const dna = resolveStyleDna(rawDna)
   const words = countWords(value)
   const target = Math.round((dna.perArticle?.ellipsisPer100?.p50 ?? dna.marks.ellipsisPer100) * words / 100)
+  const tight = (dna.marks?.ellipsisTightRate || 0) >= .6
   let current = occurrences(value, /…/g)
   if (current >= target) return String(value)
   let text = String(value)
@@ -1465,7 +1516,7 @@ export function liftPauses(value = '', rawDna) {
       if (current >= target || budget <= 0) return '، '
       current += 1
       budget -= 1
-      return '… '
+      return tight ? '…' : '… '
     })
   }
   return text
@@ -1559,7 +1610,10 @@ export function applyRhythm(value = '', rawDna) {
 /* الخط الأخير قبل العرض: طباعةٌ، ثم كسرُ الجمل المتضخّمة، ثم رفعُ الوقفات،
    ثم إيقاعُ الفقرات. أربع خطواتٍ لا تلمس حرفاً واحداً من كلماته. */
 export function refineToStyle(value = '', rawDna) {
-  const pass = (input) => applyRhythm(liftPauses(breakLongSentences(polishTypography(input), rawDna), rawDna), rawDna)
+  const tightEllipsis = (resolveStyleDna(rawDna).marks?.ellipsisTightRate || 0) >= .6
+  /* إعادة بناء الفقرات تصل الجمل بمسافة، فتُفكّ «…لكن» الملتصقة: تُثبَّت في آخر كل تمريرة. */
+  const settle = (input) => tightEllipsis ? input.replace(/…[ \t]+(?=[\p{L}«])/gu, '…') : input
+  const pass = (input) => settle(applyRhythm(liftPauses(breakLongSentences(polishTypography(input, { tightEllipsis }), rawDna), rawDna), rawDna))
   /* دورةٌ حتى النقطة الثابتة: إيقاعُ الفقرات يغيّر حدودها، فتظهر للتمريرة
      التالية جملٌ طويلة ومفاصل لم تكن ظاهرة. كانت الدالة تُستدعى مرتين في
      المسار الحقيقي (خادمٌ ثم واجهة) فيرى الدكتور نصّين مختلفين للنص الواحد.

@@ -365,6 +365,14 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   pointer-events: none;
 }
 
+/* شعرة التوقيع للأقسام العامة لا لأدوات اللوحة: موضعها محسوبٌ من عرض النافذة، فداخل
+   بطاقات الأدوات الضيّقة (بطاقات المونتير مثلاً) كانت تسقط خارج البطاقة شَعراتٍ تائهة
+   في هامش الصفحة. */
+.signature-page :is(.admin-shell, .monteur-root, [data-panel]) :is(section, header):not(.human-core):not(.page-head)::before,
+.signature-page :is(section, header)[data-panel]:not(.human-core):not(.page-head)::before {
+  content: none;
+}
+
 .signature-label > span:first-child {
   position: relative;
   overflow: hidden;

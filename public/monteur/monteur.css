@@ -425,3 +425,95 @@ textarea:focus{border-color:var(--accent)}
 .monteur-root .screen.square .scene .h2l{font-size:6.2cqw;line-height:1.35}
 .monteur-root .screen.square .director-hero .hero-orbit{width:32cqw;left:34%;right:auto;top:9%}
 .monteur-root .screen.square .hero-copy{padding-bottom:0}
+
+/* ——— المونتير داخل لوحة التحكم: البنية ———
+   ١) قاعدة ‎.wrap‎ القديمة (max-width:1240px) كانت تأتي بعد قاعدة التضمين بالنوعية
+      نفسها فتغلبها: على الشاشات العريضة ينكمش المونتير في وسط اللوحة بفراغٍ عن جانبيه.
+   ٢) عمود الشريط الجانبي بلا حدٍّ أدنى صفري: عنوان مشهدٍ طويل (nowrap) في الخطّ الزمني
+      يمدّ العمود إلى عرض العنوان كله (804px في عمود 300px) فتخرج البطاقات من اللوحة. */
+.monteur-root.embedded .wrap{max-width:none;margin:0;padding:0}
+.monteur-root .side{grid-template-columns:minmax(0,1fr)}
+.monteur-root .side>*{min-width:0}
+.monteur-root .timeline li{grid-template-columns:auto minmax(0,1fr) auto}
+/* الوقت يُقرأ «المنقضي / الكلّي» كما في كل مشغّل، لا مقلوباً بخوارزمية الاتجاه. */
+.monteur-root .time{direction:ltr;unicode-bidi:isolate}
+
+/* ═══════════ المونتير داخل الاستوديو: أدوات التحكّم بلغة الموقع ═══════════
+   ما يُصدَّر (المشاهد داخل ‎.screen‎) لا يُمَسّ. هنا الواجهة وحدها، على دستور DESIGN.md:
+   حدٌّ شعريّ قبل الظلّ، منحنى حركةٍ واحد، بلا تدرّجات ولا ظلالٍ ملوّنة، اختياراتٌ مجمّعة
+   كمبدّل الاستوديو في أعلاه، وخطٌّ لا يصغر عن حدّ القراءة المريحة. */
+.monteur-root{--m-ease:cubic-bezier(.2,.7,.2,1)}
+
+/* المسرح: ورقٌ مسطّح بحدٍّ شعريّ — الشاشة وحدها تطفو بظلّها، فتبقى هي البطل. */
+.monteur-root .player{background:var(--paper);border-color:var(--hair);box-shadow:none}
+
+/* النقل: تعبئة المسار بلون الهوية لا بتدرّج، وزرّ التشغيل بالمنحنى الموحّد. */
+.monteur-root .play{transition:transform .3s var(--m-ease)}
+.monteur-root .play:hover{transform:scale(1.05)}
+.monteur-root .scrub{background:color-mix(in srgb,var(--ink) 9%,transparent)}
+.monteur-root .scrub b{background:var(--accent)}
+.monteur-root .time{min-width:84px;font-size:.74rem;color:var(--soft)}
+
+/* الاختيارات: كل مجموعة (عنوانها وخياراتها) كتلةٌ واحدة لا تنكسر في منتصفها،
+   على هيئة المبدّل المقطعيّ نفسه الذي في رأس الاستوديو. */
+.monteur-root .mini{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-top:16px}
+.monteur-root .mgroup{display:inline-flex;align-items:center;gap:8px}
+.monteur-root .mini .mgroup>span{margin:0;font-size:.72rem;font-weight:600;color:var(--faint)}
+.monteur-root .seg{display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--hair);border-radius:999px;background:var(--canvas)}
+.monteur-root .mini .seg button{min-height:30px;padding:.3rem .85rem;border:0;border-radius:999px;background:transparent;color:var(--soft);font:600 .74rem/1 "Tajawal",system-ui,sans-serif;cursor:pointer;transition:background-color .25s var(--m-ease),color .25s var(--m-ease)}
+.monteur-root .mini .seg button:hover{border:0;color:var(--ink)}
+.monteur-root .mini .seg button[aria-current="true"]{background:var(--ink);color:var(--canvas)}
+.monteur-root .mini .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* الصوت والتصدير: التصدير زرٌّ أساسيٌّ بلون الهوية كزرّ «ابتكر» فوقه، والمفتاحان
+   يُقرآن بكلمتيهما لا برمزين غامضين. */
+.monteur-root .audio-row{gap:8px;margin-top:12px}
+.monteur-root .audio-row #exportBtn{min-height:36px;padding:.45rem 1.15rem;border:0;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:.76rem;transition:filter .25s var(--m-ease)}
+.monteur-root .audio-row #exportBtn:hover{filter:brightness(.94)}
+.monteur-root .audio-row #exportBtn:disabled{cursor:progress;opacity:.72}
+.monteur-root .audio-row select{min-height:36px;background:var(--canvas);font-size:.74rem;transition:border-color .25s var(--m-ease)}
+.monteur-root .audio-row select:hover{border-color:var(--hair2)}
+.monteur-root .audio-row .lbl{margin-inline-start:6px;font-size:.72rem;font-weight:600;color:var(--faint)}
+.monteur-root .audio-row #tgMusic,.monteur-root .audio-row #tgSfx{min-height:36px;padding:.4rem .9rem;font-size:.74rem;font-weight:600;transition:background-color .25s var(--m-ease),color .25s var(--m-ease),border-color .25s var(--m-ease)}
+
+/* بوابة الصوت: غلاف الريل يُرى من خلف زجاجٍ خفيف لا يُطمس، وزرّ التشغيل قرصٌ هادئ
+   ساكن — لا نبض لا ينتهي يطالب بالانتباه. */
+.monteur-root .gate{background:rgba(8,10,14,.36);-webkit-backdrop-filter:none;backdrop-filter:none}
+.monteur-root .gate>div{display:grid;justify-items:center;gap:.85rem;padding:0 1rem;text-align:center}
+.monteur-root .gate button{display:grid;justify-items:center;gap:.8rem;padding:0;border:0;background:none;box-shadow:none;animation:none;color:#fff;font:700 .95rem/1.4 "Tajawal",system-ui,sans-serif;text-shadow:0 1px 14px rgba(0,0,0,.5)}
+/* بلا حركة دخول: المونتير يوقف كل حركات CSS داخله ما دام الفيديو متوقفاً، فأيّ دخولٍ
+   مؤقّت كان سيتجمّد على إطاره الأول الشفاف. القرص حاضرٌ ساكن، ويتنفّس تحت المؤشر فقط. */
+.monteur-root .gate-orb{display:grid;place-items:center;width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,.95);color:var(--ink);box-shadow:0 18px 44px -18px rgba(0,0,0,.65);transition:transform .35s var(--m-ease)}
+.monteur-root .gate-orb svg{width:24px;height:24px}
+.monteur-root .gate button:hover .gate-orb{transform:scale(1.06)}
+.monteur-root .gate button:focus-visible{outline:none}
+.monteur-root .gate button:focus-visible .gate-orb{outline:2px solid #fff;outline-offset:4px}
+.monteur-root .gate small{margin-top:0;font-size:.7rem;opacity:.72}
+
+/* المخرج الإبداعي: قوس الحكاية أعمدةٌ بلون الهوية الخافت وذروتها بلون الجمر — بلا
+   تدرّجات ولا توهّج؛ والمقياس والزرّ مسطّحان. */
+.monteur-root .quality-meter{background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.monteur-root .quality-meter i{background:var(--accent);transition:width .6s var(--m-ease)}
+.monteur-root .quality-actions #autoDirect{background:var(--ink);box-shadow:none;transition:filter .25s var(--m-ease)}
+.monteur-root .quality-actions #autoDirect:hover{filter:brightness(1.18)}
+.monteur-root .story-arc i{background:color-mix(in srgb,var(--accent) 26%,#E7EBEF);transition:height .55s var(--m-ease)}
+.monteur-root .story-arc i b{display:none}
+.monteur-root .story-arc i.peak{background:var(--ember);box-shadow:none}
+.monteur-root .story-arc i.peak::before{color:var(--ember)}
+.monteur-root .story-arc span,.monteur-root .story-arc strong{font-size:.62rem}
+.monteur-root .story-arc strong{color:var(--ember)}
+.monteur-root .director-cuts button[aria-pressed=true]{background:var(--ink);border-color:var(--ink)}
+.monteur-root .director-cuts button small{font-size:.6rem!important}
+.monteur-root .timeline .badge{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+/* بطاقات المكتبة: سطحٌ مسطّح بحدٍّ شعريّ، رفعةٌ بالمنحنى الموحّد، وعنوانٌ يُقرأ بلا تقريب. */
+.monteur-root .visual-tile,.monteur-root .visual-tile.family-tile{background:var(--canvas);border-color:var(--hair);font-size:.7rem;transition:transform .3s var(--m-ease),border-color .3s var(--m-ease)}
+.monteur-root .visual-tile:hover{border-color:var(--accent)}
+.monteur-root .visual-tile small{font-size:.62rem}
+/* زرّ التوليد في الصفحة المستقلة: لون الهوية مسطّحاً، ورفعةٌ بالمنحنى الموحّد. */
+.monteur-root .go{background:var(--accent);box-shadow:none;transition:transform .3s var(--m-ease),filter .3s var(--m-ease)}
+.monteur-root .go:hover{filter:brightness(.94)}
+
+@media (prefers-reduced-motion:reduce){
+  .monteur-root .gate-orb{transition:none}
+  .monteur-root .play,.monteur-root .go,.monteur-root .visual-tile,.monteur-root .mini .seg button,.monteur-root .story-arc i,.monteur-root .quality-meter i{transition:none}
+}

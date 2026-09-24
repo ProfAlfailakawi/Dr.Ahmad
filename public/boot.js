@@ -156,14 +156,22 @@
 
   var hadServiceWorkerController = !!navigator.serviceWorker.controller;
   if (hadServiceWorkerController) {
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
+    // لا إعادة تحميل فوق عملٍ جارٍ: التوليد في الاستوديو يعلّم الجذر aria-busy،
+    // فيُؤجَّل التبديل إلى الإصدار الجديد حتى تنتهي العملية (كانت الصفحة تُعاد
+    // بعد ٢٠–٣٠ ثانية من «ولّد من الصفر» فيضيع التقدم كله).
+    var pageBusy = function () {
+      try { return html.getAttribute('aria-busy') === 'true'; } catch (error) { return false; }
+    };
+    var reloadWhenIdle = function () {
+      if (pageBusy()) { window.setTimeout(reloadWhenIdle, 4000); return; }
       var now = Date.now();
       var lastReload = 0;
       try { lastReload = Number(sessionStorage.getItem('sw-controller-reload-at') || 0); } catch (error) {}
       if (now - lastReload < 10000) return;
       try { sessionStorage.setItem('sw-controller-reload-at', String(now)); } catch (error) {}
       location.reload();
-    });
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', reloadWhenIdle);
   }
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (registration) {

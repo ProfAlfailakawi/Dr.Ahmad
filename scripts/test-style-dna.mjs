@@ -178,6 +178,7 @@ const strongBody = [
 
 let cfCalls = 0
 let sawCorrections = false
+let sawExemplar = 0
 const makeResponse = (body) => ({
   ok: true, status: 200,
   json: async () => ({ result: { response: JSON.stringify({
@@ -190,6 +191,10 @@ const learningFetch = async (url, init) => {
   if (!String(url).includes('api.cloudflare.com')) return { ok: false, status: 503, json: async () => ({}) }
   cfCalls += 1
   const instruction = JSON.parse(init.body).messages[0]?.content || ''
+  const promptText = JSON.parse(init.body).messages.map((message) => message.content || '').join('\n')
+  /* نموذج الصوت: مقالٌ حقيقي يجري أكثر من مئتي كلمة، لا جملتان من مطلعه. */
+  const exemplarMatch = promptText.match(/"نماذج_صوت":\[\{"عنوان":"[^"]*","نص":"([^"]+)"/)
+  if (exemplarMatch) sawExemplar = Math.max(sawExemplar, exemplarMatch[1].split(/\s+/).length)
   /* النموذج الوهميّ لا «يتحسّن» إلا حين تصله أرقام النقص فعلاً. */
   if (instruction.includes('جولة تصحيحٍ إلزامية')) {
     sawCorrections = true
@@ -219,6 +224,8 @@ const input = {
 const weakVerdict = judgeStyle(refineToStyle(weakBody, dna), dna)
 const article = await generatePerfectArticle(input, learningFetch)
 assert.ok(sawCorrections, 'جولة التصحيح وقعت فعلاً')
+assert.ok(sawExemplar >= 200, `النموذج يسمع مقالاً كاملاً من أرشيفه (${sawExemplar} كلمة) لا جملتين`)
+assert.equal(typeof article.voiceTouches, 'number', 'لمسة الصوت الأخيرة تُعلن بعدد تعديلاتها')
 assert.ok(cfCalls >= 3, `مرشحان ثم تصحيح (${cfCalls} نداءات)`)
 assert.ok(article.style, 'المقال يعود ومعه بطاقة أسلوبه')
 assert.ok(article.style.score > weakVerdict.score, `التصحيح رفع الدرجة ${weakVerdict.score} → ${article.style.score}`)

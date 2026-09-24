@@ -8137,3 +8137,17 @@ html.dark {
 @media (prefers-reduced-motion: reduce) {
   .design-birth [data-living-icon] { transition: none; }
 }
+
+/* شريط لوحة التحكم الثابت أسفل الشاشة (أقل من ١٠٢٤): الصفحة تترك له مسافته
+   كي لا يغطي آخر ما فيها — ارتفاعه ينشره AdminMobileNav في --admin-dock-h. */
+html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
+
+/* المنزلقات في الاستوديو وعوالم التصميم بلون الهوية لا بأزرق المتصفح الافتراضي. */
+.studio-range { accent-color: rgb(var(--c-accent)); height: 1.25rem; background: transparent; cursor: pointer; }
+.studio-range::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: rgb(var(--c-accent) / .28); }
+.studio-range::-moz-range-track { height: 4px; border-radius: 999px; background: rgb(var(--c-accent) / .28); }
+.studio-range::-moz-range-progress { height: 4px; border-radius: 999px; background: rgb(var(--c-accent)); }
+.studio-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: rgb(var(--c-accent)); border: 2px solid rgb(var(--c-canvas)); box-shadow: 0 0 0 1px rgb(var(--c-accent) / .5); }
+.studio-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: rgb(var(--c-accent)); border: 2px solid rgb(var(--c-canvas)); }
+.studio-range { -webkit-appearance: none; appearance: none; }
+.studio-range:focus-visible { outline: 2px solid rgb(var(--c-accent)); outline-offset: 3px; border-radius: 999px; }

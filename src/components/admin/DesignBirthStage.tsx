@@ -56,7 +56,7 @@ export function DesignBirthStage({ fingerprint, children }: { fingerprint: strin
         <button
           type="button"
           onClick={begin}
-          className="design-birth-replay absolute bottom-3 left-3 z-20 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-hair bg-canvas/[.92] px-3.5 text-[.64rem] font-semibold text-soft backdrop-blur hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="design-birth-replay absolute bottom-3 left-3 z-20 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-hair bg-canvas/[.92] px-3.5 text-[.75rem] font-semibold text-soft backdrop-blur hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           aria-label="أعد عرض ولادة التصميم"
         >
           <span aria-hidden="true">↺</span>

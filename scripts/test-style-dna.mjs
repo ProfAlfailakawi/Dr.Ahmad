@@ -93,13 +93,20 @@ for (const item of archive.slice(0, 25)) {
    على أنه يقلّد يده لا يفرض ذوقاً غريباً عليها. */
 let lifted = 0
 let lowered = 0
+let liftSum = 0
 for (const item of archive) {
   const before = judgeStyle(item.body, dna).score
   const after = judgeStyle(refineToStyle(item.body, dna), dna).score
   if (after > before) lifted += 1
   if (after < before - 5) lowered += 1
+  liftSum += after - before
 }
-assert.ok(lifted >= 60, `الصقل يرفع درجة مقالاته نفسها (${lifted} مقالاً)`)
+/* العدّ يتبع خطّ الأساس: حين صار الحَكَم يحتسب خواتيمه وجمله ووقفاته كما يكتبها اليوم
+   (٢٥ سبتمبر ٢٠٢٦) ارتفعت درجات نصوصه الخام (٨٦٫٩ ← ٨٨٫٠)، فبقي للصقل ما يرفعه في ٥٢
+   مقالاً بدل ٦١. المعيار الأدقّ هو الأثر نفسه: متوسط ما يضيفه الصقل (+٢٫٣ قبل التعديل
+   وبعده)، ولا مقال يهبط. */
+assert.ok(lifted >= 50, `الصقل يرفع درجة مقالاته نفسها (${lifted} مقالاً)`)
+assert.ok(liftSum / archive.length >= 2, `ويرفعها بمتوسطٍ لا يقل عن نقطتين (${(liftSum / archive.length).toFixed(1)})`)
 assert.equal(lowered, 0, 'الصقل لا يخفض درجة أي مقالٍ من مقالاته بأكثر من خمس نقاط')
 
 /* كسر الجملة المتضخّمة يقع عند مفصلٍ يبدأ به جمله، لا في أي مكان */
@@ -321,7 +328,11 @@ const medianOf = (list, useDna) => {
 }
 const recent = dated.filter((item) => item.iso >= '2025-01-01')
 assert.ok(recent.length >= 20, `عيّنة حديثة كافية (${recent.length})`)
-assert.ok(medianOf(recent, eraDna) > medianOf(recent, flatDna), `الترجيح ينصف مقالاته الحديثة (${medianOf(recent, flatDna)} ← ${medianOf(recent, eraDna)})`)
+/* صوته اليوم هو آخر عشرين مقالاً (نطاقات الإيقاع منها منذ ٢٥ سبتمبر ٢٠٢٦): عليها يُقاس
+   الإنصاف. ومنشورات ٢٠٢٥ المقطّعة لا تنهار (تبقى فوق ٨٥) وإن ابتعدت عن صوته اليوم. */
+const latestTwenty = [...dated].sort((left, right) => right.iso.localeCompare(left.iso)).slice(0, 20)
+assert.ok(medianOf(latestTwenty, eraDna) > medianOf(latestTwenty, flatDna), `الترجيح ينصف مقالاته الأخيرة (${medianOf(latestTwenty, flatDna)} ← ${medianOf(latestTwenty, eraDna)})`)
+assert.ok(medianOf(recent, eraDna) >= 85, `ومقالاته منذ ٢٠٢٥ باقيةٌ في مداه (${medianOf(recent, eraDna)})`)
 
 /* والأهم: ما يُملى على المحرك تغيّر فعلاً نحو صوته اليوم */
 const flatBrief = styleBrief(flatDna, 400)

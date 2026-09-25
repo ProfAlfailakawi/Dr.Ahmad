@@ -294,8 +294,26 @@ function recentVoice(articles) {
     paragraphsP75: percentile(texts.map((text) => paragraphsOf(text).length).sort((a, b) => a - b), .75),
     paragraphWordsMedian: percentile(texts.flatMap((text) => paragraphsOf(text).map((para) => para.split(/\s+/u).filter(Boolean).length)).sort((a, b) => a - b), .5),
     openingShares: Object.fromEntries(OPENING_MOVES.map((move) => [move, round2(texts.filter((text) => openingMove(text) === move).length / Math.max(1, texts.length))])),
+    /* ٢٥ سبتمبر ٢٠٢٦ — نطاقات صوته اليوم: منشورات ٢٠٢٥ مقطّعة (وسيط الجملة ٦ كلمات، ٧١٪
+       قصيرة) ومقالات ٢٠٢٦ أتمّ (١٢ كلمة، ٤٤٪)، ووقفاته «…» اليوم أربعٌ في المقال (ثمانٍ في
+       أقصاه) وأسئلته أربعة (ستة في أقصاها). المرجَّح بالحقبة بقي يطلب ٥٢٪ جملاً قصيرة، ويقبل
+       حتى ٢٤ وقفة و١١ سؤالاً، فأُمرت مسوداتٌ تطابقه اليوم بأن «تقطع الجمل المركّبة» ومرّت
+       مسوداتٌ تُكثر الوقفات — وهما ما رآه الحَكَم الأعمى: «كتلٌ قصيرة متقطّعة» و«…» في كل
+       موضع. من هذه النطاقات تُكتب الوصفة وتُعاير أوامر الإصلاح. */
+    bands: recentBands(texts),
   }
 }
+
+const RECENT_BAND_KEYS = ['ellipsisPer100', 'medianSentence', 'shortRate', 'singleRate', 'questions']
+function recentBands(texts) {
+  const rows = texts.map((text) => articleMetrics(text))
+  return Object.fromEntries(RECENT_BAND_KEYS.map((key) => {
+    const values = rows.map((row) => Number(row[key]) || 0).sort((a, b) => a - b)
+    return [key, { p15: percentile(values, .15), p35: percentile(values, .35), p50: percentile(values, .5), p65: percentile(values, .65), p85: percentile(values, .85) }]
+  }))
+}
+/* النطاقات اليوم إن كانت العيّنة كافية (عشرون مقالاً مؤرّخاً، وعشرة على الأقل). */
+const recentBandsOf = (dna) => ((dna?.recent?.sample || 0) >= 10 && dna.recent.bands?.medianSentence?.p50 > 0 ? dna.recent.bands : null)
 
 function ellipsisTightRate(articles) {
   const latest = latestArticles(articles, 10)
@@ -729,7 +747,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 } },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 50 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -800,12 +818,14 @@ export function styleBrief(rawDna, targetWords = 400) {
      مقالاته المرجّحة بالحقبة (p35–p65) مضروبةً في طول المقال المطلوب. */
   const perWords = (value) => (Number(value) || 0) * targetWords / 100
   const band = (key, fallback) => dna.perArticle?.[key] || { p35: fallback * .7, p50: fallback, p65: fallback * 1.3, p85: fallback * 1.6 }
+  const today = recentBandsOf(dna)
+  const articleScale = targetWords / Math.max(200, dna.article.median || 386)
   const ellipsisBand = band('ellipsisPer100', dna.marks.ellipsisPer100)
-  const ellipsisLow = Math.max(2, Math.round(perWords(ellipsisBand.p35)))
-  const ellipsisHigh = Math.max(ellipsisLow + 2, Math.round(perWords(ellipsisBand.p50) * 1.3))
+  const ellipsisLow = today ? Math.max(2, Math.round(perWords(today.ellipsisPer100.p35))) : Math.max(2, Math.round(perWords(ellipsisBand.p35)))
+  const ellipsisHigh = today ? Math.max(ellipsisLow + 1, Math.round(perWords(today.ellipsisPer100.p65)) + 1) : Math.max(ellipsisLow + 2, Math.round(perWords(ellipsisBand.p50) * 1.3))
   const questionBand = band('questionsPer100', dna.marks.questionsPerArticle / Math.max(1, (dna.article.median || 386) / 100))
-  const questionsLow = Math.max(2, Math.round(perWords(questionBand.p35)))
-  const questionsHigh = Math.max(questionsLow + 1, Math.round(perWords(questionBand.p65)))
+  const questionsLow = today ? Math.max(1, Math.round(today.questions.p35 * articleScale)) : Math.max(2, Math.round(perWords(questionBand.p35)))
+  const questionsHigh = today ? Math.max(questionsLow + 1, Math.round(today.questions.p65 * articleScale) + 1) : Math.max(questionsLow + 1, Math.round(perWords(questionBand.p65)))
   const antithesis = Math.max(2, Math.round(perWords(band('antithesisPer100', dna.moves.antithesisPer100).p65)))
   const tightEllipsis = (dna.marks?.ellipsisTightRate || 0) >= .6
   const pauseExample = tightEllipsis ? '«لأنهم عاجزون…بل لأن أحداً أقنعهم»' : '«لأنهم عاجزون… بل لأن أحداً أقنعهم»'
@@ -826,16 +846,18 @@ export function styleBrief(rawDna, targetWords = 400) {
   const closingMovesLine = closingMoves ? ` وتتوزّع خواتيم مقالاته الأخيرة هكذا: ${closingMoves}؛ ولا يختم بطريقةٍ واحدة كل مرة، وختام هذا المقال محدّدٌ في خطة بنائه.` : ''
   return [
     `بصمة الكاتب مقيسةٌ رقمياً من ${arabicCountPhrase(dna.sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
-    `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
+    today
+      ? `١) الجملة في مقالاته الأخيرة: وسيطها ${arabicCountPhrase(today.medianSentence.p50, WORD_FORMS)}، و${today.shortRate.p50}٪ من جمله تسع كلمات فأقل؛ تتفاوت أطوالها بين جملةٍ قصيرة حاسمة وأخرى أتمّ، ولا تُقطَّع الفكرة الواحدة على جملٍ مبتورة. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`
+      : `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
     `٢) نقاط الحذف «…»: بين ${ellipsisLow} و${arabicCountPhrase(ellipsisHigh, OCCURRENCE_FORMS)} في المقال كله لا أكثر، وقفةً قبل الانقلاب لا زخرفةً؛ الإكثار منها بصمة محاكاةٍ لا بصمته. ${tightEllipsis ? 'تلتصق بما قبلها وبما بعدها بلا مسافة' : 'تلتصق بما قبلها وتليها مسافة'}: ${pauseExample}.`,
     `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
-    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، ${recentShape ? `كثيفةٌ لا متقطّعة: وسيط فقرته اليوم ${arabicCountPhrase(recent.paragraphWordsMedian, WORD_FORMS)}، تنتقل داخلها من الصورة إلى الدليل إلى المعنى، ولا تُقطَّع الفكرة الواحدة على فقراتٍ من سطرين. فقرةٌ من سطرٍ واحد مرةً أو مرتين في المقال لا أكثر.` : `متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`}`,
-    `٥) الأسئلة البلاغية بين ${questionsLow} و${questionsHigh}، موزّعة لا متراكمة، وواحدٌ منها يصلح خاتمة.`,
+    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، ${recentShape ? `كثيفةٌ لا متقطّعة: وسيط فقرته اليوم ${arabicCountPhrase(recent.paragraphWordsMedian, WORD_FORMS)}، تنتقل داخلها من الصورة إلى الدليل إلى المعنى، ولا تُقطَّع الفكرة الواحدة على فقراتٍ من سطرين. ${today && today.singleRate.p50 > 0 ? `واجعل فقرةً أو اثنتين من جملةٍ واحدة بين الفقرات الكثيفة (نحو ${today.singleRate.p50}٪ من فقراته).` : 'وفقرةٌ من جملةٍ واحدة تمرّ أحياناً بين الفقرات الكثيفة.'}` : `متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`}`,
+    `٥) الأسئلة البلاغية بين ${questionsLow} و${questionsHigh}، موزّعة لا متراكمة.`,
     `٦) الصوت جمعيّ بـ«نحن» وأفعال الجماعة («نربّي»، «نعيش»، «نسمّي»). ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
     `٧) الاقتباس داخل النص بين «…» لا بعلامات لاتينية. ممنوع: الشرطة الاعتراضية —، والعناوين الفرعية، والتعداد النقطي أو الرقمي، والرموز التعبيرية، وعلامات ماركداون.`,
     `٨) الطول شرطُ قبولٍ لا اقتراح: ${arabicCountPhrase(targetWords, WORD_FORMS)}. النص الأقصر من ${arabicCountPhrase(Math.round(targetWords * .85), WORD_FORMS)} يُرفض ويُعاد. اكتب نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} بنحو ${arabicCountPhrase(Math.round(targetWords / paragraphs), WORD_FORMS)} للفقرة في المتوسط — عُدَّها قبل الإخراج. لا تختم قبل بلوغ العدد.`,
     `٩) الخاتمة تنقلب أو تسأل، ولا تلخّص: ${dna.closings.questionRate}٪ من خواتيمه سؤال و${dna.closings.antithesisRate}٪ انقلابٌ بـ«بل».${closingMovesLine} ممنوع «في الختام» و«خلاصة القول» وكل عبارةٍ تعلن أنها خاتمة، ولا واجباتٍ للقارئ («جرّب هذا الأسبوع»، «فلنبدأ اليوم بخطوة»).`,
-    `١٠) الافتتاح مشهدٌ أو نفيٌ أو ضميرٌ جمعي، في جملةٍ لا تتجاوز ${arabicCountPhrase(Math.max(16, dna.sentence.p90), WORD_FORMS)}. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
+    `١٠) الافتتاح بحركة المطلع المحدّدة في خطة البناء، في جملةٍ لا تتجاوز ${arabicCountPhrase(Math.max(16, dna.sentence.p90), WORD_FORMS)}. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
     `١١) عباراتٌ محظورة لأنها غائبةٌ تماماً عن أرشيفه: ${(dna.banned || BANNED_PHRASES).filter((phrase) => phrase !== 'صيدة' && phrase !== 'صيد').slice(0, 24).join(' · ')}.`,
     '١٢) لا تستخدم كلمة «صيدة» ولا «صيد» بأي صيغة.',
     '١٣) ممنوع منعاً باتاً تكرار جملةٍ أو عبارةٍ أو إعادة صياغة الفكرة نفسها لتطويل النص. لا يكرّر الدكتور جملةً في مقاله قط، والتكرار يُرفض آلياً مهما بلغت بقية الأرقام. كل فقرةٍ تدفع المقال خطوةً جديدة إلى الأمام.',
@@ -1210,24 +1232,41 @@ export function judgeStyle(body, rawDna, options = {}) {
     if (grade < .8 && fix) fixes.push(fix)
   }
 
+  /* ٢٥ سبتمبر ٢٠٢٦ — أوامر الإصلاح تُعاير على مقالاته الأخيرة: تدقيقٌ على آخر عشرين مقالاً
+     له وجد الحَكَم يأمر بما لا يفعله — خاتمته «تلخّص» في ١١ منها، وجمله «تُقطَّع» في ٨،
+     و«أدخل: دعونا · علينا» وهما مما ترك. المعايير هنا لا تشتدّ عمّا كانت، بل ترتخي نحو
+     صوته اليوم حيث ابتعد المرجَّح بالحقبة عنه. */
+  const recent = dna.recent || {}
+  const today = recentBandsOf(dna)
+  const pauseExample = (dna.marks?.ellipsisTightRate || 0) >= .6 ? '«عاجزون…بل»' : '«عاجزون… بل»'
+
   /* ١ — نقاط الحذف: أثقل علامةٍ في بصمته (٩٤٪ من مقالاته، وسيط ٢٨ وقفة). */
-  const ellipsisWanted = Math.max(4, Math.round((bands.ellipsisPer100?.p35 ?? 4) * metrics.words / 100))
-  const ellipsisCeiling = Math.round((bands.ellipsisPer100?.p85 ?? 13) * metrics.words / 100)
-  add('ellipsis', 'وقفات «…»', gradeWindow(metrics.ellipsisPer100, bands.ellipsisPer100), 18,
+  /* اليوم: الحدّ الأدنى عند p15 (مقالٌ بوقفةٍ واحدة يكتبه هو)، والأعلى عند p85 — المحاكاة
+     تُكثر الوقفات ولا تُقلّها. */
+  const ellipsisBand = today
+    ? { p03: 0, p35: today.ellipsisPer100.p15, p50: today.ellipsisPer100.p50, p85: today.ellipsisPer100.p85, p97: Math.max(today.ellipsisPer100.p85 * 1.8, today.ellipsisPer100.p85 + 1) }
+    : bands.ellipsisPer100
+  const ellipsisWanted = today ? Math.max(2, Math.round(today.ellipsisPer100.p35 * metrics.words / 100)) : Math.max(4, Math.round((bands.ellipsisPer100?.p35 ?? 4) * metrics.words / 100))
+  const ellipsisCeiling = today ? Math.round(today.ellipsisPer100.p65 * metrics.words / 100) + 1 : Math.round((bands.ellipsisPer100?.p85 ?? 13) * metrics.words / 100)
+  add('ellipsis', 'وقفات «…»', gradeWindow(metrics.ellipsisPer100, ellipsisBand), 18,
     `${metrics.ellipsis} وقفة`, `${ellipsisWanted}-${ellipsisCeiling}`,
-    metrics.ellipsisPer100 > (bands.ellipsisPer100?.p85 ?? 13)
+    metrics.ellipsisPer100 > (ellipsisBand?.p85 ?? 13)
       ? `الوقفات «…» أكثر من عادته (${metrics.ellipsis} في ${arabicCountPhrase(metrics.words, WORD_FORMS)}): أبقِ منها ${ellipsisCeiling} تقريباً في مواضع الانقلاب، واحذف البقية. الوقفة التي لا تسبق انقلاباً زخرفة.`
-      : `زد وقفات «…» إلى ${ellipsisWanted} على الأقل (الموجود ${metrics.ellipsis}): وقفةً قبل الانقلاب، تلتصق بما قبلها وتليها مسافة هكذا «عاجزون… بل».`)
+      : `زد وقفات «…» إلى ${ellipsisWanted} على الأقل (الموجود ${metrics.ellipsis}): وقفةً قبل الانقلاب هكذا ${pauseExample}.`)
 
   /* ٢ — طول الجملة: الطول عيب، القِصَر ليس. */
-  add('sentenceLength', 'وسيط الجملة', gradeAtMost(metrics.medianSentence, bands.medianSentence), 15,
-    `${arabicCountPhrase(metrics.medianSentence, WORD_FORMS)}`, `≤ ${arabicCountPhrase(bands.medianSentence?.p65 ?? 12, WORD_FORMS)}`,
-    `جملك أطول من عادته: وسيطها ${arabicCountPhrase(metrics.medianSentence, WORD_FORMS)} وعادته ${dna.sentence.median}. اكسر أطول ${arabicCountPhrase(Math.max(3, Math.round(metrics.sentences * .3)), SENTENCE_FORMS)} إلى جملتين حاسمتين.`)
+  const sentenceBand = today ? { ...bands.medianSentence, p65: today.medianSentence.p65, p97: today.medianSentence.p85 + 4 } : bands.medianSentence
+  const sentenceHabit = today ? today.medianSentence.p50 : dna.sentence.median
+  add('sentenceLength', 'وسيط الجملة', gradeAtMost(metrics.medianSentence, sentenceBand), 15,
+    `${arabicCountPhrase(metrics.medianSentence, WORD_FORMS)}`, `≤ ${arabicCountPhrase(sentenceBand?.p65 ?? 12, WORD_FORMS)}`,
+    `جملك أطول من عادته: وسيطها ${arabicCountPhrase(metrics.medianSentence, WORD_FORMS)} وعادته ${sentenceHabit}. اكسر أطول ${arabicCountPhrase(Math.max(3, Math.round(metrics.sentences * .3)), SENTENCE_FORMS)} إلى جملتين حاسمتين.`)
 
   /* ٣ — نسبة الجمل القصيرة. */
-  add('shortSentences', 'الجمل القصيرة', gradeAtLeast(metrics.shortRate, bands.shortRate), 12,
-    `${metrics.shortRate}٪`, `≥ ${bands.shortRate?.p35 ?? 40}٪`,
-    `${metrics.shortRate}٪ فقط من جملك تسع كلماتٍ فأقل، وعادته ${dna.sentence.shortRate}٪. اقطع الجمل المركّبة.`)
+  const shortBand = today ? { ...bands.shortRate, p35: today.shortRate.p35, p03: Math.round(today.shortRate.p35 / 3) } : bands.shortRate
+  const shortHabit = today ? today.shortRate.p50 : dna.sentence.shortRate
+  add('shortSentences', 'الجمل القصيرة', gradeAtLeast(metrics.shortRate, shortBand), 12,
+    `${metrics.shortRate}٪`, `≥ ${shortBand?.p35 ?? 40}٪`,
+    `${metrics.shortRate}٪ فقط من جملك تسع كلماتٍ فأقل، وعادته ${shortHabit}٪. اقطع أطول الجمل المركّبة، ولا تبتر فكرةً واحدة على جملٍ متقطّعة.`)
 
   /* ٤ — الجمل الطويلة جداً: نادرةٌ عنده (٥٪). */
   add('longSentences', 'الجمل الطويلة', gradeAtMost(metrics.longSentenceRate, bands.longSentenceRate), 6,
@@ -1241,19 +1280,22 @@ export function judgeStyle(body, rawDna, options = {}) {
     `${metrics.antithesis} (${metrics.antithesisPer100}/١٠٠)`, `≤ ${antithesisCeiling} في هذا الطول`,
     metrics.antithesisPer100 > (bands.antithesisPer100?.p85 ?? 1.3)
       ? `«بل» مرشوشة لا مقصودة (${arabicCountPhrase(metrics.antithesis, OCCURRENCE_FORMS)} في ${arabicCountPhrase(metrics.words, WORD_FORMS)}، وأقصى ما بلغه في مقالٍ كامل ${bands.antithesisPer100?.p97 ?? 2.3} لكل مئة). أبقِ منها ${antithesisCeiling} في مواضع الانقلاب الحقيقي واحذف الباقي؛ الانقلاب الذي لا يقلب شيئاً ركاكة.`
-      : `استعمل «…بل» مرةً أو مرتين (الموجود ${metrics.antithesis}) بصيغة «ليس كذا… بل كذا» في موضع انقلابٍ حقيقي.`)
+      : `«بل» أقل من عادته (الموجود ${metrics.antithesis}، وعادته نحو ${Math.max(2, Math.round((bands.antithesisPer100?.p50 ?? 1.2) * metrics.words / 100))} في هذا الطول): أضف ما ينقص في مواضع انقلابٍ حقيقي داخل المتن، بصيغٍ متنوّعة، لا في المطلع قالباً ولا في كل خاتمة.`)
 
   /* ٦ — الأسئلة البلاغية. */
-  add('questions', 'الأسئلة البلاغية', gradeInside(metrics.questions, bands.questions), 8,
-    `${metrics.questions}`, `${bands.questions?.p15 ?? 1}-${bands.questions?.p85 ?? 6}`,
-    metrics.questions < (bands.questions?.p15 ?? 1)
-      ? 'أضف سؤالاً بلاغياً أو سؤالين، وليكن أحدهما في الخاتمة.'
-      : 'قلّل الأسئلة؛ النص صار سلسلة أسئلة لا مقالاً.')
+  /* أسئلته اليوم بين صفرٍ (أربعةٌ من آخر عشرين مقالاً) وأحد عشر: نطاقٌ من العشرين لم يُحسّن
+     المعايرة (٢٠٪ ← ٣٠٪ من مقالاته تخالفه)، فيبقى النطاق المرجَّح؛ والوصفة وحدها تطلب وسطه. */
+  const questionBand = bands.questions
+  add('questions', 'الأسئلة البلاغية', gradeInside(metrics.questions, questionBand), 8,
+    `${metrics.questions}`, `${questionBand?.p15 ?? 1}-${questionBand?.p85 ?? 6}`,
+    metrics.questions < (questionBand?.p15 ?? 1)
+      ? 'أضف سؤالاً بلاغياً أو سؤالين في المتن.'
+      : `قلّل الأسئلة إلى ${questionBand?.p85 ?? 6} على الأكثر؛ النص صار سلسلة أسئلة لا مقالاً.`)
 
   /* ٧ — الصوت الجمعي. */
   add('collectiveVoice', 'الصوت الجمعي', gradeAtLeast(metrics.collective, bands.collective), 6,
     `${metrics.collective}`, `≥ ${bands.collective?.p35 ?? 1}`,
-    'أدخل الضمير الجمعي (نحن · دعونا · علينا · نعيش)؛ لا يكتب بصوت المحاضر المنفصل.')
+    `أدخل الضمير الجمعي (${['نحن', 'نعيش', 'نربّي', 'نسمّي'].filter((word) => !(recent.retired || []).includes(word)).join(' · ')})؛ لا يكتب بصوت المحاضر المنفصل.`)
 
   /* ٨ — إيقاع الفقرة: الفقرة المتضخّمة عيب. */
   add('paragraphRhythm', 'إيقاع الفقرات', gradeAtMost(metrics.medianParagraph, bands.medianParagraph), 8,
@@ -1264,17 +1306,29 @@ export function judgeStyle(body, rawDna, options = {}) {
   const openingClean = !/(?<!\p{L})(?:يعد|يعتبر|تعتبر|يشكل|تشكل)(?!\p{L})/u.test(bareText(text).slice(0, 90))
   add('opening', 'الافتتاح', Math.min(gradeAtMost(metrics.firstSentenceWords, bands.firstSentenceWords), openingClean ? 1 : .3), 8,
     `${arabicCountPhrase(metrics.firstSentenceWords, WORD_FORMS)}`, `≤ ${arabicCountPhrase(bands.firstSentenceWords?.p65 ?? 18, WORD_FORMS)} وبلا تعريف مدرسي`,
-    'الجملة الأولى طويلة أو تعريفية. ابدأ بمشهدٍ أو نفيٍ أو ضميرٍ جمعي في جملةٍ قصيرة.')
+    `الجملة الأولى طويلة أو تعريفية. اجعلها قصيرة (نحو ${arabicCountPhrase(bands.firstSentenceWords?.p50 ?? 7, WORD_FORMS)}) على حركة المطلع المحدّدة في خطة المقال، بلا تعريفٍ مدرسي («يُعدّ»، «يُعتبر»).`)
 
-  /* ١٠ — الخاتمة تنقلب أو تسأل ولا تلخّص. */
-  const last = bareText(metrics.lastSentence)
-  const closingOpen = metrics.lastSentence.includes('؟')
-    || /(?<!\p{L})بل(?!\p{L})/u.test(last)
-    || /…/.test(metrics.lastSentence)
-    || /(?<!\p{L})(?:ربما|لعل|نحتاج|علينا|دعونا|فلنبدأ|يبدأ)(?!\p{L})/u.test(last)
-  add('closing', 'الخاتمة', closingOpen ? (countWords(metrics.lastSentence) <= 32 ? 1 : .6) : .25, 8,
-    closingOpen ? 'تفتح' : 'تلخّص', 'سؤال أو انقلاب «بل» أو وقفة «…»',
-    'الخاتمة تلخّص بدل أن تفتح. اجعل الجملة الأخيرة سؤالاً أو انقلاباً بـ«بل»، ولا تتجاوز ثلاثين كلمة.')
+  /* ١٠ — الخاتمة تنقلب أو تسأل ولا تلخّص. كانت تُقرأ من آخر «جملة» بعد تقطيعها عند «…»
+     الملتصقة (منذ ٢٠٢٦)، فتضيع الوقفة التي تقلب المعنى («…ثم يكتشف أنه كان يهرب من نفسه»)،
+     ولا تعرف من انقلاباته إلا «بل» — وهو ينقلب بـ«لا» و«لكن» و«أمّا» كثيراً. رسبت بها ١١ من
+     خواتيم آخر عشرين مقالاً له ودفعت المسودات إلى سؤالٍ أو «بل» في كل ختام. الآن: العلامات
+     في الجملة الأخيرة كاملةً (حتى النقطة أو السؤال)، والطول لما بعد آخر وقفة؛ والتلخيص
+     الصريح («في الختام»، «وبالتالي») يرسب دائماً. مقالاته منذ ٢٠٢٥ تعبرها: ٤٦٪ ← ٩٠٪،
+     والنص الآلي العام: ١٩٪ ← ٣١٪. */
+  const closingParagraphs = paragraphsOf(text)
+  const closingSegments = (closingParagraphs[closingParagraphs.length - 1] || '').split(/(?<=[.!؟?])\s+/u).map((part) => part.trim()).filter(Boolean)
+  const closingTail = closingSegments[closingSegments.length - 1] || metrics.lastSentence
+  const tailBare = bareText(closingTail)
+  const closingSummary = /^(?:و?في الختام|ختاما|و?خلاصة القول|و?خلاصة|و?بالتالي|و?هكذا|و?من هنا|و?لذلك فإن|و?لذا فإن|و?إجمالا|و?باختصار)(?!\p{L})/u.test(tailBare)
+  const closingOpen = !closingSummary && (closingTail.includes('؟')
+    || closingTail.includes('…')
+    || /(?<!\p{L})(?:بل|لا|لكن|لكنه|لكنها|لكننا|أما|ربما|لعل|نحتاج|يبدأ|عندها)(?!\p{L})/u.test(tailBare))
+  const closingWords = countWords(metrics.lastSentence)
+  add('closing', 'الخاتمة', closingOpen ? (closingWords <= 22 ? 1 : closingWords <= 32 ? .6 : .25) : .25, 8,
+    closingOpen ? (closingWords <= 22 ? 'تنقلب' : 'طويلة') : 'تلخّص', 'انقلابٌ قصير («…»، «لا»، «بل»، «لكن») أو سؤال',
+    closingOpen
+      ? `الجملة الأخيرة طويلة (${arabicCountPhrase(closingWords, WORD_FORMS)}): خواتيمه مكثّفة، فاختصرها إلى نحو اثنتي عشرة كلمة.`
+      : 'الخاتمة تلخّص بدل أن تنقلب. اجعل الجملة الأخيرة قصيرةً تقلب الفكرة أو تفتحها كما حدّدها الختام في خطة المقال: وقفة «…» قبل انقلاب، أو «لا» أو «بل» أو «لكن»، أو سؤال. لا «في الختام» ولا تلخيص.')
 
   /* ١١ — التكرار: أثقل عيبٍ ينحدر إليه النموذج المجاني تحت ضغط الأرقام.
      توزيعه كله أصفار، فالعتبات هنا مطلقة لا نسبية. */

@@ -763,6 +763,7 @@ assert.ok(longOrphan.split('\n\n')[1].length > 160, 'اليتيمة في الا�
 assert.ok(judgeStyle(longOrphan, eraDna, { generated: true }).corrections.some((line) => line.includes('الفقرة اليتيمة')), 'واليتيمة الطويلة تُضبط')
 const negatedScene = [orphanDraft.split('\n\n')[0], 'وفي مدارس أخرى لا يتكرر المشهد نفسه: طالبٌ يسأل، ومعلّمٌ يلتفت إلى الوجوه قبل الدفاتر، وتصير الحصة حواراً لا تلقيناً.'].join('\n\n')
 assert.ok(!judgeStyle(negatedScene, eraDna, { generated: true }).corrections.some((line) => line.includes('الجملة الجاهزة')), 'والنفي لا يُعدّ مشهداً جاهزاً')
+for (const lead of ['ولا', 'فلا', 'ولم']) assert.ok(!judgeStyle(negatedScene.replace('لا يتكرر', `${lead} يتكرر`), eraDna, { generated: true }).corrections.some((line) => line.includes('الجملة الجاهزة')), `والنفي بـ«${lead}» لا يُعدّ مشهداً جاهزاً`)
 const hisOrphans = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الفقرة اليتيمة') || line.includes('الجملة الجاهزة'))).length
 assert.ok(hisOrphans <= 2, `ولا تكاد تُنسب إلى مقالاته (${hisOrphans} من ${dated.length})`)
 

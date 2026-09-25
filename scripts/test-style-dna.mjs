@@ -677,6 +677,17 @@ assert.ok(inventedVerdict.corrections.some((line) => line.includes('الجملة
 assert.ok(!judgeStyle(invented, eraDna).corrections.some((line) => line.includes('الحوار المختلق') || line.includes('الجملة العامية')), 'وما يكتبه هو بيده لا يُحاسَب')
 const fromHim = judgeStyle(invented, eraDna, { generated: true, authorMaterial: 'سألت ابني بعد الامتحان: «وين وصلت؟» فقال: «ما أدري…خلصت».' })
 assert.ok(!fromHim.corrections.some((line) => line.includes('الحوار المختلق') || line.includes('الجملة العامية')), 'وما جاء من مادته هو لا يُحاسَب')
+/* والإعفاء في موضعه وحده (Codex): لفظ حكايةٍ في المادة لا يُعفي المقال كله. */
+const studyOnly = judgeStyle(invented, eraDna, { generated: true, authorMaterial: 'قالت دراسة Lally et al. (2010) إن العادة تحتاج نحو 66 يوماً لتستقر.' })
+assert.ok(studyOnly.corrections.some((line) => line.includes('احذف الحوار المختلق')), '«قالت دراسة» في المادة لا تجيز حواراً مختلقاً في المقال')
+const mixedStory = [
+  'في محاضرة الأحد سألتُ طلابي: لماذا تتعلّمون؟ فقال أحدهم إنه يتعلّم من أجل الشهادة، وضحك الآخرون كأن الجواب بديهي…',
+  'وحدثتني معلمةٌ في مدرسةٍ أخرى عن طالبٍ لا يسأل أبداً؛ كأن السؤال عنده عيب.',
+  'نحن نربّي أبناءنا على الإجابة لا على السؤال. والمدرسة لا تصنع هذا وحدها: نحن نصنعه كل مساء حين نسأل عن الدرجة قبل أن نسأل عن اليوم…',
+].join('\n\n')
+const mixedVerdict = judgeStyle(mixedStory, eraDna, { generated: true, authorMaterial: 'في محاضرة الأحد سألت طلابي: لماذا تتعلمون؟ فقال أحدهم: من أجل الشهادة. وضحك الباقون.' })
+const mixedOrder = mixedVerdict.corrections.find((line) => line.includes('الحكاية الشخصية المختلقة')) || ''
+assert.ok(mixedOrder.includes('حدثتني') && !mixedOrder.includes('سألتُ'), `حكايته من مادته تبقى، والمختلقة بجوارها تُحاسَب (${mixedOrder.slice(0, 90)})`)
 const inventedStory = 'حدثتني معلمةٌ عن طالبٍ لا يسأل…والسؤال عنده خوف.\n\nنحن نربّي أبناءنا على الإجابة؛ لا على السؤال. والمدرسة لا تصنع هذا وحدها: نحن نصنعه كل مساء حين نسأل عن الدرجة قبل أن نسأل عن اليوم، وحين نقيس التعب بعدد الساعات لا بما بقي في القلب…\n\nوربما يبدأ التعلّم الحقيقي يوم نكفّ عن العدّ.'
 assert.ok(judgeStyle(inventedStory, eraDna, { generated: true, authorMaterial: 'دراسة Lally et al. (2010): نحو 66 يوماً لتكوين العادة.' }).corrections.some((line) => line.includes('الحكاية الشخصية المختلقة')), 'ومادةٌ بلا حكاية لا تجيز حكايةً مختلقة')
 const hisDialect = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الجملة العامية'))).length
@@ -694,6 +705,7 @@ await generatePerfectArticle({ ...input, material: 'في محاضرة الأحد
 assert.ok(sawMaterial, 'مادته تصل الكاتب ومعها قاعدتها')
 assert.match(studio, /material: material\.trim\(\)/, 'حقل مادته موصولٌ بطلب الكتابة')
 assert.match(studio, /authorMaterial: bundle\.authorMaterial \|\| ''/, 'وحَكَم الاستوديو يعرف ما جاء منه')
+assert.ok((studio.match(/setMaterial\(''\)/g) || []).length >= 4, 'ومادة المقال لا تنتقل إلى فكرةٍ أخرى تُحمَّل في الاستوديو (Codex)')
 
 const CHANGE_COUNT_FORMS = { one: 'تعديل واحد', two: 'تعديلين', few: 'تعديلات', many: 'تعديلاً' }
 const PLACE_COUNT_FORMS = { one: 'موضع واحد', two: 'موضعين', few: 'مواضع', many: 'موضعاً' }

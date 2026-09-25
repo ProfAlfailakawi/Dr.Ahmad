@@ -874,8 +874,26 @@ const INVENTED_DIALOGUE_PATTERN = /(?<!\p{L})(?:ف|و)?(?:يجيب|تجيب|ير
 const DIALECT_WORD_PATTERN = /(?<!\p{L})(?:شلون|اشلون|إشلون|وش|ليش|هني|هنيه|لسه|لسّه|وايد|ماكو|شنو|شفيك|شفيج|يبه|يمه|يمّه|مو|مب|تبي|تبين|وين|شسوي)(?!\p{L})/u
 const dialectQuotes = (text) => [...String(text || '').matchAll(/«([^»]{1,200})»/gu)].map((match) => match[1]).filter((quote) => DIALECT_WORD_PATTERN.test(bareText(quote)))
 /* حين يزوّد الدكتور المحرك بمادته (موقفٌ عاشه، جملةٌ سمعها) تصير الحكاية حكايته
-   والجملة جملته: لا تُحاسَب المسودة على ما جاء منه. */
-const materialTellsStory = (material = '') => /(?<!\p{L})(?:[وف]?(?:أنا|لي|سألت|سألني|سألتني|قلت|قال|قالت|رأيت|زرت|التقيت|حدثني|حدثتني|أخبرني|أخبرتني|صديقي|صديقتي|ابني|ابنتي|بناتي|أبنائي|طلابي|طالبي|طالبتي))(?!\p{L})/u.test(bareText(material))
+   والجملة جملته — في موضعها وحده: ما حول الأثر يشارك مادته ثلاث كلماتٍ دالّة فأكثر
+   (بجذعٍ خفيف بلا «و/ف» ولا «ال»). كان وجود لفظ حكايةٍ في المادة («قالت دراسة»)
+   يُعفي المقال كله، فتمرّ حكايةٌ مختلقة في فقرةٍ أخرى بلا أمر إصلاح (Codex). */
+const MATERIAL_STOPWORDS = new Set(['التي', 'الذي', 'هذا', 'هذه', 'ذلك', 'تلك', 'على', 'إلى', 'الى', 'كان', 'كانت', 'يكون', 'لكن', 'حين', 'عندما', 'بعد', 'قبل', 'بين', 'حتى', 'لأن', 'ليس', 'ليست', 'ماذا', 'لماذا', 'كيف', 'نحن', 'أنه', 'أنها', 'إنه', 'إنها', 'فيه', 'فيها', 'منه', 'منها', 'عنه', 'عنها', 'كله', 'كلها'])
+const materialStem = (word) => word.replace(/^[وف](?=\p{L}{3})/u, '').replace(/^(?:بال|لل|ال)(?=\p{L}{2})/u, '')
+const contentStems = (value = '') => new Set(bareText(value).split(/[^\p{L}]+/u).map(materialStem).filter((word) => word.length >= 3 && !MATERIAL_STOPWORDS.has(word)))
+const unsupportedHits = (text, pattern, materialStems) => {
+  const hits = []
+  for (const paragraph of paragraphsOf(text)) {
+    for (const match of paragraph.matchAll(pattern)) {
+      if (materialStems.size) {
+        let shared = 0
+        for (const stem of contentStems(paragraph.slice(Math.max(0, match.index - 60), match.index + match[0].length + 100))) if (materialStems.has(stem)) shared += 1
+        if (shared >= 3) continue
+      }
+      hits.push(match[0].trim())
+    }
+  }
+  return [...new Set(hits)]
+}
 
 /* المطابقة بحدود الكلمة: «صيد» داخل «رصيد» و«قصيدة» ليست الكلمة الممنوعة.
    هذا الخطأ وحده كان يرسّب تسعة عشر مقالاً من مقالاته. */
@@ -1328,9 +1346,9 @@ export function judgeStyle(body, rawDna, options = {}) {
   /* الحكاية الشخصية تُحاسَب في المسودة المولَّدة وحدها: ما يرويه هو من حياته حقيقيٌّ له
      («حين أختبرُ مدرسةَ بناتي»)، وما يرويه النموذج بضمير المتكلم مختلقٌ بالضرورة. */
   const material = String(options.authorMaterial || '')
-  const ownStory = materialTellsStory(material)
-  const anecdoteHits = options.generated && !ownStory ? [...new Set((text.match(PERSONAL_ANECDOTE_PATTERN) || []).map((hit) => hit.trim()))].slice(0, 4) : []
-  const dialogueHits = options.generated && !ownStory ? [...new Set((text.match(INVENTED_DIALOGUE_PATTERN) || []).map((hit) => hit.trim()))].slice(0, 3) : []
+  const materialStems = contentStems(material)
+  const anecdoteHits = options.generated ? unsupportedHits(text, PERSONAL_ANECDOTE_PATTERN, materialStems).slice(0, 4) : []
+  const dialogueHits = options.generated ? unsupportedHits(text, INVENTED_DIALOGUE_PATTERN, materialStems).slice(0, 3) : []
   const dialectHits = options.generated ? dialectQuotes(text).filter((quote) => !bareText(material).includes(bareText(quote))).slice(0, 3) : []
   const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length
   if (dna.recent || voiceSlips) {

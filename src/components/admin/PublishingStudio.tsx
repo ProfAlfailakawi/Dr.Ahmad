@@ -2551,6 +2551,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
 
   const adoptSavedIdea = (decision: EditorialBoardDecision) => {
     setIdea(decision.idea)
+    /* مادةُ المقال السابق ليست مادة هذا (Codex): حكايته وجملته لا تنتقلان إلى فكرةٍ أخرى. */
+    setMaterial('')
     setEditorialDecision(null)
     setNotice(`حُمّلت فكرة «${decision.idea.slice(0, 60)}» من سجل المجلس — اعرضها عليه الآن برادار اليوم.`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -2593,6 +2595,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     setProposalSourcePerson(row.name.slice(0, 80))
     setProposalSourceContext(`من صندوق الوارد: ${row.message.slice(0, 220)}`)
     setIdea(seed.slice(0, 300))
+    setMaterial('')
     setEditorialDecision(null)
     setInboxSuggestionsOpen(false)
     setNotice('التُقط المقترح من صندوق الوارد بمصدره — اعرضه على المجلس.')
@@ -2741,7 +2744,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       const stored = sessionStorage.getItem('admin:publishing-room-seed')
       if (!stored) return
       const seed = JSON.parse(stored) as { idea?: string; audience?: string; purpose?: string; openBoard?: boolean }
-      if (seed.idea) setIdea(seed.idea)
+      if (seed.idea) { setIdea(seed.idea); setMaterial('') }
       if (seed.audience) setAudience(seed.audience)
       if (seed.purpose) setAngle(seed.purpose.slice(0, 180))
       setEditorialDecision(null)
@@ -3564,6 +3567,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     // حتى لا تتحول بطاقات الاقتراح القديمة إلى باب خلفي يتجاوز قرار المجلس.
     setIdea(title)
     setAngle(suggestion)
+    setMaterial('')
     setEditorialDecision(null)
     setEditorialProgress('idle')
     setView('idea')

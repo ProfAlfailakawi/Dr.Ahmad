@@ -256,6 +256,25 @@ const bodyOfItem = (item) => String(typeof item === 'string' ? item : item?.body
    مقالاً قديماً) والوصفة كانت تأمر بها؛ «؛» في ١٣ من آخر ١٤ مقالاً ولم تُذكر؛ و«فاسأل
    نفسك:» ختمت ٨ منها و«وربما يبدأ…» ٥. القائمة تتجدد بنفسها كلما نشر. */
 const RETIREMENT_CANDIDATES = ['دعونا', 'علينا أن نعترف', 'أفلا', 'تماماً', 'أصلاً', 'أبداً', 'مطلقاً', 'بالذات', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل']
+
+/* ٢٥ سبتمبر ٢٠٢٦ — كيف يفتتح: حركة الجملة الأولى في المقال. حَكَمٌ أعمى: «مطالعه جملٌ
+   مكثّفة كأنها عناوين، والمحاكاة تفضّل المشهد السينمائي»؛ وبُنى الكاتب الآلي كانت تُختار
+   بالتساوي، فافتتحت ثلاثةٌ من كل عشر بالنفي («ليست المشكلة…») وهو يفتتح به ثلاثةً من عشرين.
+   آخر عشرين مقالاً له: أطروحة مكثّفة ٥ · مشهد ٦ · «نحن» ٤ · نفي ٣ · سؤال ١ · قول ١. */
+export const OPENING_MOVES = ['thesis', 'scene', 'we', 'negation', 'question', 'quote']
+export function openingMove(text = '') {
+  const first = paragraphsOf(String(text || ''))[0] || ''
+  const sentence = (first.split(/(?<=[.؟!…])\s*/u)[0] || '').trim()
+  const bare = bareText(sentence)
+  const head = (bare.split(/\s+/u)[0] || '').replace(/[،,:«»]/gu, '')
+  if (/^«/u.test(bare) || /^(نقول|يقولون|يقول|تقول|نسمع|تتردد)[^.؟!]{0,24}«/u.test(bare)) return 'quote'
+  if (/[؟?]\s*$/u.test(sentence) || /^(هل|لماذا|كيف|ماذا|متى|أين|أي)$/u.test(head)) return 'question'
+  if (/^(ليس|ليست|لسنا|لست|لم|لا|لن)$/u.test(head)) return 'negation'
+  if (/^(نحن|كلنا|نعيش|نربي|نقول|نركض|نسمي|نظن|نحب|نخاف|نطلب|نريد|نكبر)$/u.test(head) || (/^\p{L}{3,}نا$/u.test(head) && !/^(هنا|أنا|لنا|بنا|ربنا|هاهنا|هنالك)$/u.test(head))) return 'we'
+  if (/^(في|وفي|حين|عندما|كل|صباح|مساء|ليلة|تظهر|يظهر|يدخل|تدخل|دخل|دخلت|يجلس|تجلس|جلس|جلست|يقف|تقف|وقف|وقفت|يعود|تعود|عاد|عادت|ترتفع|يرتفع|تنتهي|ينتهي|انتهى|انتهت|يرن|رن)$/u.test(head)) return 'scene'
+  return 'thesis'
+}
+
 function recentVoice(articles) {
   const latest = latestArticles(articles, 20)
   const texts = latest.map(bodyOfItem)
@@ -274,6 +293,7 @@ function recentVoice(articles) {
     paragraphsMedian: percentile(texts.map((text) => paragraphsOf(text).length).sort((a, b) => a - b), .5),
     paragraphsP75: percentile(texts.map((text) => paragraphsOf(text).length).sort((a, b) => a - b), .75),
     paragraphWordsMedian: percentile(texts.flatMap((text) => paragraphsOf(text).map((para) => para.split(/\s+/u).filter(Boolean).length)).sort((a, b) => a - b), .5),
+    openingShares: Object.fromEntries(OPENING_MOVES.map((move) => [move, round2(texts.filter((text) => openingMove(text) === move).length / Math.max(1, texts.length))])),
   }
 }
 
@@ -709,7 +729,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38 },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -845,6 +865,17 @@ export function styleBrief(rawDna, targetWords = 400) {
 
 /* لقاءٌ شخصيّ بضمير المتكلم وحوار: لا يرد في مقالاته منذ ٢٠٢٦، والمحاكاة تكثر منه. */
 const PERSONAL_ANECDOTE_PATTERN = /(?<![\p{L}])(?:و|ف)?(?:سألتُ?ه?ا?|سألتُهم|أتذكّر|أتذكر|حدّثتني|حدثتني|حدّثني|حدثني|قال لي|قالت لي|صديقٌ لي|صديق لي|جارتي|ابنُ أخي|ابن أخي|أعرف رجلاً|أعرف رجلا|زرتُ|التقيتُ)(?![\p{L}])/gu
+
+/* ٢٥ سبتمبر ٢٠٢٦ — وحوارٌ مختلق على ألسنة الناس، وعاميةٌ بين «…». الحَكَم الأعمى:
+   «يُسأل الموظف: كيف حالك؟ فيجيب: بخير» و«وش قال المدرس؟ فيجيب…» و«وأنت لسه؟» في
+   المحاكاة وحدها. أرشيفه: صفر جملةٍ عامية بين «…» في ١٤٣ مقالاً، وحوارٌ من هذا النوع
+   في ثلاثة مقالات منذ ٢٠٢٥؛ والمسودات المولَّدة: عاميةٌ في ٣ من ٣٠ وحوارٌ في ٣ من ٣٠. */
+const INVENTED_DIALOGUE_PATTERN = /(?<!\p{L})(?:ف|و)?(?:يجيب|تجيب|يردّ|يرد|تردّ|ترد)(?:ه|ها|ون)?(?!\p{L})\s*[:«]|(?<!\p{L})(?:ف|و)?(?:يسأل|تسأل|يقول|تقول)(?:ه|ها|ون)?(?:\s+\p{L}+){0,4}\s*:\s*«[^»]{1,120}[؟?]»/gu
+const DIALECT_WORD_PATTERN = /(?<!\p{L})(?:شلون|اشلون|إشلون|وش|ليش|هني|هنيه|لسه|لسّه|وايد|ماكو|شنو|شفيك|شفيج|يبه|يمه|يمّه|مو|مب|تبي|تبين|وين|شسوي)(?!\p{L})/u
+const dialectQuotes = (text) => [...String(text || '').matchAll(/«([^»]{1,200})»/gu)].map((match) => match[1]).filter((quote) => DIALECT_WORD_PATTERN.test(bareText(quote)))
+/* حين يزوّد الدكتور المحرك بمادته (موقفٌ عاشه، جملةٌ سمعها) تصير الحكاية حكايته
+   والجملة جملته: لا تُحاسَب المسودة على ما جاء منه. */
+const materialTellsStory = (material = '') => /(?<!\p{L})(?:[وف]?(?:أنا|لي|سألت|سألني|سألتني|قلت|قال|قالت|رأيت|زرت|التقيت|حدثني|حدثتني|أخبرني|أخبرتني|صديقي|صديقتي|ابني|ابنتي|بناتي|أبنائي|طلابي|طالبي|طالبتي))(?!\p{L})/u.test(bareText(material))
 
 /* المطابقة بحدود الكلمة: «صيد» داخل «رصيد» و«قصيدة» ليست الكلمة الممنوعة.
    هذا الخطأ وحده كان يرسّب تسعة عشر مقالاً من مقالاته. */
@@ -1296,13 +1327,20 @@ export function judgeStyle(body, rawDna, options = {}) {
   const retiredHits = hasBanned(text, (dna.recent?.retired || []).filter((word) => word !== 'لكنّ'))
   /* الحكاية الشخصية تُحاسَب في المسودة المولَّدة وحدها: ما يرويه هو من حياته حقيقيٌّ له
      («حين أختبرُ مدرسةَ بناتي»)، وما يرويه النموذج بضمير المتكلم مختلقٌ بالضرورة. */
-  const anecdoteHits = options.generated ? [...new Set((text.match(PERSONAL_ANECDOTE_PATTERN) || []).map((hit) => hit.trim()))].slice(0, 4) : []
-  if (dna.recent || anecdoteHits.length) {
-    add('currentVoice', 'صوته اليوم', retiredHits.length || anecdoteHits.length ? Math.max(0, 1 - .5 * (retiredHits.length + anecdoteHits.length)) : 1, 8,
-      [...retiredHits, ...anecdoteHits].join(' · ') || 'نظيف', 'صفر',
+  const material = String(options.authorMaterial || '')
+  const ownStory = materialTellsStory(material)
+  const anecdoteHits = options.generated && !ownStory ? [...new Set((text.match(PERSONAL_ANECDOTE_PATTERN) || []).map((hit) => hit.trim()))].slice(0, 4) : []
+  const dialogueHits = options.generated && !ownStory ? [...new Set((text.match(INVENTED_DIALOGUE_PATTERN) || []).map((hit) => hit.trim()))].slice(0, 3) : []
+  const dialectHits = options.generated ? dialectQuotes(text).filter((quote) => !bareText(material).includes(bareText(quote))).slice(0, 3) : []
+  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length
+  if (dna.recent || voiceSlips) {
+    add('currentVoice', 'صوته اليوم', voiceSlips ? Math.max(0, 1 - .5 * voiceSlips) : 1, 8,
+      [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`)].join(' · ') || 'نظيف', 'صفر',
       [
         retiredHits.length ? `احذف ما غاب عن مقالاته الأخيرة كلها: ${retiredHits.map((word) => `«${word}»`).join(' · ')}.` : '',
-        anecdoteHits.length ? `احذف الحكاية الشخصية المختلقة (${anecdoteHits.map((hit) => `«${hit}»`).join(' · ')}): لا يكتب في مقالاته الحديثة حواراً مع طالبٍ أو معلمٍ أو قريب. اجعلها مشهداً عامّاً بلا «أنا» (تظهر النتيجة، يتغيّر شكل البيت…).` : '',
+        anecdoteHits.length ? `احذف الحكاية الشخصية المختلقة (${anecdoteHits.map((hit) => `«${hit}»`).join(' · ')}): لا يكتب في مقالاته الحديثة حواراً مع طالبٍ أو معلمٍ أو قريب. اجعلها مشهداً عامّاً بلا «أنا» ولا أسماء، بفعلٍ مضارع يعرفه كل قارئ.` : '',
+        dialogueHits.length ? `احذف الحوار المختلق (${dialogueHits.map((hit) => `«${hit}»`).join(' · ')}): لا يُجري على ألسنة الناس سؤالاً وجواباً؛ صِف ما يحدث وصفاً عامّاً بلا أقوال.` : '',
+        dialectHits.length ? `اكتب بالفصحى أو احذف الجملة العامية بين «…» (${dialectHits.map((quote) => `«${quote}»`).join(' · ')}): لم يكتب جملةً عامية واحدة بين «…» في مقالاته.` : '',
       ].filter(Boolean).join(' '))
   }
 

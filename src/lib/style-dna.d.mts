@@ -34,6 +34,20 @@ export interface StyleDna {
   closings: { questionRate: number; antithesisRate: number; appealRate: number }
   perArticle: Record<string, StyleBand>
   era?: { halfLifeYears: number; weightedSample: number; recentArticles: number }
+  /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً، ويتجدد كلما نشر. */
+  recent?: {
+    sample: number
+    retired: string[]
+    semicolonShare: number
+    askYourselfShare: number
+    perhapsBeginsShare: number
+    openers: string[]
+    paragraphsMedian?: number
+    paragraphsP75?: number
+    paragraphWordsMedian?: number
+    /* حركة الجملة الأولى في مقالاته: بها تُوزَّع بُنى المقالات المولَّدة. */
+    openingShares?: Partial<Record<OpeningMove, number>>
+  }
   banned: string[]
   bannedVoice: string[]
 }
@@ -79,6 +93,10 @@ export declare function countWords(value?: string): number
 export declare function sentencesOf(value?: string): string[]
 export declare function paragraphsOf(value?: string): string[]
 
+export type OpeningMove = 'thesis' | 'scene' | 'we' | 'negation' | 'question' | 'quote'
+export declare const OPENING_MOVES: OpeningMove[]
+export declare function openingMove(text?: string): OpeningMove
+
 export declare function measureStyleDna(articles: ({ body?: string; iso?: string; date?: string } | string)[]): StyleDna | null
 export declare function articleMetrics(body: string, options?: { collective?: string[] }): StyleMetrics
 export declare function deriveCollectiveVerbs(corpus?: string): string[]
@@ -104,6 +122,8 @@ export declare function judgeStyle(
     threshold?: number
     /* المسودة من صنع المحرك: تُحاسَب على الحكاية الشخصية المختلقة، وما يكتبه هو لا. */
     generated?: boolean
+    /* مادته هو لهذا المقال (موقفٌ عاشه، جملةٌ سمعها): ما جاء منها لا يُحاسَب. */
+    authorMaterial?: string
   },
 ): StyleVerdict
 

@@ -307,6 +307,12 @@ function recentVoice(articles) {
     perhapsBeginsShare: closingShare(/ربما يبدأ/u),
     /* الاستشهاد بدراسةٍ مسمّاة: في أربعة عشر من آخر عشرين مقالاً، وغيابه أول ما كشف المسودات. */
     citationShare: share({ test: (text) => citationSpans(text).length > 0 }),
+    /* كم مرجعاً يسمّي حين يستشهد: وسيطٌ ثلاثة (١–٦) في آخر عشرين مقالاً، والوصفة كانت تسقفه باثنين فجاءت
+       المسودات بمرجعٍ واحد أو بلا مرجع، وعدّها الحَكَم الأعمى في جولة J علامةً عليها. */
+    citationsPerArticle: (() => {
+      const counts = texts.map((text) => new Set(citationSpans(text).flatMap((span) => span.keys)).size).filter(Boolean).sort((a, b) => a - b)
+      return counts.length ? { p50: percentile(counts, .5), p85: percentile(counts, .85) } : null
+    })(),
     /* خواتيمه كما هي: انقلابٌ بـ«بل» في فقرته الأخيرة ٨ من ٢٠، وسؤالٌ ختامي ٢ من ٢٠. كان كل ختامٍ
        غير «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل»، فختمت به ثماني مسوداتٍ من عشر في جولة I. */
     closingAntithesisShare: closingShare(/(?<!\p{L})بل(?!\p{L})/u),
@@ -780,7 +786,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {

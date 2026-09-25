@@ -813,6 +813,17 @@ const longSentence = 'ونحن حين نكافئ الطالب على الإجا�
 assert.equal(sentencesOf(breakLongSentences(longSentence, eraDna)).length, 1, 'جملةٌ تامّة من خمسٍ وعشرين كلمة لا تُقطع (السقف مئين ٩٠ لجمله الأخيرة)')
 assert.ok(briefH.includes('عشرون كلمة فأكثر') && !briefH.includes('جملةٌ من ثلاث كلمات'), 'الوصفة تطلب الجملة الطويلة التامّة لا الشذرات')
 
+/* جولة J: عدد المراجع بنسبته هو (وسيطٌ ثلاثة حين يستشهد) لا سقف «مرجعٍ أو اثنين». */
+assert.deepEqual(eraRecent.citationsPerArticle, { p50: 3, p85: 4 }, `عدد مراجعه في المقال مقيس (${JSON.stringify(eraRecent.citationsPerArticle)})`)
+let countRule = ''
+await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'توقعات المعلم من طلابه' }, async (url, init) => {
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+  const instruction = JSON.parse(init.body).messages[0]?.content || ''
+  if (!countRule && instruction.includes('قواعد المضمون')) countRule = instruction
+  return makeResponse(strongBody)
+})
+assert.ok(countRule.includes('نحو 3 مراجع') && !countRule.includes('مرجعٌ أو اثنان'), 'الوصفة تطلب عدد مراجعه هو لا سقف اثنين')
+
 /* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
 const closingKinds = new Map()
 for (let variation = 0; variation < 40; variation += 1) {

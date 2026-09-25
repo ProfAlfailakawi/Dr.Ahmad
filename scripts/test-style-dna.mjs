@@ -757,6 +757,12 @@ const orphanDraft = [
 const orphanVerdict = judgeStyle(orphanDraft, eraDna, { generated: true })
 assert.ok(orphanVerdict.corrections.some((line) => line.includes('الفقرة اليتيمة')), 'الفقرة اليتيمة «بعض…» تُضبط في المسودة')
 assert.ok(orphanVerdict.corrections.some((line) => line.includes('الجملة الجاهزة')), 'والمشهد الجاهز يُضبط')
+/* Codex: اليتيمة الطويلة (فوق ١٦٠ حرفاً) تُضبط أيضاً، والنفي «لا يتكرر المشهد نفسه» تباينٌ مشروع لا جملةٌ جاهزة. */
+const longOrphan = [orphanDraft.split('\n\n')[0], 'بعض الصمت في بيوتنا يكشف عن تعبٍ طويل لم نعترف به ولم نسمّه ولم نجلس معه يوماً واحداً كي نفهم من أين جاء ولماذا بقي معنا كل هذا الوقت دون أن نلتفت إليه أو نسأل عنه بصدق.'].join('\n\n')
+assert.ok(longOrphan.split('\n\n')[1].length > 160, 'اليتيمة في الاختبار أطول من ١٦٠ حرفاً')
+assert.ok(judgeStyle(longOrphan, eraDna, { generated: true }).corrections.some((line) => line.includes('الفقرة اليتيمة')), 'واليتيمة الطويلة تُضبط')
+const negatedScene = [orphanDraft.split('\n\n')[0], 'وفي مدارس أخرى لا يتكرر المشهد نفسه: طالبٌ يسأل، ومعلّمٌ يلتفت إلى الوجوه قبل الدفاتر، وتصير الحصة حواراً لا تلقيناً.'].join('\n\n')
+assert.ok(!judgeStyle(negatedScene, eraDna, { generated: true }).corrections.some((line) => line.includes('الجملة الجاهزة')), 'والنفي لا يُعدّ مشهداً جاهزاً')
 const hisOrphans = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الفقرة اليتيمة') || line.includes('الجملة الجاهزة'))).length
 assert.ok(hisOrphans <= 2, `ولا تكاد تُنسب إلى مقالاته (${hisOrphans} من ${dated.length})`)
 

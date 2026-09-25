@@ -19,17 +19,25 @@ const decode = (value = '') => String(value)
   .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
   .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
   .replace(/&([a-z]+);/gi, (entity, name) => NAMED[name.toLowerCase()] ?? entity)
-const plain = (value = '') => decode(String(value).replace(/<(script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim()
-const tight = (value = '') => decode(String(value).replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim()
+/* النص يُقارَن ولا يُعرض أبداً، لكن بقايا الوسوم تُمحى كلها (CodeQL): أي «<» أو «>» يبقى
+   بعد نزع الوسوم وفكّ الكيانات يصير مسافة، فلا يخرج من هنا «<script» ولو من وسمٍ مكسور. */
+const noAngles = (value = '') => value.replace(/[<>]/g, ' ')
+const plain = (value = '') => noAngles(decode(noAngles(String(value).replace(/<(script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')))).replace(/\s+/g, ' ').trim()
+const tight = (value = '') => noAngles(decode(noAngles(String(value).replace(/<[^>]+>/g, '')))).replace(/\s+/g, ' ').trim()
 const squash = (value = '') => value.toLowerCase().replace(/[^a-z0-9]/g, '')
 
 /* بعض الخوادم ترفض الطلب المتلاحق أحياناً: ثلاث محاولاتٍ متباعدة قبل الحكم بالسقوط. */
+/* الرابط الميت (404 أو 410) غير الخادم الرافض (403 أو قطع الاتصال): الأول خطأٌ في البنك
+   يُسقط الفحص، والثاني «تعذّر الوصول» يُعاد لاحقاً (Codex). آخر حالةٍ لكل رابطٍ هنا. */
+const lastStatus = new Map()
 async function get(url, as = 'text') {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const response = await fetch(url, { headers: UA, redirect: 'follow' })
+      lastStatus.set(url, response.status)
       if (response.ok) return as === 'json' ? await response.json() : await response.text()
-    } catch { /* يُعاد */ }
+      if ([404, 410].includes(response.status)) return null
+    } catch { lastStatus.set(url, 0) }
     await new Promise((done) => setTimeout(done, 1500 * (attempt + 1)))
   }
   return null
@@ -79,8 +87,15 @@ for (const reference of bank.references) {
     console.log(`… يدوي  ${reference.id} — ${reference.quote_source}`)
     continue
   }
+  /* رابط WHO للوحدة فيه «improved-heath» كما نشرته المنظمة نفسها؛ «health» تعطي 404. */
   const page = reference.doi ? null : plain(await get(reference.url) || '')
   const { texts, reached } = reference.doi ? await abstractsFor(reference) : { texts: [page], reached: Boolean(page) }
+  const deadStatus = lastStatus.get(reference.doi ? `https://api.crossref.org/works/${encodeURIComponent(reference.doi)}` : reference.url)
+  if ([404, 410].includes(deadStatus)) {
+    failed += 1
+    console.log(`✗ ${reference.id} — الرابط ميت (${reference.doi ? 'المعرّف غير مسجّل في Crossref' : deadStatus})`)
+    continue
+  }
   const parts = plain(reference.quote).split(/\s*…\s*/).map((part) => part.trim()).filter(Boolean)
   const missing = parts.filter((part) => !texts.some((text) => text.includes(part)))
   /* خادمٌ يقطع الاتصال (UNESCO وSpringer يرفضان بصمة fetch في Node أحياناً) ليس دليلاً على خطأ

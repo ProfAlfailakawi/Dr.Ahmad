@@ -255,7 +255,7 @@ const bodyOfItem = (item) => String(typeof item === 'string' ? item : item?.body
    بعلاماتٍ كلها مقيسة هنا على آخر عشرين مقالاً. «دعونا» صفرٌ منذ ٢٠٢٥ (وكانت في ٣٠
    مقالاً قديماً) والوصفة كانت تأمر بها؛ «؛» في ١٣ من آخر ١٤ مقالاً ولم تُذكر؛ و«فاسأل
    نفسك:» ختمت ٨ منها و«وربما يبدأ…» ٥. القائمة تتجدد بنفسها كلما نشر. */
-const RETIREMENT_CANDIDATES = ['دعونا', 'علينا أن نعترف', 'أفلا', 'تماماً', 'أصلاً', 'أبداً', 'مطلقاً', 'بالذات', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ']
+const RETIREMENT_CANDIDATES = ['دعونا', 'علينا أن نعترف', 'أفلا', 'تماماً', 'أصلاً', 'أبداً', 'مطلقاً', 'بالذات', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل']
 function recentVoice(articles) {
   const latest = latestArticles(articles, 20)
   const texts = latest.map(bodyOfItem)
@@ -268,6 +268,12 @@ function recentVoice(articles) {
     askYourselfShare: share(/اسأل نفسك/u),
     perhapsBeginsShare: share(/ربما يبدأ/u),
     openers: topOpeners(texts.flatMap(paragraphsOf)).slice(0, 10).map((item) => item.word),
+    /* شكل الفقرة اليوم: حَكَمٌ أعمى كشف المحاكاة بفقراتٍ قصيرة متقطّعة (١٦ فقرة، وسيط ٢٢
+       كلمة) بينما مقالاته الأخيرة نحو عشر فقرات كثيفة (وسيط ~٣٨ كلمة). المرجَّح بالحقبة
+       ما زال يحمل منشورات ٢٠٢٥ المقطّعة. */
+    paragraphsMedian: percentile(texts.map((text) => paragraphsOf(text).length).sort((a, b) => a - b), .5),
+    paragraphsP75: percentile(texts.map((text) => paragraphsOf(text).length).sort((a, b) => a - b), .75),
+    paragraphWordsMedian: percentile(texts.flatMap((text) => paragraphsOf(text).map((para) => para.split(/\s+/u).filter(Boolean).length)).sort((a, b) => a - b), .5),
   }
 }
 
@@ -703,7 +709,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'] },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38 },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -784,10 +790,11 @@ export function styleBrief(rawDna, targetWords = 400) {
   const tightEllipsis = (dna.marks?.ellipsisTightRate || 0) >= .6
   const pauseExample = tightEllipsis ? '«لأنهم عاجزون…بل لأن أحداً أقنعهم»' : '«لأنهم عاجزون… بل لأن أحداً أقنعهم»'
   const scale = targetWords / Math.max(200, dna.article.median || 386)
-  const paragraphs = Math.max(6, Math.round((dna.paragraph.perArticleMedian || 7) * scale))
-  const paragraphsLow = Math.max(5, Math.round(paragraphs * .75))
-  const paragraphsHigh = Math.max(paragraphs + 2, Math.round((dna.paragraph.perArticleP75 || 10) * scale))
   const recent = dna.recent || {}
+  const recentShape = (recent.sample || 0) >= 10 && recent.paragraphsMedian > 0
+  const paragraphs = Math.max(6, Math.round((recentShape ? recent.paragraphsMedian : dna.paragraph.perArticleMedian || 7) * scale))
+  const paragraphsLow = Math.max(5, Math.round(paragraphs * .75))
+  const paragraphsHigh = Math.max(paragraphs + 2, Math.round(((recentShape ? recent.paragraphsP75 : dna.paragraph.perArticleP75) || 10) * scale))
   /* المفتتحات من مقالاته الأخيرة إن توفّرت: «فيا» و«نعم» مفتتحا ٢٠١٧ لا اليوم. */
   const openers = (recent.openers?.length ? recent.openers : (dna.openers || []).map((item) => item.word)).filter((word) => word.length >= 2).slice(0, 10)
   const closingMoves = [
@@ -802,7 +809,7 @@ export function styleBrief(rawDna, targetWords = 400) {
     `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
     `٢) نقاط الحذف «…»: بين ${ellipsisLow} و${arabicCountPhrase(ellipsisHigh, OCCURRENCE_FORMS)} في المقال كله لا أكثر، وقفةً قبل الانقلاب لا زخرفةً؛ الإكثار منها بصمة محاكاةٍ لا بصمته. ${tightEllipsis ? 'تلتصق بما قبلها وبما بعدها بلا مسافة' : 'تلتصق بما قبلها وتليها مسافة'}: ${pauseExample}.`,
     `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
-    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`,
+    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، ${recentShape ? `كثيفةٌ لا متقطّعة: وسيط فقرته اليوم ${arabicCountPhrase(recent.paragraphWordsMedian, WORD_FORMS)}، تنتقل داخلها من الصورة إلى الدليل إلى المعنى، ولا تُقطَّع الفكرة الواحدة على فقراتٍ من سطرين. فقرةٌ من سطرٍ واحد مرةً أو مرتين في المقال لا أكثر.` : `متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`}`,
     `٥) الأسئلة البلاغية بين ${questionsLow} و${questionsHigh}، موزّعة لا متراكمة، وواحدٌ منها يصلح خاتمة.`,
     `٦) الصوت جمعيّ بـ«نحن» وأفعال الجماعة («نربّي»، «نعيش»، «نسمّي»). ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
     `٧) الاقتباس داخل النص بين «…» لا بعلامات لاتينية. ممنوع: الشرطة الاعتراضية —، والعناوين الفرعية، والتعداد النقطي أو الرقمي، والرموز التعبيرية، وعلامات ماركداون.`,

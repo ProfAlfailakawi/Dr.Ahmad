@@ -721,7 +721,32 @@ for (let variation = 0; variation < 12; variation += 1) {
   })
 }
 const pauseShare = pauseLines.with / Math.max(1, pauseLines.with + pauseLines.without)
+/* والصفر المقيس يُحترم: لا وقفة في أي مطلعٍ إن خلت منها مطالعه كلها (Codex). */
+let pausesAtZero = 0
+for (let variation = 0; variation < 6; variation += 1) {
+  await generatePerfectArticle({ ...input, styleDna: { ...eraDna, recent: { ...eraDna.recent, openingPauseShare: 0 } }, variation }, async (url, init) => {
+    if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+    if ((JSON.parse(init.body).messages[0]?.content || '').includes('تحمل وقفة «…» واحدة')) pausesAtZero += 1
+    return makeResponse(strongBody)
+  })
+}
+assert.equal(pausesAtZero, 0, 'نسبة صفر تعني مطلعاً بلا وقفة دائماً')
 assert.ok(pauseLines.with && pauseLines.without && pauseShare >= .25 && pauseShare <= .75, `مطالع بوقفةٍ وأخرى بلا وقفة بنسبته (${pauseLines.with}/${pauseLines.with + pauseLines.without})`)
+
+/* بنك مراجع العالم: قسمه لا يُعلَن للكاتب إلا حين يصله منه شيء (Codex). */
+const worldBank = JSON.parse(readFileSync(resolve(root, 'src/data/global-references.json'), 'utf8'))
+assert.ok(Array.isArray(worldBank.references), 'بنك مراجع العالم مقروء')
+for (const reference of worldBank.references) {
+  assert.ok(reference.label && reference.year && reference.url && reference.quote && reference.claim_ar, `كل مرجعٍ عالمي بسنده (${reference.id || reference.label})`)
+}
+let sawWorldRule = false
+await generatePerfectArticle({ ...input, idea: 'فكرةٌ لا يطابقها مرجعٌ عالمي قط: زخرفة الأواني النحاسية' }, async (url, init) => {
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+  const instruction = JSON.parse(init.body).messages[0]?.content || ''
+  if (instruction.includes('«من_مراجع_العالم»')) sawWorldRule = true
+  return makeResponse(strongBody)
+})
+assert.equal(sawWorldRule, false, 'فكرةٌ بلا مرجعٍ عالمي لا تُحدَّث عن قسمٍ غائب')
 
 let sawMaterial = false
 await generatePerfectArticle({ ...input, material: 'في محاضرة الأحد سألت طلابي: لماذا تتعلّمون؟ فقال أحدهم: «من أجل الشهادة».' }, async (url, init) => {

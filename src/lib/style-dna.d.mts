@@ -47,6 +47,8 @@ export interface StyleDna {
     paragraphWordsMedian?: number
     /* حركة الجملة الأولى في مقالاته: بها تُوزَّع بُنى المقالات المولَّدة. */
     openingShares?: Partial<Record<OpeningMove, number>>
+    /* نسبة مقالاته الأخيرة التي تحمل جملة مطلعها وقفة «…». */
+    openingPauseShare?: number
     /* نطاقات صوته اليوم (مئينات آخر عشرين مقالاً): منها الوصفة وأوامر الإصلاح. */
     bands?: Partial<Record<'ellipsisPer100' | 'medianSentence' | 'shortRate' | 'singleRate' | 'questions', { p15: number; p35: number; p50: number; p65: number; p85: number }>>
   }

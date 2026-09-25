@@ -344,7 +344,8 @@ assert.doesNotMatch(eraBrief, /يختم \d+٪ من فقراته بوقفة/, 'و
 /* «…» مدىً من صوته اليوم لا حدٌّ أدنى من صوت ٢٠١٧، وطباعتها كما يكتبها الآن. */
 const pauseRange = eraBrief.match(/نقاط الحذف «…»: بين (\d+) و(\d+)/)
 assert.ok(pauseRange && Number(pauseRange[2]) <= 10, `مدى الوقفات من صوته اليوم (${pauseRange?.[1]}–${pauseRange?.[2]})`)
-assert.ok(eraDna.marks.ellipsisTightRate >= .9 && eraBrief.includes('عاجزون…بل'), 'الوقفة تلتصق بما بعدها كما في مقالاته الأحدث')
+assert.ok(eraDna.marks.ellipsisTightRate >= .9 && eraBrief.includes('يصمت البيت…ثم'), 'الوقفة تلتصق بما بعدها كما في مقالاته الأحدث')
+assert.ok(!eraBrief.includes('عاجزون'), 'ومثال الطباعة محايد: لا سطر من مطلع مقالٍ له يصل كل مسودة')
 assert.equal(refineToStyle('يبتسم… لكن شيئاً لا يتحرّك.', eraDna), 'يبتسم…لكن شيئاً لا يتحرّك.', 'والصقل يتبع طباعته الحالية')
 assert.equal(sentencesOf('يبتسم…لكن شيئاً لا يتحرّك. هل نستعدّ؟').length, 3, 'والوقفة الملتصقة فاصلُ جملة كالمنفصلة')
 /* البصمة الاحتياطية (طلبٌ بلا بصمة) تُقاس بالطريقة نفسها: لا تُعيد صوت ٢٠١٧. */
@@ -704,6 +705,23 @@ assert.ok(judgeStyle(inventedStory, eraDna, { generated: true, authorMaterial: '
 const hisDialect = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الجملة العامية'))).length
 assert.equal(hisDialect, 0, 'ولا جملة عامية بين «…» في مقالاته كلها: الكاشف لا يتّهمه')
 assert.ok(unsupportedClaims('في محاضرة الأحد رفع ٤٢٪ من الطلاب أيديهم.', ['رفع ٤٢٪ من طلابي أيديهم في محاضرة الأحد']).length === 0, 'ورقمه من مادته مُسنَد')
+
+/* وقفة المطلع توزَّع بنسبته (نصف مقالاته الأخيرة) لا في كل مسودة. */
+assert.ok(eraDna.recent.openingPauseShare >= .3 && eraDna.recent.openingPauseShare <= .7, `وقفة المطلع في نحو نصف مقالاته (${eraDna.recent.openingPauseShare})`)
+const pauseLines = { with: 0, without: 0 }
+for (let variation = 0; variation < 12; variation += 1) {
+  await generatePerfectArticle({ ...input, styleDna: eraDna, variation }, async (url, init) => {
+    if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+    const instruction = JSON.parse(init.body).messages[0]?.content || ''
+    if (!instruction.includes('جولة تصحيحٍ إلزامية')) {
+      if (instruction.includes('تحمل وقفة «…» واحدة')) pauseLines.with += 1
+      if (instruction.includes('تامّةٌ بلا وقفة «…»')) pauseLines.without += 1
+    }
+    return makeResponse(strongBody)
+  })
+}
+const pauseShare = pauseLines.with / Math.max(1, pauseLines.with + pauseLines.without)
+assert.ok(pauseLines.with && pauseLines.without && pauseShare >= .25 && pauseShare <= .75, `مطالع بوقفةٍ وأخرى بلا وقفة بنسبته (${pauseLines.with}/${pauseLines.with + pauseLines.without})`)
 
 let sawMaterial = false
 await generatePerfectArticle({ ...input, material: 'في محاضرة الأحد سألت طلابي: لماذا تتعلّمون؟ فقال أحدهم: «من أجل الشهادة».' }, async (url, init) => {

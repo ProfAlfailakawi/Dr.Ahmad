@@ -286,6 +286,8 @@ const RARE_FORMULAS = [
   { label: 'نسمّي', pattern: /(?<!\p{L})و?نسمي(?:ه|ها|هم)?(?!\p{L})/u },
   { label: 'القيادة', pattern: /(?<!\p{L})(?:و|ف)?(?:ال)?قيادا?[ةت](?!\p{L})/u },
   { label: 'فهل… أم…؟', pattern: /فهل[^؟.]{0,80}أم[^؟.]{0,80}؟/u },
+  /* جولة J: صفرٌ في آخر عشرين مقالاً له، وخمسٌ في عشر مسودات («أيُعقل…؟ أيُعقل…؟»). */
+  { label: 'أليس / أيُعقل / أوليس', pattern: /(?<!\p{L})(?:أليس|أليست|أوليس|أيعقل|أفيعقل)(?!\p{L})/u },
 ]
 const rareFormulaPatterns = new Map(RARE_FORMULAS.map((item) => [item.label, item.pattern]))
 
@@ -786,7 +788,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟', 'أليس / أيُعقل / أوليس'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -892,14 +894,14 @@ export function styleBrief(rawDna, targetWords = 400) {
       : `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
     `٢) نقاط الحذف «…»: بين ${ellipsisLow} و${arabicCountPhrase(ellipsisHigh, OCCURRENCE_FORMS)} في المقال كله لا أكثر، وقفةً قبل الانقلاب لا زخرفةً؛ الإكثار منها بصمة محاكاةٍ لا بصمته. ${tightEllipsis ? 'تلتصق بما قبلها وبما بعدها بلا مسافة' : 'تلتصق بما قبلها وتليها مسافة'}: ${pauseExample}.`,
     `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغته الغالبة ${tightEllipsis ? '«لا كذا…بل كذا»' : '«لا كذا… بل كذا»'} (سبعٌ من إحدى عشرة في آخر عشرين مقالاً له؛ و«ليس…بل» نادرة عنده). رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
-    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، ${recentShape ? `كثيفةٌ لا متقطّعة: وسيط فقرته اليوم ${arabicCountPhrase(recent.paragraphWordsMedian, WORD_FORMS)}، تنتقل داخلها من الصورة إلى الدليل إلى المعنى، ولا تُقطَّع الفكرة الواحدة على فقراتٍ من سطرين. ${today && today.singleRate.p50 > 0 ? `واجعل فقرةً أو اثنتين من جملةٍ واحدة بين الفقرات الكثيفة (نحو ${today.singleRate.p50}٪ من فقراته)، انعطافاً يدفع المقال لا حكمةً معلّقة، ولا تبدأها بـ«بعض» (صفرٌ من فقراته المفردة).` : 'وفقرةٌ من جملةٍ واحدة تمرّ أحياناً بين الفقرات الكثيفة.'}` : `متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`}`,
+    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، ${recentShape ? `كثيفةٌ لا متقطّعة: وسيط فقرته اليوم ${arabicCountPhrase(recent.paragraphWordsMedian, WORD_FORMS)}، تنتقل داخلها من الصورة إلى الدليل إلى المعنى، ولا تُقطَّع الفكرة الواحدة على فقراتٍ من سطرين. ${today && today.singleRate.p50 > 0 ? `والفقرة المفردة (جملةٌ واحدة) قليلةٌ عنده: وسيطها فقرةٌ واحدة في المقال، و${today.singleRate.p35 === 0 ? 'أكثر من ثلث مقالاته الأخيرة بلا فقرةٍ مفردة أصلاً' : `نحو ${today.singleRate.p50}٪ من فقراته`}؛ فإن احتجتها فواحدةٌ تدفع المقال لا حكمةٌ معلّقة، ولا تبدأها بـ«بعض» (صفرٌ من فقراته المفردة).` : 'وفقرةٌ من جملةٍ واحدة تمرّ أحياناً بين الفقرات الكثيفة.'}` : `متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`}`,
     `٥) الأسئلة البلاغية بين ${questionsLow} و${questionsHigh}، موزّعة لا متراكمة.`,
     /* بلا أمثلة أفعال: «نربّي» و«نسمّي» كانتا المثال فصارتا في نصف المسودات (٢٫٦٢ و١٫٧٥ لكل
        ألف كلمة مقابل ٠٫٥٣ و٠٫٢٧ عنده). */
     `٦) الصوت جمعيّ بـ«نحن» وأفعال الجماعة، تختارها من فكرة المقال نفسها لا من قائمةٍ جاهزة، ولا تكرّر الفعل نفسه. ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
     `٧) الاقتباس داخل النص بين «…» لا بعلامات لاتينية. ممنوع: الشرطة الاعتراضية —، والعناوين الفرعية، والتعداد النقطي أو الرقمي، والرموز التعبيرية، وعلامات ماركداون.`,
     `٨) الطول شرطُ قبولٍ لا اقتراح: ${arabicCountPhrase(targetWords, WORD_FORMS)}. النص الأقصر من ${arabicCountPhrase(Math.round(targetWords * .85), WORD_FORMS)} يُرفض ويُعاد. اكتب نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} بنحو ${arabicCountPhrase(Math.round(targetWords / paragraphs), WORD_FORMS)} للفقرة في المتوسط — عُدَّها قبل الإخراج. لا تختم قبل بلوغ العدد.`,
-    `٩) الخاتمة تنقلب أو تسأل، ولا تلخّص: ${dna.closings.questionRate}٪ من خواتيمه سؤال و${dna.closings.antithesisRate}٪ انقلابٌ بـ«بل».${closingMovesLine} ممنوع «في الختام» و«خلاصة القول» وكل عبارةٍ تعلن أنها خاتمة، ولا واجباتٍ للقارئ («جرّب هذا الأسبوع»، «فلنبدأ اليوم بخطوة»).`,
+    `٩) الخاتمة تنقلب أو تسأل، ولا تلخّص: ${dna.closings.questionRate}٪ من خواتيمه سؤال و${dna.closings.antithesisRate}٪ انقلابٌ بـ«بل».${closingMovesLine} ولا تعيد الخاتمة جملة المطلع ولا كلماتها: في سبعة عشر من آخر عشرين مقالاً له لا تشترك خاتمته مع مطلعه في كلمةٍ دالّة. ممنوع «في الختام» و«خلاصة القول» وكل عبارةٍ تعلن أنها خاتمة، ولا واجباتٍ للقارئ («جرّب هذا الأسبوع»، «فلنبدأ اليوم بخطوة»).`,
     `١٠) الافتتاح بحركة المطلع المحدّدة في خطة البناء، في جملةٍ لا تتجاوز ${arabicCountPhrase(Math.max(16, dna.sentence.p90), WORD_FORMS)}. ممنوع التعريف المدرسي («يُعدّ… من أهم…»).`,
     `١١) عباراتٌ محظورة لأنها غائبةٌ تماماً عن أرشيفه: ${(dna.banned || BANNED_PHRASES).filter((phrase) => phrase !== 'صيدة' && phrase !== 'صيد').slice(0, 24).join(' · ')}.`,
     '١٢) لا تستخدم كلمة «صيدة» ولا «صيد» بأي صيغة.',
@@ -1463,16 +1465,28 @@ export function judgeStyle(body, rawDna, options = {}) {
     return pattern ? [label, (bareVoice.match(new RegExp(pattern.source, 'gu')) || []).length] : [label, 0]
   }).filter(([, count]) => count > 0) : []
   const rareHits = rareCounts.length >= 2 || rareCounts.some(([, count]) => count >= 2) ? rareCounts.map(([label, count]) => `«${label}»×${count}`) : []
-  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length + orphanHits.length + stockHits.length + (rareHits.length ? 1 : 0)
+  /* صيغة الاستشهاد: «et al.» ١٦ مرة و«وآخرين» ٣ في آخر عشرين مقالاً له، و«وآخرون» و«وزملاؤه» صفر؛ وفي
+     مسودات جولة J اثنتان واثنتان، ومعها اسمٌ بحروفٍ عربية («لكلارك وزملائه»). */
+  const citeFormHits = options.generated ? (bareVoice.match(/(?<!\p{L})(?:وآخرون|وزملاؤه|وزملائه|وزملاءه)(?!\p{L})/gu) || []).slice(0, 3) : []
+  /* الخاتمة تعيد المطلع: سبعة عشر من آخر عشرين مقالاً له بلا كلمةٍ دالّة مشتركة، وأقصاه ٦٠٪؛ ومسودةٌ في
+     جولة J أعادت كلمات مطلعها كلها. العتبة فوق أقصاه. */
+  const echoWords = (value) => bareText(value).split(/\s+/).filter((word) => word.length > 3)
+  const openingWords = new Set(echoWords(sentencesOf(text)[0] || ''))
+  const lastParagraphWords = echoWords(paragraphsOf(text).at(-1) || '')
+  const openingEcho = options.generated && openingWords.size >= 3 ? lastParagraphWords.filter((word) => openingWords.has(word)).length / openingWords.size : 0
+  const echoHit = openingEcho >= .67
+  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length + orphanHits.length + stockHits.length + (rareHits.length ? 1 : 0) + (citeFormHits.length ? 1 : 0) + (echoHit ? 1 : 0)
   if (dna.recent || voiceSlips) {
     add('currentVoice', 'صوته اليوم', voiceSlips ? Math.max(0, 1 - .5 * voiceSlips) : 1, 8,
-      [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`), ...orphanHits, ...stockHits, ...rareHits].join(' · ') || 'نظيف', 'صفر',
+      [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`), ...orphanHits, ...stockHits, ...rareHits, ...citeFormHits.map((hit) => `«${hit}»`), ...(echoHit ? [`الخاتمة تعيد المطلع ${Math.round(openingEcho * 100)}٪`] : [])].join(' · ') || 'نظيف', 'صفر',
       [
         retiredHits.length ? `احذف ما غاب عن مقالاته الأخيرة كلها: ${retiredHits.map((word) => `«${word}»`).join(' · ')}.` : '',
         anecdoteHits.length ? `احذف الحكاية الشخصية المختلقة (${anecdoteHits.map((hit) => `«${hit}»`).join(' · ')}): لا يكتب في مقالاته الحديثة حواراً مع طالبٍ أو معلمٍ أو قريب. اجعلها مشهداً عامّاً بلا «أنا» ولا أسماء، بفعلٍ مضارع يعرفه كل قارئ.` : '',
         dialogueHits.length ? `احذف الحوار المختلق (${dialogueHits.map((hit) => `«${hit}»`).join(' · ')}): لا يُجري على ألسنة الناس سؤالاً وجواباً؛ صِف ما يحدث وصفاً عامّاً بلا أقوال.` : '',
         orphanHits.length ? `ادمج الفقرة اليتيمة التي تبدأ بـ«بعض» في ما قبلها أو احذفها (${orphanHits.map((hit) => `«${hit}…»`).join(' · ')}): فقراته المفردة انعطافٌ لا حكمةٌ معلّقة.` : '',
         stockHits.length ? `احذف الجملة الجاهزة (${stockHits.map((hit) => `«${hit}»`).join(' · ')}) وما تجرّه من فقرةٍ تكرّر المشهد في مكانٍ آخر: خذ مكاناً واحداً وتعمّق فيه.` : '',
+        citeFormHits.length ? `اكتب الاستشهاد بصيغته هو: «Tang et al. (2023)» أو «Howard وآخرين (2021)»، واسم الباحث باللاتينية دائماً (${citeFormHits.map((hit) => `«${hit}»`).join(' · ')} صفرٌ في مقالاته).` : '',
+        echoHit ? 'لا تُعد جملة المطلع في الخاتمة: اختم بجملةٍ جديدة، فخاتمته لا تشترك مع مطلعه في كلمةٍ دالّة في سبعة عشر من آخر عشرين مقالاً.' : '',
         rareHits.length ? `خفّف الصيغ النادرة في مقالاته الأخيرة (${rareHits.join(' · ')}): مرةً واحدة على الأكثر لصيغةٍ واحدة، وأعد صياغة الباقي بلفظٍ من فكرة المقال.` : '',
         dialectHits.length ? `اكتب بالفصحى أو احذف الجملة العامية بين «…» (${dialectHits.map((quote) => `«${quote}»`).join(' · ')}): لم يكتب جملةً عامية واحدة بين «…» في مقالاته.` : '',
       ].filter(Boolean).join(' '))

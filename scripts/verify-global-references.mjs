@@ -19,11 +19,21 @@ const decode = (value = '') => String(value)
   .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
   .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
   .replace(/&([a-z]+);/gi, (entity, name) => NAMED[name.toLowerCase()] ?? entity)
-/* النص يُقارَن ولا يُعرض أبداً، لكن بقايا الوسوم تُمحى كلها (CodeQL): أي «<» أو «>» يبقى
-   بعد نزع الوسوم وفكّ الكيانات يصير مسافة، فلا يخرج من هنا «<script» ولو من وسمٍ مكسور. */
+/* النص يُقارَن ولا يُعرض أبداً. الوسوم تُنزع بمرورٍ على الحروف لا بتعبيرٍ نمطي (CodeQL:
+   نزع «<script» بالتعبير النمطي قد يترك بقايا وسم): كل ما بين «<» و«>» يسقط، ثم يُمحى
+   أي «<» أو «>» يبقى بعد فكّ الكيانات. محتوى السكربتات إن بقي نصاً لا يضرّ المطابقة. */
+const stripTags = (value = '', gap = ' ') => {
+  let out = ''
+  let inTag = false
+  for (const character of String(value)) {
+    if (character === '<') { inTag = true; out += gap } else if (character === '>' && inTag) inTag = false
+    else if (!inTag) out += character
+  }
+  return out
+}
 const noAngles = (value = '') => value.replace(/[<>]/g, ' ')
-const plain = (value = '') => noAngles(decode(noAngles(String(value).replace(/<(script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')))).replace(/\s+/g, ' ').trim()
-const tight = (value = '') => noAngles(decode(noAngles(String(value).replace(/<[^>]+>/g, '')))).replace(/\s+/g, ' ').trim()
+const plain = (value = '') => noAngles(decode(stripTags(value))).replace(/\s+/g, ' ').trim()
+const tight = (value = '') => noAngles(decode(stripTags(value, ''))).replace(/\s+/g, ' ').trim()
 const squash = (value = '') => value.toLowerCase().replace(/[^a-z0-9]/g, '')
 
 /* بعض الخوادم ترفض الطلب المتلاحق أحياناً: ثلاث محاولاتٍ متباعدة قبل الحكم بالسقوط. */

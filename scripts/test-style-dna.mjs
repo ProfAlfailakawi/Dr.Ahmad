@@ -685,7 +685,8 @@ assert.ok(unsupportedClaims('في محاضرة الأحد رفع ٤٢٪ من ا�
 
 let sawMaterial = false
 await generatePerfectArticle({ ...input, material: 'في محاضرة الأحد سألت طلابي: لماذا تتعلّمون؟ فقال أحدهم: «من أجل الشهادة».' }, async (url, init) => {
-  if (!String(url).includes('api.cloudflare.com')) return { ok: false, status: 503, json: async () => ({}) }
+  /* المضيف بالمطابقة التامة لا بالاحتواء (CodeQL: «api.cloudflare.com» قد يقع في أي موضعٍ من الرابط). */
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
   const text = JSON.parse(init.body).messages.map((message) => message.content || '').join('\n')
   if (text.includes('"من_عندك":"في محاضرة الأحد') && text.includes('«من_عندك» إن وصل')) sawMaterial = true
   return makeResponse(strongBody)

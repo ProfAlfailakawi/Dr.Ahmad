@@ -119,9 +119,11 @@ export const countWords = (value = '') => wordsOf(value).length
    («يبتسم…لكن»): ٦٠ موضعاً من ٦٠. كان التقطيع يشترط مسافةً بعدها، فتلتحم
    جملتان في مقالاته الحديثة وحدها ويبدو وسيط جملته ١٦ كلمة لا ١١. الوقفة
    فاصلٌ بمسافةٍ أو بدونها. */
+/* «et al.» ليست نهاية جملة (جولة I): كانت تُقطع عندها فيفصل إيقاعُ الفقرات «Wang et al.» عن سنتها
+   بسطرٍ فارغ، ورآها الحَكَم الأعمى استشهاداً مكسوراً. */
 export const sentencesOf = (value = '') => String(value)
   .replace(/\s+/g, ' ')
-  .split(/(?<=[.!؟…])\s+|(?<=…)(?=[\p{L}«])/u)
+  .split(/(?<=[.!؟…])(?<!(?<![\p{L}])et al\.)\s+|(?<=…)(?=[\p{L}«])/u)
   .map((part) => part.trim())
   .filter(Boolean)
 
@@ -305,6 +307,13 @@ function recentVoice(articles) {
     perhapsBeginsShare: closingShare(/ربما يبدأ/u),
     /* الاستشهاد بدراسةٍ مسمّاة: في أربعة عشر من آخر عشرين مقالاً، وغيابه أول ما كشف المسودات. */
     citationShare: share({ test: (text) => citationSpans(text).length > 0 }),
+    /* خواتيمه كما هي: انقلابٌ بـ«بل» في فقرته الأخيرة ٨ من ٢٠، وسؤالٌ ختامي ٢ من ٢٠. كان كل ختامٍ
+       غير «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل»، فختمت به ثماني مسوداتٍ من عشر في جولة I. */
+    closingAntithesisShare: closingShare(/(?<!\p{L})بل(?!\p{L})/u),
+    closingQuestionShare: closingShare(/؟\s*$/u),
+    /* الجملة الطويلة التامّة: مئين ٩٠ لأطوال جمله، ونسبة ما بلغ عشرين كلمة فأكثر. */
+    sentenceP90: percentile(texts.flatMap((text) => sentencesOf(text).map(countWords)).sort((a, b) => a - b), .9),
+    longShare: round2(texts.flatMap((text) => sentencesOf(text).map(countWords)).filter((words) => words >= 20).length / Math.max(1, texts.flatMap((text) => sentencesOf(text)).length)),
     /* عباراتٌ يُكثر منها المحاكي وهي نادرةٌ عنده: ما ورد في مقالٍ واحدٍ على الأكثر من آخر عشرين. */
     rareFormulas: RARE_FORMULAS.filter((item) => texts.filter((text) => item.pattern.test(plain(text))).length <= 1).map((item) => item.label),
     openers: topOpeners(texts.flatMap(paragraphsOf)).slice(0, 10).map((item) => item.word),
@@ -771,7 +780,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 50 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -794,7 +803,7 @@ export const FALLBACK_STYLE_DNA = {
     questionsPer100: { p03: 0, p15: .3, p35: .8, p50: 1.1, p65: 1.5, p85: 2.7, p97: 3.3 },
     collectivePer100: { p03: .2, p15: .8, p35: 1.3, p50: 1.9, p65: 2.8, p85: 3.5, p97: 4.7 },
     wawStartRate: { p03: 7, p15: 10, p35: 14, p50: 18, p65: 20, p85: 30, p97: 50 },
-    sentenceSpread: { p03: 54, p15: 58, p35: 63, p50: 67, p65: 77, p85: 88, p97: 96 },
+    sentenceSpread: { p03: 54, p15: 58, p35: 63, p50: 70, p65: 75, p85: 88, p97: 96 },
     ellipsisEndRate: { p03: 0, p15: 0, p35: 0, p50: 0, p65: 0, p85: 5, p97: 100 },
     faStartRate: { p03: 0, p15: 3, p35: 7, p50: 9, p65: 11, p85: 14, p97: 22 },
   },
@@ -873,7 +882,7 @@ export function styleBrief(rawDna, targetWords = 400) {
   return [
     `بصمة الكاتب مقيسةٌ رقمياً من ${arabicCountPhrase(dna.sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
     today
-      ? `١) الجملة في مقالاته الأخيرة: وسيطها ${arabicCountPhrase(today.medianSentence.p50, WORD_FORMS)}، و${today.shortRate.p50}٪ من جمله تسع كلمات فأقل؛ تتفاوت أطوالها بين جملةٍ قصيرة حاسمة وأخرى أتمّ، ولا تُقطَّع الفكرة الواحدة على جملٍ مبتورة. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`
+      ? `١) الجملة في مقالاته الأخيرة: وسيطها ${arabicCountPhrase(today.medianSentence.p50, WORD_FORMS)}، و${today.shortRate.p50}٪ من جمله تسع كلمات فأقل؛ تتفاوت أطوالها بين جملةٍ قصيرة حاسمة وأخرى أتمّ، ولا تُقطَّع الفكرة الواحدة على جملٍ مبتورة. ${recent.longShare > 0 ? `ونحو ${Math.round(recent.longShare * 100)}٪ من جمله عشرون كلمة فأكثر، تامّةٌ متماسكة؛ فالتفاوت عنده يأتي من الجملة الطويلة التامّة بين جملٍ متوسطة لا من شذراتٍ من كلمتين أو ثلاث. ولا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, recent.sentenceP90 || 0), WORD_FORMS)} إلا نادراً.` : `امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`}`
       : `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
     `٢) نقاط الحذف «…»: بين ${ellipsisLow} و${arabicCountPhrase(ellipsisHigh, OCCURRENCE_FORMS)} في المقال كله لا أكثر، وقفةً قبل الانقلاب لا زخرفةً؛ الإكثار منها بصمة محاكاةٍ لا بصمته. ${tightEllipsis ? 'تلتصق بما قبلها وبما بعدها بلا مسافة' : 'تلتصق بما قبلها وتليها مسافة'}: ${pauseExample}.`,
     `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغته الغالبة ${tightEllipsis ? '«لا كذا…بل كذا»' : '«لا كذا… بل كذا»'} (سبعٌ من إحدى عشرة في آخر عشرين مقالاً له؛ و«ليس…بل» نادرة عنده). رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
@@ -905,7 +914,7 @@ export function styleBrief(rawDna, targetWords = 400) {
       const lines = [
         Number.isFinite(endRate) && endRate >= 30 ? `يختم ${endRate}٪ من فقراته بوقفة «…»، فالفقرة عنده تنتهي معلّقةً لا مغلقةً بنقطة` : '',
         Number.isFinite(waw) && waw >= 15 ? `نحو ${waw}٪ من جمله تبدأ بالواو («ونحن…»، «وحين…»)` : '',
-        Number.isFinite(spread) && spread >= 40 ? 'أطوال جمله متفاوتة بحدّة: جملةٌ من ثلاث كلمات بجوار جملةٍ من عشرين؛ الجمل المتساوية الطول بصمة آلة' : '',
+        Number.isFinite(spread) && spread >= 40 ? 'أطوال جمله متفاوتة بحدّة: جملةٌ طويلة تامّة من عشرين كلمة فأكثر بين جملٍ متوسطة وقصيرة؛ الجمل المتساوية الطول بصمة آلة' : '',
       ].filter(Boolean)
       return lines.length ? `١٦) عاداته الخفية، ولا يلتقطها المحاكي فتفضحه: ${lines.join('؛ ')}.` : ''
     })(),
@@ -1593,7 +1602,7 @@ const MACHINE_TRACE_ACTIONS = {
   commaPer100: { less: 'صِل الجمل المتقاربة بالفاصلة بدل تقطيعها', more: 'قسّم الجمل المثقلة بالفواصل' },
   colonPer100: { less: 'قدّم فكرةً بنقطتين حيث يليها تفسيرها', more: 'احذف النقطتين والفاصلة المنقوطة وصِل بالواو' },
   wawStartRate: { less: 'ابدأ نحو ثلث جملك بالواو («ونحن…»، «وحين…»)', more: 'نوّع بدايات الجمل بدل الواو' },
-  sentenceSpread: { less: 'نوّع أطوال الجمل بحدّة: جملةٌ من ثلاث كلمات بجوار جملةٍ من عشرين', more: 'قرّب أطوال الجمل قليلاً' },
+  sentenceSpread: { less: 'نوّع أطوال الجمل من جهة الطول: اجعل بعضها طويلاً تامّاً (عشرين كلمة فأكثر) بين المتوسطة، لا بشذراتٍ من كلمتين أو ثلاث', more: 'قرّب أطوال الجمل قليلاً' },
   shortRate: { less: 'قسّم بعض الجمل الطويلة', more: 'صِل الجمل القصيرة المتتابعة بالواو والفاصلة؛ التقطيع المتواصل بصمة آلة' },
   medianSentence: { less: 'أطِل الجملة الوسطى بعطفٍ أو حال', more: 'قصّر الجمل المركّبة' },
   lexicalDiversity: { less: 'نوّع مفرداتك', more: 'لا تبحث عن مرادفٍ جديد في كل جملة؛ كرّر الكلمة المفتاحية كما يفعل' },
@@ -1820,7 +1829,11 @@ const SENTENCE_STARTERS = ['بل', 'ولكن', 'لكن', 'ولا', 'لا', 'وق
 
 export function breakLongSentences(value = '', rawDna) {
   const dna = resolveStyleDna(rawDna)
-  const ceiling = Math.max(16, (dna.perArticle?.medianSentence?.p85 ?? 15) + 4)
+  /* ٢٦ سبتمبر ٢٠٢٦ — السقف كان ثماني عشرة كلمة (مئين وسيط الجملة لا مئين الجملة)، فقطع جمله الطويلة
+     التامّة: ٢٣٫٦٪ من جمل آخر عشرين مقالاً له عشرون كلمة فأكثر، وبعد الصقل ١٣٫٧٪؛ ومسودات جولة I ١٫٩٪.
+     التفاوت عنده من تلك الجمل، فلمّا غابت أمر الحَكَم بتنويع الأطوال فجاءت شذراتٌ من ثلاث كلمات. السقف
+     الآن مئين ٩٠ لجمله الأخيرة نفسها. */
+  const ceiling = Number(dna.recent?.sentenceP90) > 0 ? Number(dna.recent.sentenceP90) : Math.max(16, (dna.perArticle?.medianSentence?.p85 ?? 15) + 4)
   /* المفاصل المقيسة أولاً (dna.hinges)، والقائمة المكتوبة احتياطاً. بلا هذا
      كانت جملة النموذج الموصولة بـ«حيث» و«كما» تنجو كاملةً، فيبقى وسيط الجملة
      عشرين كلمة بينما وسيطه ثمان. */
@@ -1909,7 +1922,9 @@ export function refineToStyle(value = '', rawDna) {
      المسار الحقيقي (خادمٌ ثم واجهة) فيرى الدكتور نصّين مختلفين للنص الواحد.
      تستقرّ في دورتين على أرشيفه كله، والحدّ ثلاث. ولا حرف يُضاف أو يُحذف
      في أيٍّ منها. */
-  let text = String(value)
+  /* الأرقام الهندية («٣٤٥») صفرٌ في مقالاته الـ١٤٣ واللاتينية في ٧٣ منها، وكتبها الكاتب الآلي في جولة I
+     فعدّها الحَكَم الأعمى علامة. تُكتب بصورته؛ لا حرف يُضاف أو يُحذف. */
+  let text = String(value).replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
   for (let round = 0; round < 3; round += 1) {
     const next = pass(text)
     if (next === text) break

@@ -21,7 +21,7 @@ const {
   BANNED_PHRASES, arabicCountPhrase, articleMetrics, calibrateStyle, countWords, judgeNaturalness, judgeStyle, measureStyleDna, percentileRank,
   PROOFREAD_INSTRUCTION, acceptProofread, bareText, buildOrthographyIndex, deriveExcerpt,
   extractVoiceSignature, liftPauses, locateIssues, orthographySlips, polishTypography, refineToStyle,
-  sentencesOf, styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory, openingMove, OPENING_MOVES,
+  breakLongSentences, sentencesOf, styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory, openingMove, OPENING_MOVES,
 } = await import(resolve(root, 'src/lib/style-dna.mjs'))
 
 const bodies = JSON.parse(readFileSync(resolve(root, 'src/data/bodies.json'), 'utf8'))
@@ -802,6 +802,31 @@ assert.ok(judgeStyle(rareDraft, eraDna, { generated: true }).corrections.some((l
 assert.ok(!judgeStyle(strongBody.replace('وأخطر ما في الأمر أنه هادئ.', 'وأخطر ما في الأمر أنه يتكرر كل يوم.'), eraDna, { generated: true }).corrections.some((line) => line.includes('الصيغ النادرة')), 'ومرةٌ واحدة تمرّ')
 const hisRare = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الصيغ النادرة'))).length
 assert.ok(hisRare <= 2, `ولا تكاد تُنسب إلى مقالاته (${hisRare} من ${dated.length})`)
+
+/* جولة I: «et al.» ليست نهاية جملة، والأرقام الهندية ليست أرقامه، والجملة الطويلة التامّة جملته. */
+assert.equal(sentencesOf('ويشير Wang et al. (2013) إلى أن مناخ الصف يصنع الفرق. ثم نمضي.').length, 2, '«et al.» لا تقطع الجملة')
+const citedParagraph = 'يتعلّم أن الكلام طبقتان، كلامٌ يُقال في العلن، وكلامٌ يُصدَّق في الخفاء. ويشير Wang et al. (2013) إلى أن مناخ الصف حين يسوده احترامٌ حقيقي يرتبط بانخراطٍ أعلى وسلوكٍ أهدأ لدى الطلاب في المرحلة المتوسطة.'
+assert.ok(!/et al\.\s*\n/.test(refineToStyle(`${strongBody}\n\n${citedParagraph}`, eraDna)), 'والصقل لا يفصل «Wang et al.» عن سنتها')
+assert.ok(refineToStyle('في مراجعةٍ جمعت نتائج ٣٤٥ تجربة.', eraDna).includes('345'), 'الأرقام الهندية تُكتب لاتينية كما يكتبها هو')
+assert.ok(eraRecent.sentenceP90 >= 22 && eraRecent.longShare >= .15, `جمله الطويلة التامّة مقيسة (مئين ٩٠: ${eraRecent.sentenceP90} · عشرون فأكثر: ${Math.round(eraRecent.longShare * 100)}٪)`)
+const longSentence = 'ونحن حين نكافئ الطالب على الإجابة السريعة وحدها، لا نعلّمه أن يفكّر في السؤال نفسه، بل نعلّمه أن يخاف من الوقت أكثر مما يحبّ المعرفة.'
+assert.equal(sentencesOf(breakLongSentences(longSentence, eraDna)).length, 1, 'جملةٌ تامّة من خمسٍ وعشرين كلمة لا تُقطع (السقف مئين ٩٠ لجمله الأخيرة)')
+assert.ok(briefH.includes('عشرون كلمة فأكثر') && !briefH.includes('جملةٌ من ثلاث كلمات'), 'الوصفة تطلب الجملة الطويلة التامّة لا الشذرات')
+
+/* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
+const closingKinds = new Map()
+for (let variation = 0; variation < 40; variation += 1) {
+  await generatePerfectArticle({ ...input, styleDna: eraDna, variation, idea: `فكرة الختام رقم ${variation}` }, async (url, init) => {
+    if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+    const closing = ((JSON.parse(init.body).messages[0]?.content || '').match(/الختام في هذا المقال: ([^\n]{0,30})/) || [])[1]
+    if (closing) closingKinds.set(closing, (closingKinds.get(closing) || 0) + 1)
+    return makeResponse(strongBody)
+  })
+}
+const closingTotal = [...closingKinds.values()].reduce((sum, count) => sum + count, 0)
+const inversionClosings = [...closingKinds].filter(([kind]) => kind.startsWith('انقلابٌ')).reduce((sum, [, count]) => sum + count, 0)
+assert.ok(closingKinds.size >= 4, `خمسة أنواعٍ من الختام تتوزّع (${closingKinds.size})`)
+assert.ok(inversionClosings / closingTotal <= .6, `ختام «بل» بنسبته لا غالباً (${inversionClosings}/${closingTotal})`)
 let sawWorldRule = false
 await generatePerfectArticle({ ...input, idea: 'فكرةٌ لا يطابقها مرجعٌ عالمي قط: زخرفة الأواني النحاسية' }, async (url, init) => {
   if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }

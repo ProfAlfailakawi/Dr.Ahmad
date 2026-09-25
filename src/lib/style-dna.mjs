@@ -856,7 +856,7 @@ export function styleBrief(rawDna, targetWords = 400) {
       : `١) الجملة قصيرة: وسيطها ${arabicCountPhrase(dna.sentence.median, WORD_FORMS)}، و${dna.sentence.shortRate}٪ من جمله تسع كلمات فأقل. امنع الجمل الطويلة المركّبة؛ لا تتجاوز جملةٌ ${arabicCountPhrase(Math.max(22, dna.sentence.p90 + 3), WORD_FORMS)} إلا نادراً.`,
     `٢) نقاط الحذف «…»: بين ${ellipsisLow} و${arabicCountPhrase(ellipsisHigh, OCCURRENCE_FORMS)} في المقال كله لا أكثر، وقفةً قبل الانقلاب لا زخرفةً؛ الإكثار منها بصمة محاكاةٍ لا بصمته. ${tightEllipsis ? 'تلتصق بما قبلها وبما بعدها بلا مسافة' : 'تلتصق بما قبلها وتليها مسافة'}: ${pauseExample}.`,
     `٣) البناء الضدّي «…بل»: ${arabicCountPhrase(antithesis, OCCURRENCE_FORMS)} لا أكثر، في مواضع انقلابٍ حقيقي بصيغة «ليس كذا… بل كذا». رشُّها في كل فقرة تقليدٌ ميكانيكي يُرفض؛ أقصى ما بلغه في مقالٍ كامل ${dna.perArticle?.antithesisPer100?.p97 ?? 2.3} لكل مئة كلمة.`,
-    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، ${recentShape ? `كثيفةٌ لا متقطّعة: وسيط فقرته اليوم ${arabicCountPhrase(recent.paragraphWordsMedian, WORD_FORMS)}، تنتقل داخلها من الصورة إلى الدليل إلى المعنى، ولا تُقطَّع الفكرة الواحدة على فقراتٍ من سطرين. ${today && today.singleRate.p50 > 0 ? `واجعل فقرةً أو اثنتين من جملةٍ واحدة بين الفقرات الكثيفة (نحو ${today.singleRate.p50}٪ من فقراته).` : 'وفقرةٌ من جملةٍ واحدة تمرّ أحياناً بين الفقرات الكثيفة.'}` : `متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`}`,
+    `٤) الفقرات نحو ${arabicCountPhrase(paragraphs, PARAGRAPH_FORMS)} (بين ${paragraphsLow} و${paragraphsHigh})، ${recentShape ? `كثيفةٌ لا متقطّعة: وسيط فقرته اليوم ${arabicCountPhrase(recent.paragraphWordsMedian, WORD_FORMS)}، تنتقل داخلها من الصورة إلى الدليل إلى المعنى، ولا تُقطَّع الفكرة الواحدة على فقراتٍ من سطرين. ${today && today.singleRate.p50 > 0 ? `واجعل فقرةً أو اثنتين من جملةٍ واحدة بين الفقرات الكثيفة (نحو ${today.singleRate.p50}٪ من فقراته)، انعطافاً يدفع المقال لا حكمةً معلّقة، ولا تبدأها بـ«بعض» (صفرٌ من فقراته المفردة).` : 'وفقرةٌ من جملةٍ واحدة تمرّ أحياناً بين الفقرات الكثيفة.'}` : `متفاوتة الطول، و${dna.paragraph.singleSentenceRate}٪ من فقراته جملةٌ واحدة: ضع فقرةً من سطرٍ واحد بين الفقرات الأطول.`}`,
     `٥) الأسئلة البلاغية بين ${questionsLow} و${questionsHigh}، موزّعة لا متراكمة.`,
     `٦) الصوت جمعيّ بـ«نحن» وأفعال الجماعة («نربّي»، «نعيش»، «نسمّي»). ممنوع منعاً باتاً: «أرى» و«في تقديري» و«من وجهة نظري» و«كتبتُ سابقاً» وأي إحالةٍ إلى مقالٍ سابق له.`,
     `٧) الاقتباس داخل النص بين «…» لا بعلامات لاتينية. ممنوع: الشرطة الاعتراضية —، والعناوين الفرعية، والتعداد النقطي أو الرقمي، والرموز التعبيرية، وعلامات ماركداون.`,
@@ -899,6 +899,11 @@ const PERSONAL_ANECDOTE_PATTERN = /(?<![\p{L}])(?:و|ف)?(?:سألتُ?ه?ا?|س
    في ثلاثة مقالات منذ ٢٠٢٥؛ والمسودات المولَّدة: عاميةٌ في ٣ من ٣٠ وحوارٌ في ٣ من ٣٠. */
 const INVENTED_DIALOGUE_PATTERN = /(?<!\p{L})(?:ف|و)?(?:يجيب|تجيب|يردّ|يرد|تردّ|ترد)(?:ه|ها|ون)?(?!\p{L})\s*[:«]|(?<!\p{L})(?:ف|و)?(?:يسأل|تسأل|يقول|تقول)(?:ه|ها|ون)?(?:\s+\p{L}+){0,4}\s*:\s*«[^»]{1,120}[؟?]»/gu
 const DIALECT_WORD_PATTERN = /(?<!\p{L})(?:شلون|اشلون|إشلون|وش|ليش|هني|هنيه|لسه|لسّه|وايد|ماكو|شنو|شفيك|شفيج|يبه|يمه|يمّه|مو|مب|تبي|تبين|وين|شسوي)(?!\p{L})/u
+/* ٢٥ سبتمبر ٢٠٢٦ — حَكَم الجولة الثالثة: «فقرات يتيمة من جملةٍ واحدة تبدأ بـ«بعض…»»
+   (٨ من ٣٠ فقرةً مفردة في المسودات، وصفرٌ من ٤٧ في آخر عشرين مقالاً له)، و«فقرات
+   جاهزة: في بعض مدارسنا يتكرر المشهد نفسه» (٤ مسودات من ١٠، وصفرٌ عنده). */
+const ORPHAN_SOME = /^\s*و?بعض(?!\p{L})[^\n]{0,160}$/u
+const STOCK_SCENE_PATTERN = /(?:يتكرر|يتكرّر|نعيش|نرى)\s+(?:ال)?مشهد(?:اً)?\s+(?:نفسه|ذاته)|المشهد\s+(?:نفسه|ذاته)\s+(?:يتكرر|يتكرّر)/u
 const dialectQuotes = (text) => [...String(text || '').matchAll(/«([^»]{1,200})»/gu)].map((match) => match[1]).filter((quote) => DIALECT_WORD_PATTERN.test(bareText(quote)))
 /* حين يزوّد الدكتور المحرك بمادته (موقفٌ عاشه، جملةٌ سمعها) تصير الحكاية حكايته
    والجملة جملته — في موضعها وحده: ما حول الأثر يشارك مادته ثلاث كلماتٍ دالّة فأكثر
@@ -1409,14 +1414,18 @@ export function judgeStyle(body, rawDna, options = {}) {
   const anecdoteHits = options.generated ? unsupportedHits(text, PERSONAL_ANECDOTE_PATTERN, materialStems).slice(0, 4) : []
   const dialogueHits = options.generated ? unsupportedHits(text, INVENTED_DIALOGUE_PATTERN, materialStems).slice(0, 3) : []
   const dialectHits = options.generated ? dialectQuotes(text).filter((quote) => !bareText(material).includes(bareText(quote))).slice(0, 3) : []
-  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length
+  const orphanHits = options.generated ? paragraphsOf(text).filter((paragraph) => ORPHAN_SOME.test(paragraph) && sentencesOf(paragraph).length <= 1).map((paragraph) => paragraph.slice(0, 40)).slice(0, 3) : []
+  const stockHits = options.generated ? (text.match(new RegExp(STOCK_SCENE_PATTERN.source, 'gu')) || []).slice(0, 2) : []
+  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length + orphanHits.length + stockHits.length
   if (dna.recent || voiceSlips) {
     add('currentVoice', 'صوته اليوم', voiceSlips ? Math.max(0, 1 - .5 * voiceSlips) : 1, 8,
-      [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`)].join(' · ') || 'نظيف', 'صفر',
+      [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`), ...orphanHits, ...stockHits].join(' · ') || 'نظيف', 'صفر',
       [
         retiredHits.length ? `احذف ما غاب عن مقالاته الأخيرة كلها: ${retiredHits.map((word) => `«${word}»`).join(' · ')}.` : '',
         anecdoteHits.length ? `احذف الحكاية الشخصية المختلقة (${anecdoteHits.map((hit) => `«${hit}»`).join(' · ')}): لا يكتب في مقالاته الحديثة حواراً مع طالبٍ أو معلمٍ أو قريب. اجعلها مشهداً عامّاً بلا «أنا» ولا أسماء، بفعلٍ مضارع يعرفه كل قارئ.` : '',
         dialogueHits.length ? `احذف الحوار المختلق (${dialogueHits.map((hit) => `«${hit}»`).join(' · ')}): لا يُجري على ألسنة الناس سؤالاً وجواباً؛ صِف ما يحدث وصفاً عامّاً بلا أقوال.` : '',
+        orphanHits.length ? `ادمج الفقرة اليتيمة التي تبدأ بـ«بعض» في ما قبلها أو احذفها (${orphanHits.map((hit) => `«${hit}…»`).join(' · ')}): فقراته المفردة انعطافٌ لا حكمةٌ معلّقة.` : '',
+        stockHits.length ? `احذف الجملة الجاهزة (${stockHits.map((hit) => `«${hit}»`).join(' · ')}) وما تجرّه من فقرةٍ تكرّر المشهد في مكانٍ آخر: خذ مكاناً واحداً وتعمّق فيه.` : '',
         dialectHits.length ? `اكتب بالفصحى أو احذف الجملة العامية بين «…» (${dialectHits.map((quote) => `«${quote}»`).join(' · ')}): لم يكتب جملةً عامية واحدة بين «…» في مقالاته.` : '',
       ].filter(Boolean).join(' '))
   }

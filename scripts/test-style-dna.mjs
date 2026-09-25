@@ -748,6 +748,18 @@ await generatePerfectArticle({ ...input, idea: 'فكرةٌ لا يطابقها �
 })
 assert.equal(sawWorldRule, false, 'فكرةٌ بلا مرجعٍ عالمي لا تُحدَّث عن قسمٍ غائب')
 
+/* الفقرة اليتيمة «بعض…» والمشهد الجاهز: تُضبط في المسودة، ولا تُنسب إليه أبداً. */
+const orphanDraft = [
+  'نحن نربّي أبناءنا على السباق؛ ثم نسأل لماذا تعبوا، ونحسب التعب ضعفاً لا رسالة. والمدرسة تكافئ من يصل أولاً ولا تسأل كيف وصل.',
+  'بعض الصمت يكشف أكثر مما يكشفه أي جدول مزدحم.',
+  'وفي بعض مدارسنا يتكرر المشهد نفسه: طالبٌ يحفظ ولا يسأل، ومعلّمٌ يُنهي المنهج ولا يلتفت إلى الوجوه…ثم نسمّي ذلك إنجازاً.',
+].join('\n\n')
+const orphanVerdict = judgeStyle(orphanDraft, eraDna, { generated: true })
+assert.ok(orphanVerdict.corrections.some((line) => line.includes('الفقرة اليتيمة')), 'الفقرة اليتيمة «بعض…» تُضبط في المسودة')
+assert.ok(orphanVerdict.corrections.some((line) => line.includes('الجملة الجاهزة')), 'والمشهد الجاهز يُضبط')
+const hisOrphans = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الفقرة اليتيمة') || line.includes('الجملة الجاهزة'))).length
+assert.ok(hisOrphans <= 2, `ولا تكاد تُنسب إلى مقالاته (${hisOrphans} من ${dated.length})`)
+
 let sawMaterial = false
 await generatePerfectArticle({ ...input, material: 'في محاضرة الأحد سألت طلابي: لماذا تتعلّمون؟ فقال أحدهم: «من أجل الشهادة».' }, async (url, init) => {
   /* المضيف بالمطابقة التامة لا بالاحتواء (CodeQL: «api.cloudflare.com» قد يقع في أي موضعٍ من الرابط). */

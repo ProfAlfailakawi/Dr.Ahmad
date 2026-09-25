@@ -3428,7 +3428,7 @@ const ARTICLE_FAMILIES = [
     id: 'thesis',
     move: 'thesis',
     label: 'الأطروحة المكثّفة',
-    plan: 'افتح بجملةٍ واحدة تحمل أطروحة المقال كلها كأنها عنوانه: قصيرة، تقرّر ولا تشرح، وقد تنقلب في نصفها الثاني بعد وقفة «…». ثم افتح ما انطوت عليه فقرةً بعد فقرة: ما نراه كل يوم، ثم ما يخفيه، ثم ما يسنده من «من_مراجعك» أو من «من_عندك» إن وُجد. واختم بما حدّده الختام أدناه، وليرجع إلى جملة المطلع وقد اكتسبت معناها.',
+    plan: 'افتح بجملةٍ واحدة تحمل أطروحة المقال كلها كأنها عنوانه: قصيرة، تقرّر ولا تشرح. ثم افتح ما انطوت عليه فقرةً بعد فقرة: ما نراه كل يوم، ثم ما يخفيه، ثم ما يسنده من «من_مراجعك» أو من «من_عندك» إن وُجد. واختم بما حدّده الختام أدناه، وليرجع إلى جملة المطلع وقد اكتسبت معناها.',
   },
   {
     id: 'scene',
@@ -3604,6 +3604,18 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     return 'الختام في هذا المقال: انقلابٌ مكثّف (كثيراً بـ«…بل») أو جملةٌ تقلب الفكرة. لا تستعمل فيه «فاسأل نفسك» ولا «وربما يبدأ».'
   }
 
+  /* وقفة المطلع بنسبته: جملة مطلعه تحمل «…» في نصف مقالاته الأخيرة، وحملتها المسودات في
+     خمسٍ من خمس («نحتفل بالدرجة…ولا نسأل») فصارت توقيعةً مكررة. تُحدَّد لكل مقالٍ ببصمة
+     فكرته ورقم جولته، كالختام. */
+  const openingPauseFor = (family) => {
+    const share = Number(dna.recent?.openingPauseShare)
+    const pauseShare = Number.isFinite(share) && share > 0 ? share : .5
+    const roll = mixHash(familyFingerprint(`${input.idea}|${family.id}|pause`) + (Number(input.variation) || 0) * 104_729) % 100
+    return roll < Math.round(pauseShare * 100)
+      ? 'جملة المطلع في هذا المقال تحمل وقفة «…» واحدة قبل انعطافها.'
+      : 'جملة المطلع في هذا المقال تامّةٌ بلا وقفة «…» ولا «بل»: قرّرها كما هي، ودع الانعطاف لما بعدها.'
+  }
+
   const instructionFor = (family) => [
     identity,
     '',
@@ -3611,6 +3623,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     '',
     `بناء هذا المقال — ${family.label}:`,
     family.plan,
+    openingPauseFor(family),
     closingFor(family),
     '',
     contentRules,

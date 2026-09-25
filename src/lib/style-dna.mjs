@@ -294,6 +294,9 @@ function recentVoice(articles) {
     paragraphsP75: percentile(texts.map((text) => paragraphsOf(text).length).sort((a, b) => a - b), .75),
     paragraphWordsMedian: percentile(texts.flatMap((text) => paragraphsOf(text).map((para) => para.split(/\s+/u).filter(Boolean).length)).sort((a, b) => a - b), .5),
     openingShares: Object.fromEntries(OPENING_MOVES.map((move) => [move, round2(texts.filter((text) => openingMove(text) === move).length / Math.max(1, texts.length))])),
+    /* وقفة «…» في جملة المطلع: في تسعةٍ من آخر عشرين مقالاً له، وفي خمس مسوداتٍ من خمس
+       (٢٥ سبتمبر ٢٠٢٦). يوزّعها الخادم على المقالات بهذه النسبة كما يوزّع الخواتيم. */
+    openingPauseShare: share(/^[^.!؟?]*…/u),
     /* ٢٥ سبتمبر ٢٠٢٦ — نطاقات صوته اليوم: منشورات ٢٠٢٥ مقطّعة (وسيط الجملة ٦ كلمات، ٧١٪
        قصيرة) ومقالات ٢٠٢٦ أتمّ (١٢ كلمة، ٤٤٪)، ووقفاته «…» اليوم أربعٌ في المقال (ثمانٍ في
        أقصاه) وأسئلته أربعة (ستة في أقصاها). المرجَّح بالحقبة بقي يطلب ٥٢٪ جملاً قصيرة، ويقبل
@@ -747,7 +750,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 50 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 50 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -828,7 +831,9 @@ export function styleBrief(rawDna, targetWords = 400) {
   const questionsHigh = today ? Math.max(questionsLow + 1, Math.round(today.questions.p65 * articleScale) + 1) : Math.max(questionsLow + 1, Math.round(perWords(questionBand.p65)))
   const antithesis = Math.max(2, Math.round(perWords(band('antithesisPer100', dna.moves.antithesisPer100).p65)))
   const tightEllipsis = (dna.marks?.ellipsisTightRate || 0) >= .6
-  const pauseExample = tightEllipsis ? '«لأنهم عاجزون…بل لأن أحداً أقنعهم»' : '«لأنهم عاجزون… بل لأن أحداً أقنعهم»'
+  /* مثال الطباعة محايد: كان سطراً من مطلع مقالٍ له («لأنهم عاجزون…بل لأن أحداً أقنعهم»)
+     يصل كل مسودة، فيعلّمها الانقلاب بـ«…بل» قالباً ويعرض جملته للنقل. */
+  const pauseExample = tightEllipsis ? '«يصمت البيت…ثم يعلو السؤال»' : '«يصمت البيت… ثم يعلو السؤال»'
   const scale = targetWords / Math.max(200, dna.article.median || 386)
   const recent = dna.recent || {}
   const recentShape = (recent.sample || 0) >= 10 && recent.paragraphsMedian > 0
@@ -1238,7 +1243,7 @@ export function judgeStyle(body, rawDna, options = {}) {
      صوته اليوم حيث ابتعد المرجَّح بالحقبة عنه. */
   const recent = dna.recent || {}
   const today = recentBandsOf(dna)
-  const pauseExample = (dna.marks?.ellipsisTightRate || 0) >= .6 ? '«عاجزون…بل»' : '«عاجزون… بل»'
+  const pauseExample = (dna.marks?.ellipsisTightRate || 0) >= .6 ? '«يصمت البيت…ثم يعلو السؤال»' : '«يصمت البيت… ثم يعلو السؤال»'
 
   /* ١ — نقاط الحذف: أثقل علامةٍ في بصمته (٩٤٪ من مقالاته، وسيط ٢٨ وقفة). */
   /* اليوم: الحدّ الأدنى عند p15 (مقالٌ بوقفةٍ واحدة يكتبه هو)، والأعلى عند p85 — المحاكاة

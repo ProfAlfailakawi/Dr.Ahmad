@@ -3056,6 +3056,10 @@ const knowledgeFiles = {
   passages: resolve(process.cwd(), 'src/data/book-passages.json'),
   interviews: resolve(process.cwd(), 'src/data/media-archive-transcripts.json'),
   interviewMeta: resolve(process.cwd(), 'src/data/media-archive.json'),
+  /* ٢٥ سبتمبر ٢٠٢٦ — مراجع العالم (بطلب الدكتور: «مراجع على مستوى العالم… أهم شي مصادر
+     موثوقة»): دراساتٌ وتقارير من مجلاتٍ محكّمة ومنظماتٍ دولية، كلٌّ منها تحقّقنا منه من
+     صفحته الأصلية (DOI أو صفحة المجلة أو التقرير الرسمي) ومعه اقتباسٌ حرفي يسند رقمه. */
+  globalReferences: resolve(process.cwd(), 'src/data/global-references.json'),
 }
 const readJsonIfPresent = (file, fallback) => { try { return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : fallback } catch { return fallback } }
 /* جذعٌ تقريبي للمطابقة بالكلمة لا بجزئها: تُنزع السوابق (و ف ب ل ك) وأداة التعريف. */
@@ -3134,6 +3138,15 @@ function knowledgeIndex() {
     /* «Howard وآخرين (2021)» و«Howard et al. (2021)» مرجعٌ واحد. */
     for (const citation of citationsOf(body)) documents.push({ kind: 'citation', group: citation.key.replace(/\s*(?:وآخرين|وآخرون)/u, ' et al.'), slug, label: citation.key, text: citation.paragraph, claim: citation.sentence })
   }
+  for (const reference of readJsonIfPresent(knowledgeFiles.globalReferences, { references: [] }).references || []) {
+    if (!reference?.label || !reference?.claim_ar || !reference?.url) continue
+    documents.push({
+      kind: 'global', group: reference.id || reference.label, label: reference.label,
+      /* المطابقة بالعربية: النتيجة وكلماتها المفتاحية (الفكرة تُكتب بالعربية). */
+      text: `${reference.claim_ar} ${(reference.keywords_ar || []).join(' ')}`,
+      claim: reference.claim_ar, venue: reference.venue || '', url: reference.url, year: reference.year,
+    })
+  }
   const frequency = new Map()
   let totalLength = 0
   for (const document of documents) {
@@ -3149,14 +3162,14 @@ function knowledgeIndex() {
 }
 
 /** أقرب ما قاله هو في الفكرة، من كل مصدرٍ على حدة، بتنوّعٍ (مقطعان على الأكثر من الكتاب الواحد). */
-export function domainKnowledge(idea, { angle = '', books = 4, articles = 2, interviews = 2, citations = 2, exclude = [] } = {}) {
+export function domainKnowledge(idea, { angle = '', books = 4, articles = 2, interviews = 2, citations = 2, globals = 2, exclude = [] } = {}) {
   const { documents, frequency, averageLength } = knowledgeIndex()
   /* الفكرة وحدها تشترط المطابقة؛ الزاوية ترجّح ولا تُقصي: «التلعيب» بزاوية «القيادة
      لا الاستبدال» كانت تُسقط كل مقاطع التلعيب لأن كلمة الزاوية ليست فيها. */
   const ideaTerms = [...new Set(knowledgeTerms(idea))].slice(0, 16)
   const angleTerms = [...new Set(knowledgeTerms(angle))].filter((term) => !ideaTerms.includes(term)).slice(0, 8)
   const query = [...ideaTerms, ...angleTerms]
-  const empty = { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [], من_مراجعك: [] }
+  const empty = { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [], من_مراجعك: [], من_مراجع_العالم: [] }
   if (!ideaTerms.length || !documents.length) return empty
   const angleSet = new Set(angleTerms)
   const idf = new Map(query.map((term) => {
@@ -3186,12 +3199,13 @@ export function domainKnowledge(idea, { angle = '', books = 4, articles = 2, int
   const floor = (scored[0]?.score || 0) * .5
   /* المرجع جملةٌ واحدة قصيرة فدرجته دون درجة المقطع الطويل بطبيعته: يُقاس بأقرب مرجعٍ مثله. */
   const citationFloor = (scored.find((entry) => entry.document.kind === 'citation')?.score || 0) * .5
+  const globalFloor = (scored.find((entry) => entry.document.kind === 'global')?.score || 0) * .5
   const pick = (kind, limit, perGroup) => {
     const counts = new Map()
     const picked = []
     for (const { document, score } of scored) {
       if (document.kind !== kind) continue
-      if (score < (kind === 'citation' ? citationFloor : floor)) continue
+      if (score < (kind === 'citation' ? citationFloor : kind === 'global' ? globalFloor : floor)) continue
       const count = counts.get(document.group) || 0
       if (count >= perGroup) continue
       counts.set(document.group, count + 1)
@@ -3205,6 +3219,7 @@ export function domainKnowledge(idea, { angle = '', books = 4, articles = 2, int
     من_مقالاتك: pick('article', articles, 1).map((item) => ({ نص: boundedString(item.text, 600) })),
     من_لقاءاتك: pick('interview', interviews, 1).map((item) => ({ لقاء: item.label, نص: boundedString(item.text, 460) })),
     من_مراجعك: pick('citation', citations, 1).map((item) => ({ مرجع: item.label, ما_نسبتَه_إليه: boundedString(item.claim, 420) })),
+    من_مراجع_العالم: pick('global', globals, 1).map((item) => ({ مرجع: item.label, المصدر: item.venue, ما_وجدته: boundedString(item.claim, 480), الرابط: item.url })),
   }
 }
 
@@ -3563,7 +3578,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   const anchors = rhythmAnchors(input.styleSamples)
   const exemplars = voiceExemplars(input.existing, envNumber('ARTICLE_VOICE_EXEMPLAR_WORDS', 520, 120, 1200))
   /* مقالا نماذج الصوت يُستثنيان من «معرفتك»: هما في الطلب كاملين أصلاً. */
-  const knowledge = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off' ? { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [], من_مراجعك: [] } : domainKnowledge(input.idea, { angle: input.angle || '', exclude: input.existing.filter((item) => String(archiveBodyForSlug(item?.slug) || item?.body || '').split(/\s+/).filter(Boolean).length >= 220).slice(0, 2).map((item) => item?.slug).filter(Boolean) })
+  const knowledge = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off' ? { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [], من_مراجعك: [], من_مراجع_العالم: [] } : domainKnowledge(input.idea, { angle: input.angle || '', exclude: input.existing.filter((item) => String(archiveBodyForSlug(item?.slug) || item?.body || '').split(/\s+/).filter(Boolean).length >= 220).slice(0, 2).map((item) => item?.slug).filter(Boolean) })
   const brief = styleBrief(dna, input.targetWords)
   /* ---------- الميزانية الزمنية: الباب أضيق من المحرك ----------
      السجلّ الحيّ: المقال كُتب مرتين بنجاح (٢٠٠ في ٧٩٫٦ ثم ٦٦٫١ ثانية) ولم يره
@@ -3584,7 +3599,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     '· الحدث الراهن اختياري: اربطه فقط إن كان الارتباط عضوياً. لا تستخدم سوى العنوان والملخص والمصدر والرابط المقدّم.',
     '· العنوان قويّ غير صحفيٍّ مبتذل، والمقتطف بين ٩٠ و١٩٠ حرفاً وبنبرة المقال نفسها.',
     '· «نماذج_صوت» مقالان كاملان من مقالاتك: اسمع منهما النَّفَس وطول الجملة والوقفة «…» والانقلاب «بل» والانتقال بين الفقرات. يُمنع نقل أي عبارةٍ أو مثالٍ أو فكرةٍ منهما؛ المطلوب أن يشبه المقالُ الجديدُ صوتَهما لا كلامَهما.',
-    '· «من_مراجعك» داخل «معرفتك»: دراساتٌ استشهدتَ بها أنت في مقالاتك المنشورة، ومعها المعنى الذي نسبته إليها. في مقالاتك الحديثة تستشهد بدراسةٍ أو اثنتين هكذا: «اسم الباحث باللاتينية (السنة)». اختر المرجع الأقرب إلى موضوع هذا المقال تحديداً لا مرجعاً عاماً يصلح لكل موضوع؛ ولا تستشهد بمرجعٍ لمجرد أنه مشهور. إن خدم مرجعٌ منها فكرتك فاستشهد به بالمعنى نفسه وبصياغةٍ جديدة. ولا تستشهد أبداً بدراسةٍ أو رقمٍ أو مجلةٍ ليست فيها أو في «من_عندك».',
+    '· «من_مراجعك» داخل «معرفتك»: دراساتٌ استشهدتَ بها أنت في مقالاتك المنشورة، ومعها المعنى الذي نسبته إليها. في مقالاتك الحديثة تستشهد بدراسةٍ أو اثنتين هكذا: «اسم الباحث باللاتينية (السنة)». اختر المرجع الأقرب إلى موضوع هذا المقال تحديداً لا مرجعاً عاماً يصلح لكل موضوع؛ ولا تستشهد بمرجعٍ لمجرد أنه مشهور. إن خدم مرجعٌ منها فكرتك فاستشهد به بالمعنى نفسه وبصياغةٍ جديدة. ولا تستشهد أبداً بدراسةٍ أو رقمٍ أو مجلةٍ ليست فيها أو في «من_مراجع_العالم» أو في «من_عندك».',
+    '· «من_مراجع_العالم» داخل «معرفتك»: دراساتٌ وتقارير عالمية من مجلاتٍ محكّمة ومنظماتٍ دولية، تحقّقنا من كلٍّ منها من صفحته الأصلية. استشهد بمرجعٍ منها إن خدم فكرتك تحديداً: باسمه وسنته كما في «مرجع»، وبنتيجته كما في «ما_وجدته» بأرقامها نفسها وحذرها نفسه (الارتباط ارتباطٌ لا سبب)، بصياغتك أنت. لا تزد عليها رقماً أو تعميماً ولا تنسب إليها ما لم تقله. مرجعٌ أو اثنان في المقال كله من «من_مراجعك» و«من_مراجع_العالم» معاً، لا أكثر.',
     '· «من_عندك» إن وصل: مادةٌ كتبها الدكتور بنفسه لهذا المقال (مناسبته، أو موقفٌ عاشه، أو جملةٌ سمعها، أو مصدرٌ برقمه). هي أصدق ما في المقال فاجعلها في قلبه: انقلها بأمانة، وما رواه فيها بضمير المتكلم يُروى كذلك، ولا تزد عليها تفصيلاً أو قولاً أو رقماً لم يذكره. وهي وحدها ما يجوز أن يُروى بضمير المتكلم.',
     '· «معرفتك» مقاطع من متون كتبك التسعة في تكنولوجيا التعليم ومن فقرات مقالاتك ومن لقاءاتك (تفريغٌ آليّ قد يحمل كلام المحاور أو نشرة الأخبار؛ خذ منه موقفك أنت فقط): هي رصيدك أنت في تخصصك. ابنِ الحجة على مفاهيمها ومواقفك فيها بكلماتٍ جديدة، ولا تنقل منها جملةً حرفياً، ولا تنقل منها رقماً، ولا تقل «في كتابي» ولا «في لقاءٍ لي». وإن لم يصلك منها شيء فاكتب من فكرتك.',
     '· أعد JSON فقط.',
@@ -3666,6 +3682,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
         من_لقاءاتك: knowledge.من_لقاءاتك.slice(0, 1).map((item) => ({ ...item, نص: item.نص.slice(0, 300) })),
         من_مقالاتك: knowledge.من_مقالاتك.slice(0, 1).map((item) => ({ نص: item.نص.slice(0, 300) })),
         من_مراجعك: knowledge.من_مراجعك.slice(0, 2),
+        من_مراجع_العالم: knowledge.من_مراجع_العالم.slice(0, 2),
       },
       nearestArchive: input.existing.slice(0, 10).map((item) => ({
         title: item.title, excerpt: item.excerpt, body: String(item.body || '').slice(0, 260),
@@ -3720,7 +3737,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       archive: knowledgeArchive,
       orthography,
       /* بوابة الإسناد تحتاج المصادر لا الأرشيف وحده: الحدث الراهن سندٌ مشروع. */
-      sources: [...input.existing, ...currentEvents, ...knowledge.من_مراجعك.map((item) => item.ما_نسبتَه_إليه), ...(input.material ? [input.material] : [])],
+      sources: [...input.existing, ...currentEvents, ...knowledge.من_مراجعك.map((item) => item.ما_نسبتَه_إليه), ...knowledge.من_مراجع_العالم.map((item) => `${item.مرجع} ${item.المصدر} ${item.ما_وجدته}`), ...(input.material ? [input.material] : [])],
       threshold: 80,
     })
     const words = exactWordCount(draft.body)

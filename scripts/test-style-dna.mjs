@@ -721,6 +721,16 @@ for (let variation = 0; variation < 12; variation += 1) {
   })
 }
 const pauseShare = pauseLines.with / Math.max(1, pauseLines.with + pauseLines.without)
+/* والصفر المقيس يُحترم: لا وقفة في أي مطلعٍ إن خلت منها مطالعه كلها (Codex). */
+let pausesAtZero = 0
+for (let variation = 0; variation < 6; variation += 1) {
+  await generatePerfectArticle({ ...input, styleDna: { ...eraDna, recent: { ...eraDna.recent, openingPauseShare: 0 } }, variation }, async (url, init) => {
+    if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+    if ((JSON.parse(init.body).messages[0]?.content || '').includes('تحمل وقفة «…» واحدة')) pausesAtZero += 1
+    return makeResponse(strongBody)
+  })
+}
+assert.equal(pausesAtZero, 0, 'نسبة صفر تعني مطلعاً بلا وقفة دائماً')
 assert.ok(pauseLines.with && pauseLines.without && pauseShare >= .25 && pauseShare <= .75, `مطالع بوقفةٍ وأخرى بلا وقفة بنسبته (${pauseLines.with}/${pauseLines.with + pauseLines.without})`)
 
 let sawMaterial = false

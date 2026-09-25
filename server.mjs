@@ -3608,8 +3608,9 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
      خمسٍ من خمس («نحتفل بالدرجة…ولا نسأل») فصارت توقيعةً مكررة. تُحدَّد لكل مقالٍ ببصمة
      فكرته ورقم جولته، كالختام. */
   const openingPauseFor = (family) => {
+    /* الصفر المقيس صفرٌ لا غياب (Codex): إن خلت مطالعه الأخيرة من الوقفة فلا وقفة. */
     const share = Number(dna.recent?.openingPauseShare)
-    const pauseShare = Number.isFinite(share) && share > 0 ? share : .5
+    const pauseShare = Number.isFinite(share) && dna.recent?.openingPauseShare !== null && dna.recent?.openingPauseShare !== undefined ? clamp(share, 0, 1) : .5
     const roll = mixHash(familyFingerprint(`${input.idea}|${family.id}|pause`) + (Number(input.variation) || 0) * 104_729) % 100
     return roll < Math.round(pauseShare * 100)
       ? 'جملة المطلع في هذا المقال تحمل وقفة «…» واحدة قبل انعطافها.'

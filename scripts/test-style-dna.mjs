@@ -21,7 +21,7 @@ const {
   BANNED_PHRASES, arabicCountPhrase, articleMetrics, calibrateStyle, countWords, judgeNaturalness, judgeStyle, measureStyleDna, percentileRank,
   PROOFREAD_INSTRUCTION, acceptProofread, bareText, buildOrthographyIndex, deriveExcerpt,
   extractVoiceSignature, liftPauses, locateIssues, orthographySlips, polishTypography, refineToStyle,
-  sentencesOf, styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory,
+  sentencesOf, styleBrief, unsupportedClaims, verbatimOverlap, withVoiceMemory, openingMove, OPENING_MOVES,
 } = await import(resolve(root, 'src/lib/style-dna.mjs'))
 
 const bodies = JSON.parse(readFileSync(resolve(root, 'src/data/bodies.json'), 'utf8'))
@@ -93,13 +93,20 @@ for (const item of archive.slice(0, 25)) {
    على أنه يقلّد يده لا يفرض ذوقاً غريباً عليها. */
 let lifted = 0
 let lowered = 0
+let liftSum = 0
 for (const item of archive) {
   const before = judgeStyle(item.body, dna).score
   const after = judgeStyle(refineToStyle(item.body, dna), dna).score
   if (after > before) lifted += 1
   if (after < before - 5) lowered += 1
+  liftSum += after - before
 }
-assert.ok(lifted >= 60, `الصقل يرفع درجة مقالاته نفسها (${lifted} مقالاً)`)
+/* العدّ يتبع خطّ الأساس: حين صار الحَكَم يحتسب خواتيمه وجمله ووقفاته كما يكتبها اليوم
+   (٢٥ سبتمبر ٢٠٢٦) ارتفعت درجات نصوصه الخام (٨٦٫٩ ← ٨٨٫٠)، فبقي للصقل ما يرفعه في ٥٢
+   مقالاً بدل ٦١. المعيار الأدقّ هو الأثر نفسه: متوسط ما يضيفه الصقل (+٢٫٣ قبل التعديل
+   وبعده)، ولا مقال يهبط. */
+assert.ok(lifted >= 50, `الصقل يرفع درجة مقالاته نفسها (${lifted} مقالاً)`)
+assert.ok(liftSum / archive.length >= 2, `ويرفعها بمتوسطٍ لا يقل عن نقطتين (${(liftSum / archive.length).toFixed(1)})`)
 assert.equal(lowered, 0, 'الصقل لا يخفض درجة أي مقالٍ من مقالاته بأكثر من خمس نقاط')
 
 /* كسر الجملة المتضخّمة يقع عند مفصلٍ يبدأ به جمله، لا في أي مكان */
@@ -151,7 +158,7 @@ delete process.env.GEMINI_API_KEY
 delete process.env.GOOGLE_API_KEY
 process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account'
 process.env.CLOUDFLARE_API_TOKEN = 'test-token'
-const { citationsOf, domainKnowledge, generatePerfectArticle } = await import(resolve(root, 'server.mjs'))
+const { citationsOf, domainKnowledge, generatePerfectArticle, chooseFamilies } = await import(resolve(root, 'server.mjs'))
 /* بنك المراجع: يلتقط استشهاداته كما كتبها، وبزمنٍ خطّي (CodeQL: النمط المتداخل كان يتراجع أُسّياً). */
 assert.deepEqual(citationsOf('وإذا أضفنا منظور Ryan وDeci (2000) في نظرية الدافعية الذاتية، تتضح الصورة.').map((item) => item.key), ['Ryan وDeci (2000)'])
 assert.deepEqual(citationsOf('هذا ما أشارت إليه أعمال حديثة مثل Lawrence et al. (2021) وFairlamb et al. (2022).').map((item) => item.key), ['Lawrence et al. (2021)'])
@@ -321,7 +328,11 @@ const medianOf = (list, useDna) => {
 }
 const recent = dated.filter((item) => item.iso >= '2025-01-01')
 assert.ok(recent.length >= 20, `عيّنة حديثة كافية (${recent.length})`)
-assert.ok(medianOf(recent, eraDna) > medianOf(recent, flatDna), `الترجيح ينصف مقالاته الحديثة (${medianOf(recent, flatDna)} ← ${medianOf(recent, eraDna)})`)
+/* صوته اليوم هو آخر عشرين مقالاً (نطاقات الإيقاع منها منذ ٢٥ سبتمبر ٢٠٢٦): عليها يُقاس
+   الإنصاف. ومنشورات ٢٠٢٥ المقطّعة لا تنهار (تبقى فوق ٨٥) وإن ابتعدت عن صوته اليوم. */
+const latestTwenty = [...dated].sort((left, right) => right.iso.localeCompare(left.iso)).slice(0, 20)
+assert.ok(medianOf(latestTwenty, eraDna) > medianOf(latestTwenty, flatDna), `الترجيح ينصف مقالاته الأخيرة (${medianOf(latestTwenty, flatDna)} ← ${medianOf(latestTwenty, eraDna)})`)
+assert.ok(medianOf(recent, eraDna) >= 85, `ومقالاته منذ ٢٠٢٥ باقيةٌ في مداه (${medianOf(recent, eraDna)})`)
 
 /* والأهم: ما يُملى على المحرك تغيّر فعلاً نحو صوته اليوم */
 const flatBrief = styleBrief(flatDna, 400)
@@ -633,6 +644,79 @@ for (const item of archive.slice(0, 40)) {
 assert.match(checker, /data-mimic-review="true"/, 'والمراجعة المقطعية معروضة')
 assert.match(checker, /calibrateStyle/, 'والفاحص يعايِر عتبته من أرشيفه')
 assert.doesNotMatch(checker, /143/, 'ولا عددَ مقالاتٍ مكتوباً باليد في الفاحص')
+
+/* ─── ٢٥ سبتمبر ٢٠٢٦: مطالعه بنسبه، ولا حوار مصنوع ولا عامية بين «…» ─── */
+/* حَكَمٌ أعمى فرّق مقالاته من المحاكاة بمطالع «ليست المشكلة…» وبألفاظ الخطط نفسها
+   («المفارقة»، «المعيار»، «البديل») وبحوارٍ مصنوع وعاميةٍ مصطنعة. */
+assert.equal(openingMove('ليس كلُّ ما نقيسه في المدرسة يستحق أن يُقاس.'), 'negation')
+assert.equal(openingMove('نحن نربّي أبناءنا على الخوف من الخطأ… ثم نطلب منهم الإبداع.'), 'we')
+assert.equal(openingMove('تظهر الدرجات على الشاشة، ويصمت البيت.'), 'scene')
+assert.equal(openingMove('هل نعلّم أبناءنا أن يفكروا؟ أم أن يجيبوا؟'), 'question')
+assert.equal(openingMove('نقول: «عادي»… ونمضي.'), 'quote')
+assert.equal(openingMove('الامتحان الذي يخيف الطالب لا يقيس ما يعرفه… بل ما يخافه.'), 'thesis')
+const openingShares = eraDna.recent.openingShares
+assert.ok(Math.abs(OPENING_MOVES.reduce((sum, move) => sum + (openingShares[move] || 0), 0) - 1) < .03, `نسب المطالع تامّة (${JSON.stringify(openingShares)})`)
+assert.ok(openingShares.thesis + openingShares.scene >= .4 && openingShares.negation <= .25, `مطالعه أطروحةٌ ومشهد قبل النفي (${JSON.stringify(openingShares)})`)
+const firstPicks = {}
+for (let index = 0; index < 600; index += 1) {
+  const [first, second] = chooseFamilies(`فكرة رقم ${index} عن التعليم`, index % 7, openingShares)
+  assert.notEqual(first.id, second.id, 'خياران مختلفان لا نسختان')
+  firstPicks[first.move] = (firstPicks[first.move] || 0) + 1
+}
+for (const move of OPENING_MOVES) {
+  const got = (firstPicks[move] || 0) / 600
+  assert.ok(Math.abs(got - (openingShares[move] || 0)) <= .07, `المطلع «${move}» بنسبه (${got.toFixed(2)} مقابل ${openingShares[move]})`)
+}
+const familiesBlock = server.slice(server.indexOf('const ARTICLE_FAMILIES = ['), server.indexOf('const FALLBACK_OPENING_SHARES'))
+for (const word of ['المعيار', 'المفارقة', 'البديل', 'كويتيةً']) assert.ok(!familiesBlock.includes(word), `خطط البناء لا تسلّم الكاتب لفظ «${word}»`)
+assert.match(familiesBlock, /لا تستعمل الصيغة الجاهزة «ليست المشكلة/, 'والنفي يُصاغ من الفكرة لا من القالب')
+assert.doesNotMatch(server, /ثم معيار، ثم دليل/, 'ولا «ثم معيار» في قواعد المضمون')
+assert.doesNotMatch(server, /وقد تمرّ عبارةٌ كويتية/, 'ولا دعوة إلى العامية بين «…»')
+assert.doesNotMatch(server, /تظهر النتيجة، يتغيّر شكل البيت/, 'ولا مطلعٌ من مقالاته مثالاً يُستنسخ')
+
+const invented = [
+  'تُعلَّق الشهادة على الثلاجة، ويصمت البيت كله…لكن الصمت لا يعني الرضا.',
+  'يسأل الأب ابنه: «وين وصلت؟» فيجيب: «ما أدري…خلصت».',
+  'نحن نربّي أبناءنا على السباق؛ ثم نسأل لماذا تعبوا.',
+  'والمدرسة لا تصنع هذا وحدها. نحن نصنعه كل مساء حين نسأل عن الدرجة قبل أن نسأل عن اليوم، وحين نقيس التعب بعدد الساعات لا بما بقي في القلب…',
+  'وربما يبدأ التعلّم الحقيقي يوم نكفّ عن العدّ.',
+].join('\n\n')
+const inventedVerdict = judgeStyle(invented, eraDna, { generated: true })
+assert.ok(inventedVerdict.checks.find((check) => check.key === 'currentVoice')?.grade < 1, 'الحوار المصنوع والعامية بين «…» يُنقصان المسودة المولَّدة')
+assert.ok(inventedVerdict.corrections.some((line) => line.includes('احذف الحوار المختلق')), 'ومع الحوار أمر إصلاحٍ محدد')
+assert.ok(inventedVerdict.corrections.some((line) => line.includes('الجملة العامية')), 'والعامية تُردّ إلى الفصحى')
+assert.ok(!judgeStyle(invented, eraDna).corrections.some((line) => line.includes('الحوار المختلق') || line.includes('الجملة العامية')), 'وما يكتبه هو بيده لا يُحاسَب')
+const fromHim = judgeStyle(invented, eraDna, { generated: true, authorMaterial: 'سألت ابني بعد الامتحان: «وين وصلت؟» فقال: «ما أدري…خلصت».' })
+assert.ok(!fromHim.corrections.some((line) => line.includes('الحوار المختلق') || line.includes('الجملة العامية')), 'وما جاء من مادته هو لا يُحاسَب')
+/* والإعفاء في موضعه وحده (Codex): لفظ حكايةٍ في المادة لا يُعفي المقال كله. */
+const studyOnly = judgeStyle(invented, eraDna, { generated: true, authorMaterial: 'قالت دراسة Lally et al. (2010) إن العادة تحتاج نحو 66 يوماً لتستقر.' })
+assert.ok(studyOnly.corrections.some((line) => line.includes('احذف الحوار المختلق')), '«قالت دراسة» في المادة لا تجيز حواراً مختلقاً في المقال')
+const mixedStory = [
+  'في محاضرة الأحد سألتُ طلابي: لماذا تتعلّمون؟ فقال أحدهم إنه يتعلّم من أجل الشهادة، وضحك الآخرون كأن الجواب بديهي…',
+  'وحدثتني معلمةٌ في مدرسةٍ أخرى عن طالبٍ لا يسأل أبداً؛ كأن السؤال عنده عيب.',
+  'نحن نربّي أبناءنا على الإجابة لا على السؤال. والمدرسة لا تصنع هذا وحدها: نحن نصنعه كل مساء حين نسأل عن الدرجة قبل أن نسأل عن اليوم…',
+].join('\n\n')
+const mixedVerdict = judgeStyle(mixedStory, eraDna, { generated: true, authorMaterial: 'في محاضرة الأحد سألت طلابي: لماذا تتعلمون؟ فقال أحدهم: من أجل الشهادة. وضحك الباقون.' })
+const mixedOrder = mixedVerdict.corrections.find((line) => line.includes('الحكاية الشخصية المختلقة')) || ''
+assert.ok(mixedOrder.includes('حدثتني') && !mixedOrder.includes('سألتُ'), `حكايته من مادته تبقى، والمختلقة بجوارها تُحاسَب (${mixedOrder.slice(0, 90)})`)
+const inventedStory = 'حدثتني معلمةٌ عن طالبٍ لا يسأل…والسؤال عنده خوف.\n\nنحن نربّي أبناءنا على الإجابة؛ لا على السؤال. والمدرسة لا تصنع هذا وحدها: نحن نصنعه كل مساء حين نسأل عن الدرجة قبل أن نسأل عن اليوم، وحين نقيس التعب بعدد الساعات لا بما بقي في القلب…\n\nوربما يبدأ التعلّم الحقيقي يوم نكفّ عن العدّ.'
+assert.ok(judgeStyle(inventedStory, eraDna, { generated: true, authorMaterial: 'دراسة Lally et al. (2010): نحو 66 يوماً لتكوين العادة.' }).corrections.some((line) => line.includes('الحكاية الشخصية المختلقة')), 'ومادةٌ بلا حكاية لا تجيز حكايةً مختلقة')
+const hisDialect = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الجملة العامية'))).length
+assert.equal(hisDialect, 0, 'ولا جملة عامية بين «…» في مقالاته كلها: الكاشف لا يتّهمه')
+assert.ok(unsupportedClaims('في محاضرة الأحد رفع ٤٢٪ من الطلاب أيديهم.', ['رفع ٤٢٪ من طلابي أيديهم في محاضرة الأحد']).length === 0, 'ورقمه من مادته مُسنَد')
+
+let sawMaterial = false
+await generatePerfectArticle({ ...input, material: 'في محاضرة الأحد سألت طلابي: لماذا تتعلّمون؟ فقال أحدهم: «من أجل الشهادة».' }, async (url, init) => {
+  /* المضيف بالمطابقة التامة لا بالاحتواء (CodeQL: «api.cloudflare.com» قد يقع في أي موضعٍ من الرابط). */
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+  const text = JSON.parse(init.body).messages.map((message) => message.content || '').join('\n')
+  if (text.includes('"من_عندك":"في محاضرة الأحد') && text.includes('«من_عندك» إن وصل')) sawMaterial = true
+  return makeResponse(strongBody)
+})
+assert.ok(sawMaterial, 'مادته تصل الكاتب ومعها قاعدتها')
+assert.match(studio, /material: material\.trim\(\)/, 'حقل مادته موصولٌ بطلب الكتابة')
+assert.match(studio, /authorMaterial: bundle\.authorMaterial \|\| ''/, 'وحَكَم الاستوديو يعرف ما جاء منه')
+assert.ok((studio.match(/setMaterial\(''\)/g) || []).length >= 4, 'ومادة المقال لا تنتقل إلى فكرةٍ أخرى تُحمَّل في الاستوديو (Codex)')
 
 const CHANGE_COUNT_FORMS = { one: 'تعديل واحد', two: 'تعديلين', few: 'تعديلات', many: 'تعديلاً' }
 const PLACE_COUNT_FORMS = { one: 'موضع واحد', two: 'موضعين', few: 'مواضع', many: 'موضعاً' }

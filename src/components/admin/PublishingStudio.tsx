@@ -93,6 +93,8 @@ type Bundle = {
   event?: CurrentEvent | null
   eventConnection?: string
   generatedBy?: 'archive-ai' | 'local-fallback'
+  /* مادته هو التي كُتب منها المقال: حكايته وجملته وأرقامه لا تُحاسَب كأنها مختلقة. */
+  authorMaterial?: string
   socialPack?: PerfectSocialPack | null
 }
 
@@ -2510,6 +2512,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const [idea, setIdea] = useState('الذكاء الاصطناعي في التعليم')
   const [audience, setAudience] = useState('المعلمين والقيادات التعليمية')
   const [angle, setAngle] = useState('الأثر الإنساني قبل بريق الأداة')
+  /* ما لا تملكه المحاكاة: مناسبة المقال، وموقفٌ عاشه، وجملةٌ سمعها، ودراسةٌ برقمها. */
+  const [material, setMaterial] = useState('')
   const [bundle, setBundle] = useState<Bundle>(() => buildBundle(idea, audience, angle, articles))
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
@@ -2547,6 +2551,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
 
   const adoptSavedIdea = (decision: EditorialBoardDecision) => {
     setIdea(decision.idea)
+    /* مادةُ المقال السابق ليست مادة هذا (Codex): حكايته وجملته لا تنتقلان إلى فكرةٍ أخرى. */
+    setMaterial('')
     setEditorialDecision(null)
     setNotice(`حُمّلت فكرة «${decision.idea.slice(0, 60)}» من سجل المجلس — اعرضها عليه الآن برادار اليوم.`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -2589,6 +2595,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     setProposalSourcePerson(row.name.slice(0, 80))
     setProposalSourceContext(`من صندوق الوارد: ${row.message.slice(0, 220)}`)
     setIdea(seed.slice(0, 300))
+    setMaterial('')
     setEditorialDecision(null)
     setInboxSuggestionsOpen(false)
     setNotice('التُقط المقترح من صندوق الوارد بمصدره — اعرضه على المجلس.')
@@ -2737,7 +2744,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       const stored = sessionStorage.getItem('admin:publishing-room-seed')
       if (!stored) return
       const seed = JSON.parse(stored) as { idea?: string; audience?: string; purpose?: string; openBoard?: boolean }
-      if (seed.idea) setIdea(seed.idea)
+      if (seed.idea) { setIdea(seed.idea); setMaterial('') }
       if (seed.audience) setAudience(seed.audience)
       if (seed.purpose) setAngle(seed.purpose.slice(0, 180))
       setEditorialDecision(null)
@@ -2870,9 +2877,15 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   )
   const liveStyleVerdict = useMemo(
     () => wordCount(settledBody) >= 120
-      ? judgeStyle(settledBody, styleDna, { archive: comparisonArchive, sources: archiveTexts, orthography, generated: Boolean(bundle.generatedBy) })
+      ? judgeStyle(settledBody, styleDna, {
+        archive: comparisonArchive,
+        sources: bundle.authorMaterial ? [...archiveTexts, bundle.authorMaterial] : archiveTexts,
+        orthography,
+        generated: Boolean(bundle.generatedBy),
+        authorMaterial: bundle.authorMaterial || '',
+      })
       : null,
-    [settledBody, styleDna, archiveTexts, comparisonArchive, orthography, bundle.generatedBy],
+    [settledBody, styleDna, archiveTexts, comparisonArchive, orthography, bundle.generatedBy, bundle.authorMaterial],
   )
   const lab = useMemo(() => ideaLab(idea, richArticles, books, papers), [idea, richArticles])
   const privateLinks = (privateBookLinks as { books?: PrivateBookLink[] }).books || []
@@ -3386,13 +3399,13 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     () => wordCount(settledBody) >= 60
       ? locateIssues(settledBody, styleDna, {
         archive: bundle.generatedBy ? comparisonArchive : undefined,
-        sources: archiveTexts,
+        sources: bundle.authorMaterial ? [...archiveTexts, bundle.authorMaterial] : archiveTexts,
         orthography,
         /* نصّه هو: لا تُعرض عليه قواعد النموذج، بل العيب الموضوعي وحده. */
         strict: Boolean(bundle.generatedBy),
       })
       : [],
-    [settledBody, styleDna, comparisonArchive, archiveTexts, orthography, bundle.generatedBy],
+    [settledBody, styleDna, comparisonArchive, archiveTexts, orthography, bundle.generatedBy, bundle.authorMaterial],
   )
 
   /* نداءٌ واحد لفقرةٍ واحدة: يستبدلها في مكانها ولا يمسّ بقية المقال. */
@@ -3458,6 +3471,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           idea: requestedIdea,
           audience,
           angle: requestedAngle,
+          material: material.trim(),
           targetWords: requestedTarget,
           skipOriginality,
           styleProfile: style,
@@ -3490,7 +3504,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       /* الصقل الحتمي الأخير: طباعةٌ وإيقاعُ فقراتٍ ببصمته. لا تُضاف كلمة. */
       setAlternates(generated.alternates || [])
       const refinedBody = refineToStyle(generated.body, styleDna)
-      const verdict = judgeStyle(refinedBody, styleDna, { archive: richArticles.map((article) => ({ body: article.body || '' })) })
+      const verdict = judgeStyle(refinedBody, styleDna, { archive: richArticles.map((article) => ({ body: article.body || '' })), generated: true, authorMaterial: material.trim() })
       generated = { ...generated, body: refinedBody, exactWords: wordCount(refinedBody) }
       setStyleVerdict(verdict)
       generated = {
@@ -3526,6 +3540,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         event: generated.event || null,
         eventConnection: generated.eventConnection || '',
         generatedBy: generated.modelValidated ? 'archive-ai' : 'local-fallback',
+        authorMaterial: material.trim() || undefined,
         socialPack: null,
       }
       setBundle(nextBundle)
@@ -3552,6 +3567,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     // حتى لا تتحول بطاقات الاقتراح القديمة إلى باب خلفي يتجاوز قرار المجلس.
     setIdea(title)
     setAngle(suggestion)
+    setMaterial('')
     setEditorialDecision(null)
     setEditorialProgress('idle')
     setView('idea')
@@ -4031,6 +4047,9 @@ ${effectivePurpose}`,
               <Field label="الجمهور"><select className={input} value={audience} onChange={(event) => { setAudience(event.target.value); setEditorialDecision(null) }}><option>المعلمين والقيادات التعليمية</option><option>أولياء الأمور</option><option>الطلاب والباحثين</option><option>الإعلاميين</option><option>الجمهور العام</option></select></Field>
               <Field label="فرضية الزاوية"><select className={input} value={angle} onChange={(event) => { setAngle(event.target.value); setEditorialDecision(null) }}><option>الأثر الإنساني قبل بريق الأداة</option><option>زاوية تربوية عملية</option><option>سؤال أخلاقي وفكري</option><option>مدخل إعلامي سريع</option><option>امتداد أكاديمي من الأرشيف</option></select></Field>
               <Field label="طول أول مسودة"><input className={input} inputMode="numeric" aria-label="طول التوليد المبدئي" value={targetWordsInput} onChange={(event) => { const raw = fromArabicDigits(event.target.value).replace(/[^0-9]/g, ''); setTargetWordsInput(raw); const value = Number(raw); if (raw && Number.isFinite(value)) setTargetWords(Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, value))) }} onBlur={() => { const value = Number(targetWordsInput); const normalizedValue = Math.max(MIN_ARTICLE_WORDS, Math.min(MAX_GENERATION_WORDS, Number.isFinite(value) && value > 0 ? value : targetWords)); setTargetWords(normalizedValue); setTargetWordsInput(String(normalizedValue)) }} /></Field>
+            </div>
+            <div className="mt-4">
+              <Field label="مادتك لهذا المقال — اختياري"><textarea className={`${input} min-h-20 leading-loose`} value={material} maxLength={1500} onChange={(event) => setMaterial(event.target.value)} placeholder="مناسبة المقال، أو موقفٌ عشته، أو جملةٌ سمعتها، أو دراسةٌ برقمها ومصدرها. يبني المحرك عليها كما كتبتها ولا يخترع غيرها." /></Field>
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button type="button" disabled={editorialBusy || generating || idea.trim().length < 3} className={primary} onClick={() => void runEditorialBoard()}>{editorialBusy ? 'المجلس يحلل…' : 'اعرض الفكرة على مجلس التحرير'}</button>

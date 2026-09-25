@@ -2925,10 +2925,11 @@ async function callGeminiStructured(request, fetchImpl = fetch) {
 async function callGeminiStructuredDirect({ instruction, prompt, properties, required, maxOutputTokens = 4_096, temperature = .55 }, fetchImpl = fetch) {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   if (!apiKey) throw new HttpError(503, 'AI service is not configured')
+  /* الكاتب يبدأ بالنموذج نفسه الذي يعمل به الموقع كله (gemini-3.5-flash)، ثم يتدرّج إلى الأقدم إن تعذّر. */
   const configuredModel = process.env.EDITORIAL_GEMINI_MODEL || process.env.GEMINI_MODEL || ''
   const models = configuredModel
     ? [configuredModel]
-    : ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-pro-latest']
+    : ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-pro-latest']
   let response
   let lastStatus = 0
   for (const model of models) {
@@ -3831,7 +3832,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     if (best.lengthOff > wordTolerance) {
       orders.push(best.words > input.targetWords
         ? `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: احذف الجمل التفسيرية الزائدة وكل عبارةٍ تعيد ما قيل، ولا تحذف المشهد ولا الخاتمة.`
-        : `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: أضف فقرةً تعمّق الحجة: مثالاً عامّاً من واقع البيت أو المدرسة، أو دليلاً من «من_مراجعك». لا حكايةً شخصية ولا حواراً مختلقاً، ولا تكرار جملةٍ سبقت أو إعادة صياغتها.`)
+        : `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: عمّق الحجة في موضعها لا في ذيل المقال: مثالاً عامّاً من الميدان نفسه الذي يدور فيه المقال، أو دليلاً من «من_مراجعك». لا تنقل الفكرة إلى ميدانٍ جديد قبيل الخاتمة («وفي البيت أيضاً…»). لا حكايةً شخصية ولا حواراً مختلقاً، ولا تكرار جملةٍ سبقت أو إعادة صياغتها.`)
     }
 
     const revision = await callGeminiStructured({

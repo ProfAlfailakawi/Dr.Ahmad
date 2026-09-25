@@ -1,5 +1,1630 @@
 {
-  "about": "مراجع العالم: دراساتٌ وتقارير من مجلاتٍ محكّمة ومنظماتٍ دولية في تخصص الدكتور، كلٌّ منها تُحقِّق منه من صفحته الأصلية (DOI أو صفحة المجلة أو التقرير الرسمي) ومعه اقتباسٌ حرفي يسند كل رقم. يستشهد الكاتب الآلي منها وحدها ومن مراجع الدكتور ومادته، ولا يضيف رقماً لم يرد فيها.",
-  "verified": "2026-09-25",
-  "references": []
+ "about": "مراجع العالم: دراساتٌ وتقارير من مجلاتٍ محكّمة ومنظماتٍ دولية في تخصص الدكتور، كلٌّ منها تُحقِّق منه من صفحته الأصلية (DOI أو صفحة المجلة أو التقرير الرسمي) ومعه اقتباسٌ حرفي يسند كل رقم. يستشهد الكاتب الآلي منها وحدها ومن مراجع الدكتور ومادته، ولا يضيف رقماً لم يرد فيها.",
+ "verified": "2026-09-25",
+ "references": [
+  {
+   "id": "rosenthal-rubin-1978",
+   "label": "Rosenthal وRubin (1978)",
+   "authors": [
+    "Rosenthal",
+    "Rubin"
+   ],
+   "year": 1978,
+   "title": "Interpersonal expectancy effects: the first 345 studies",
+   "venue": "Behavioral and Brain Sciences",
+   "doi": "10.1017/S0140525X00075506",
+   "url": "https://doi.org/10.1017/S0140525X00075506",
+   "quote": "the research has been extended from experimenters to teachers, employers, and therapists whose expectations for their pupils, employees, and patients might also come to serve as interpersonal self-fulfilling prophecies. Our general purpose is to summarize the results of 345 experiments investigating interpersonal expectancy effects.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "مراجعةٌ جمعت نتائج 345 تجربة في أثر التوقّعات بين الناس: ما يتوقّعه المعلم من تلاميذه، وصاحب العمل من موظفيه، والمعالج من مرضاه، قد يصير نبوءةً تحقّق نفسها.",
+   "keywords_ar": [
+    "توقعات المعلم",
+    "توقعات",
+    "التوقعات",
+    "توقع",
+    "المعلم",
+    "المعلمين",
+    "نظرة المعلم",
+    "النبوءة التي تحقق نفسها",
+    "أثر بيجماليون",
+    "الحكم المسبق",
+    "الطالب",
+    "التلاميذ",
+    "طالباً",
+    "طلابه",
+    "تصنع"
+   ],
+   "topics": [
+    "teacher-expectations"
+   ]
+  },
+  {
+   "id": "jussim-harber-2005",
+   "label": "Jussim وHarber (2005)",
+   "authors": [
+    "Jussim",
+    "Harber"
+   ],
+   "year": 2005,
+   "title": "Teacher Expectations and Self-Fulfilling Prophecies: Knowns and Unknowns, Resolved and Unresolved Controversies",
+   "venue": "Personality and Social Psychology Review",
+   "doi": "10.1207/s15327957pspr0902_3",
+   "url": "https://doi.org/10.1207/s15327957pspr0902_3",
+   "quote": "35 years of empirical research on teacher expectations justifies the following conclusions: (a) Self-fulfilling prophecies in the classroom do occur, but these effects are typically small, they do not accumulate greatly across perceivers or over time, and they may be more likely to dissipate than accumulate; (b) powerful self-fulfilling prophecies may selectively occur among students from stigmatized social groups",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "خلاصة 35 عاماً من البحث في توقّعات المعلمين: النبوءة التي تحقّق نفسها تقع فعلاً في الصف، لكن أثرها في الغالب صغير ولا يتراكم كثيراً مع الوقت، وقد يشتدّ عند طلابٍ من فئاتٍ موصومة اجتماعياً.",
+   "keywords_ar": [
+    "توقعات المعلم",
+    "توقعات",
+    "التوقعات",
+    "المعلم",
+    "المعلمين",
+    "الصف",
+    "النبوءة التي تحقق نفسها",
+    "الوصم",
+    "الطلاب",
+    "الطالب",
+    "طالباً",
+    "طلابه",
+    "تصنع"
+   ],
+   "topics": [
+    "teacher-expectations"
+   ]
+  },
+  {
+   "id": "hattie-timperley-2007",
+   "label": "Hattie وTimperley (2007)",
+   "authors": [
+    "Hattie",
+    "Timperley"
+   ],
+   "year": 2007,
+   "title": "The Power of Feedback",
+   "venue": "Review of Educational Research",
+   "doi": "10.3102/003465430298487",
+   "url": "https://doi.org/10.3102/003465430298487",
+   "quote": "Feedback is one of the most powerful influences on learning and achievement, but this impact can be either positive or negative. … the type of feedback and the way it is given can be differentially effective.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "التغذية الراجعة من أقوى ما يؤثّر في التعلّم والتحصيل، لكن أثرها قد يكون إيجابياً أو سلبياً؛ ونوعها وطريقة تقديمها هما ما يصنع الفرق.",
+   "keywords_ar": [
+    "التغذية الراجعة",
+    "الملاحظات",
+    "تعليق المعلم",
+    "التقويم",
+    "التصحيح",
+    "الدرجات",
+    "التحصيل",
+    "التعلم",
+    "المعلم",
+    "الطالب"
+   ],
+   "topics": [
+    "feedback",
+    "assessment"
+   ]
+  },
+  {
+   "id": "black-wiliam-1998",
+   "label": "Black وWiliam (1998)",
+   "authors": [
+    "Black",
+    "Wiliam"
+   ],
+   "year": 1998,
+   "title": "Assessment and Classroom Learning",
+   "venue": "Assessment in Education: Principles, Policy & Practice",
+   "doi": "10.1080/0969595980050102",
+   "url": "https://doi.org/10.1080/0969595980050102",
+   "quote": "Several studies show firm evidence that innovations designed to strengthen the frequent feedback that students receive about their learning yield substantial learning gains.",
+   "quote_source": "OpenAlex abstract",
+   "claim_ar": "مراجعةٌ لأبحاث التقويم التكويني في الصف: الممارسات التي تقوّي التغذية الراجعة المتكرّرة للطلاب عن تعلّمهم تحقّق مكاسب كبيرة في التعلّم.",
+   "keywords_ar": [
+    "التقويم التكويني",
+    "التقويم",
+    "التقييم",
+    "الاختبارات",
+    "التغذية الراجعة",
+    "الصف",
+    "الطلاب",
+    "التعلم",
+    "الدرجات"
+   ],
+   "topics": [
+    "assessment",
+    "feedback"
+   ]
+  },
+  {
+   "id": "kluger-denisi-1996",
+   "label": "Kluger وDeNisi (1996)",
+   "authors": [
+    "Kluger",
+    "DeNisi"
+   ],
+   "year": 1996,
+   "title": "The effects of feedback interventions on performance: A historical review, a meta-analysis, and a preliminary feedback intervention theory.",
+   "venue": "Psychological Bulletin",
+   "doi": "10.1037/0033-2909.119.2.254",
+   "url": "https://doi.org/10.1037/0033-2909.119.2.254",
+   "quote": "Since the beginning of the century, feedback interventions (FIs) produced negative—but largely ignored—effects on performance. … The results suggest that FI effectiveness decreases as attention moves up the hierarchy closer to the self and away from the task.",
+   "quote_source": "OpenAlex abstract",
+   "claim_ar": "تحليلٌ بعدي لأبحاث التغذية الراجعة: بعضها أضرّ بالأداء منذ مطلع القرن الماضي وأُغفل ذلك، ويضعف أثرها كلما انصرف انتباه المتلقّي عن المهمة إلى ذاته.",
+   "keywords_ar": [
+    "التغذية الراجعة",
+    "الملاحظات",
+    "النقد",
+    "المديح",
+    "التقييم",
+    "الأداء",
+    "الذات",
+    "المهمة"
+   ],
+   "topics": [
+    "feedback",
+    "assessment"
+   ]
+  },
+  {
+   "id": "roediger-karpicke-2006",
+   "label": "Roediger وKarpicke (2006)",
+   "authors": [
+    "Roediger",
+    "Karpicke"
+   ],
+   "year": 2006,
+   "title": "Test-Enhanced Learning",
+   "venue": "Psychological Science",
+   "doi": "10.1111/j.1467-9280.2006.01693.x",
+   "url": "https://doi.org/10.1111/j.1467-9280.2006.01693.x",
+   "quote": "However, on the delayed tests, prior testing produced substantially greater retention than studying, even though repeated studying increased students' confidence in their ability to remember the material. Testing is a powerful means of improving learning, not just assessing it.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "في الاختبارات المؤجّلة احتفظ الطلاب الذين اختُبروا بما تعلّموه أكثر بكثير ممن أعادوا المذاكرة، مع أن إعادة المذاكرة زادت ثقتهم بقدرتهم على التذكّر؛ فالاختبار وسيلةٌ للتعلّم لا للقياس وحده.",
+   "keywords_ar": [
+    "الاختبار",
+    "الاختبارات",
+    "الامتحان",
+    "الامتحانات",
+    "المذاكرة",
+    "الحفظ",
+    "التذكر",
+    "الذاكرة",
+    "التقويم",
+    "الطلاب"
+   ],
+   "topics": [
+    "assessment",
+    "study-skills"
+   ]
+  },
+  {
+   "id": "dunlosky-2013",
+   "label": "Dunlosky et al. (2013)",
+   "authors": [
+    "Dunlosky",
+    "Rawson",
+    "Marsh",
+    "Nathan",
+    "Willingham"
+   ],
+   "year": 2013,
+   "title": "Improving Students’ Learning With Effective Learning Techniques",
+   "venue": "Psychological Science in the Public Interest",
+   "doi": "10.1177/1529100612453266",
+   "url": "https://doi.org/10.1177/1529100612453266",
+   "quote": "we discuss 10 learning techniques in detail … Practice testing and distributed practice received high utility assessments because they benefit learners of different ages and abilities … Most students report rereading and highlighting, yet these techniques do not consistently boost students' performance",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "مراجعةٌ لـ10 من أساليب المذاكرة: الاختبار الذاتي والمذاكرة الموزّعة على فترات نالا أعلى تقييم لأنهما ينفعان متعلّمين من أعمارٍ وقدراتٍ مختلفة، أما إعادة القراءة والتظليل، وهما ما يعتمد عليه أكثر الطلاب، فلا يرفعان الأداء باطّراد.",
+   "keywords_ar": [
+    "المذاكرة",
+    "الحفظ",
+    "إعادة القراءة",
+    "التظليل",
+    "الاختبار الذاتي",
+    "الامتحانات",
+    "الاختبارات",
+    "الطلاب",
+    "التعلم"
+   ],
+   "topics": [
+    "study-skills",
+    "assessment"
+   ]
+  },
+  {
+   "id": "cepeda-2006",
+   "label": "Cepeda et al. (2006)",
+   "authors": [
+    "Cepeda",
+    "Pashler",
+    "Vul",
+    "Wixted",
+    "Rohrer"
+   ],
+   "year": 2006,
+   "title": "Distributed practice in verbal recall tasks: A review and quantitative synthesis.",
+   "venue": "Psychological Bulletin",
+   "doi": "10.1037/0033-2909.132.3.354",
+   "url": "https://doi.org/10.1037/0033-2909.132.3.354",
+   "quote": "This review found 839 assessments of distributed practice in 317 experiments located in 184 articles. … the ISI producing maximal retention increased as retention interval increased.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ بعدي لـ839 قياساً في 317 تجربة عن توزيع التعلّم على فترات: كلما طالت المدة المطلوب الاحتفاظ فيها بالمعلومة طالت الفجوة بين جلسات المذاكرة التي تحقّق أفضل احتفاظ.",
+   "keywords_ar": [
+    "المذاكرة",
+    "التكرار",
+    "الحفظ",
+    "التذكر",
+    "النسيان",
+    "الذاكرة",
+    "ليلة الامتحان",
+    "التعلم"
+   ],
+   "topics": [
+    "study-skills"
+   ]
+  },
+  {
+   "id": "vonderembse-2018",
+   "label": "von der Embse et al. (2018)",
+   "authors": [
+    "von der Embse",
+    "Jester",
+    "Roy",
+    "Post"
+   ],
+   "year": 2018,
+   "title": "Test anxiety effects, predictors, and correlates: A 30-year meta-analytic review",
+   "venue": "Journal of Affective Disorders",
+   "doi": "10.1016/j.jad.2017.11.048",
+   "url": "https://doi.org/10.1016/j.jad.2017.11.048",
+   "quote": "Results of 238 studies from 1988 to the present, were synthesized … Results indicated that test anxiety was significantly and negatively related to a wide range of educational performance outcomes, including standardized tests, university entrance exams, and grade point average. Results were most pronounced at the middle grades level. … Perceived difficulty of the test and the high-stakes nature or consequences of the test was also related to higher test anxiety.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ بعدي لـ238 دراسة: قلق الامتحان يرتبط سلباً بطيفٍ واسع من نتائج الأداء، من الاختبارات المقنّنة إلى امتحانات القبول الجامعي والمعدل، وأوضح ما يكون في المرحلة المتوسطة؛ ويرتفع القلق حين يرى الطالب الاختبار صعباً وعواقبه كبيرة.",
+   "keywords_ar": [
+    "قلق الامتحان",
+    "القلق",
+    "الامتحان",
+    "الامتحانات",
+    "الاختبارات",
+    "المعدل",
+    "الدرجات",
+    "الضغط",
+    "الطالب",
+    "الطلاب"
+   ],
+   "topics": [
+    "assessment",
+    "mental-health"
+   ]
+  },
+  {
+   "id": "pashler-2008",
+   "label": "Pashler et al. (2008)",
+   "authors": [
+    "Pashler",
+    "McDaniel",
+    "Rohrer",
+    "Bjork"
+   ],
+   "year": 2008,
+   "title": "Learning Styles",
+   "venue": "Psychological Science in the Public Interest",
+   "doi": "10.1111/j.1539-6053.2009.01038.x",
+   "url": "https://doi.org/10.1111/j.1539-6053.2009.01038.x",
+   "quote": "of those that did use an appropriate method, several found results that flatly contradict the popular meshing hypothesis. We conclude therefore, that at present, there is no adequate evidence base to justify incorporating learning-styles assessments into general educational practice.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "لا يوجد حتى الآن أساسٌ علمي كافٍ يسوّغ إدخال تشخيص «أنماط التعلّم» في الممارسة التعليمية العامة، وبعض التجارب التي اختبرت الفكرة بمنهجٍ مناسب ناقضتها صراحة.",
+   "keywords_ar": [
+    "أنماط التعلم",
+    "أنماط",
+    "المتعلم البصري",
+    "السمعي",
+    "الفروق الفردية",
+    "التدريس",
+    "المعلم",
+    "الطلاب"
+   ],
+   "topics": [
+    "teaching-myths"
+   ]
+  },
+  {
+   "id": "madigan-kim-2021",
+   "label": "Madigan وKim (2021)",
+   "authors": [
+    "Madigan",
+    "Kim"
+   ],
+   "year": 2021,
+   "title": "Towards an understanding of teacher attrition: A meta-analysis of burnout, job satisfaction, and teachers’ intentions to quit",
+   "venue": "Teaching and Teacher Education",
+   "doi": "10.1016/j.tate.2021.103425",
+   "url": "https://doi.org/10.1016/j.tate.2021.103425",
+   "quote": "burnout and job satisfaction together explained 27% of the variance in teachers’ intentions to quit. Finally, relative importance analyses indicated that burnout symptoms accounted for the majority of this explained variance. … there was evidence that the strength of these relationships has increased over time.",
+   "quote_source": "author accepted manuscript (White Rose Research Online); the publisher page blocks automated access",
+   "claim_ar": "تحليلٌ بعدي عن ترك المعلمين للمهنة: الاحتراق الوظيفي والرضا الوظيفي معاً فسّرا 27% من التباين في نيّة المعلمين الاستقالة، وللاحتراق النصيب الأكبر منه، وثمة ما يدل على أن هذه العلاقة تشتدّ مع الزمن.",
+   "keywords_ar": [
+    "الاحتراق",
+    "الاحتراق الوظيفي",
+    "الإنهاك",
+    "المعلم",
+    "المعلمين",
+    "ترك المهنة",
+    "الاستقالة",
+    "الرضا الوظيفي",
+    "التعب"
+   ],
+   "topics": [
+    "burnout",
+    "teachers"
+   ]
+  },
+  {
+   "id": "madigan-curran-2021",
+   "label": "Madigan وCurran (2021)",
+   "authors": [
+    "Madigan",
+    "Curran"
+   ],
+   "year": 2021,
+   "title": "Does Burnout Affect Academic Achievement? A Meta-Analysis of over 100,000 Students",
+   "venue": "Educational Psychology Review",
+   "doi": "10.1007/s10648-020-09533-1",
+   "url": "https://doi.org/10.1007/s10648-020-09533-1",
+   "quote": "A literature search returned 29 studies (N = 109,396) and 89 effect sizes. … Taken together, the findings suggest that burnout leads to worse academic achievement in school, college, and university.",
+   "quote_source": "publisher article page",
+   "claim_ar": "أول تحليلٍ بعدي لعلاقة احتراق الطلاب بتحصيلهم، في 29 دراسة شملت 109,396 طالباً: تشير النتائج إلى أن الاحتراق يقود إلى تحصيلٍ أضعف في المدرسة والكلية والجامعة.",
+   "keywords_ar": [
+    "الاحتراق",
+    "احتراق الطلاب",
+    "الإنهاك",
+    "التعب",
+    "الضغط",
+    "التحصيل",
+    "الطالب",
+    "الطلاب",
+    "الجامعة",
+    "المدرسة"
+   ],
+   "topics": [
+    "burnout",
+    "mental-health"
+   ]
+  },
+  {
+   "id": "orben-przybylski-2019",
+   "label": "Orben وPrzybylski (2019)",
+   "authors": [
+    "Orben",
+    "Przybylski"
+   ],
+   "year": 2019,
+   "title": "The association between adolescent well-being and digital technology use",
+   "venue": "Nature Human Behaviour",
+   "doi": "10.1038/s41562-018-0506-1",
+   "url": "https://doi.org/10.1038/s41562-018-0506-1",
+   "quote": "three large-scale social datasets … The association we find between digital technology use and adolescent well-being is negative but small, explaining at most 0.4% of the variation in well-being. Taking the broader context of the data into account suggests that these effects are too small to warrant policy change.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "في ثلاث قواعد بياناتٍ كبيرة جاءت العلاقة بين استخدام المراهقين للتكنولوجيا الرقمية وسلامتهم النفسية سلبيةً لكنها صغيرة، تفسّر 0.4% على الأكثر من التباين؛ ويرى الباحثان أنها أصغر من أن تسوّغ تغيير السياسات.",
+   "keywords_ar": [
+    "الشاشات",
+    "الشاشة",
+    "الهاتف",
+    "الأجهزة",
+    "التكنولوجيا الرقمية",
+    "وسائل التواصل",
+    "المراهقين",
+    "المراهق",
+    "الصحة النفسية",
+    "السلامة النفسية"
+   ],
+   "topics": [
+    "screens",
+    "mental-health"
+   ]
+  },
+  {
+   "id": "hill-tyson-2009",
+   "label": "Hill وTyson (2009)",
+   "authors": [
+    "Hill",
+    "Tyson"
+   ],
+   "year": 2009,
+   "title": "Parental involvement in middle school: A meta-analytic assessment of the strategies that promote achievement.",
+   "venue": "Developmental Psychology",
+   "doi": "10.1037/a0015362",
+   "url": "https://doi.org/10.1037/a0015362",
+   "quote": "Across 50 studies, parental involvement was positively associated with achievement, with the exception of parental help with homework. Involvement that reflected academic socialization had the strongest positive association with achievement.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ بعدي لـ50 دراسة في المرحلة المتوسطة: مشاركة الوالدين ترتبط إيجاباً بالتحصيل إلا مساعدتهم في الواجبات المنزلية، وأقوى أشكالها ارتباطاً بالتحصيل ما يسمّيه الباحثان «التنشئة الأكاديمية».",
+   "keywords_ar": [
+    "الأسرة",
+    "الوالدين",
+    "الآباء",
+    "الأمهات",
+    "الأهل",
+    "البيت",
+    "الواجبات",
+    "الواجب المنزلي",
+    "التحصيل",
+    "الأبناء"
+   ],
+   "topics": [
+    "family"
+   ]
+  },
+  {
+   "id": "pinquart-2016",
+   "label": "Pinquart (2016)",
+   "authors": [
+    "Pinquart"
+   ],
+   "year": 2016,
+   "title": "Associations of Parenting Styles and Dimensions with Academic Achievement in Children and Adolescents: A Meta-analysis",
+   "venue": "Educational Psychology Review",
+   "doi": "10.1007/s10648-015-9338-y",
+   "url": "https://doi.org/10.1007/s10648-015-9338-y",
+   "quote": "308 empirical studies … Parental responsiveness (warmth), behavioral control, autonomy granting, and an authoritative parenting style were associated with better academic performance both concurrently and in longitudinal studies, although these associations were small in a statistical sense. Parental harsh control, and psychological control, as well as neglectful, authoritarian, and permissive parenting styles were related to lower achievement with small to very small effect sizes.",
+   "quote_source": "publisher article page",
+   "claim_ar": "تحليلٌ بعدي لـ308 دراسات: دفء الوالدين وضبطهم للسلوك ومنحهم الأبناء استقلاليتهم، والتربية الحازمة الدافئة، ترتبط بأداءٍ دراسي أفضل وإن كان الارتباط صغيراً؛ أما القسوة والضبط النفسي والإهمال والتسلّط والتساهل فترتبط بتحصيلٍ أدنى.",
+   "keywords_ar": [
+    "الأسرة",
+    "التربية",
+    "أساليب التربية",
+    "الوالدين",
+    "الآباء",
+    "الأهل",
+    "القسوة",
+    "التسلط",
+    "الدلال",
+    "الأبناء",
+    "التحصيل"
+   ],
+   "topics": [
+    "family"
+   ]
+  },
+  {
+   "id": "jeynes-2007",
+   "label": "Jeynes (2007)",
+   "authors": [
+    "Jeynes"
+   ],
+   "year": 2007,
+   "title": "The Relationship Between Parental Involvement and Urban Secondary School Student Academic Achievement",
+   "venue": "Urban Education",
+   "doi": "10.1177/0042085906293818",
+   "url": "https://doi.org/10.1177/0042085906293818",
+   "quote": "A meta-analysis is undertaken, including 52 studies, to determine the influence of parental involvement on the educational outcomes of urban secondary school children. … The results indicate that the influence of parental involvement overall is significant for secondary school children.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "تحليلٌ بعدي لـ52 دراسة عن طلاب المرحلة الثانوية في المدن: أثر مشاركة الوالدين في تعليم أبنائهم دالٌّ في المجمل.",
+   "keywords_ar": [
+    "الأسرة",
+    "الوالدين",
+    "الأهل",
+    "مشاركة الوالدين",
+    "المرحلة الثانوية",
+    "الأبناء",
+    "التحصيل",
+    "المدرسة"
+   ],
+   "topics": [
+    "family"
+   ]
+  },
+  {
+   "id": "madigan-2019-jama",
+   "label": "Madigan et al. (2019)",
+   "authors": [
+    "Madigan",
+    "Browne",
+    "Racine",
+    "Mori",
+    "Tough"
+   ],
+   "year": 2019,
+   "title": "Association Between Screen Time and Children’s Performance on a Developmental Screening Test",
+   "venue": "JAMA Pediatrics",
+   "doi": "10.1001/jamapediatrics.2018.5056",
+   "url": "https://doi.org/10.1001/jamapediatrics.2018.5056",
+   "quote": "Of the 2441 children included in the analysis … higher levels of screen time at 24 and 36 months were significantly associated with poorer performance on developmental screening tests at 36 months … The results of this study support the directional association between screen time and child development.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "دراسةٌ طولية تابعت 2441 طفلاً: ارتفاع وقت الشاشة في عمر 24 و36 شهراً ارتبط بأداءٍ أضعف لاحقاً في اختبارات فحص النمو، والنتائج تدعم أن اتجاه العلاقة من الشاشة إلى النمو.",
+   "keywords_ar": [
+    "الشاشات",
+    "الشاشة",
+    "الطفل",
+    "الأطفال",
+    "الطفولة المبكرة",
+    "النمو",
+    "الأجهزة",
+    "الهاتف",
+    "الآيباد",
+    "التلفاز"
+   ],
+   "topics": [
+    "screens",
+    "early-childhood"
+   ]
+  },
+  {
+   "id": "scott-2004",
+   "label": "Scott et al. (2004)",
+   "authors": [
+    "Scott",
+    "Leritz",
+    "Mumford"
+   ],
+   "year": 2004,
+   "title": "The effectiveness of creativity training: A quantitative review",
+   "venue": "Creativity Research Journal",
+   "doi": "10.1080/10400410409534549",
+   "url": "https://doi.org/10.1080/10400410409534549",
+   "quote": "Based on 70 prior studies, it was found that well‐designed creativity training programs typically induce gains in performance with these effects generalizing across criteria, settings, and target populations. … more successful programs were likely to focus on development of cognitive skills and the heuristics involved in skill application, using realistic exercises appropriate to the domain at hand.",
+   "quote_source": "OpenAlex abstract",
+   "claim_ar": "تحليلٌ بعدي لـ70 دراسة: برامج تدريب الإبداع المصمّمة جيداً ترفع الأداء عادةً، ويمتد أثرها عبر المقاييس والبيئات والفئات، وأنجحها ما ركّز على مهارات التفكير واستراتيجيات تطبيقها بتمارين واقعية من صميم المجال.",
+   "keywords_ar": [
+    "الإبداع",
+    "المبدع",
+    "التفكير الإبداعي",
+    "الابتكار",
+    "الخيال",
+    "تنمية الإبداع",
+    "مهارات التفكير",
+    "التدريب",
+    "المدرسة",
+    "المدارس",
+    "الطلاب"
+   ],
+   "topics": [
+    "creativity"
+   ]
+  },
+  {
+   "id": "kim-2011",
+   "label": "Kim (2011)",
+   "authors": [
+    "Kim"
+   ],
+   "year": 2011,
+   "title": "The Creativity Crisis: The Decrease in Creative Thinking Scores on the Torrance Tests of Creative Thinking",
+   "venue": "Creativity Research Journal",
+   "doi": "10.1080/10400419.2011.627805",
+   "url": "https://doi.org/10.1080/10400419.2011.627805",
+   "quote": "The total sample for all six normative samples included 272,599 kindergarten through 12th grade students and adults. … Results also indicated that since 1990, even as IQ scores have risen, creative thinking scores have significantly decreased. The decrease for kindergartners through third graders was the most significant.",
+   "quote_source": "OpenAlex abstract",
+   "claim_ar": "تحليل البيانات المعيارية لاختبارات تورانس للتفكير الإبداعي على 272,599 طالباً وراشداً: منذ 1990 تراجعت درجات التفكير الإبداعي تراجعاً دالاً مع أن درجات الذكاء ارتفعت، وكان أشدّ التراجع من الروضة حتى الصف الثالث.",
+   "keywords_ar": [
+    "الإبداع",
+    "التفكير الإبداعي",
+    "الخيال",
+    "الابتكار",
+    "الذكاء",
+    "الأطفال",
+    "الروضة",
+    "المدرسة",
+    "المدارس"
+   ],
+   "topics": [
+    "creativity"
+   ]
+  },
+  {
+   "id": "sisk-2018",
+   "label": "Sisk et al. (2018)",
+   "authors": [
+    "Sisk",
+    "Burgoyne",
+    "Sun",
+    "Butler",
+    "Macnamara"
+   ],
+   "year": 2018,
+   "title": "To What Extent and Under Which Circumstances Are Growth Mind-Sets Important to Academic Achievement? Two Meta-Analyses",
+   "venue": "Psychological Science",
+   "doi": "10.1177/0956797617739704",
+   "url": "https://doi.org/10.1177/0956797617739704",
+   "quote": "Overall effects were weak for both meta-analyses. However, some results supported specific tenets of the theory, namely, that students with low socioeconomic status or who are academically at risk might benefit from mind-set interventions.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلان بعديان عن «عقلية النمو»: علاقتها بالتحصيل وأثر برامجها ضعيفان في المجمل، لكن الطلاب من خلفياتٍ اقتصادية واجتماعية متدنّية أو المعرّضين للتعثّر الدراسي قد ينتفعون منها.",
+   "keywords_ar": [
+    "عقلية النمو",
+    "العقلية الثابتة",
+    "العقلية",
+    "الذكاء",
+    "الجهد",
+    "الدافعية",
+    "التحصيل",
+    "الطلاب",
+    "التعثر"
+   ],
+   "topics": [
+    "motivation",
+    "mindset"
+   ]
+  },
+  {
+   "id": "yeager-2019",
+   "label": "Yeager et al. (2019)",
+   "authors": [
+    "Yeager",
+    "Hanselman",
+    "Walton",
+    "Murray",
+    "Crosnoe",
+    "Muller",
+    "Tipton",
+    "Schneider",
+    "Hulleman",
+    "Hinojosa",
+    "Paunesku",
+    "Romero",
+    "Flint",
+    "Roberts",
+    "Trott",
+    "Iachan",
+    "Buontempo",
+    "Yang",
+    "Carvalho",
+    "Hahn",
+    "Gopalan",
+    "Mhatre",
+    "Ferguson",
+    "Duckworth",
+    "Dweck"
+   ],
+   "year": 2019,
+   "title": "A national experiment reveals where a growth mindset improves achievement",
+   "venue": "Nature",
+   "doi": "10.1038/s41586-019-1466-y",
+   "url": "https://doi.org/10.1038/s41586-019-1466-y",
+   "quote": "a short (less than one hour), online growth mindset intervention-which teaches that intellectual abilities can be developed-improved grades among lower-achieving students … in a nationally representative sample of students in secondary education in the United States. … the intervention changed grades when peer norms aligned with the messages of the intervention.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تجربةٌ على عيّنةٍ وطنية ممثّلة لطلاب الثانوية في الولايات المتحدة: تدخّلٌ قصير عبر الإنترنت، أقل من ساعة، يعلّم أن القدرات العقلية تنمو، رفع درجات الطلاب الأضعف تحصيلاً، لكنه غيّر الدرجات حين وافقت أعراف الأقران رسالته.",
+   "keywords_ar": [
+    "عقلية النمو",
+    "العقلية",
+    "الأقران",
+    "الزملاء",
+    "ثقافة المدرسة",
+    "الذكاء",
+    "الجهد",
+    "الدرجات",
+    "الطلاب"
+   ],
+   "topics": [
+    "motivation",
+    "mindset"
+   ]
+  },
+  {
+   "id": "cerasoli-2014",
+   "label": "Cerasoli et al. (2014)",
+   "authors": [
+    "Cerasoli",
+    "Nicklin",
+    "Ford"
+   ],
+   "year": 2014,
+   "title": "Intrinsic motivation and extrinsic incentives jointly predict performance: A 40-year meta-analysis.",
+   "venue": "Psychological Bulletin",
+   "doi": "10.1037/a0035661",
+   "url": "https://doi.org/10.1037/a0035661",
+   "quote": "More than 4 decades of research … findings from school, work, and physical domains … indicate that intrinsic motivation is a medium to strong predictor of performance … intrinsic motivation predicted more unique variance in quality of performance, whereas incentives were a better predictor of quantity of performance.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ بعدي يغطّي أكثر من 4 عقود من البحث في المدرسة والعمل والرياضة: الدافع الداخلي منبئٌ متوسط إلى قوي بالأداء، وهو يتنبّأ أكثر بجودة الأداء، بينما تتنبّأ الحوافز الخارجية أكثر بكمّيته.",
+   "keywords_ar": [
+    "الدافعية",
+    "الدافع الداخلي",
+    "الحوافز",
+    "المكافآت",
+    "الجوائز",
+    "الدرجات",
+    "الأداء",
+    "الجودة",
+    "الشغف"
+   ],
+   "topics": [
+    "motivation"
+   ]
+  },
+  {
+   "id": "roorda-2011",
+   "label": "Roorda et al. (2011)",
+   "authors": [
+    "Roorda",
+    "Koomen",
+    "Spilt",
+    "Oort"
+   ],
+   "year": 2011,
+   "title": "The Influence of Affective Teacher–Student Relationships on Students’ School Engagement and Achievement",
+   "venue": "Review of Educational Research",
+   "doi": "10.3102/0034654311421793",
+   "url": "https://doi.org/10.3102/0034654311421793",
+   "quote": "Results were based on 99 studies, including students from preschool to high school. … Overall, associations of both positive and negative relationships with engagement were medium to large, whereas associations with achievement were small to medium.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "تحليلٌ بعدي لـ99 دراسة من الروضة إلى الثانوية: العلاقة العاطفية بين المعلم والطالب، إيجابيةً كانت أو سلبية، ترتبط ارتباطاً متوسطاً إلى كبير بانخراط الطالب في المدرسة، وصغيراً إلى متوسط بتحصيله.",
+   "keywords_ar": [
+    "العلاقة بين المعلم والطالب",
+    "المعلم",
+    "الطالب",
+    "الطلاب",
+    "العلاقة",
+    "الانخراط",
+    "الاهتمام",
+    "الاحترام",
+    "التحصيل"
+   ],
+   "topics": [
+    "teacher-student"
+   ]
+  },
+  {
+   "id": "cornelius-white-2007",
+   "label": "Cornelius-White (2007)",
+   "authors": [
+    "Cornelius-White"
+   ],
+   "year": 2007,
+   "title": "Learner-Centered Teacher-Student Relationships Are Effective: A Meta-Analysis",
+   "venue": "Review of Educational Research",
+   "doi": "10.3102/003465430298563",
+   "url": "https://doi.org/10.3102/003465430298563",
+   "quote": "The author reviewed about 1,000 articles to synthesize 119 studies from 1948 to 2004 with 1,450 findings and 355,325 students. … Mean correlations ( r= .31) were above average compared with other educational innovations for cognitive and especially affective and behavioral outcomes.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "تحليلٌ بعدي لـ119 دراسة شملت 355,325 طالباً: العلاقات الإيجابية المتمحورة حول المتعلّم بين المعلم والطالب ترتبط بنواتج معرفية، وأكثر منها وجدانية وسلوكية، بدرجةٍ تفوق متوسط الابتكارات التربوية الأخرى.",
+   "keywords_ar": [
+    "العلاقة بين المعلم والطالب",
+    "المعلم",
+    "الطالب",
+    "المتعلم",
+    "التعاطف",
+    "الاحترام",
+    "الثقة",
+    "الصف"
+   ],
+   "topics": [
+    "teacher-student"
+   ]
+  },
+  {
+   "id": "taylor-2017",
+   "label": "Taylor et al. (2017)",
+   "authors": [
+    "Taylor",
+    "Oberle",
+    "Durlak",
+    "Weissberg"
+   ],
+   "year": 2017,
+   "title": "Promoting Positive Youth Development Through School-Based Social and Emotional Learning Interventions: A Meta-Analysis of Follow-Up Effects",
+   "venue": "Child Development",
+   "doi": "10.1111/cdev.12864",
+   "url": "https://doi.org/10.1111/cdev.12864",
+   "quote": "This meta-analysis reviewed 82 school-based, universal social and emotional learning (SEL) interventions involving 97,406 kindergarten to high school students … Follow-up outcomes (collected 6 months to 18 years postintervention) demonstrate SEL's enhancement of positive youth development. Participants fared significantly better than controls in social-emotional skills, attitudes, and indicators of well-being. Benefits were similar regardless of students' race, socioeconomic background, or school location.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ بعدي لـ82 برنامجاً مدرسياً للتعلّم الاجتماعي والعاطفي شملت 97,406 طلاب: بعد 6 أشهر إلى 18 عاماً من انتهائها ظل المشاركون أفضل من غيرهم في المهارات الاجتماعية والعاطفية والاتجاهات ومؤشرات السلامة النفسية، أياً كانت خلفيتهم أو موقع مدرستهم.",
+   "keywords_ar": [
+    "التعلم الاجتماعي والعاطفي",
+    "المشاعر",
+    "العواطف",
+    "المهارات الاجتماعية",
+    "الذكاء العاطفي",
+    "القيم",
+    "المدرسة",
+    "الطلاب",
+    "السلامة النفسية"
+   ],
+   "topics": [
+    "sel",
+    "mental-health"
+   ]
+  },
+  {
+   "id": "zee-koomen-2016",
+   "label": "Zee وKoomen (2016)",
+   "authors": [
+    "Zee",
+    "Koomen"
+   ],
+   "year": 2016,
+   "title": "Teacher Self-Efficacy and Its Effects on Classroom Processes, Student Academic Adjustment, and Teacher Well-Being",
+   "venue": "Review of Educational Research",
+   "doi": "10.3102/0034654315626801",
+   "url": "https://doi.org/10.3102/0034654315626801",
+   "quote": "This study integrates 40 years of teacher self-efficacy (TSE) research … Results suggest that TSE shows positive links with students’ academic adjustment, patterns of teacher behavior and practices related to classroom quality, and factors underlying teachers’ psychological well-being, including personal accomplishment, job satisfaction, and commitment. Negative associations were found between TSE and burnout factors.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "مراجعة 40 عاماً من البحث في الكفاءة الذاتية للمعلم: ترتبط إيجاباً بتكيّف الطلاب الدراسي وجودة الصف ورضا المعلم والتزامه، وسلباً بعوامل الاحتراق.",
+   "keywords_ar": [
+    "المعلم",
+    "المعلمين",
+    "ثقة المعلم",
+    "الكفاءة الذاتية",
+    "الرضا الوظيفي",
+    "الاحتراق",
+    "الصف",
+    "التدريس"
+   ],
+   "topics": [
+    "teachers",
+    "burnout"
+   ]
+  },
+  {
+   "id": "bastani-2025",
+   "label": "Bastani et al. (2025)",
+   "authors": [
+    "Bastani",
+    "Bastani",
+    "Sungu",
+    "Ge",
+    "Kabakcı",
+    "Mariman"
+   ],
+   "year": 2025,
+   "title": "Generative AI without guardrails can harm learning: Evidence from high school mathematics",
+   "venue": "Proceedings of the National Academy of Sciences",
+   "doi": "10.1073/pnas.2422633122",
+   "url": "https://doi.org/10.1073/pnas.2422633122",
+   "quote": "nearly a thousand high school math students … our results show that having GPT-4 access while solving problems significantly improves performance (48% improvement in grades for GPT Base and 127% for GPT Tutor). However, we additionally find that when access is subsequently taken away, students actually perform worse than those who never had access (17% reduction in grades for GPT Base) … These negative learning effects are largely mitigated by the safeguards in GPT Tutor.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تجربةٌ ميدانية على نحو ألف طالب رياضيات في الثانوية: الوصول إلى GPT-4 أثناء حلّ التمارين رفع الدرجات 48% بالواجهة العادية، لكن حين سُحبت الأداة أدّى هؤلاء أسوأ بـ17% ممن لم يستخدموها قط؛ والنسخة المصمّمة بضوابط تحمي التعلّم خفّفت هذا الضرر إلى حدٍّ كبير.",
+   "keywords_ar": [
+    "الذكاء الاصطناعي",
+    "الذكاء الاصطناعي التوليدي",
+    "شات جي بي تي",
+    "ChatGPT",
+    "الواجبات",
+    "الغش",
+    "الاعتماد",
+    "الرياضيات",
+    "التعلم",
+    "الطلاب"
+   ],
+   "topics": [
+    "ai-education"
+   ]
+  },
+  {
+   "id": "kestin-2025",
+   "label": "Kestin et al. (2025)",
+   "authors": [
+    "Kestin",
+    "Miller",
+    "Klales",
+    "Milbourne",
+    "Ponti"
+   ],
+   "year": 2025,
+   "title": "AI tutoring outperforms in-class active learning: an RCT introducing a novel research-based design in an authentic educational setting",
+   "venue": "Scientific Reports",
+   "doi": "10.1038/s41598-025-97652-6",
+   "url": "https://doi.org/10.1038/s41598-025-97652-6",
+   "quote": "a randomized, controlled trial measuring college students' learning … The novel design of the custom AI tutor is informed by the same pedagogical best practices as employed in the in-class lessons. We find that students learn significantly more in less time when using the AI tutor, compared with the in-class active learning. They also feel more engaged and more motivated.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تجربةٌ عشوائية محكّمة على طلاب جامعيين: تعلّموا أكثر وفي وقتٍ أقل مع معلّمٍ ذكي صُمّم بأفضل الممارسات التربوية نفسها، مقارنةً بصفٍّ قائم على التعلّم النشط، وشعروا بانخراطٍ ودافعيةٍ أكبر.",
+   "keywords_ar": [
+    "الذكاء الاصطناعي",
+    "المعلم الذكي",
+    "التعلم النشط",
+    "الجامعة",
+    "التعليم الجامعي",
+    "التعلم",
+    "الطلاب",
+    "الدافعية"
+   ],
+   "topics": [
+    "ai-education"
+   ]
+  },
+  {
+   "id": "lee-2025-chi",
+   "label": "Lee et al. (2025)",
+   "authors": [
+    "Lee",
+    "Sarkar",
+    "Tankelevitch",
+    "Drosos",
+    "Rintel",
+    "Banks",
+    "Wilson"
+   ],
+   "year": 2025,
+   "title": "The Impact of Generative AI on Critical Thinking: Self-Reported Reductions in Cognitive Effort and Confidence Effects From a Survey of Knowledge Workers",
+   "venue": "Proceedings of the 2025 CHI Conference on Human Factors in Computing Systems",
+   "doi": "10.1145/3706598.3713778",
+   "url": "https://doi.org/10.1145/3706598.3713778",
+   "quote": "Self-Reported Reductions in Cognitive Effort … We survey 319 knowledge workers … Specifically, higher confidence in GenAI is associated with less critical thinking, while higher self-confidence is associated with more critical thinking.",
+   "quote_source": "OpenAlex abstract",
+   "claim_ar": "استطلاعٌ لـ319 من العاملين في مجالات المعرفة: كلما زادت ثقتهم بالذكاء الاصطناعي التوليدي قلّ تفكيرهم النقدي، وكلما زادت ثقتهم بأنفسهم زاد؛ والنتائج مبنية على ما أفادوا به عن أنفسهم.",
+   "keywords_ar": [
+    "الذكاء الاصطناعي",
+    "الذكاء الاصطناعي التوليدي",
+    "التفكير النقدي",
+    "التفكير",
+    "الثقة",
+    "الاعتماد",
+    "العمل"
+   ],
+   "topics": [
+    "ai-education",
+    "critical-thinking"
+   ]
+  },
+  {
+   "id": "delgado-2018",
+   "label": "Delgado et al. (2018)",
+   "authors": [
+    "Delgado",
+    "Vargas",
+    "Ackerman",
+    "Salmerón"
+   ],
+   "year": 2018,
+   "title": "Don't throw away your printed books: A meta-analysis on the effects of reading media on reading comprehension",
+   "venue": "Educational Research Review",
+   "doi": "10.1016/j.edurev.2018.09.003",
+   "url": "https://doi.org/10.1016/j.edurev.2018.09.003",
+   "quote": "involving 171,055 participants. Both designs yielded the same advantage of paper over digital reading … the paper-based reading advantage increased in time-constrained reading compared to self-paced reading … (3) publication year: the advantage of paper-based reading increased over the years.",
+   "quote_source": "OpenAlex abstract",
+   "claim_ar": "تحليلٌ بعدي شمل 171,055 مشاركاً: الفهم القرائي من الورق أفضل منه من الشاشة، وتزداد أفضلية الورق حين يُقيَّد وقت القراءة، وقد ازدادت عبر السنين لا العكس.",
+   "keywords_ar": [
+    "القراءة",
+    "الكتاب",
+    "الكتب",
+    "الورق",
+    "الشاشة",
+    "الشاشات",
+    "الفهم القرائي",
+    "القراءة الرقمية"
+   ],
+   "topics": [
+    "reading",
+    "screens"
+   ]
+  },
+  {
+   "id": "cooper-2006",
+   "label": "Cooper et al. (2006)",
+   "authors": [
+    "Cooper",
+    "Robinson",
+    "Patall"
+   ],
+   "year": 2006,
+   "title": "Does Homework Improve Academic Achievement? A Synthesis of Research, 1987–2003",
+   "venue": "Review of Educational Research",
+   "doi": "10.3102/00346543076001001",
+   "url": "https://doi.org/10.3102/00346543076001001",
+   "quote": "The authors found that all studies, regardless of type, had design flaws. However, both within and across design types, there was generally consistent evidence for a positive influence of homework on achievement. Studies that reported simple homework–achievement correlations revealed evidence that a stronger correlation existed (a) in Grades 7–12 than in K–6",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "مراجعةٌ لأبحاث الواجب المنزلي في الولايات المتحدة: الأدلة متسقة عموماً على أثرٍ إيجابي للواجب في التحصيل، والارتباط أقوى في الصفوف 7–12 منه في الصفوف الأولى، مع أن الدراسات كلها لم تخلُ من عيوبٍ في التصميم.",
+   "keywords_ar": [
+    "الواجب المنزلي",
+    "الواجبات",
+    "الواجب",
+    "البيت",
+    "التحصيل",
+    "الطلاب",
+    "الأسرة"
+   ],
+   "topics": [
+    "homework"
+   ]
+  },
+  {
+   "id": "aap-2014",
+   "label": "American Academy of Pediatrics (2014)",
+   "authors": [
+    "ADOLESCENT SLEEP WORKING GROUP",
+    "COMMITTEE ON ADOLESCENCE",
+    "COUNCIL ON SCHOOL HEALTH",
+    "Au",
+    "Carskadon",
+    "Millman",
+    "Wolfson",
+    "Braverman",
+    "Adelman",
+    "Breuner",
+    "Levine",
+    "Marcell",
+    "Murray",
+    "O’Brien",
+    "Devore",
+    "Allison",
+    "Ancona",
+    "Barnett",
+    "Gunther",
+    "Holmes",
+    "Lamont",
+    "Minier",
+    "Okamoto",
+    "Wheeler",
+    "Young"
+   ],
+   "year": 2014,
+   "title": "School Start Times for Adolescents",
+   "venue": "Pediatrics",
+   "doi": "10.1542/peds.2014-1697",
+   "url": "https://doi.org/10.1542/peds.2014-1697",
+   "quote": "the evidence strongly implicates earlier school start times (ie, before 8:30 am) as a key modifiable contributor to insufficient sleep … urges high schools and middle schools to aim for start times that allow students the opportunity to achieve optimal levels of sleep (8.5-9.5 hours)",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "بيان سياسةٍ رسمي: الأدلة تشير بقوة إلى أن بدء الدوام المدرسي مبكراً، قبل 8:30 صباحاً، عاملٌ رئيس قابل للتغيير في قلة نوم المراهقين؛ والأكاديمية تحثّ المدارس المتوسطة والثانوية على مواعيد تتيح لطلابها 8.5-9.5 ساعات من النوم.",
+   "keywords_ar": [
+    "النوم",
+    "السهر",
+    "الدوام المدرسي",
+    "الدوام",
+    "بداية اليوم الدراسي",
+    "المراهقين",
+    "المراهق",
+    "المدرسة",
+    "التعب"
+   ],
+   "topics": [
+    "sleep",
+    "school"
+   ]
+  },
+  {
+   "id": "dewald-2010",
+   "label": "Dewald et al. (2010)",
+   "authors": [
+    "Dewald",
+    "Meijer",
+    "Oort",
+    "Kerkhof",
+    "Bögels"
+   ],
+   "year": 2010,
+   "title": "The influence of sleep quality, sleep duration and sleepiness on school performance in children and adolescents: A meta-analytic review",
+   "venue": "Sleep Medicine Reviews",
+   "doi": "10.1016/j.smrv.2009.10.004",
+   "url": "https://doi.org/10.1016/j.smrv.2009.10.004",
+   "quote": "All three sleep variables were significantly but modestly related to school performance. Sleepiness showed the strongest relation to school performance … Effect sizes were larger for studies including younger participants",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "ثلاثة تحليلاتٍ بعدية: جودة النوم ومدته والنعاس ترتبط كلها بالأداء المدرسي ارتباطاً دالاً لكنه متواضع، وأقواها النعاس، والأثر أكبر لدى الأصغر سناً.",
+   "keywords_ar": [
+    "النوم",
+    "السهر",
+    "النعاس",
+    "التعب",
+    "الأداء المدرسي",
+    "الطلاب",
+    "الأطفال",
+    "المراهقين"
+   ],
+   "topics": [
+    "sleep"
+   ]
+  },
+  {
+   "id": "sparrow-2011",
+   "label": "Sparrow et al. (2011)",
+   "authors": [
+    "Sparrow",
+    "Liu",
+    "Wegner"
+   ],
+   "year": 2011,
+   "title": "Google Effects on Memory: Cognitive Consequences of Having Information at Our Fingertips",
+   "venue": "Science",
+   "doi": "10.1126/science.1207745",
+   "url": "https://doi.org/10.1126/science.1207745",
+   "quote": "The results of four studies suggest that when faced with difficult questions, people are primed to think about computers and that when people expect to have future access to information, they have lower rates of recall of the information itself and enhanced recall instead for where to access it. The Internet has become a primary form of external or transactive memory",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "أربع دراسات: حين يتوقّع الناس أن المعلومة ستبقى متاحة لهم يقلّ تذكّرهم لها ويزيد تذكّرهم لمكان الوصول إليها؛ فقد صار الإنترنت ذاكرةً خارجية نخزّن فيها ما نعرف.",
+   "keywords_ar": [
+    "الذاكرة",
+    "الحفظ",
+    "التذكر",
+    "الإنترنت",
+    "البحث",
+    "جوجل",
+    "المعلومة",
+    "المعلومات"
+   ],
+   "topics": [
+    "memory",
+    "technology"
+   ]
+  },
+  {
+   "id": "allen-2018",
+   "label": "Allen et al. (2018)",
+   "authors": [
+    "Allen",
+    "Kern",
+    "Vella-Brodrick",
+    "Hattie",
+    "Waters"
+   ],
+   "year": 2018,
+   "title": "What Schools Need to Know About Fostering School Belonging: a Meta-analysis",
+   "venue": "Educational Psychology Review",
+   "doi": "10.1007/s10648-016-9389-8",
+   "url": "https://doi.org/10.1007/s10648-016-9389-8",
+   "quote": "the average association between each of these themes and school belonging was meta-analytically examined across 51 studies (N = 67,378). Teacher support and positive personal characteristics were the strongest predictors of school belonging.",
+   "quote_source": "publisher article page",
+   "claim_ar": "تحليلٌ بعدي لـ51 دراسة شملت 67,378 طالباً: دعم المعلم والسمات الشخصية الإيجابية أقوى ما يتنبّأ بشعور الطالب بالانتماء إلى مدرسته.",
+   "keywords_ar": [
+    "الانتماء",
+    "الانتماء للمدرسة",
+    "المدرسة",
+    "دعم المعلم",
+    "المعلم",
+    "الطالب",
+    "الطلاب",
+    "الوحدة",
+    "العزلة"
+   ],
+   "topics": [
+    "belonging",
+    "school"
+   ]
+  },
+  {
+   "id": "chetty-2014",
+   "label": "Chetty et al. (2014)",
+   "authors": [
+    "Chetty",
+    "Friedman",
+    "Rockoff"
+   ],
+   "year": 2014,
+   "title": "Measuring the Impacts of Teachers II: Teacher Value-Added and Student Outcomes in Adulthood",
+   "venue": "American Economic Review",
+   "doi": "10.1257/aer.104.9.2633",
+   "url": "https://doi.org/10.1257/aer.104.9.2633",
+   "quote": "Using school district and tax records for more than one million children, we find that students assigned to high-VA teachers are more likely to attend college, earn higher salaries, and are less likely to have children as teenagers. Replacing a teacher whose VA is in the bottom 5 percent with an average teacher would increase the present value of students' lifetime income by approximately $250,000 per classroom.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "بسجلات أكثر من مليون طفل: الطلاب الذين درّسهم معلمون يرفعون تحصيل طلابهم أكثر من غيرهم كانوا أرجح في الالتحاق بالجامعة وأعلى رواتب لاحقاً؛ واستبدال معلمٍ من أدنى 5 بالمئة بمعلمٍ متوسط يرفع القيمة الحالية لدخل طلاب الصف الواحد مدى الحياة بنحو 250,000 دولار.",
+   "keywords_ar": [
+    "المعلم",
+    "المعلمين",
+    "جودة المعلم",
+    "أثر المعلم",
+    "المعلم الجيد",
+    "مهنة التعليم",
+    "الطلاب",
+    "المستقبل",
+    "الدخل"
+   ],
+   "topics": [
+    "teachers"
+   ]
+  },
+  {
+   "id": "kraft-2018",
+   "label": "Kraft et al. (2018)",
+   "authors": [
+    "Kraft",
+    "Blazar",
+    "Hogan"
+   ],
+   "year": 2018,
+   "title": "The Effect of Teacher Coaching on Instruction and Achievement: A Meta-Analysis of the Causal Evidence",
+   "venue": "Review of Educational Research",
+   "doi": "10.3102/0034654318759268",
+   "url": "https://doi.org/10.3102/0034654318759268",
+   "quote": "Combining results across 60 studies that employ causal research designs, we find pooled effect sizes of 0.49 standard deviations (SD) on instruction and 0.18 SD on achievement. … Average effects from effectiveness trials of larger programs are only a fraction of the effects found in efficacy trials of smaller programs.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "تحليلٌ بعدي لـ60 دراسة سببية عن التوجيه الفردي للمعلمين: أثره 0.49 انحرافاً معيارياً في جودة التدريس و0.18 في تحصيل الطلاب، لكن البرامج الكبيرة لا تحقّق إلا جزءاً مما تحقّقه البرامج الصغيرة.",
+   "keywords_ar": [
+    "التطوير المهني",
+    "تدريب المعلمين",
+    "المعلم",
+    "المعلمين",
+    "التوجيه",
+    "الإشراف",
+    "التدريس",
+    "الدورات"
+   ],
+   "topics": [
+    "teachers",
+    "professional-development"
+   ]
+  },
+  {
+   "id": "mueller-dweck-1998",
+   "label": "Mueller وDweck (1998)",
+   "authors": [
+    "Mueller",
+    "Dweck"
+   ],
+   "year": 1998,
+   "title": "Praise for intelligence can undermine children's motivation and performance.",
+   "venue": "Journal of Personality and Social Psychology",
+   "doi": "10.1037/0022-3514.75.1.33",
+   "url": "https://doi.org/10.1037/0022-3514.75.1.33",
+   "quote": "six studies demonstrated that praise for intelligence had more negative consequences for students' achievement motivation than praise for effort. Fifth graders praised for intelligence were found to care more about performance goals relative to learning goals than children praised for effort. After failure, they also displayed less task persistence, less task enjoyment, more low-ability attributions, and worse task performance than children praised for effort.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "ست دراسات على تلاميذ الصف الخامس: مدح الذكاء أضرّ بدافعية الإنجاز أكثر من مدح الجهد، وبعد الإخفاق أظهر من مُدحوا لذكائهم مثابرةً ومتعةً وأداءً أقل ممن مُدحوا لجهدهم.",
+   "keywords_ar": [
+    "المديح",
+    "المدح",
+    "الثناء",
+    "التشجيع",
+    "الذكاء",
+    "الجهد",
+    "الفشل",
+    "الإخفاق",
+    "الدافعية",
+    "الأطفال"
+   ],
+   "topics": [
+    "motivation",
+    "praise"
+   ]
+  },
+  {
+   "id": "curran-hill-2019",
+   "label": "Curran وHill (2019)",
+   "authors": [
+    "Curran",
+    "Hill"
+   ],
+   "year": 2019,
+   "title": "Perfectionism is increasing over time: A meta-analysis of birth cohort differences from 1989 to 2016.",
+   "venue": "Psychological Bulletin",
+   "doi": "10.1037/bul0000138",
+   "url": "https://doi.org/10.1037/bul0000138",
+   "quote": "over the last 27 years. Their analyses are based on 164 samples and 41,641 American, Canadian, and British college students … Cross-temporal meta-analysis revealed that levels of self-oriented perfectionism, socially prescribed perfectionism, and other-oriented perfectionism have linearly increased. … recent generations of young people perceive that others are more demanding of them, are more demanding of others, and are more demanding of themselves.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ عبر الزمن لـ41,641 طالباً جامعياً في أمريكا وكندا وبريطانيا على مدى 27 عاماً: الكمالية بأنواعها الثلاثة تزايدت، والأجيال الأحدث تشعر أن الآخرين يطالبونها بأكثر، وتطالب الآخرين ونفسها بأكثر.",
+   "keywords_ar": [
+    "الكمالية",
+    "المثالية",
+    "الضغط",
+    "التوقعات",
+    "المنافسة",
+    "الشباب",
+    "الطلاب",
+    "الجامعة",
+    "القلق"
+   ],
+   "topics": [
+    "mental-health",
+    "pressure"
+   ]
+  },
+  {
+   "id": "guthold-2020",
+   "label": "Guthold et al. (2020)",
+   "authors": [
+    "Guthold",
+    "Stevens",
+    "Riley",
+    "Bull"
+   ],
+   "year": 2020,
+   "title": "Global trends in insufficient physical activity among adolescents: a pooled analysis of 298 population-based surveys with 1·6 million participants",
+   "venue": "The Lancet Child & Adolescent Health",
+   "doi": "10.1016/S2352-4642(19)30323-2",
+   "url": "https://doi.org/10.1016/S2352-4642(19)30323-2",
+   "quote": "We used data from 298 school-based surveys from 146 countries, territories, and areas including 1·6 million students aged 11-17 years. Globally, in 2016, 81·0% (95% uncertainty interval 77·8-87·7) of students aged 11-17 years were insufficiently physically active (77·6% [76·1-80·4] of boys and 84·7% [83·0-88·2] of girls).",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ مجمّع لـ298 مسحاً مدرسياً في 146 بلداً شملت 1.6 مليون طالب: 81% من الطلاب بين 11 و17 عاماً لم يبلغوا الحد الكافي من النشاط البدني في 2016، والبنات (84.7%) أقل نشاطاً من البنين (77.6%).",
+   "keywords_ar": [
+    "النشاط البدني",
+    "الرياضة",
+    "الحركة",
+    "اللعب",
+    "الخمول",
+    "الجلوس",
+    "المراهقين",
+    "الطلاب",
+    "البنات"
+   ],
+   "topics": [
+    "physical-activity"
+   ]
+  },
+  {
+   "id": "moore-2017",
+   "label": "Moore et al. (2017)",
+   "authors": [
+    "Moore",
+    "Norman",
+    "Suetani",
+    "Thomas",
+    "Sly",
+    "Scott"
+   ],
+   "year": 2017,
+   "title": "Consequences of bullying victimization in childhood and adolescence: A systematic review and meta-analysis",
+   "venue": "World Journal of Psychiatry",
+   "doi": "10.5498/wjp.v7.i1.60",
+   "url": "https://doi.org/10.5498/wjp.v7.i1.60",
+   "quote": "Out of 317 articles assessed for eligibility, 165 satisfied the predetermined inclusion criteria for meta-analysis. … The evidence was strongest for causal associations between bullying victimization and mental health problems such as depression, anxiety, poor general health and suicidal ideation and behaviours.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "مراجعةٌ منهجية وتحليلٌ بعدي لـ165 دراسة: أقوى الأدلة كانت على علاقةٍ سببية بين التعرّض للتنمّر ومشكلات الصحة النفسية كالاكتئاب والقلق وضعف الصحة العامة والأفكار والسلوكيات الانتحارية.",
+   "keywords_ar": [
+    "التنمر",
+    "الإيذاء",
+    "العنف المدرسي",
+    "الصحة النفسية",
+    "الاكتئاب",
+    "القلق",
+    "الأطفال",
+    "المراهقين",
+    "المدرسة",
+    "المدارس",
+    "المدرسي",
+    "الطلاب"
+   ],
+   "topics": [
+    "bullying",
+    "mental-health"
+   ]
+  },
+  {
+   "id": "freeman-2014",
+   "label": "Freeman et al. (2014)",
+   "authors": [
+    "Freeman",
+    "Eddy",
+    "McDonough",
+    "Smith",
+    "Okoroafor",
+    "Jordt",
+    "Wenderoth"
+   ],
+   "year": 2014,
+   "title": "Active learning increases student performance in science, engineering, and mathematics",
+   "venue": "Proceedings of the National Academy of Sciences",
+   "doi": "10.1073/pnas.1319030111",
+   "url": "https://doi.org/10.1073/pnas.1319030111",
+   "quote": "we metaanalyzed 225 studies … These results indicate that average examination scores improved by about 6% in active learning sections, and that students in classes with traditional lecturing were 1.5 times more likely to fail than were students in classes with active learning.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ بعدي لـ225 دراسة في مقررات العلوم والهندسة والرياضيات الجامعية: التعلّم النشط رفع متوسط درجات الامتحانات نحو 6%، وطلاب المحاضرة التقليدية كانوا أكثر عرضةً للرسوب بـ1.5 مرة.",
+   "keywords_ar": [
+    "التعلم النشط",
+    "المحاضرة",
+    "التلقين",
+    "التدريس",
+    "طرق التدريس",
+    "الجامعة",
+    "التعليم الجامعي",
+    "الرسوب"
+   ],
+   "topics": [
+    "teaching"
+   ]
+  },
+  {
+   "id": "sweller-1988",
+   "label": "Sweller (1988)",
+   "authors": [
+    "Sweller"
+   ],
+   "year": 1988,
+   "title": "Cognitive Load During Problem Solving: Effects on Learning",
+   "venue": "Cognitive Science",
+   "doi": "10.1207/s15516709cog1202_4",
+   "url": "https://doi.org/10.1207/s15516709cog1202_4",
+   "quote": "domain specific knowledge in the form of schemas is the primary factor distinguishing experts from novices in problem‐solving skill. … conventional problem solving in the form of means‐ends analysis requires a relatively large amount of cognitive processing capacity which is consequently unavailable for schema acquisition.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "المعرفة المنظّمة في مخططاتٍ ذهنية هي أول ما يميّز الخبير من المبتدئ في حلّ المشكلات، وحلّ المسائل بالطريقة التقليدية يستهلك قدراً كبيراً من طاقة المعالجة الذهنية فلا يبقى منها ما يكفي لبناء تلك المخططات.",
+   "keywords_ar": [
+    "العبء المعرفي",
+    "التفكير",
+    "حل المشكلات",
+    "الذاكرة",
+    "الخبرة",
+    "المبتدئ",
+    "التدريس",
+    "المناهج",
+    "الحشو"
+   ],
+   "topics": [
+    "cognition",
+    "teaching"
+   ]
+  },
+  {
+   "id": "who-burnout-2019",
+   "label": "WHO (2019)",
+   "year": 2019,
+   "venue": "World Health Organization — ICD-11",
+   "url": "https://www.who.int/news/item/28-05-2019-burn-out-an-occupational-phenomenon-international-classification-of-diseases",
+   "quote": "Burn-out is included in the 11th Revision of the International Classification of Diseases (ICD-11) as an occupational phenomenon. It is not classified as a medical condition. … “Burn-out is a syndrome conceptualized as resulting from chronic workplace stress that has not been successfully managed. It is characterized by three dimensions: feelings of energy depletion or exhaustion; increased mental distance from one’s job, or feelings of negativism or cynicism related to one's job; and reduced professional efficacy. Burn-out refers specifically to phenomena in the occupational context and should not be applied to describe experiences in other areas of life.”",
+   "quote_source": "official page",
+   "claim_ar": "الاحتراق الوظيفي في التصنيف الدولي للأمراض (ICD-11) ظاهرةٌ مهنية لا حالةٌ طبية: متلازمةٌ من ضغط عملٍ مزمن لم يُحسَن التعامل معه، أبعادها الإنهاك، والابتعاد الذهني عن العمل أو السلبية تجاهه، وتراجع الفاعلية المهنية؛ ولا يُستعمل المصطلح لتجارب خارج سياق العمل.",
+   "keywords_ar": [
+    "الاحتراق",
+    "الاحتراق الوظيفي",
+    "الاحتراق النفسي",
+    "احتراق",
+    "الإنهاك",
+    "الإرهاق",
+    "ضغط العمل",
+    "المعلم",
+    "المعلمين",
+    "الموظف"
+   ],
+   "topics": [
+    "burnout",
+    "mental-health"
+   ]
+  },
+  {
+   "id": "who-adolescent-mh-2025",
+   "label": "WHO (2025)",
+   "year": 2025,
+   "venue": "World Health Organization — Fact sheet: Mental health of adolescents",
+   "url": "https://www.who.int/news-room/fact-sheets/detail/adolescent-mental-health",
+   "quote": "Globally, one in seven 10-19-year-olds experiences a mental disorder, accounting for 15% of the global burden of disease in this age group. … yet these remain largely unrecognized and untreated.",
+   "quote_source": "official page",
+   "claim_ar": "على مستوى العالم يعاني واحدٌ من كل سبعة مراهقين بين 10 و19 عاماً اضطراباً نفسياً، وهو ما يمثّل 15% من العبء العالمي للأمراض في هذه الفئة، وأكثر هذه الحالات لا يُكتشف ولا يُعالَج.",
+   "keywords_ar": [
+    "الصحة النفسية",
+    "المراهقين",
+    "المراهق",
+    "المراهقة",
+    "الاكتئاب",
+    "القلق",
+    "الاضطراب النفسي",
+    "الأبناء",
+    "الشباب"
+   ],
+   "topics": [
+    "mental-health"
+   ]
+  },
+  {
+   "id": "who-loneliness-2025",
+   "label": "WHO (2025)",
+   "year": 2025,
+   "venue": "World Health Organization — Commission on Social Connection",
+   "url": "https://www.who.int/news/item/30-06-2025-social-connection-linked-to-improved-heath-and-reduced-risk-of-early-death",
+   "quote": "1 in 6 people worldwide is affected by loneliness … Between 17–21% of individuals aged 13–29-year-olds reported feeling lonely, with the highest rates among teenagers.",
+   "quote_source": "official page",
+   "claim_ar": "تقرير لجنة التواصل الاجتماعي في منظمة الصحة العالمية: واحدٌ من كل 6 أشخاص في العالم يعاني الوحدة، وبين 17 و21% ممن أعمارهم بين 13 و29 عاماً أفادوا بشعورهم بها، وأعلى النسب بين المراهقين.",
+   "keywords_ar": [
+    "الوحدة",
+    "العزلة",
+    "التواصل الاجتماعي",
+    "العلاقات",
+    "الصداقة",
+    "الشباب",
+    "المراهقين",
+    "الأسرة",
+    "الشاشات"
+   ],
+   "topics": [
+    "loneliness",
+    "mental-health"
+   ]
+  },
+  {
+   "id": "who-under5-2019",
+   "label": "WHO (2019)",
+   "year": 2019,
+   "venue": "World Health Organization — Guidelines on physical activity, sedentary behaviour and sleep for children under 5",
+   "url": "https://www.who.int/news/item/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more",
+   "quote": "Infants (less than 1 year) should: … Screen time is not recommended. … For 1-year-olds, sedentary screen time (such as watching TV or videos, playing computer games) is not recommended. For those aged 2 years, sedentary screen time should be no more than 1 hour; less is better . When sedentary, engaging in reading and storytelling with a caregiver is encouraged.",
+   "quote_source": "official page",
+   "claim_ar": "إرشادات منظمة الصحة العالمية للأطفال دون الخامسة: لا يُنصح بوقت الشاشة للرضيع ولا لابن السنة، ولا يزيد لابن السنتين على ساعة واحدة، والأقل أفضل؛ ويُشجَّع حين يجلس الطفل أن يقرأ معه من يرعاه ويحكي له.",
+   "keywords_ar": [
+    "الشاشات",
+    "الشاشة",
+    "الطفل",
+    "الأطفال",
+    "الرضيع",
+    "الطفولة المبكرة",
+    "القراءة",
+    "الحكايات",
+    "اللعب",
+    "الأجهزة"
+   ],
+   "topics": [
+    "screens",
+    "early-childhood"
+   ]
+  },
+  {
+   "id": "unesco-genai-2023",
+   "label": "UNESCO (2023)",
+   "year": 2023,
+   "venue": "UNESCO — Guidance for generative AI in education and research",
+   "url": "https://www.unesco.org/en/articles/guidance-generative-ai-education-and-research",
+   "quote": "The absence of national regulations on GenAI in most countries leaves the data privacy of users unprotected and educational institutions largely unprepared to validate the tools. … the Guidance proposes key steps to the regulation of GenAI tool, including mandating the protection of data privacy, and setting an age limit for the independent conversations with GenAI platforms.",
+   "quote_source": "official page",
+   "claim_ar": "إرشادات اليونسكو للذكاء الاصطناعي التوليدي في التعليم والبحث: غياب التنظيم الوطني في معظم الدول يترك خصوصية المستخدمين بلا حماية والمؤسسات التعليمية غير مستعدة للتحقّق من الأدوات؛ وتقترح الإرشادات حماية البيانات وتحديد سنٍّ للمحادثة المستقلة مع هذه المنصات.",
+   "keywords_ar": [
+    "الذكاء الاصطناعي",
+    "الذكاء الاصطناعي التوليدي",
+    "السياسات",
+    "التنظيم",
+    "الخصوصية",
+    "البيانات",
+    "المدرسة",
+    "الطلاب",
+    "الأطفال"
+   ],
+   "topics": [
+    "ai-education",
+    "policy"
+   ]
+  },
+  {
+   "id": "unesco-gem-2023",
+   "label": "UNESCO GEM Report (2023)",
+   "year": 2023,
+   "venue": "UNESCO — Global Education Monitoring Report 2023: Technology in education",
+   "url": "https://www.unesco.org/en/articles/unesco-issues-urgent-call-appropriate-use-technology-education",
+   "quote": "The report cites evidence showing that learning benefits disappear if technology is used in excess or in the absence of a qualified teacher. For example, distributing computers to students does not improve learning if teachers are not involved in the pedagogical experience. Smartphones in schools have also proven to be a distraction to learning, yet fewer than a quarter of countries ban their use in schools.",
+   "quote_source": "official page",
+   "claim_ar": "التقرير العالمي لرصد التعليم عن التكنولوجيا: فوائد التكنولوجيا للتعلّم تختفي إذا أُفرط في استخدامها أو غاب المعلم المؤهّل، فتوزيع الحواسيب لا يحسّن التعلّم إن لم يشارك المعلمون، والهواتف الذكية ثبت أنها تشتّت التعلّم ومع ذلك تحظرها أقل من ربع الدول في مدارسها.",
+   "keywords_ar": [
+    "التكنولوجيا",
+    "تكنولوجيا التعليم",
+    "الهاتف",
+    "الهواتف",
+    "الجوال",
+    "الحواسيب",
+    "الأجهزة",
+    "المدرسة",
+    "المعلم",
+    "التعلم",
+    "الشاشات"
+   ],
+   "topics": [
+    "technology",
+    "screens",
+    "policy"
+   ]
+  },
+  {
+   "id": "unesco-language-2016",
+   "label": "UNESCO (2016)",
+   "year": 2016,
+   "venue": "UNESCO GEM Report — Policy paper: If you don't understand, how can you learn?",
+   "url": "https://www.unesco.org/en/articles/40-dont-access-education-language-they-understand",
+   "quote": "40% of the global population does not access education in a language they understand. … being taught in a language other than their own can negatively impact children’s learning, especially for those living in poverty.",
+   "quote_source": "official page",
+   "claim_ar": "40% من سكان العالم لا يتلقّون التعليم بلغةٍ يفهمونها، والتعلّم بغير لغة الطفل قد يضرّ بتعلّمه، خاصةً إن كان فقيراً.",
+   "keywords_ar": [
+    "اللغة",
+    "اللغة الأم",
+    "اللغة العربية",
+    "العربية",
+    "لغة التدريس",
+    "الهوية",
+    "الإنجليزية",
+    "الأطفال",
+    "التعلم"
+   ],
+   "topics": [
+    "language",
+    "identity"
+   ]
+  },
+  {
+   "id": "unesco-teachers-2024",
+   "label": "UNESCO (2024)",
+   "year": 2024,
+   "venue": "UNESCO — Global report on teachers",
+   "url": "https://www.unesco.org/en/articles/global-report-teachers-what-you-need-know",
+   "quote": "The global report on teachers reveals an urgent need for 44 million primary and secondary teachers worldwide by 2030. … attrition rates among primary teachers almost doubled from 4.62 per cent globally in 2015 to 9.06 in 2022, with teachers often leaving the profession within their initial five years.",
+   "quote_source": "official page",
+   "claim_ar": "التقرير العالمي عن المعلمين: يحتاج العالم إلى 44 مليون معلم في التعليم الابتدائي والثانوي بحلول 2030، وتضاعف تقريباً معدل ترك معلمي الابتدائي للمهنة من 4.62% في 2015 إلى 9.06% في 2022، وكثيرٌ منهم يتركها في سنواته الخمس الأولى.",
+   "keywords_ar": [
+    "المعلم",
+    "المعلمين",
+    "نقص المعلمين",
+    "ترك المهنة",
+    "مهنة التعليم",
+    "الاستقالة",
+    "التسرب",
+    "المدارس"
+   ],
+   "topics": [
+    "teachers"
+   ]
+  }
+ ]
 }

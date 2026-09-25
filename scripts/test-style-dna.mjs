@@ -739,6 +739,33 @@ assert.ok(Array.isArray(worldBank.references), 'بنك مراجع العالم �
 for (const reference of worldBank.references) {
   assert.ok(reference.label && reference.year && reference.url && reference.quote && reference.claim_ar, `كل مرجعٍ عالمي بسنده (${reference.id || reference.label})`)
 }
+/* ٢٥ سبتمبر ٢٠٢٦ — البنك ممتلئ: كل رقمٍ في الخلاصة العربية يرد في الاقتباس الحرفي نفسه
+   («81%» تسندها «81·0%»، و«109,396» تسندها «N = 109,396»)، ولا رابط إلا لصفحةٍ أصلية. */
+const numbersIn = (value = '') => [...String(value).replace(/·/g, '.').matchAll(/\d+(?:[.,]\d+)*/g)].map((match) => Number(match[0].replace(/,(?=\d{3}(?!\d))/g, '')))
+assert.ok(worldBank.references.length >= 40, `بنك مراجع العالم ممتلئ (${worldBank.references.length})`)
+assert.equal(new Set(worldBank.references.map((reference) => reference.id)).size, worldBank.references.length, 'معرّفات المراجع فريدة')
+for (const reference of worldBank.references) {
+  const quoted = new Set(numbersIn(reference.quote))
+  const orphans = numbersIn(reference.claim_ar).filter((number) => !quoted.has(number))
+  assert.deepEqual(orphans, [], `كل رقمٍ في خلاصة ${reference.id} يسنده الاقتباس`)
+  assert.match(reference.url, /^https:\/\/(?:doi\.org\/10\.|www\.who\.int\/|www\.unesco\.org\/)/, `رابط ${reference.id} صفحةٌ أصلية`)
+  assert.ok((reference.keywords_ar || []).length >= 4, `لـ${reference.id} كلماتٌ عربية للمطابقة`)
+}
+/* الاسترجاع: الفكرة تجد مرجعها، والفكرة الغريبة لا تجد شيئاً. */
+const worldLabels = (idea) => domainKnowledge(idea).من_مراجع_العالم.map((item) => item.مرجع)
+assert.ok(worldLabels('توقعات المعلم من طلابه').some((label) => label.startsWith('Rosenthal')), 'فكرة «توقعات المعلم» تستدعي Rosenthal')
+assert.ok(worldLabels('التوقّعات التي تصنع طالباً').some((label) => label.startsWith('Rosenthal') || label.startsWith('Jussim')), 'وعنوانه «التوقّعات التي تصنع طالباً» يستدعي أبحاث التوقعات لا الكمالية')
+const burnoutWorld = domainKnowledge('الاحتراق الوظيفي').من_مراجع_العالم
+assert.ok(burnoutWorld.some((item) => item.مرجع === 'WHO (2019)' && item.الرابط.includes('who.int') && item.ما_وجدته.includes('ICD-11')), 'فكرة «الاحتراق» تستدعي تعريف WHO في ICD-11')
+assert.deepEqual(worldLabels('زخرفة الأواني النحاسية'), [], 'فكرةٌ لا صلة لها لا تستدعي مرجعاً عالمياً')
+let sawWorldEntry = false
+await generatePerfectArticle({ ...input, idea: 'توقعات المعلم من طلابه' }, async (url, init) => {
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+  const request = JSON.parse(init.body).messages.map((message) => message.content).join('\n')
+  if (request.includes('«من_مراجع_العالم»') && request.includes('Rosenthal وRubin (1978)')) sawWorldEntry = true
+  return makeResponse(strongBody)
+})
+assert.ok(sawWorldEntry, 'والمرجع العالمي يصل الكاتب بقاعدته حين تطابقه الفكرة')
 let sawWorldRule = false
 await generatePerfectArticle({ ...input, idea: 'فكرةٌ لا يطابقها مرجعٌ عالمي قط: زخرفة الأواني النحاسية' }, async (url, init) => {
   if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }

@@ -766,6 +766,42 @@ await generatePerfectArticle({ ...input, idea: 'توقعات المعلم من �
   return makeResponse(strongBody)
 })
 assert.ok(sawWorldEntry, 'والمرجع العالمي يصل الكاتب بقاعدته حين تطابقه الفكرة')
+
+/* ٢٦ سبتمبر ٢٠٢٦ — جولة H: الفكرة عنوانٌ مجرّد لا يطابق مرجعاً، والمسودة بلا استشهاد. بعدها يُبحث
+   بعنوان المسودة ومقتطفها وزاويتها، ويُعرض ما وُجد «مراجعَ مقترحة» في جولة التصحيح. */
+const repairRequests = []
+let firstDraftServed = false
+await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'حين يتردد الطالب قبل أن يرفع يده', angle: '' }, async (url, init) => {
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+  const messages = JSON.parse(init.body).messages
+  if (firstDraftServed) repairRequests.push(messages.map((message) => message.content).join('\n'))
+  firstDraftServed = true
+  return { ok: true, status: 200, json: async () => ({ result: { response: JSON.stringify({
+    title: 'الصف الذي يخاف من الخطأ', cat: 'التعليم', excerpt: 'حين يخاف الطالب من الخطأ في الصف يتوقف عن المحاولة، ونسمّي صمته أدباً.',
+    body: strongBody, angle: 'الخطأ في الصف بوابة التعلم لا عيبه', eventId: '', eventConnection: '', originalityNote: '',
+  }) } }) }
+})
+const suggested = repairRequests.find((request) => request.includes('«مراجع_مقترحة»'))
+assert.ok(suggested && /Metcalfe \(2017\)|Keith وFrese \(2008\)|Sinha وKapur \(2021\)/.test(suggested), 'مسودةٌ بلا استشهاد تُعرض عليها مراجع من موضوعها الفعلي في جولة التصحيح')
+assert.ok(suggested.includes('فلا تستشهد بشيء'), 'والاستشهاد بها مشروطٌ بأن يخدم الفكرة لا أمرٌ مطلق')
+
+/* نسبتا الختام تُقاسان في الفقرة الأخيرة: كانتا تعدّان العبارة أينما وقعت (٤٠٪ و٣٠٪). */
+const eraRecent = eraDna.recent
+const endsWith = (pattern) => dated.slice().sort((left, right) => right.iso.localeCompare(left.iso)).slice(0, 20).filter((item) => pattern.test(item.body.trim().split(/\n\s*\n/).at(-1))).length / 20
+assert.equal(eraRecent.askYourselfShare, Math.round(endsWith(/اسأل نفسك/u) * 100) / 100, `«فاسأل نفسك» نسبة خواتيمه لا نسبة ورودها (${eraRecent.askYourselfShare})`)
+assert.equal(eraRecent.perhapsBeginsShare, Math.round(endsWith(/ربما يبدأ/u) * 100) / 100, `و«ربما يبدأ» كذلك (${eraRecent.perhapsBeginsShare})`)
+assert.ok(eraRecent.citationShare >= .5, `الاستشهاد المسمّى مقيسٌ في مقالاته الأخيرة (${eraRecent.citationShare})`)
+const briefH = styleBrief(eraDna, 350)
+assert.ok(!briefH.includes('ليس كذا') && briefH.includes('لا كذا'), 'قالب «…بل» في الوصفة بصيغته الغالبة عنده «لا كذا…بل كذا»')
+assert.ok(!/«نربّي»|«نسمّي»/u.test(briefH.split('\n').find((line) => line.startsWith('٦)')) || ''), 'قاعدة الصوت الجمعي بلا أمثلة أفعالٍ تُنسخ')
+assert.ok(eraRecent.rareFormulas.includes('يتكرر') && briefH.includes('صيغٌ نادرة'), 'الصيغ النادرة عنده تصل الوصفة')
+
+/* الصيغ النادرة: مرةٌ تمرّ، والتكرار يُضبط في المسودة، ولا تكاد تُنسب إلى مقالاته. */
+const rareDraft = strongBody.replace('وأخطر ما في الأمر أنه هادئ.', 'وأخطر ما في الأمر أنه يتكرر كل يوم. ويتكرر في كل صف.')
+assert.ok(judgeStyle(rareDraft, eraDna, { generated: true }).corrections.some((line) => line.includes('الصيغ النادرة')), 'تكرار صيغةٍ نادرة عنده يُضبط في المسودة')
+assert.ok(!judgeStyle(strongBody.replace('وأخطر ما في الأمر أنه هادئ.', 'وأخطر ما في الأمر أنه يتكرر كل يوم.'), eraDna, { generated: true }).corrections.some((line) => line.includes('الصيغ النادرة')), 'ومرةٌ واحدة تمرّ')
+const hisRare = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('الصيغ النادرة'))).length
+assert.ok(hisRare <= 2, `ولا تكاد تُنسب إلى مقالاته (${hisRare} من ${dated.length})`)
 let sawWorldRule = false
 await generatePerfectArticle({ ...input, idea: 'فكرةٌ لا يطابقها مرجعٌ عالمي قط: زخرفة الأواني النحاسية' }, async (url, init) => {
   if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }

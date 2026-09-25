@@ -3579,7 +3579,9 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   const anchors = rhythmAnchors(input.styleSamples)
   const exemplars = voiceExemplars(input.existing, envNumber('ARTICLE_VOICE_EXEMPLAR_WORDS', 520, 120, 1200))
   /* مقالا نماذج الصوت يُستثنيان من «معرفتك»: هما في الطلب كاملين أصلاً. */
-  const knowledge = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off' ? { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [], من_مراجعك: [], من_مراجع_العالم: [] } : domainKnowledge(input.idea, { angle: input.angle || '', exclude: input.existing.filter((item) => String(archiveBodyForSlug(item?.slug) || item?.body || '').split(/\s+/).filter(Boolean).length >= 220).slice(0, 2).map((item) => item?.slug).filter(Boolean) })
+  const exemplarSlugs = input.existing.filter((item) => String(archiveBodyForSlug(item?.slug) || item?.body || '').split(/\s+/).filter(Boolean).length >= 220).slice(0, 2).map((item) => item?.slug).filter(Boolean)
+  const knowledgeOff = process.env.ARTICLE_DOMAIN_KNOWLEDGE === 'off'
+  const knowledge = knowledgeOff ? { من_كتبك: [], من_مقالاتك: [], من_لقاءاتك: [], من_مراجعك: [], من_مراجع_العالم: [] } : domainKnowledge(input.idea, { angle: input.angle || '', exclude: exemplarSlugs })
   const brief = styleBrief(dna, input.targetWords)
   /* ---------- الميزانية الزمنية: الباب أضيق من المحرك ----------
      السجلّ الحيّ: المقال كُتب مرتين بنجاح (٢٠٠ في ٧٩٫٦ ثم ٦٦٫١ ثانية) ولم يره
@@ -3599,6 +3601,10 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     '· الأرشيف المرفق مادةُ إيقاعٍ ومعرفةٍ فقط. يُمنع منعاً باتاً نقل أي عبارة منه، ويُمنع أن يشير المقال إلى مقالٍ سابق لك أو أن يقول «كتبتُ من قبل».',
     `· الحجة عنده تبدأ مما يعرفه القارئ، ثم تكشف ما وراءه، ثم تُسند بدليلٍ حقيقي إن وُجد. لا تخترع حكايةً شخصية ولا حواراً مع طالبٍ أو معلمٍ أو قريب («سألتُ»، «أتذكّر»، «حدثتني»، «صديقٌ لي»، «أعرف رجلاً»): لا يكتبها في مقالاته الحديثة، وهي أوضح ما يفضح المحاكاة. والإحصائية أو الاستشهاد من «من_مراجعك»${hasGlobal ? ' أو «من_مراجع_العالم»' : ''} أو «من_عندك» أو من السياق الراهن المرفق حصراً؛ يُمنع منعاً باتاً اختراع رقمٍ أو دراسةٍ أو اسم مصدر، ويُمنع التلميح إلى أبحاثٍ مجهولة («تُثبت الدراسات»، «يقول علم النفس»). إن غاب السند الحقيقي فاكتب الحجة من المشهد وما يكشفه.`,
     '· تكتب مقالك الأسبوعي لقرّاء كويتيين، والسياق كويتي، ولا تعابير شامية أو مصرية. خذ مكاناً واحداً وتعمّق فيه؛ لا تعدّد الأمكنة («في البيت… وفي المدرسة… وفي العمل…») لتعمّم الفكرة، ولا تنقل المشهد إلى مكانٍ آخر بجملةٍ جاهزة («وفي بعض مدارسنا يتكرر المشهد نفسه»). ولا تُجرِ حواراً على ألسنة الناس («يسأل… فيجيب…») ولا تضع جملةً عامية بين «…» إلا ما جاء في «من_عندك» بلفظه: لم يكتب جملةً عامية واحدة بين «…» في مقالاته، والحوار المصنوع أوضح ما فضح المحاكاة أمام الحَكَم الأعمى.',
+    /* ٢٦ سبتمبر ٢٠٢٦ — الجمهور الافتراضي في الاستوديو «المعلمين والقيادات التعليمية»، فأضافت ستُّ
+       مسوداتٍ من عشر فقرةً عن القيادة والإدارة (٣٫٢١ لكل ألف كلمة مقابل ٠٫١٣ في آخر عشرين مقالاً
+       له)، وعدّها الحَكَم الأعمى انحرافاً عن الفكرة. */
+    '· «audience» مَن يقرأ المقال لا موضوعٌ يُضاف إليه: لا تنقل الحجة إلى القيادات أو الإدارة أو الميزانيات أو القرار الإداري ما لم يكن ذلك في الفكرة نفسها.',
     '· الحدث الراهن اختياري: اربطه فقط إن كان الارتباط عضوياً. لا تستخدم سوى العنوان والملخص والمصدر والرابط المقدّم.',
     '· العنوان قويّ غير صحفيٍّ مبتذل، والمقتطف بين ٩٠ و١٩٠ حرفاً وبنبرة المقال نفسها.',
     '· «نماذج_صوت» مقالان كاملان من مقالاتك: اسمع منهما النَّفَس وطول الجملة والوقفة «…» والانقلاب «بل» والانتقال بين الفقرات. يُمنع نقل أي عبارةٍ أو مثالٍ أو فكرةٍ منهما؛ المطلوب أن يشبه المقالُ الجديدُ صوتَهما لا كلامَهما.',
@@ -3730,6 +3736,8 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     ...knowledge.من_مقالاتك.map((item) => ({ body: item.نص })),
     ...knowledge.من_مراجعك.map((item) => ({ body: item.ما_نسبتَه_إليه })),
   ]
+  /* مراجع مقترحة لجولة التصحيح (تُضاف إلى السند حين تُعرض). */
+  const suggestedSources = []
   const evaluate = (draft) => {
     const verdict = judgeStyle(draft.body, dna, {
       /* المسودة من صنع المحرك: تُحاسَب على ما لا يكتبه (الحكاية الشخصية المختلقة). */
@@ -3740,7 +3748,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       archive: knowledgeArchive,
       orthography,
       /* بوابة الإسناد تحتاج المصادر لا الأرشيف وحده: الحدث الراهن سندٌ مشروع. */
-      sources: [...input.existing, ...currentEvents, ...knowledge.من_مراجعك.map((item) => item.ما_نسبتَه_إليه), ...knowledge.من_مراجع_العالم.map((item) => `${item.مرجع} ${item.المصدر} ${item.ما_وجدته}`), ...(input.material ? [input.material] : [])],
+      sources: [...input.existing, ...currentEvents, ...knowledge.من_مراجعك.map((item) => item.ما_نسبتَه_إليه), ...knowledge.من_مراجع_العالم.map((item) => `${item.مرجع} ${item.المصدر} ${item.ما_وجدته}`), ...suggestedSources, ...(input.material ? [input.material] : [])],
       threshold: 80,
     })
     const words = exactWordCount(draft.body)
@@ -3821,14 +3829,37 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
   /* جولتان لا ثلاث: كل نداءٍ يستهلك من حصةٍ يومية مشتركة مع صور الاستوديو،
      والقياس يقول إن الجولة الثالثة نادراً ما تضيف. يُرفع بمتغير بيئة. */
   const maxRounds = envNumber('ARTICLE_REPAIR_ROUNDS', 2, 1, 4)
+  /* ٢٦ سبتمبر ٢٠٢٦ — الاستشهاد المسمّى في أربعة عشر من آخر عشرين مقالاً له، وفي مسودةٍ واحدة من
+     عشر في جولة H؛ وكان غيابه أول ما سمّاه الحَكَم الأعمى. السبب: الفكرة عنوانٌ مجرّد («العودة التي
+     لا تُصلح ما قبلها») لا تطابق كلماتُه مرجعاً، فلم يُعرض على الكاتب شيءٌ في سبعٍ من عشر. بعد المسودة
+     الأولى يُبحث بعنوانها ومقتطفها وزاويتها — وفيها موضوعها الفعلي — ويُعرض ما وُجد مع ما عُرض أولاً
+     «مراجعَ مقترحة» في جولة التصحيح: يستشهد بأحدها إن خدم فكرته المركزية، وإلا تركها. */
+  const citationShare = Number(dna.recent?.citationShare) || 0
+  const citationSuggestions = (draft) => {
+    if (knowledgeOff || citationShare < .5 || citationSpans(draft.body || '').length) return []
+    const found = domainKnowledge(`${draft.title || ''} ${draft.excerpt || ''} ${draft.angle || ''}`, { exclude: exemplarSlugs, books: 0, articles: 0, interviews: 0, citations: 2, globals: 2 })
+    const offered = [
+      ...knowledge.من_مراجع_العالم.map((item) => ({ مرجع: item.مرجع, المصدر: item.المصدر, ما_وجدته: item.ما_وجدته })),
+      ...found.من_مراجع_العالم.map((item) => ({ مرجع: item.مرجع, المصدر: item.المصدر, ما_وجدته: item.ما_وجدته })),
+      ...knowledge.من_مراجعك.map((item) => ({ مرجع: item.مرجع, ما_وجدته: item.ما_نسبتَه_إليه })),
+      ...found.من_مراجعك.map((item) => ({ مرجع: item.مرجع, ما_وجدته: item.ما_نسبتَه_إليه })),
+    ]
+    const seen = new Set()
+    return offered.filter((item) => !seen.has(item.مرجع) && seen.add(item.مرجع)).slice(0, 3)
+  }
   for (let round = 1; round <= maxRounds && canAfford(15_000); round += 1) {
-    if (best.verdict.ready && best.lengthOff <= wordTolerance && !best.originalityBroken && best.repetition.duplicateSentenceRate <= 0) break
+    const suggestions = citationSuggestions(best.draft)
+    if (best.verdict.ready && best.lengthOff <= wordTolerance && !best.originalityBroken && best.repetition.duplicateSentenceRate <= 0 && !suggestions.length) break
+    for (const item of suggestions) suggestedSources.push(`${item.مرجع} ${item.المصدر || ''} ${item.ما_وجدته}`)
 
     const orders = []
     if (best.originalityBroken) {
       orders.push(`أعد الكتابة بزاوية جديدة جذرياً؛ أقرب منشور «${best.similarity.matches[0]?.title || best.draft.title}». لا تكرر عنوانه ولا افتتاحيته ولا خاتمته.`)
     }
     orders.push(...best.verdict.corrections)
+    if (suggestions.length) {
+      orders.push(`مقالاتك الأخيرة تستشهد بدراسةٍ مسمّاة في ${Math.round(citationShare * 100)}٪ منها، وهذا النص بلا استشهاد. في «مراجع_مقترحة» مراجع تحقّقنا منها: إن خدم أحدها فكرتك المركزية فأسند به حجتك في جملةٍ أو جملتين داخل فقرةٍ قائمة، باسمه وسنته كما في «مرجع» وبنتيجته وحذرها كما في «ما_وجدته»، لا في فقرةٍ مستقلة ولا بأرقامٍ ليست فيه. وإن لم يخدمها أيٌّ منها فلا تستشهد بشيء.`)
+    }
     if (best.lengthOff > wordTolerance) {
       orders.push(best.words > input.targetWords
         ? `النص ${arabicCountPhrase(best.words, WORD_PLAIN_FORMS)} والمطلوب ${input.targetWords}: احذف الجمل التفسيرية الزائدة وكل عبارةٍ تعيد ما قيل، ولا تحذف المشهد ولا الخاتمة.`
@@ -3844,7 +3875,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
         '',
         'لا تعتذر ولا تشرح ما فعلت. أعد المقال كاملاً في JSON.',
       ].join('\n'),
-      prompt: JSON.stringify({ article: best.draft, currentEvents, forbiddenNearest: best.similarity.matches, round, ...(input.material ? { من_عندك: input.material } : {}) }),
+      prompt: JSON.stringify({ article: best.draft, currentEvents, forbiddenNearest: best.similarity.matches, round, ...(suggestions.length ? { مراجع_مقترحة: suggestions } : {}), ...(input.material ? { من_عندك: input.material } : {}) }),
       /* التصحيح مهمةٌ ضيّقة لا تحتاج نموذج التفكير البطيء: نثبّتها على الأول
          مهما كان الفائز، فيهبط زمن الجولة وتُصان الحصة. */
       cfModel: process.env.EDITORIAL_CF_MODEL || ARTICLE_MODEL_PRIMARY,

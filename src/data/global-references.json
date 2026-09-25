@@ -1,6 +1,6 @@
 {
  "about": "مراجع العالم: دراساتٌ وتقارير من مجلاتٍ محكّمة ومنظماتٍ دولية في تخصص الدكتور، كلٌّ منها تُحقِّق منه من صفحته الأصلية (DOI أو صفحة المجلة أو التقرير الرسمي) ومعه اقتباسٌ حرفي يسند كل رقم. يستشهد الكاتب الآلي منها وحدها ومن مراجع الدكتور ومادته، ولا يضيف رقماً لم يرد فيها.",
- "verified": "2026-09-25",
+ "verified": "2026-09-26",
  "references": [
   {
    "id": "rosenthal-rubin-1978",
@@ -1624,6 +1624,265 @@
    ],
    "topics": [
     "teachers"
+   ]
+  },
+  {
+   "id": "metcalfe-2017",
+   "label": "Metcalfe (2017)",
+   "authors": [
+    "Metcalfe"
+   ],
+   "year": 2017,
+   "title": "Learning from Errors",
+   "venue": "Annual Review of Psychology",
+   "doi": "10.1146/annurev-psych-010416-044022",
+   "url": "https://doi.org/10.1146/annurev-psych-010416-044022",
+   "quote": "Although error avoidance during learning appears to be the rule in American classrooms, laboratory studies suggest that it may be a counterproductive strategy, at least for neurologically typical students. Experimental investigations indicate that errorful learning followed by corrective feedback is beneficial to learning. … error tolerance encourages students' active, exploratory, generative engagement.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "مراجعةٌ في Annual Review of Psychology: تجنّب الخطأ أثناء التعلّم هو القاعدة في الصفوف الأمريكية، لكن التجارب تشير إلى أنه قد يأتي بعكس المقصود؛ فالتعلّم الذي يقع فيه الخطأ ثم يعقبه تصحيحٌ يفيد التعلّم، والتسامح مع الخطأ يشجّع الطالب على المشاركة النشطة والاستكشاف.",
+   "keywords_ar": [
+    "الخطأ",
+    "الأخطاء",
+    "الخوف من الخطأ",
+    "يخاف",
+    "الفشل",
+    "التصحيح",
+    "الصف",
+    "الطالب",
+    "المعلم",
+    "التجربة"
+   ],
+   "topics": [
+    "mistakes",
+    "feedback"
+   ]
+  },
+  {
+   "id": "keith-frese-2008",
+   "label": "Keith وFrese (2008)",
+   "authors": [
+    "Keith",
+    "Frese"
+   ],
+   "year": 2008,
+   "title": "Effectiveness of error management training: A meta-analysis.",
+   "venue": "Journal of Applied Psychology",
+   "doi": "10.1037/0021-9010.93.1.59",
+   "url": "https://doi.org/10.1037/0021-9010.93.1.59",
+   "quote": "Error management training (EMT) is a training method that involves active exploration as well as explicit encouragement for learners to make errors during training and to learn from them. … Although the mean effect of EMT across all 24 identified studies (N = 2,183) was positive and significant (Cohen's d = 0.44) … Results suggest that EMT may be better suited than error-avoidant training methods for promotion of transfer to novel tasks.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "تحليلٌ بعدي لـ24 دراسة شملت 2,183 متعلّماً: التدريب الذي يشجّع المتعلّم صراحةً على الخطأ والتعلّم منه كان أثره إيجابياً ودالاً (0.44)، ويبدو أنسب من التدريب الذي يتجنّب الخطأ لنقل المهارة إلى مهامّ جديدة.",
+   "keywords_ar": [
+    "الخطأ",
+    "الأخطاء",
+    "الخوف من الخطأ",
+    "الفشل",
+    "التدريب",
+    "التجربة",
+    "المتعلم",
+    "التعلم من الخطأ"
+   ],
+   "topics": [
+    "mistakes",
+    "training"
+   ]
+  },
+  {
+   "id": "yeager-2014",
+   "label": "Yeager et al. (2014)",
+   "authors": [
+    "Yeager",
+    "Henderson",
+    "Paunesku",
+    "Walton",
+    "D'Mello",
+    "Spitzer",
+    "Duckworth"
+   ],
+   "year": 2014,
+   "title": "Boring but important: A self-transcendent purpose for learning fosters academic self-regulation.",
+   "venue": "Journal of Personality and Social Psychology",
+   "doi": "10.1037/a0037637",
+   "url": "https://doi.org/10.1037/a0037637",
+   "quote": "This proposal was supported in 4 studies with over 2,000 adolescents and young adults. … Those with more of a purpose for learning also persisted longer on a boring task rather than giving in to a tempting alternative and, many months later, were less likely to drop out of college. … a brief, one-time psychological intervention promoting a self-transcendent purpose for learning could improve high school science and math grade point average (GPA) over several months.",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "أربع دراسات على أكثر من 2,000 مراهق وشاب: من يتعلّم لغايةٍ أبعد من نفسه يثابر أطول على المهمة المملّة بدل الانصراف إلى ما يغريه، وكان بعد أشهر أقل تركاً للجامعة؛ وتدخّلٌ قصير لمرةٍ واحدة يغرس هذه الغاية رفع معدلات العلوم والرياضيات في الثانوية لأشهر.",
+   "keywords_ar": [
+    "المعنى",
+    "الغاية",
+    "لماذا",
+    "لماذا نتعلم",
+    "الهدف",
+    "الدافعية",
+    "المثابرة",
+    "الملل",
+    "الطلاب",
+    "الأبناء"
+   ],
+   "topics": [
+    "purpose",
+    "motivation"
+   ]
+  },
+  {
+   "id": "luthar-2020",
+   "label": "Luthar et al. (2020)",
+   "authors": [
+    "Luthar",
+    "Kumar",
+    "Zillmer"
+   ],
+   "year": 2020,
+   "title": "High-achieving schools connote risks for adolescents: Problems documented, processes implicated, and directions for interventions.",
+   "venue": "American Psychologist",
+   "doi": "10.1037/amp0000556",
+   "url": "https://doi.org/10.1037/amp0000556",
+   "quote": "Excessive pressures to excel, generally in affluent contexts, are now listed among the top 4 \"high risk\" factors for adolescents' mental health, along with exposure to poverty, trauma, and discrimination. Multiple studies of high-achieving school (HAS) cohorts have shown elevated rates of serious symptoms relative to norms",
+   "quote_source": "PubMed abstract",
+   "claim_ar": "مراجعةٌ في American Psychologist: الضغط المفرط للتفوّق، وأغلبه في البيئات الميسورة، صار من أبرز 4 عوامل خطرٍ على الصحة النفسية للمراهقين إلى جانب الفقر والصدمات والتمييز، ودراساتٌ متعددة على طلاب المدارس عالية التحصيل وجدت لديهم أعراضاً حادة بمعدلاتٍ أعلى من المعتاد.",
+   "keywords_ar": [
+    "النجاح",
+    "التفوق",
+    "الضغط",
+    "ضغط التفوق",
+    "الدرجات",
+    "المراهقين",
+    "الأبناء",
+    "الصحة النفسية",
+    "القلق",
+    "المنافسة"
+   ],
+   "topics": [
+    "pressure",
+    "mental-health",
+    "success"
+   ]
+  },
+  {
+   "id": "kasser-ryan-1996",
+   "label": "Kasser وRyan (1996)",
+   "authors": [
+    "Kasser",
+    "Ryan"
+   ],
+   "year": 1996,
+   "title": "Further Examining the American Dream: Differential Correlates of Intrinsic and Extrinsic Goals",
+   "venue": "Personality and Social Psychology Bulletin",
+   "doi": "10.1177/0146167296223006",
+   "url": "https://doi.org/10.1177/0146167296223006",
+   "quote": "the relative importance and efficacy of extrinsic aspirations for financial success, an appealing appearance, and social recognition were associated with lower vitality and self-actualization and more physical symptoms. Conversely, the relative importance and efficacy of intrinsic aspirations for self-acceptance, affiliation, community feeling, and physical health were associated with higher well-being and less distress.",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "من تتصدّر حياته الأهداف الخارجية، كالنجاح المالي والمظهر الجذاب والاعتراف الاجتماعي، ارتبطت لديه بحيويةٍ أقل وأعراضٍ جسدية أكثر، أما الأهداف الداخلية كتقبّل الذات والعلاقات وخدمة المجتمع فارتبطت بسلامةٍ نفسية أعلى وضيقٍ أقل.",
+   "keywords_ar": [
+    "النجاح",
+    "السعادة",
+    "الفرح",
+    "الرضا",
+    "المال",
+    "المظهر",
+    "الاعتراف",
+    "الأهداف",
+    "المعنى"
+   ],
+   "topics": [
+    "success",
+    "well-being"
+   ]
+  },
+  {
+   "id": "atteberry-mceachin-2021",
+   "label": "Atteberry وMcEachin (2021)",
+   "authors": [
+    "Atteberry",
+    "McEachin"
+   ],
+   "year": 2021,
+   "title": "School’s Out: The Role of Summers in Understanding Achievement Disparities",
+   "venue": "American Educational Research Journal",
+   "doi": "10.3102/0002831220937285",
+   "url": "https://doi.org/10.3102/0002831220937285",
+   "quote": "we document dramatic variability in SLL. While some students actually maintain their school-year learning rate, others lose nearly all their school-year progress. Moreover, decrements are not randomly distributed—52% of students lose ground in all 5 consecutive years (English language arts).",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "فقدان التعلّم في العطلة الصيفية يتفاوت تفاوتاً كبيراً: بعض الطلاب يحافظ على وتيرة تعلّمه، وبعضهم يفقد تقريباً كل ما كسبه في العام الدراسي، و52% من الطلاب تراجعوا في 5 سنواتٍ متتالية كلها (في اللغة الإنجليزية).",
+   "keywords_ar": [
+    "العطلة",
+    "الصيف",
+    "العودة",
+    "العودة إلى المدرسة",
+    "بداية العام",
+    "العام الدراسي",
+    "النسيان",
+    "الطلاب",
+    "المدرسة"
+   ],
+   "topics": [
+    "school",
+    "return"
+   ]
+  },
+  {
+   "id": "sinha-kapur-2021",
+   "label": "Sinha وKapur (2021)",
+   "authors": [
+    "Sinha",
+    "Kapur"
+   ],
+   "year": 2021,
+   "title": "When Problem Solving Followed by Instruction Works: Evidence for Productive Failure",
+   "venue": "Review of Educational Research",
+   "doi": "10.3102/00346543211019105",
+   "url": "https://doi.org/10.3102/00346543211019105",
+   "quote": "we report evidence from a meta-analysis of 53 studies with 166 comparisons that compared PS-I with I-PS design. Our results showed a significant, moderate effect in favor of PS-I … Contrasting trends were, however, observed for younger age learners (second to fifth graders)",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "تحليلٌ بعدي لـ53 دراسة: أن يحاول الطالب حلّ المشكلة ويتعثّر فيها قبل الشرح («الفشل المنتِج») تفوّق بأثرٍ متوسط على الشرح أولاً ثم الحل، مع استثناءٍ لدى الصغار من الصف الثاني إلى الخامس.",
+   "keywords_ar": [
+    "الفشل المنتج",
+    "الخطأ",
+    "المحاولة",
+    "التعثر",
+    "حل المشكلات",
+    "الشرح",
+    "التدريس",
+    "الصف",
+    "الطالب"
+   ],
+   "topics": [
+    "mistakes",
+    "teaching"
+   ]
+  },
+  {
+   "id": "clark-2016",
+   "label": "Clark et al. (2016)",
+   "authors": [
+    "Clark",
+    "Michel",
+    "Zhdanova",
+    "Pui",
+    "Baltes"
+   ],
+   "year": 2016,
+   "title": "All Work and No Play? A Meta-Analytic Examination of the Correlates and Outcomes of Workaholism",
+   "venue": "Journal of Management",
+   "doi": "10.1177/0149206314522301",
+   "url": "https://doi.org/10.1177/0149206314522301",
+   "quote": "Results also show that workaholism is related to many negative outcomes, such as burnout, job stress, work–life conflict, and decreased physical and mental health. Overall, results provide solid evidence that workaholism is best conceptualized as an addiction to work",
+   "quote_source": "Crossref abstract",
+   "claim_ar": "تحليلٌ بعدي عن إدمان العمل: يرتبط بنتائج سلبية كثيرة منها الاحتراق وضغط العمل وتعارض العمل مع الحياة وتراجع الصحة الجسدية والنفسية، والنتائج تدعم فهمه إدماناً على العمل.",
+   "keywords_ar": [
+    "الانشغال",
+    "الجدية",
+    "إدمان العمل",
+    "العمل",
+    "الهروب",
+    "الانشغال الدائم",
+    "الاحتراق",
+    "التعب",
+    "الراحة"
+   ],
+   "topics": [
+    "work",
+    "burnout"
    ]
   }
  ]

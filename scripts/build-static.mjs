@@ -17,7 +17,7 @@ import sharp from 'sharp'
 import { buildSitemapDocuments, sitemapLocsFromDist } from './archive-sitemap.mjs'
 import { isPublicArticle, readCanonicalCms } from './canonical-cms.mjs'
 import { INDEXNOW_KEY } from './indexnow-ping.mjs'
-import { articleCitation, bookCitation, paperCitation, scholarMetaTags } from '../src/lib/scholar-citation.mjs'
+import { bookCitation, paperCitation, scholarMetaTags } from '../src/lib/scholar-citation.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
@@ -468,8 +468,8 @@ const routes = [
     const thumbnail = item.thumbnail || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '')
     return { ...item, path: `/media/${item.slug}`, title: item.title, desc: item.topics || `${item.program || 'لقاء إعلامي'} — ${item.channel || item.outlet || ''}`, type: item.url ? 'video.other' : 'website', iso: item.iso, image: thumbnail, thumbnail }
   }),
-  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg`, scholar: articleCitation(a, { site: SITE }) })),
-  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg`, scholar: articleCitation(a, { site: SITE }) })),
+  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg` })),
+  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
 ]
 
 const LEGACY_REDIRECTS = [

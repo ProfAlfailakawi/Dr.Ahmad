@@ -172,6 +172,8 @@ export const BANNED_PHRASES = [
   /* جولة L: «ارتباطٌ لا سبب» جاءت من نص قاعدة المراجع نفسها («(الارتباط ارتباطٌ لا سبب)»)، و«ويسند هذا»
      إطارٌ جاهز للاستشهاد. كلتاهما صفرٌ في مقالاته الـ١٤٣. */
   'ارتباطٌ لا سبب', 'ويسند هذا', 'ويسند ذلك',
+  /* جولة M: «ونحن حين…» في أربع مسوداتٍ من عشر، وصفرٌ في مقالاته الـ١٤٣. */
+  'ونحن حين',
   'صيدة', 'صيد',
 ]
 
@@ -265,7 +267,8 @@ const bodyOfItem = (item) => String(typeof item === 'string' ? item : item?.body
    بعلاماتٍ كلها مقيسة هنا على آخر عشرين مقالاً. «دعونا» صفرٌ منذ ٢٠٢٥ (وكانت في ٣٠
    مقالاً قديماً) والوصفة كانت تأمر بها؛ «؛» في ١٣ من آخر ١٤ مقالاً ولم تُذكر؛ و«فاسأل
    نفسك:» ختمت ٨ منها و«وربما يبدأ…» ٥. القائمة تتجدد بنفسها كلما نشر. */
-const RETIREMENT_CANDIDATES = ['دعونا', 'علينا أن نعترف', 'أفلا', 'تماماً', 'أصلاً', 'أبداً', 'مطلقاً', 'بالذات', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل']
+/* «فهل» في عشرين من مقالاته القديمة وصفرٌ في آخر عشرين، وفي سبع مسوداتٍ من عشر في جولة M. */
+const RETIREMENT_CANDIDATES = ['فهل', 'دعونا', 'علينا أن نعترف', 'أفلا', 'تماماً', 'أصلاً', 'أبداً', 'مطلقاً', 'بالذات', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل']
 
 /* ٢٥ سبتمبر ٢٠٢٦ — كيف يفتتح: حركة الجملة الأولى في المقال. حَكَمٌ أعمى: «مطالعه جملٌ
    مكثّفة كأنها عناوين، والمحاكاة تفضّل المشهد السينمائي»؛ وبُنى الكاتب الآلي كانت تُختار
@@ -307,6 +310,8 @@ function recentVoice(articles) {
   const plain = (value) => String(value).normalize('NFC').replace(/[\u064B-\u064D]/g, '')
   const share = (pattern) => round2(texts.filter((text) => pattern.test(text)).length / Math.max(1, texts.length))
   const closingShare = (pattern) => round2(texts.filter((text) => pattern.test(paragraphsOf(text).at(-1) || '')).length / Math.max(1, texts.length))
+  /* منطقة الختام: آخر ثلاث فقرات («فاسأل نفسك:» ثم فقرةٌ قصيرة تختم). جولة M. */
+  const closingZoneShare = (pattern) => round2(texts.filter((text) => pattern.test(paragraphsOf(text).slice(-3).join('\n'))).length / Math.max(1, texts.length))
   return {
     sample: texts.length,
     retired: RETIREMENT_CANDIDATES.filter((word) => !texts.some((text) => plain(text).includes(plain(word)))),
@@ -314,9 +319,10 @@ function recentVoice(articles) {
     /* ٢٦ سبتمبر ٢٠٢٦ — نسبتا الختام تُقاسان في فقرته الأخيرة لا في المقال كله. كانتا تعدّان
        العبارة أينما وقعت (٤٠٪ و٣٠٪) ثم تُمليان على الكاتب «نسبةَ خواتيمه»، وهو لم يختم بـ«فاسأل
        نفسك» إلا ثلاثةً من آخر عشرين ولا بـ«ربما يبدأ» إلا اثنين؛ فختمت أربعُ مسوداتٍ من عشر
-       بـ«وربما يبدأ…يوم» وسمّاها الحَكَم الأعمى قالباً. */
-    askYourselfShare: closingShare(/اسأل نفسك/u),
-    perhapsBeginsShare: closingShare(/ربما يبدأ/u),
+       بـ«وربما يبدأ…يوم» وسمّاها الحَكَم الأعمى قالباً. ثم (جولة M) تبيّن أن الفقرة الأخيرة وحدها ضيّقة: العبارتان
+       في منطقة الختام (آخر ثلاث فقرات) في ثمانيةٍ وستة من عشرين، وغابت «فاسأل نفسك» من المسودات كلها. */
+    askYourselfShare: closingZoneShare(/اسأل نفسك/u),
+    perhapsBeginsShare: closingZoneShare(/ربما يبدأ/u),
     /* الاستشهاد بدراسةٍ مسمّاة: في أربعة عشر من آخر عشرين مقالاً، وغيابه أول ما كشف المسودات. */
     citationShare: share({ test: (text) => citationSpans(text).length > 0 }),
     /* كم مرجعاً يسمّي حين يستشهد: وسيطٌ ثلاثة (١–٦) في آخر عشرين مقالاً، والوصفة كانت تسقفه باثنين فجاءت
@@ -804,7 +810,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, tanweenPer1000: { p50: 20, p85: 53 }, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟', '…فحسب، بل…', 'أليس / أيُعقل / أوليس'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
+  recent: { sample: 20, retired: ['فهل', 'دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .4, perhapsBeginsShare: .3, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, tanweenPer1000: { p50: 20, p85: 53 }, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟', '…فحسب، بل…', 'أليس / أيُعقل / أوليس'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -902,7 +908,7 @@ export function styleBrief(rawDna, targetWords = 400) {
   ].filter(Boolean).join(' ')
   /* نسبٌ لا أمر: التوقيعة المكررة في كل مقالٍ قالب. الخادم يوزّع الختام على المقالات بهذه
      النسب ويحدّده في خطة كل مقال. */
-  const closingMovesLine = closingMoves ? ` وتتوزّع خواتيم مقالاته الأخيرة هكذا: ${closingMoves}؛ ولا يختم بطريقةٍ واحدة كل مرة، وختام هذا المقال محدّدٌ في خطة بنائه.` : ''
+  const closingMovesLine = closingMoves ? ` وتتوزّع منطقة الختام في مقالاته الأخيرة (آخر ثلاث فقرات) هكذا: ${closingMoves}؛ ولا يختم بطريقةٍ واحدة كل مرة، وختام هذا المقال محدّدٌ في خطة بنائه.` : ''
   return [
     `بصمة الكاتب مقيسةٌ رقمياً من ${arabicCountPhrase(dna.sampleSize, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)} له. التزمها رقماً رقماً؛ النص الذي يخالف هذه الأرقام ليس نصّه ويُرفض آلياً:`,
     today

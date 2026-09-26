@@ -785,11 +785,14 @@ const suggested = repairRequests.find((request) => request.includes('«مراج�
 assert.ok(suggested && /Metcalfe \(2017\)|Keith وFrese \(2008\)|Sinha وKapur \(2021\)/.test(suggested), 'مسودةٌ بلا استشهاد تُعرض عليها مراجع من موضوعها الفعلي في جولة التصحيح')
 assert.ok(suggested.includes('فلا تستشهد بشيء'), 'والاستشهاد بها مشروطٌ بأن يخدم الفكرة لا أمرٌ مطلق')
 
-/* نسبتا الختام تُقاسان في الفقرة الأخيرة: كانتا تعدّان العبارة أينما وقعت (٤٠٪ و٣٠٪). */
+/* نسبتا الختام تُقاسان في منطقة الختام (آخر ثلاث فقرات): لا في المقال كله (كانت ٤٠٪ و٣٠٪ بمعنى «أينما وقعت»)،
+   ولا في الفقرة الأخيرة وحدها (٣ و٢ من ٢٠، فغابت «فاسأل نفسك» من المسودات كلها في جولة M). */
 const eraRecent = eraDna.recent
-const endsWith = (pattern) => dated.slice().sort((left, right) => right.iso.localeCompare(left.iso)).slice(0, 20).filter((item) => pattern.test(item.body.trim().split(/\n\s*\n/).at(-1))).length / 20
-assert.equal(eraRecent.askYourselfShare, Math.round(endsWith(/اسأل نفسك/u) * 100) / 100, `«فاسأل نفسك» نسبة خواتيمه لا نسبة ورودها (${eraRecent.askYourselfShare})`)
-assert.equal(eraRecent.perhapsBeginsShare, Math.round(endsWith(/ربما يبدأ/u) * 100) / 100, `و«ربما يبدأ» كذلك (${eraRecent.perhapsBeginsShare})`)
+const inZone = (pattern) => dated.slice().sort((left, right) => right.iso.localeCompare(left.iso)).slice(0, 20).filter((item) => pattern.test(item.body.trim().split(/\n\s*\n/).slice(-3).join('\n'))).length / 20
+assert.equal(eraRecent.askYourselfShare, Math.round(inZone(/اسأل نفسك/u) * 100) / 100, `«فاسأل نفسك» نسبتها في منطقة الختام (${eraRecent.askYourselfShare})`)
+assert.equal(eraRecent.perhapsBeginsShare, Math.round(inZone(/ربما يبدأ/u) * 100) / 100, `و«ربما يبدأ» كذلك (${eraRecent.perhapsBeginsShare})`)
+assert.ok(eraRecent.retired.includes('فهل'), '«فهل» متقاعدة: صفرٌ في آخر عشرين مقالاً له')
+assert.ok(BANNED_PHRASES.includes('ونحن حين'), '«ونحن حين» محظورة: صفرٌ في مقالاته الـ١٤٣')
 assert.ok(eraRecent.citationShare >= .5, `الاستشهاد المسمّى مقيسٌ في مقالاته الأخيرة (${eraRecent.citationShare})`)
 const briefH = styleBrief(eraDna, 350)
 assert.ok(!briefH.includes('ليس كذا') && briefH.includes('لا كذا'), 'قالب «…بل» في الوصفة بصيغته الغالبة عنده «لا كذا…بل كذا»')
@@ -900,10 +903,12 @@ for (let variation = 0; variation < 40; variation += 1) {
     return makeResponse(strongBody)
   })
 }
+const askClosings = [...closingKinds].filter(([kind]) => kind.startsWith('قبيل النهاية')).reduce((sum, [, count]) => sum + count, 0)
 const closingTotal = [...closingKinds.values()].reduce((sum, count) => sum + count, 0)
 const inversionClosings = [...closingKinds].filter(([kind]) => kind.startsWith('انقلابٌ')).reduce((sum, [, count]) => sum + count, 0)
 assert.ok(closingKinds.size >= 4, `خمسة أنواعٍ من الختام تتوزّع (${closingKinds.size})`)
 assert.ok(inversionClosings / closingTotal <= .6, `ختام «بل» بنسبته لا غالباً (${inversionClosings}/${closingTotal})`)
+assert.ok(askClosings / closingTotal >= .2 && askClosings / closingTotal <= .6, `«فاسأل نفسك» في منطقة الختام بنسبته نحو ٤٠٪ (${askClosings}/${closingTotal})`)
 let sawWorldRule = false
 await generatePerfectArticle({ ...input, idea: 'فكرةٌ لا يطابقها مرجعٌ عالمي قط: زخرفة الأواني النحاسية' }, async (url, init) => {
   if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }

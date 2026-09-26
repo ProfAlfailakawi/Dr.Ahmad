@@ -324,6 +324,12 @@ function recentVoice(articles) {
        غير «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل»، فختمت به ثماني مسوداتٍ من عشر في جولة I. */
     closingAntithesisShare: closingShare(/(?<!\p{L})بل(?!\p{L})/u),
     closingQuestionShare: closingShare(/؟\s*$/u),
+    /* تنوين الضم والكسر لكل ألف كلمة (جولة L): وسيطه نحو عشرين ومئين ٨٥ عنده ٤٤؛ وجاءت مسودات K وL بوسيطٍ
+       فوق الخمسين، وزاده المدقّق حين نوّن الصفات («صامتٍ»، «حاسمٌ»). التشكيل الكثيف يُرى بالعين قبل أن يُقرأ. */
+    tanweenPer1000: (() => {
+      const rates = texts.map((text) => Math.round((String(text).match(/[\u064C\u064D]/g) || []).length / Math.max(1, countWords(text)) * 1000)).sort((a, b) => a - b)
+      return rates.length ? { p50: percentile(rates, .5), p85: percentile(rates, .85) } : null
+    })(),
     /* الجملة الطويلة التامّة: مئين ٩٠ لأطوال جمله، ونسبة ما بلغ عشرين كلمة فأكثر. */
     sentenceP90: percentile(texts.flatMap((text) => sentencesOf(text).map(countWords)).sort((a, b) => a - b), .9),
     longShare: round2(texts.flatMap((text) => sentencesOf(text).map(countWords)).filter((words) => words >= 20).length / Math.max(1, texts.flatMap((text) => sentencesOf(text)).length)),
@@ -793,7 +799,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟', 'أليس / أيُعقل / أوليس'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, tanweenPer1000: { p50: 20, p85: 53 }, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟', 'أليس / أيُعقل / أوليس'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -916,6 +922,7 @@ export function styleBrief(rawDna, targetWords = 400) {
     openers.length ? `١٥) يبدأ جمله وفقراته بهذه الكلمات أكثر من غيرها — استعمل بعضها في مواضعها الطبيعية: ${openers.join(' · ')}.` : '',
     recent.retired?.length ? `١٧) كلماتٌ غابت عن مقالاته الأخيرة كلها (آخر ${arabicCountPhrase(recent.sample, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)})، فلا تستعملها أبداً: ${recent.retired.join(' · ')}.` : '',
     recent.rareFormulas?.length ? `١٩) صيغٌ نادرة في مقالاته الأخيرة (مقالٌ واحد على الأكثر من آخر ${arabicCountPhrase(recent.sample, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS)}) ويُكثر منها المحاكي: ${recent.rareFormulas.map((item) => `«${item}»`).join(' · ')}. مرةً في المقال على الأكثر، إلا أن تكون هي موضوع الفكرة نفسها.` : '',
+    recent.tanweenPer1000?.p85 ? `٢٠) التشكيل عنده خفيف: تنوين الضم والكسر نحو ${recent.tanweenPer1000.p50} لكل ألف كلمة، وقلّما يتجاوز ${recent.tanweenPer1000.p85}؛ لا تشكّل إلا ما يرفع اللبس، واترك الصفات والأسماء بلا تنوين ضمٍّ أو كسر، وتنوين الفتح على الألف كما هو («طلاباً»).` : '',
     recent.semicolonShare >= .4 ? `١٨) الفاصلة المنقوطة «؛» علامته اليوم (في ${Math.round(recent.semicolonShare * 100)}٪ من مقالاته الأخيرة): يفصّل بها ما قبلها أو يوازن بين طرفين، مرةً أو مرتين في المقال.` : '',
     (() => {
       /* عاداتٌ خفية مقيسة: لا يذكرها أحدٌ حين يصف أسلوبه، ولا يلتقطها المحاكي —
@@ -1480,10 +1487,13 @@ export function judgeStyle(body, rawDna, options = {}) {
   const lastParagraphWords = echoWords(paragraphsOf(text).at(-1) || '')
   const openingEcho = options.generated && openingWords.size >= 3 ? lastParagraphWords.filter((word) => openingWords.has(word)).length / openingWords.size : 0
   const echoHit = openingEcho >= .67
-  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length + orphanHits.length + stockHits.length + (rareHits.length ? 1 : 0) + (citeFormHits.length ? 1 : 0) + (echoHit ? 1 : 0)
+  const tanweenCeiling = dna.recent?.tanweenPer1000?.p85
+  const tanweenRate = Math.round((String(text).match(/[\u064C\u064D]/g) || []).length / Math.max(1, countWords(text)) * 1000)
+  const tanweenHit = Boolean(options.generated && tanweenCeiling && tanweenRate > tanweenCeiling)
+  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length + orphanHits.length + stockHits.length + (rareHits.length ? 1 : 0) + (citeFormHits.length ? 1 : 0) + (echoHit ? 1 : 0) + (tanweenHit ? 1 : 0)
   if (dna.recent || voiceSlips) {
     add('currentVoice', 'صوته اليوم', voiceSlips ? Math.max(0, 1 - .5 * voiceSlips) : 1, 8,
-      [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`), ...orphanHits, ...stockHits, ...rareHits, ...citeFormHits.map((hit) => `«${hit}»`), ...(echoHit ? [`الخاتمة تعيد المطلع ${Math.round(openingEcho * 100)}٪`] : [])].join(' · ') || 'نظيف', 'صفر',
+      [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`), ...orphanHits, ...stockHits, ...rareHits, ...citeFormHits.map((hit) => `«${hit}»`), ...(echoHit ? [`الخاتمة تعيد المطلع ${Math.round(openingEcho * 100)}٪`] : []), ...(tanweenHit ? [`تنوين ${tanweenRate}/ألف`] : [])].join(' · ') || 'نظيف', 'صفر',
       [
         retiredHits.length ? `احذف ما غاب عن مقالاته الأخيرة كلها: ${retiredHits.map((word) => `«${word}»`).join(' · ')}.` : '',
         anecdoteHits.length ? `احذف الحكاية الشخصية المختلقة (${anecdoteHits.map((hit) => `«${hit}»`).join(' · ')}): لا يكتب في مقالاته الحديثة حواراً مع طالبٍ أو معلمٍ أو قريب. اجعلها مشهداً عامّاً بلا «أنا» ولا أسماء، بفعلٍ مضارع يعرفه كل قارئ.` : '',
@@ -1491,6 +1501,7 @@ export function judgeStyle(body, rawDna, options = {}) {
         orphanHits.length ? `ادمج الفقرة اليتيمة التي تبدأ بـ«بعض» في ما قبلها أو احذفها (${orphanHits.map((hit) => `«${hit}…»`).join(' · ')}): فقراته المفردة انعطافٌ لا حكمةٌ معلّقة.` : '',
         stockHits.length ? `احذف الجملة الجاهزة (${stockHits.map((hit) => `«${hit}»`).join(' · ')}) وما تجرّه من فقرةٍ تكرّر المشهد في مكانٍ آخر: خذ مكاناً واحداً وتعمّق فيه.` : '',
         citeFormHits.length ? `اكتب الاستشهاد بصيغته هو: «Tang et al. (2023)» أو «Howard وآخرين (2021)»، واسم الباحث باللاتينية دائماً (${citeFormHits.map((hit) => `«${hit}»`).join(' · ')} صفرٌ في مقالاته).` : '',
+        tanweenHit ? `خفّف التشكيل: تنوين الضم والكسر ${tanweenRate} لكل ألف كلمة وعنده نحو ${dna.recent.tanweenPer1000.p50}؛ احذف ما لا يرفع لبساً، خاصةً على الصفات.` : '',
         echoHit ? 'لا تُعد جملة المطلع في الخاتمة: اختم بجملةٍ جديدة، فخاتمته لا تشترك مع مطلعه في كلمةٍ دالّة في سبعة عشر من آخر عشرين مقالاً.' : '',
         rareHits.length ? `خفّف الصيغ النادرة في مقالاته الأخيرة (${rareHits.join(' · ')}): مرةً واحدة على الأكثر لصيغةٍ واحدة، وأعد صياغة الباقي بلفظٍ من فكرة المقال.` : '',
         dialectHits.length ? `اكتب بالفصحى أو احذف الجملة العامية بين «…» (${dialectHits.map((quote) => `«${quote}»`).join(' · ')}): لم يكتب جملةً عامية واحدة بين «…» في مقالاته.` : '',
@@ -2026,6 +2037,10 @@ export function acceptProofread(original, corrected, rawDna) {
   }
   const drift = 1 - common / Math.max(1, a.length)
   if (drift > .04) return { accepted: false, reason: `المصحّح أعاد الكتابة لا التصحيح (${Math.round(drift * 100)}٪ من الحروف)` }
+  /* جولة L: المدقّق نوّن الصفات («صامتٍ»، «حاسمٌ») فزاد تشكيلاً يخالف خفّة تشكيله. تُقبل الزيادة الطفيفة
+     (حركةٌ تفكّ لبساً)، ولا يُقبل التشكيل الجديد بالجملة. */
+  const marks = (value) => (value.match(/[\u064B-\u0652]/g) || []).length
+  if (marks(target) - marks(source) > 3) return { accepted: false, reason: `المصحّح أضاف تشكيلاً (${marks(target) - marks(source)} حركة)` }
 
   const before = judgeStyle(source, dna)
   const after = judgeStyle(target, dna)
@@ -2045,7 +2060,8 @@ export const PROOFREAD_INSTRUCTION = [
   'مهمتك الوحيدة: تصحيح الأخطاء الإملائية والنحوية وأخطاء التطابق في النص كما هو.',
   'ممنوع منعاً باتاً: تغيير أسلوب الكاتب، أو إعادة صياغة جملة، أو حذف جملة أو إضافتها،',
   'أو تغيير علامات الترقيم — وبخاصة نقاط الحذف «…» وعلامات الاقتباس «» — أو تغيير',
-  'مواضع الفقرات، أو تغيير موضع تنوين الفتح المعتمد في الموقع (مثل «طلاباً»).',
+  'مواضع الفقرات، أو تغيير موضع تنوين الفتح المعتمد في الموقع (مثل «طلاباً»)،',
+  'أو إضافة حركةٍ أو تنوينٍ أو شدّةٍ لم تكن في النص: التشكيل عند الكاتب خفيف، والخطأ الذي تصحّحه حرفٌ أو كلمة لا حركةٌ غائبة.',
   'أعد النص نفسه حرفاً بحرف مع تصحيح الأخطاء وحدها. أعد JSON بمفتاح body فقط.',
 ].join('\n')
 

@@ -870,6 +870,17 @@ assert.ok(briefH.includes('ما لا يظهر') && briefH.includes('يستحق �
 const familiesSource = server.slice(server.indexOf('const ARTICLE_FAMILIES = ['), server.indexOf('export function chooseFamilies'))
 assert.deepEqual(BANNED_PHRASES.filter((phrase) => phrase.length > 3 && bareText(familiesSource).includes(bareText(phrase))), [], 'خطط البناء لا تحمل عبارةً محظورة ينسخها الكاتب')
 
+/* جولة L: التشكيل عنده خفيف، والمدقّق لا يزيده. */
+assert.ok(eraRecent.tanweenPer1000?.p50 > 0 && eraRecent.tanweenPer1000.p85 > eraRecent.tanweenPer1000.p50, `كثافة تنوينه مقيسة (${JSON.stringify(eraRecent.tanweenPer1000)})`)
+const heavy = strongBody.replace(/(\p{L}{4,})(?=[ ،.])/gu, (word, match, offset) => (offset % 3 === 0 ? `${match}ٍ` : match))
+assert.ok(judgeStyle(heavy, eraDna, { generated: true }).corrections.some((line) => line.includes('خفّف التشكيل')), 'المسودة المشكولة بالتنوين تُضبط')
+const hisTanween = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('خفّف التشكيل'))).length
+assert.ok(hisTanween <= 4, `ولا تكاد تُنسب إلى مقالاته (${hisTanween} من ${dated.length})`)
+assert.ok(PROOFREAD_INSTRUCTION.includes('إضافة حركةٍ أو تنوينٍ'), 'المدقّق ممنوعٌ من إضافة التشكيل')
+const voweled = strongBody.replace('فرارٌ', 'فرارٌ').replace(/(\p{L}{5,})(?= )/gu, (word, match, offset) => (offset % 5 === 0 ? `${match}ٌ` : match))
+assert.ok(!acceptProofread(strongBody, voweled, eraDna).accepted, 'تصحيحٌ يضيف تشكيلاً بالجملة يُرفض')
+assert.ok(briefH.includes('التشكيل عنده خفيف'), 'الوصفة تصف خفّة تشكيله')
+
 /* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
 const closingKinds = new Map()
 for (let variation = 0; variation < 40; variation += 1) {

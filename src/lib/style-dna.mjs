@@ -169,6 +169,9 @@ export const BANNED_PHRASES = [
      «في هذا المشهد» ٣، «لا تكمن في» ٣، «أخطر مما» ٣، «وحده يستحق/يكفي» ٣. و«ما وراء» ليست منها (٣ عنده). */
   'ما لا يظهر', 'ما لا يُرى', 'في هذا المشهد', 'لا تكمن في', 'ما تخفيه', 'ما يخفيه',
   'أخطر مما', 'أخطر كثيراً', 'وحده يستحق', 'وحده يكفي', 'يستحق التوقف', 'يستحق وقفة',
+  /* جولة L: «ارتباطٌ لا سبب» جاءت من نص قاعدة المراجع نفسها («(الارتباط ارتباطٌ لا سبب)»)، و«ويسند هذا»
+     إطارٌ جاهز للاستشهاد. كلتاهما صفرٌ في مقالاته الـ١٤٣. */
+  'ارتباطٌ لا سبب', 'ويسند هذا', 'ويسند ذلك',
   'صيدة', 'صيد',
 ]
 
@@ -292,6 +295,8 @@ const RARE_FORMULAS = [
   { label: 'القيادة', pattern: /(?<!\p{L})(?:و|ف)?(?:ال)?قيادا?[ةت](?!\p{L})/u },
   { label: 'فهل… أم…؟', pattern: /فهل[^؟.]{0,80}أم[^؟.]{0,80}؟/u },
   /* جولة J: صفرٌ في آخر عشرين مقالاً له، وخمسٌ في عشر مسودات («أيُعقل…؟ أيُعقل…؟»). */
+  /* جولة L: «نحن لا نربّي… فحسب، بل…» ثلاثٌ في عشر مسودات، ومرةٌ واحدة في مقالاته الـ١٤٣. */
+  { label: '…فحسب، بل…', pattern: /(?<!\p{L})فحسب(?!\p{L})[^.؟!]{0,40}(?<!\p{L})بل(?!\p{L})/u },
   { label: 'أليس / أيُعقل / أوليس', pattern: /(?<!\p{L})(?:أليس|أليست|أوليس|أيعقل|أفيعقل)(?!\p{L})/u },
 ]
 const rareFormulaPatterns = new Map(RARE_FORMULAS.map((item) => [item.label, item.pattern]))
@@ -799,7 +804,7 @@ export const FALLBACK_STYLE_DNA = {
   collectiveVerbs: COLLECTIVE_VERBS_FALLBACK,
   era: { halfLifeYears: .5, weightedSample: 943, recentArticles: 3 },
   /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً (recentVoice). */
-  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, tanweenPer1000: { p50: 20, p85: 53 }, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟', 'أليس / أيُعقل / أوليس'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
+  recent: { sample: 20, retired: ['دعونا', 'علينا أن نعترف', 'أفلا', 'مطلقاً', 'لا أكثر ولا أقل', 'فلنبدأ', 'جرّب', 'لكنّ', 'المعيار', 'البديل'], semicolonShare: .9, askYourselfShare: .15, perhapsBeginsShare: .1, citationShare: .7, citationsPerArticle: { p50: 3, p85: 4 }, closingAntithesisShare: .4, closingQuestionShare: .1, sentenceP90: 30, tanweenPer1000: { p50: 20, p85: 53 }, longShare: .24, rareFormulas: ['يتكرر', 'نسمّي', 'القيادة', 'فهل… أم…؟', '…فحسب، بل…', 'أليس / أيُعقل / أوليس'], openers: ['في', 'فاسأل', 'حين', 'لكن', 'وفي', 'نحن', 'وحين', 'المشكلة', 'بعض', 'لهذا'], paragraphsMedian: 9, paragraphsP75: 13, paragraphWordsMedian: 38, openingShares: { thesis: .25, scene: .3, we: .2, negation: .15, question: .05, quote: .05 }, openingPauseShare: .5, bands: { ellipsisPer100: { p15: .3, p35: .9, p50: 1.1, p65: 1.3, p85: 2.2 }, medianSentence: { p15: 10, p35: 11, p50: 13, p65: 14, p85: 17 }, shortRate: { p15: 24, p35: 33, p50: 41, p65: 44, p85: 47 }, singleRate: { p15: 0, p35: 0, p50: 13, p65: 15, p85: 29 }, questions: { p15: 0, p35: 3, p50: 4, p65: 4, p85: 6 } } },
   /* مسطرة الحَكَم: توزيع كل مقياسٍ على مقالاته منفردة، **مرجَّحةً بالحقبة**
      (نصف عمرٍ ستة أشهر) فتكون بصمة أحمد ٢٠٢٦ لا أحمد ٢٠١٧. */
   perArticle: {
@@ -1391,7 +1396,7 @@ export function judgeStyle(body, rawDna, options = {}) {
     closingOpen ? (closingWords <= 22 ? 'تنقلب' : 'طويلة') : 'تلخّص', 'انقلابٌ قصير («…»، «لا»، «بل»، «لكن») أو سؤال',
     closingOpen
       ? `الجملة الأخيرة طويلة (${arabicCountPhrase(closingWords, WORD_FORMS)}): خواتيمه مكثّفة، فاختصرها إلى نحو اثنتي عشرة كلمة.`
-      : 'الخاتمة تلخّص بدل أن تنقلب. اجعل الجملة الأخيرة قصيرةً تقلب الفكرة أو تفتحها كما حدّدها الختام في خطة المقال: وقفة «…» قبل انقلاب، أو «لا» أو «بل» أو «لكن»، أو سؤال. لا «في الختام» ولا تلخيص.')
+      : 'الخاتمة تلخّص بدل أن تنقلب. اجعل الجملة الأخيرة قصيرةً على نوع الختام المحدّد في خطة المقال: سؤالٌ، أو وقفة «…»، أو «لا» أو «لكن»، أو «بل» إن كان الختام المحدّد انقلاباً. لا «في الختام» ولا تلخيص.')
 
   /* ١١ — التكرار: أثقل عيبٍ ينحدر إليه النموذج المجاني تحت ضغط الأرقام.
      توزيعه كله أصفار، فالعتبات هنا مطلقة لا نسبية. */

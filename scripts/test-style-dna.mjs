@@ -881,6 +881,14 @@ const voweled = strongBody.replace('فرارٌ', 'فرارٌ').replace(/(\p{L}{5
 assert.ok(!acceptProofread(strongBody, voweled, eraDna).accepted, 'تصحيحٌ يضيف تشكيلاً بالجملة يُرفض')
 assert.ok(briefH.includes('التشكيل عنده خفيف'), 'الوصفة تصف خفّة تشكيله')
 
+/* جولة L: المرجع المقترح من موضوع المسودة يجب أن يشارك الفكرة الأصلية كلمةً على الأقل، فلا يُلصق Rosenthal
+   بمقالٍ عن التعب. والعبارات الجاهزة التي جاءت من نص القاعدة نفسها صارت محظورة. */
+const graftQuery = 'حين تتحوّل العبارة المكرّرة إلى توقّعٍ مسبق من المعلم عن طلابه'
+assert.ok(domainKnowledge(graftQuery, { books: 0, articles: 0, interviews: 0 }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Rosenthal')), 'بلا قيدٍ: موضوع المسودة يجلب Rosenthal')
+assert.ok(!domainKnowledge(graftQuery, { books: 0, articles: 0, interviews: 0, mustMatch: 'تعبٌ جديد بعبارات قديمة' }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Rosenthal')), 'ومع قيد الفكرة لا يُلصق بمقالٍ عن التعب')
+assert.ok(!server.includes('(الارتباط ارتباطٌ لا سبب)') && BANNED_PHRASES.includes('ارتباطٌ لا سبب'), 'عبارة الحذر لا تُملى حرفياً، وهي محظورة')
+assert.ok(eraRecent.rareFormulas.includes('…فحسب، بل…'), '«…فحسب، بل…» صيغةٌ نادرة عنده')
+
 /* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
 const closingKinds = new Map()
 for (let variation = 0; variation < 40; variation += 1) {

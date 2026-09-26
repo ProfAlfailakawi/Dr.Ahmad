@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ArticleRecord } from '../../lib/cms'
 import { loadArticleBodies } from '../../lib/article-bodies'
-import { arabicCountPhrase, WORD_PLAIN_FORMS } from '../../lib/arabic-count'
+import { ARTICLE_FORMS, arabicCountPhrase, WORD_PLAIN_FORMS } from '../../lib/arabic-count'
 import {
   articleMetrics,
   buildOrthographyIndex,
+  calibrateStyle,
   countWords,
+  judgeNaturalness,
   judgeStyle,
   locateIssues,
   measureStyleDna,
   paragraphsOf,
+  percentileRank,
   polishTypography,
   refineToStyle,
   resolveStyleDna,
@@ -19,7 +22,7 @@ import {
   type StyleCheck,
   type StyleVerdict,
 } from '../../lib/style-dna.mjs'
-import { buildMimicLexicon, mimicVoice, type MimicResult } from '../../lib/style-mimic.mjs'
+import { buildMimicLexicon, composeReviewed, diffHunks, mimicVoice, type MimicHunk, type MimicResult } from '../../lib/style-mimic.mjs'
 
 const DRAFT_KEY = 'admin-style-checker-draft-v1'
 const card = 'min-w-0 rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
@@ -60,25 +63,6 @@ function paragraphNumber(sentence: string, paragraphs: string[]) {
   const needle = compact(sentence).slice(0, 72)
   const found = paragraphs.findIndex((paragraph) => compact(paragraph).includes(needle))
   return found >= 0 ? found + 1 : 1
-}
-
-function naturalnessOf(verdict: StyleVerdict | null) {
-  if (!verdict) return { score: 0, label: 'بانتظار النص', note: 'هذا مؤشر أسلوبي، وليس كاشف ذكاء اصطناعي.' }
-  const grade = (key: string) => verdict.checks.find((check) => check.key === key)?.grade ?? 1
-  /* سلامة التركيب أثقل من كل ما عداها في هذا المؤشر: نصٌّ بجملٍ مكسورة قد
-     يكون إيقاعه مضبوطاً تماماً — وهو بالضبط ما تُنتجه آلةٌ تحسِّن الأرقام. */
-  const penalty =
-    (1 - grade('wellFormed')) * 34
-    + (1 - grade('banned')) * 28
-    + (1 - grade('typography')) * 20
-    + (1 - grade('repetition')) * 24
-    + (1 - grade('lexicalDiversity')) * 14
-    + (1 - grade('longSentences')) * 7
-    + Math.min(12, verdict.metrics.duplicateGramRate * 2)
-  const score = clamp(100 - penalty)
-  if (score >= 86) return { score, label: 'طبيعي أسلوبياً', note: 'لا تظهر في البنية علامات آلية بارزة.' }
-  if (score >= 68) return { score, label: 'يحتاج لمسة بشرية', note: 'هناك انتظام أو صياغات تستحق المراجعة.' }
-  return { score, label: 'آثار صياغة آلية', note: 'العبارات أو التكرار أو القالب أوضح من صوتك.' }
 }
 
 function scoreTone(score: number) {
@@ -129,6 +113,47 @@ function CheckRow({ check }: { check: StyleCheck }) {
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-hair">
         <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${percent}%` }} />
       </div>
+    </div>
+  )
+}
+
+/* النص نفسه وعليه مواضع الخلل: الدكتور يرى الجملة في سياقها لا في قائمةٍ منفصلة. */
+function HighlightedText({ text, issues }: { text: string; issues: Issue[] }) {
+  const segments = useMemo(() => {
+    const ranges: { start: number; end: number; issue: Issue; index: number }[] = []
+    issues.forEach((issue, index) => {
+      const sentence = issue.sentence.trim()
+      if (!sentence) return
+      let start = text.indexOf(sentence)
+      let length = sentence.length
+      if (start < 0) {
+        const probe = sentence.slice(0, 40)
+        start = probe.length >= 12 ? text.indexOf(probe) : -1
+        length = probe.length
+      }
+      if (start < 0) return
+      const end = start + length
+      if (ranges.some((range) => start < range.end && end > range.start)) return
+      ranges.push({ start, end, issue, index })
+    })
+    ranges.sort((left, right) => left.start - right.start)
+    const out: { text: string; issue?: Issue; index?: number }[] = []
+    let cursor = 0
+    for (const range of ranges) {
+      if (range.start > cursor) out.push({ text: text.slice(cursor, range.start) })
+      out.push({ text: text.slice(range.start, range.end), issue: range.issue, index: range.index })
+      cursor = range.end
+    }
+    if (cursor < text.length) out.push({ text: text.slice(cursor) })
+    return out
+  }, [text, issues])
+  return (
+    <div className="max-h-[560px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-hair bg-canvas px-4 py-4 text-[.9rem] leading-[2.05] text-ink">
+      {segments.map((segment, key) => segment.issue ? (
+        <mark key={key} title={`${kindLabel[segment.issue.kind] || 'مراجعة'}: ${segment.issue.reason}`} className="rounded bg-accent/[.14] px-0.5 text-ink underline decoration-accent/60 decoration-dotted underline-offset-4">
+          {segment.text}<sup className="mr-0.5 font-display text-[.6rem] text-accent">{(segment.index ?? 0) + 1}</sup>
+        </mark>
+      ) : <span key={key}>{segment.text}</span>)}
     </div>
   )
 }
@@ -195,8 +220,12 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
   const [notice, setNotice] = useState('')
   const [mimic, setMimic] = useState<MimicResult | null>(null)
   const [undoBody, setUndoBody] = useState<string | null>(null)
+  /* مراجعة المحاكاة مقطعاً مقطعاً: الأصل، والمقاطع، وما ردّه الدكتور منها. */
+  const [hunks, setHunks] = useState<MimicHunk[]>([])
+  const [rejected, setRejected] = useState<number[]>([])
+  const [reviewedBody, setReviewedBody] = useState<string | null>(null)
 
-  // تحميل الأرشيف الكامل تلقائياً ومحلياً لضمان تغذية البصمة بكامل الـ 143 مقالاً
+  // تحميل الأرشيف الكامل تلقائياً ومحلياً لضمان تغذية البصمة بالأرشيف كاملاً
   useEffect(() => {
     let active = true
     setLoadingArchive(true)
@@ -242,6 +271,9 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
   const orthography = useMemo(() => buildOrthographyIndex(archive), [archive])
   /* يُبنى مرةً واحدة على الأرشيف: كل عبارةٍ توزن في سياق تعديلها قبل المساس بها. */
   const mimicLexicon = useMemo(() => buildMimicLexicon(archive), [archive])
+  /* العتبة وحدود الطبيعية من توزيع مقالاته هو، لا من رقمٍ ثابت. */
+  const calibration = useMemo(() => calibrateStyle(archive, dna, { orthography }), [archive, dna, orthography])
+  const archiveCount = dna?.sampleSize || archive.length
   const words = countWords(body)
 
   useEffect(() => {
@@ -263,8 +295,8 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
   }, [notice])
 
   const verdict = useMemo(() => analysisBody.trim() && countWords(analysisBody) >= 40
-    ? judgeStyle(analysisBody, dna, { orthography, threshold: 80 })
-    : null, [analysisBody, dna, orthography])
+    ? judgeStyle(analysisBody, dna, { orthography, threshold: calibration.threshold })
+    : null, [analysisBody, dna, orthography, calibration.threshold])
   const paragraphs = useMemo(() => paragraphsOf(analysisBody), [analysisBody])
   const issues = useMemo<Issue[]>(() => {
     if (!verdict) return []
@@ -285,11 +317,17 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
         paragraph: item.index + 1,
       }))
     return [...located, ...swollen].slice(0, 10)
-  }, [analysisBody, archive, dna, mode, orthography, paragraphs, verdict])
-  const naturalness = naturalnessOf(verdict)
+  }, [analysisBody, dna, mode, orthography, paragraphs, verdict])
+  const naturalness = judgeNaturalness(verdict, calibration)
+  const styleRank = verdict && calibration.measured ? percentileRank(calibration.raw, verdict.raw) : null
+  /* «الأكثر أثراً أولاً» بالنقاط الضائعة فعلاً (الوزن × النقص)، لا بالنسبة وحدها:
+     نقصٌ بعشرين في مقياسٍ وزنه ١٨ أثقل من نقصٍ بثلاثين في مقياسٍ وزنه ٥. */
   const weakest = useMemo(() => verdict
-    ? [...verdict.checks].filter((check) => check.grade < .8).sort((left, right) => left.grade - right.grade).slice(0, 6)
+    ? [...verdict.checks].filter((check) => check.grade < .8)
+      .sort((left, right) => (1 - right.grade) * right.weight - (1 - left.grade) * left.weight)
+      .slice(0, 6)
     : [], [verdict])
+  const reviewLive = mimic !== null && undoBody !== null && reviewedBody === body
 
   const copy = async (value: string, success: string) => {
     try {
@@ -333,6 +371,9 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
     setUndoBody(body)
     setBody(result.text)
     setAnalysisBody(result.text)
+    setHunks(diffHunks(body, result.text))
+    setRejected([])
+    setReviewedBody(result.text)
     const gain = (result.after?.raw ?? 0) - (result.before?.raw ?? 0)
     setNotice(`${arabicCountPhrase(result.changes.length, CHANGE_FORMS)} · المطابقة ${gain >= 0 ? '+' : ''}${gain} نقطة`)
   }
@@ -343,7 +384,21 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
     setAnalysisBody(undoBody)
     setUndoBody(null)
     setMimic(null)
+    setHunks([])
+    setRejected([])
+    setReviewedBody(null)
     setNotice('رُجّع النص كما كان قبل المحاكاة.')
+  }
+
+  /* قبول مقطعٍ أو ردّه: يُعاد بناء النص من الأصل والمحاكاة معاً، فلا يتراكم خطأ. */
+  const toggleHunk = (id: number) => {
+    if (!mimic || undoBody === null || !reviewLive) return
+    const next = rejected.includes(id) ? rejected.filter((item) => item !== id) : [...rejected, id]
+    const composed = composeReviewed(undoBody, mimic.text, hunks, next)
+    setRejected(next)
+    setBody(composed)
+    setAnalysisBody(composed)
+    setReviewedBody(composed)
   }
 
   const syncFullArchive = async () => {
@@ -351,7 +406,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
     try {
       const bodies = await loadArticleBodies()
       setFullCorpusBodies(bodies)
-      setNotice('تم استيعاب الـ 143 مقالاً بالكامل في البصمة الحية ✓')
+      setNotice(`استُوعب ${arabicCountPhrase(Object.keys(bodies).length, ARTICLE_FORMS)} في البصمة الحية ✓`)
     } catch {
       setNotice('تم استخدام المتون المتوفرة محلياً.')
     } finally {
@@ -366,12 +421,17 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
     localStorage.removeItem(DRAFT_KEY)
     setMimic(null)
     setUndoBody(null)
+    setHunks([])
+    setRejected([])
+    setReviewedBody(null)
     setNotice('مُسحت المسودة من هذا الجهاز.')
   }
 
   const reportText = verdict ? [
     title.trim() ? `العنوان: ${title.trim()}` : '',
     ...styleReportLines(verdict),
+    styleRank !== null ? `موقعه بين مقالاتك: أعلى من ${styleRank}٪ منها (العتبة المعايَرة ${calibration.threshold}٪).` : '',
+    `الطبيعية: ${naturalness.score}٪ · ${naturalness.label}`,
     '',
     'المواضع:',
     ...(issues.length ? issues.map((issue) => `الفقرة ${issue.paragraph} · ${kindLabel[issue.kind] || 'مراجعة'}: ${issue.reason}\n«${issue.sentence}»`) : ['لا توجد مواضع قاطعة.']),
@@ -390,7 +450,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
               {loadingArchive && <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[.6rem] text-accent">يستوعب الأرشيف…</span>}
             </div>
             <h2 className="mt-2 font-display text-2xl font-semibold leading-snug sm:text-3xl">هل يبدو هذا المقال منك فعلاً؟</h2>
-            <p className="mt-3 max-w-2xl text-[.82rem] leading-[1.9] text-white/70">مسطرة ومحاكي أسلوبي يقارن الإيقاع والجمل والفقرات ببصمة مقالاتك الـ 143 المنشورة، ويقلد صوتك ويصقل النص فوراً محلياً وبلا إرسال للإنترنت.</p>
+            <p className="mt-3 max-w-2xl text-[.82rem] leading-[1.9] text-white/70">مسطرة ومحاكي أسلوبي يقارن الإيقاع والجمل والفقرات ببصمة مقالاتك المنشورة، ويقلد صوتك ويصقل النص فوراً محلياً وبلا إرسال للإنترنت.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -400,7 +460,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
             </div>
             {archive.length < 100 && (
               <button type="button" onClick={() => void syncFullArchive()} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[.68rem] font-semibold text-white hover:bg-white/20">
-                استيعاب كامل الأرشيف (143)
+                استيعاب كامل الأرشيف
               </button>
             )}
           </div>
@@ -468,9 +528,18 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
                   <ScoreDial score={verdict.score} label="مطابقة الأسلوب" />
                   <ScoreDial score={naturalness.score} label="طبيعية الصياغة" />
                 </div>
+                {styleRank !== null && (
+                  <div className={`${inset} mt-3 px-4 py-3`}>
+                    <div className="flex items-center justify-between gap-3"><strong className="text-[.8rem] text-ink">موقعه بين مقالاتك</strong><span className="font-display text-accent">أعلى من {styleRank}٪</span></div>
+                    <div className="relative mt-2 h-1.5 rounded-full bg-hair" aria-hidden="true">
+                      <div className="absolute inset-y-0 right-0 rounded-full bg-accent/70" style={{ width: `${styleRank}%` }} />
+                    </div>
+                    <p className="mt-2 text-[.66rem] leading-relaxed text-soft">العتبة {calibration.threshold}٪ يعبرها تسعة أعشار مقالاتك أسلوباً، ووسيطها {calibration.median}٪. الدرجة هنا قبل سقف التحفّظ القاطع: {verdict.raw}٪.</p>
+                  </div>
+                )}
                 <div className={`${inset} mt-3 px-4 py-3`}>
                   <div className="flex items-center justify-between gap-3"><strong className="text-[.8rem] text-ink">{naturalness.label}</strong><span className="font-display text-accent">{naturalness.score}٪</span></div>
-                  <p className="mt-1 text-[.68rem] leading-relaxed text-soft">{naturalness.note} مقيس على 143 مقالاً في الأرشيف المعتمد.</p>
+                  <p className="mt-1 text-[.68rem] leading-relaxed text-soft">{naturalness.note} {naturalness.rank !== null ? `أكثر طبيعيةً من ${naturalness.rank}٪ من مقالاتك. ` : ''}مقيسٌ على {arabicCountPhrase(calibration.sampleSize || archiveCount, ARTICLE_FORMS)}.</p>
                 </div>
               </>
             ) : (
@@ -537,6 +606,35 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
                   <span className="basis-full text-[.68rem] leading-relaxed text-soft">{change.reason}</span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {hunks.length > 0 && (
+            <div className="mt-4 rounded-xl border border-hair bg-canvas px-4 py-4" data-mimic-review="true">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <strong className="text-[.74rem] text-ink">راجع كل تعديلٍ في نصك: اقبله أو ردّه</strong>
+                <span className="text-[.64rem] text-soft">{hunks.length - rejected.length} مقبول · {rejected.length} مردود</span>
+              </div>
+              <p className="mt-1 text-[.68rem] leading-relaxed text-soft">
+                {reviewLive
+                  ? 'كل مقطعٍ فرقٌ فعليٌّ بين نصك قبل المحاكاة وبعدها. ردُّ مقطعٍ يعيده كما كتبته، والدرجة تُحدَّث فوراً.'
+                  : 'حرّرتَ النص بيدك بعد المحاكاة، فتوقفت المراجعة المقطعية كي لا تُمحى تعديلاتك. «تراجع عن المحاكاة» يعيد الأصل كاملاً.'}
+              </p>
+              <ul className="mt-3 grid gap-2">
+                {hunks.map((hunk) => {
+                  const refused = rejected.includes(hunk.id)
+                  return (
+                    <li key={hunk.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 ${refused ? 'border-hair opacity-70' : 'border-accent/25 bg-accent/[.03]'}`}>
+                      <span className={`text-[.8rem] ${refused ? 'text-ink' : 'text-soft line-through decoration-soft/50'}`}>{hunk.from.trim() ? `«${hunk.from.trim()}»` : '(لا شيء)'}</span>
+                      <span className="text-soft">←</span>
+                      <span className={`text-[.8rem] ${refused ? 'text-soft line-through decoration-soft/50' : 'text-accent'}`}>{hunk.to.trim() ? `«${hunk.to.trim()}»` : hunk.to ? '(فاصل)' : 'حُذفت'}</span>
+                      <button type="button" disabled={!reviewLive} onClick={() => toggleHunk(hunk.id)} className="mr-auto rounded-full border border-hair px-3 py-1 text-[.66rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45">
+                        {refused ? 'اقبله' : 'ردّه'}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
             </div>
           )}
 
@@ -609,11 +707,17 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
               <div><p className="text-[.7rem] font-semibold text-accent">أين بالضبط؟</p><h3 className="mt-1 font-display text-xl font-semibold text-ink">الفقرات التي تحتاج يدك.</h3></div>
               <span className="font-display text-lg text-accent">{issues.length}</span>
             </div>
+            {issues.length > 0 && (
+              <details className="mt-4" open>
+                <summary className="cursor-pointer text-[.72rem] font-semibold text-ink">المواضع في سياقها داخل النص</summary>
+                <div className="mt-3"><HighlightedText text={analysisBody} issues={issues} /></div>
+              </details>
+            )}
             <div className="mt-4 grid gap-3">
               {issues.length ? issues.map((issue, index) => (
                 <article key={`${issue.kind}-${index}`} className={`${inset} overflow-hidden`}>
                   <div className="flex items-center justify-between gap-3 border-b border-hair px-4 py-2.5">
-                    <strong className="text-[.72rem] text-ink">الفقرة {issue.paragraph}</strong>
+                    <strong className="text-[.72rem] text-ink"><span className="font-display text-accent">{index + 1}.</span> الفقرة {issue.paragraph}</strong>
                     <span className="rounded-full border border-accent/20 bg-accent/[.05] px-2.5 py-1 text-[.62rem] font-semibold text-accent">{kindLabel[issue.kind] || 'مراجعة'}</span>
                   </div>
                   <div className="px-4 py-3"><p className="text-[.8rem] leading-[1.9] text-ink">«{issue.sentence}»</p><p className="mt-2 text-[.7rem] leading-relaxed text-soft">{issue.reason}</p></div>

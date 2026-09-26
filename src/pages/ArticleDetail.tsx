@@ -10,6 +10,7 @@ import { useCmsContent } from '../lib/content'
 import { CiteButton, Listen, OwnerEdit, Share } from '../components/extras'
 import { ArticleProgressBar, ReaderControls, ReaderParagraphText, ReadingTimeLabel, articleGlossaryPlan, useReaderPreferences, usePopularQuotes, type PopularQuote } from '../components/ArticleReader'
 import { SelectionTools } from '../components/IdeaFeatures'
+import GlyphLoader from '../components/GlyphLoader'
 import { openAudioPlayer } from '../components/AudioPlayer'
 import { markArticleRead } from '../components/ReaderResonance'
 import { JsonLd, useSeo } from '../components/seo'
@@ -890,7 +891,7 @@ export default function ArticleDetail() {
   if (!a && loading)
     return (
       <Page className="content-articles article-journey">
-        <div className="px-6 pt-44 text-center text-soft">لحظة…</div>
+        <div className="px-6 pt-44 text-center text-soft"><GlyphLoader size={32} label="يجهّز المقال…" /></div>
       </Page>
     )
 

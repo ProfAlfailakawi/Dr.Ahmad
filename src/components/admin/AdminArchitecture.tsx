@@ -234,8 +234,32 @@ export function AdminMobileSubnav({ tab, onSelect }: { tab: AdminTab; onSelect: 
 
 export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const area = areaOfTab(tab)
+  /* ارتفاع الشريط الثابت (مع مسافته عن الحافة) يُنشر متغيّراً: الصفحة تترك له
+     مسافةً سفلية، والمشغّل العمودي في الريل يُحدّ به فلا يغطي الشريطُ غلافه. */
+  const navRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const root = document.documentElement
+    const publish = () => {
+      const rect = nav.getBoundingClientRect()
+      const reserved = rect.height > 0 ? Math.ceil(window.innerHeight - rect.top) : 0
+      root.style.setProperty('--admin-dock-h', `${Math.max(0, reserved)}px`)
+    }
+    publish()
+    root.dataset.adminDock = 'true'
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(publish) : null
+    observer?.observe(nav)
+    window.addEventListener('resize', publish)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', publish)
+      root.style.removeProperty('--admin-dock-h')
+      delete root.dataset.adminDock
+    }
+  }, [])
   return (
-    <nav aria-label="تنقل مجالات لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur lg:hidden">
+    <nav ref={navRef} aria-label="تنقل مجالات لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur lg:hidden">
       <div className="grid min-w-0 grid-cols-4 gap-1.5">
         {ADMIN_GROUPS.map((group) => {
           const active = area === group.area
@@ -419,7 +443,7 @@ export function TodayDashboard({ articles, books, papers, media, onOpen }: { art
             <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.35]">{tasks.length ? `اليوم لديك ${arabicCountPhrase(tasks.length, DECISION_FORMS)} فقط.` : 'لا توجد مشكلات عاجلة.'}</h2>
             <p className="mt-3 max-w-2xl text-[.9rem] font-light leading-[1.9] text-white/65">هذا الصندوق يعرض القرارات لا كل النواقص. نقص التغطية الصوتية يبقى مسار تطوير مستقلاً، لا إنذاراً أحمر.</p>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-[.72rem] text-white/65"><span className="pulse relative h-1.5 w-1.5 rounded-full bg-white/70" />{loading ? 'يتصل بالنظام…' : 'يتحدّث تلقائياً'}</span>
+          {loading && <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-[.72rem] text-white/65"><span className="pulse relative h-1.5 w-1.5 rounded-full bg-white/70" />يتصل بالنظام…</span>}
         </div>
         {tasks.length ? <ol className="relative mt-8 grid gap-2.5 md:grid-cols-2">{tasks.map((task, index) => <li key={task.label}><button onClick={() => onOpen(task.tab)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.05] px-4 py-3 text-right transition-colors hover:bg-white/[.1]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[.75rem]">{index + 1}</span><span className="min-w-0 flex-1"><span className="block text-[.86rem] font-medium">{task.label}</span><span className="mt-0.5 block text-[.72rem] text-white/55">{task.note}</span></span><span className="ms-auto">←</span></button></li>)}</ol> : <p className="relative mt-7 text-[.88rem] text-white/70">يمكنك الآن الكتابة أو المغادرة. النظام لا يطلب تدخلك العاجل.</p>}
         {missingAudio > 0 && <p className="relative mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-[.78rem] leading-relaxed text-white/62">تغطية الصوت: {arabicCountPhrase(missingAudio, MATERIAL_WAITING_AUDIO_FORMS)}. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}

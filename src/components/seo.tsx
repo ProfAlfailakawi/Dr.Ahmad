@@ -52,6 +52,10 @@ export function useSeo({
     const img = image ? (image.startsWith('http') ? image : site.url + image) : `${site.url}/og/canonical-${english ? 'en' : 'ar'}.jpg`
 
     document.title = full
+    // وسوم citation_* المولودة في HTML الساكن تخصّ الصفحة الأولى وحدها؛ عند التنقل
+    // داخل التطبيق تُزال حتى لا تنسب برامجُ المراجع (Zotero) صفحةً إلى بحثٍ آخر.
+    // الوسوم التي يضيفها useScholarMeta تحمل data-scholar فلا تُمسّ هنا.
+    document.head.querySelectorAll('meta[name^="citation_"]:not([data-scholar])').forEach((el) => el.remove())
     ;[
       ['name', 'description'],
       ['name', 'robots'],
@@ -94,6 +98,25 @@ export function useSeo({
     if (googleVerification) setMeta('name', 'google-site-verification', googleVerification)
     if (bingVerification) setMeta('name', 'msvalidate.01', bingVerification)
   }, [title, description, path, type, image, robots])
+}
+
+/** وسوم Google Scholar (Highwire) في الصفحة الحية — مطابقة لما يولّده build-static.mjs. */
+export function useScholarMeta(tags: Array<[string, string]> | null | undefined) {
+  const payload = JSON.stringify(tags || [])
+  useEffect(() => {
+    const list = JSON.parse(payload) as Array<[string, string]>
+    if (!list.length) return
+    document.head.querySelectorAll('meta[name^="citation_"]').forEach((el) => el.remove())
+    const added = list.map(([name, content]) => {
+      const el = document.createElement('meta')
+      el.setAttribute('name', name)
+      el.setAttribute('content', content)
+      el.setAttribute('data-scholar', '')
+      document.head.appendChild(el)
+      return el
+    })
+    return () => { added.forEach((el) => el.remove()) }
+  }, [payload])
 }
 
 /** بيانات منظّمة — Schema.org */

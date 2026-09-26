@@ -13,7 +13,7 @@ import { useAdminAuth } from '../lib/admin-auth'
 import { Link as RouterLink, useLocation } from 'react-router'
 import { MySpace } from './MySpace'
 import { safeLink } from '../lib/dead-links'
-import { buildBibTeX, downloadCitationFile, inferBibTeXType, safeCitationFilename } from '../lib/bibtex'
+import { buildBibTeX, createBibTeXKey, downloadCitationFile, inferBibTeXType, safeCitationFilename, type BibTeXRecord } from '../lib/bibtex'
 
 /* ---------- النشرة البريدية ---------- */
 export function Newsletter({ compact = false }: { compact?: boolean }) {
@@ -238,7 +238,11 @@ export function CiteButton({
   compact = false,
   contextLabel = 'فتح المصدر الأصلي',
   compactLabel,
+  bibtex,
 }: {
+  /** سجلٌ مُهيكل (من scholar-citation.mjs) — حين يُمرَّر يُبنى منه BibTeX وRIS بدقة
+      (النوع الصحيح، كل مؤلف منفصل، المجلد والعدد والصفحات) بدل الاستنتاج من سطر الوعاء. */
+  bibtex?: BibTeXRecord
   title: string
   year: string
   container: string
@@ -262,7 +266,8 @@ export function CiteButton({
     chicago: `${authors}. «${title}». ${container} (${year}).${sourceSuffix}`,
     /* النوع يُستنتج من الوعاء الحقيقي (مجلة/كتاب/مؤتمر/أطروحة)، ولا يُختار نوعٌ
        لمجرد أنه «يستوعب حقولاً أكثر»؛ وما لا نعرفه لا يُكتب. */
-    bibtex: ((type = inferBibTeXType({ container })) => buildBibTeX({
+    /* المفتاح يُبنى من الاسم اللاتيني الثابت للمؤلف حتى لا يختلف بين بحثٍ عربي وآخر إنجليزي. */
+    bibtex: bibtex ? buildBibTeX(bibtex, { key: createBibTeXKey({ ...bibtex, authors: ['Ahmad H. Alfailakawi'] }) }) : ((type = inferBibTeXType({ container })) => buildBibTeX({
       type,
       id: `${title}-${year}`,
       authors,
@@ -283,6 +288,31 @@ export function CiteButton({
     { id: 'chicago', label: 'Chicago' },
     { id: 'bibtex', label: 'BibTeX' },
   ]
+
+  const [quickBib, setQuickBib] = useState<'idle' | 'done' | 'error'>('idle')
+  /* نسخة BibTeX بنقرة واحدة من دون فتح النافذة — للباحث الذي يعرف ما يريد. */
+  const copyBibTeXDirect = async () => {
+    const value = citations.bibtex
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) await navigator.clipboard.writeText(value)
+      else throw new Error('clipboard unavailable')
+      setQuickBib('done')
+    } catch {
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = value
+        textarea.setAttribute('readonly', '')
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        const ok = document.execCommand('copy')
+        textarea.remove()
+        setQuickBib(ok ? 'done' : 'error')
+      } catch { setQuickBib('error') }
+    }
+    window.setTimeout(() => setQuickBib('idle'), 2200)
+  }
 
   const copy = async () => {
     try {
@@ -321,13 +351,21 @@ export function CiteButton({
   const exportRis = () => {
     setExportState('idle')
     const normalizedYear = String(year || '').match(/\d{4}/)?.[0] || ''
-    const doi = String(citationUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, '')
+    const doi = bibtex?.doi || String(citationUrl || url || '').match(/10\.\d{4,9}\/[^\s?#]+/i)?.[0]?.replace(/[.,;]+$/, '')
+    const risType = bibtex ? ({ article: 'JOUR', inproceedings: 'CPAPER', book: 'BOOK', incollection: 'CHAP', misc: 'GEN' } as Record<string, string>)[bibtex.type] || 'GEN' : 'JOUR'
+    const risAuthors = bibtex ? (Array.isArray(bibtex.authors) ? bibtex.authors : [bibtex.authors || '']).filter(Boolean) : [authors].filter(Boolean)
+    const risPages = bibtex?.pages ? String(bibtex.pages).split(/-+/) : []
     const lines = [
-      'TY  - JOUR',
+      `TY  - ${risType}`,
       `TI  - ${title}`,
-      authors ? `AU  - ${authors}` : '',
+      ...risAuthors.map((name) => `AU  - ${name}`),
       normalizedYear ? `PY  - ${normalizedYear}` : '',
-      container ? `JO  - ${container}` : '',
+      bibtex ? (bibtex.journal ? `JO  - ${bibtex.journal}` : bibtex.booktitle ? `T2  - ${bibtex.booktitle}` : bibtex.publisher ? `PB  - ${bibtex.publisher}` : '') : container ? `JO  - ${container}` : '',
+      bibtex?.volume ? `VL  - ${bibtex.volume}` : '',
+      bibtex?.number ? `IS  - ${bibtex.number}` : '',
+      risPages[0] ? `SP  - ${risPages[0]}` : '',
+      risPages[1] ? `EP  - ${risPages[1]}` : '',
+      bibtex?.isbn ? `SN  - ${bibtex.isbn}` : '',
       doi ? `DO  - ${doi}` : '',
       citationUrl ? `UR  - ${citationUrl}` : '',
       'LA  - ar',
@@ -473,11 +511,22 @@ export function CiteButton({
 
   return (
     <>
-      <div className="mt-8 rounded-xl border border-hair">
-        <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex w-full items-center justify-between px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
+      <div className="mt-8 flex items-stretch rounded-xl border border-hair">
+        <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex min-w-0 flex-1 items-center justify-between gap-3 px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
           <span>✍ الاستشهاد الأكاديمي</span>
           <span className="text-[.82rem] font-semibold text-accent">APA · MLA · Chicago · BibTeX ↗</span>
         </button>
+        {bibtex && (
+          <button
+            type="button"
+            onClick={copyBibTeXDirect}
+            aria-live="polite"
+            title="نسخ سجل BibTeX مباشرة"
+            className="shrink-0 border-s border-hair px-4 text-[.78rem] font-semibold text-soft transition-colors hover:text-accent"
+          >
+            {quickBib === 'done' ? '✓ نُسخ' : quickBib === 'error' ? 'تعذّر' : <span dir="ltr">BibTeX ⧉</span>}
+          </button>
+        )}
       </div>
       {portalElement}
     </>

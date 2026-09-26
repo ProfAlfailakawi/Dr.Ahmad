@@ -17,6 +17,7 @@ import sharp from 'sharp'
 import { buildSitemapDocuments, sitemapLocsFromDist } from './archive-sitemap.mjs'
 import { isPublicArticle, readCanonicalCms } from './canonical-cms.mjs'
 import { INDEXNOW_KEY } from './indexnow-ping.mjs'
+import { articleCitation, bookCitation, paperCitation, scholarMetaTags } from '../src/lib/scholar-citation.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = resolve(ROOT, 'dist')
@@ -359,6 +360,7 @@ const withPublishing = (list) => list.map((book) => {
     edition: pick('edition'),
     publisher: pick('publisher'),
     pageCount: pick('pageCount'),
+    coAuthors: pick('coAuthors'),
   }
 })
 
@@ -393,6 +395,23 @@ const nArticles = Math.floor(articles.length / 10) * 10   // «أكثر من ١�
 const nBooks = books.length
 const nPapers = papers.length
 
+/* ---------- مسارات التعلّم (src/data/learning-paths.ts — بياناتٌ خالصة بلا استيراد) ---------- */
+const learningPathsSource = readFileSync(resolve(ROOT, 'src/data/learning-paths.ts'), 'utf8')
+const learningPathsRuntime = ts.transpileModule(learningPathsSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText.replace(/\bexport\s+/g, '')
+/* الخطوة التي حُذفت مادتها من اللوحة لا تظهر في الصفحة الساكنة ولا في خريطة الموقع. */
+const learningStepAlive = (step) => step.kind === 'book'
+  ? !isDeleted('book', step.ref.split('#')[0])
+  : step.kind === 'encyclopedia' ? !isDeleted('book', 'encyclopedia') : !isDeleted('article', step.ref)
+const learningPaths = new Function(`${learningPathsRuntime}; return learningPaths`)()
+  .map((path) => ({ ...path, steps: path.steps.filter(learningStepAlive) }))
+const LEARNING_KIND = { article: 'مقال', podcast: 'حلقة من مجلس الفكرة', encyclopedia: 'مدخل في الموسوعة', book: 'فصل من كتاب' }
+/* الصيغة نفسها في src/lib/learning-paths.ts (stepHref). */
+const learningStepHref = (step) => step.kind === 'article' || step.kind === 'podcast' ? `/articles/${step.ref}`
+  : step.kind === 'encyclopedia' ? `/publications/encyclopedia?q=${encodeURIComponent(step.title)}`
+  : `/publications/${step.ref.split('#')[0]}#book-knowledge-${step.ref.split('#')[1]}`
+
 const STATIC = [
   { path: '/', title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', desc: `الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، أستاذ تكنولوجيا التعليم والذكاء الاصطناعي، والكاتب والباحث والمستشار الكويتي. ${nBooks} كتب، ${nPapers} بحثاً محكّماً، وأكثر من ${nArticles} مقالاً منذ ${firstYear}.` },
   { path: '/publications', title: 'الكتب المنشورة', desc: `كتب د. أحمد حسين الفيلكاوي في التعليم وتكنولوجيا التعليم والذكاء الاصطناعي والتحول المجتمعي.` },
@@ -424,6 +443,8 @@ const STATIC = [
   { path: '/impact', title: 'سجل الأثر الموثق', desc: 'رحلات موثقة تُظهر انتقال الأفكار من المقال والبحث إلى الحوار العام والمؤلفات والتطبيق، مع رابط لكل محطة ظاهرة.' },
   { path: '/cv/impact', title: 'سجل الأثر الموثق', desc: 'مسار توافق قديم ينقلك إلى سجل الأثر الموثق.', robots: 'noindex, follow' },
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
+  { path: '/paths', title: 'مسارات التعلّم', desc: 'مسارات قصيرة منتقاة تمزج المقال والحلقة المسموعة ومدخل الموسوعة وفصل الكتاب في ترتيبٍ واحد، مع حفظ تقدّمك في متصفحك.' },
+  ...learningPaths.map((path) => ({ path: `/paths/${path.id}`, title: path.title, desc: path.intro })),
   { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
   { path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' },
   /* المرآة الإنجليزية */
@@ -433,17 +454,22 @@ const STATIC = [
   { path: '/en/contact', title: 'Book a meeting', desc: 'Consulting, keynotes, workshops, media interviews and research collaboration with Dr. Ahmad H. Alfailakawi.', lang: 'en' },
 ]
 
+/* Google Scholar لا يشغّل JavaScript: وسوم citation_* يجب أن تولد هنا في HTML الساكن.
+   رابط PDF المحلي لا يُعلن إلا إن كان الملف موجوداً فعلاً في files/research. */
+const localResearchPdfExists = (path) => /^\/files\/research\/[^/]+\.pdf$/i.test(path) && existsSync(resolve(ROOT, path.slice(1)))
+const scholarHead = (record) => scholarMetaTags(record).map(([name, content]) => `<meta name="${name}" content="${attr(String(content))}" />`).join('\n    ')
+
 const routes = [
   ...STATIC,
-  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.longDescription || b.desc, image: b.cover, isbn: b.isbn, year: b.year, edition: b.edition, publisher: b.publisher, pageCount: b.pageCount })),
-  ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.meta}`, type: 'article' })),
+  ...books.map((b) => ({ path: `/publications/${b.slug}`, title: b.title, desc: b.longDescription || b.desc, image: b.cover, isbn: b.isbn, year: b.year, edition: b.edition, publisher: b.publisher, pageCount: b.pageCount, scholar: bookCitation(b, { site: SITE }) })),
+  ...papers.map((p) => ({ path: `/research/${p.slug}`, title: p.title, desc: p.abstractAr || `بحث محكّم — ${p.meta}`, type: 'article', scholar: paperCitation(p, { site: SITE, pdfExists: localResearchPdfExists }) })),
   ...media.map((item) => {
     const id = youtubeId(item.url)
     const thumbnail = item.thumbnail || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : '')
     return { ...item, path: `/media/${item.slug}`, title: item.title, desc: item.topics || `${item.program || 'لقاء إعلامي'} — ${item.channel || item.outlet || ''}`, type: item.url ? 'video.other' : 'website', iso: item.iso, image: thumbnail, thumbnail }
   }),
-  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg` })),
-  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg` })),
+  ...articles.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt, type: 'article', iso: a.iso, cat: a.cat, image: `/og/articles/${a.slug}.jpg`, scholar: articleCitation(a, { site: SITE }) })),
+  ...siteArticlesFeed.map((a) => ({ path: `/articles/${a.slug}`, title: a.title, desc: a.excerpt || a.title, type: 'article', iso: a.iso, cat: a.cat || 'مقال', image: `/og/articles/${a.slug}.jpg`, scholar: articleCitation(a, { site: SITE }) })),
 ]
 
 const LEGACY_REDIRECTS = [
@@ -478,6 +504,7 @@ function stripManagedHead(html) {
     .replace(/<meta\s+name=["']description["'][^>]*>/gi, '')
     .replace(/<meta\s+name=["']robots["'][^>]*>/gi, '')
     .replace(/<meta\s+(?:property|name)=["'](?:og:[^"']+|twitter:[^"']+)["'][^>]*>/gi, '')
+    .replace(/<meta\s+name=["']citation_[^"']+["'][^>]*>/gi, '')
     .replace(/<link\s+rel=["']canonical["'][^>]*>/gi, '')
     .replace(/<script\s+type=["']application\/ld\+json["'][\s\S]*?<\/script>/gi, '')
 }
@@ -635,6 +662,24 @@ function richStaticHtml(path) {
       ['مسار قابل للاستكشاف', 'يمكن للزائر الانتقال من كل محطة إلى مادتها الأصلية ومتابعة الفكرة داخل الأرشيف بدلاً من الاكتفاء بملخص مغلق.'],
     ],
     [['/atlas','سماء المقالات'], ['/ask','العقل الحي'], ['/impact','سجل الأثر الموثق']]
+  )
+
+  if (path === '/paths') return shell(
+    'مسارات التعلّم',
+    'تسلسلاتٌ قصيرة منتقاة بعناية: مقالٌ، وحلقةٌ مسموعة، ومدخلٌ من الموسوعة، وفصلٌ من كتاب — في ترتيبٍ واحد يُقرأ من أوله إلى آخره.',
+    learningPaths.map((item) => [item.title, `${esc(item.intro)} <a href="/paths/${attr(item.id)}" style="color:#3E5C78;font-weight:600;text-decoration:none;">ابدأ المسار ←</a>`]),
+    [['/thought-paths','مسار الفكرة'], ['/listen','مجلس الفكرة'], ['/publications/encyclopedia','موسوعة تكنولوجيا التعليم']]
+  )
+
+  const learningPath = path.startsWith('/paths/') && learningPaths.find((item) => `/paths/${item.id}` === path)
+  if (learningPath) return shell(
+    learningPath.title,
+    `${learningPath.intro} ${learningPath.audience}`,
+    learningPath.steps.map((step, index) => [
+      `${String(index + 1).padStart(2, '0')} · ${LEARNING_KIND[step.kind]}: ${step.title}`,
+      `${step.question ? `«${esc(step.question)}» — ` : ''}${esc(step.note)} <a href="${attr(learningStepHref(step))}" style="color:#3E5C78;font-weight:600;text-decoration:none;">افتح المادة ←</a>`,
+    ]),
+    [['/paths','كل مسارات التعلّم'], ...learningPaths.filter((item) => item.id !== learningPath.id).map((item) => [`/paths/${item.id}`, item.title])]
   )
 
   if (path === '/atlas') return shell(
@@ -1214,7 +1259,7 @@ function schemaMediaDateTime(value = '') {
   return ''
 }
 
-function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', isbn, year, edition, publisher, pageCount, url: videoUrl, duration, topics, thumbnail, program, channel, clipStart, clipEnd, audioUrl, audioFile }) {
+function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', scholar, isbn, year, edition, publisher, pageCount, url: videoUrl, duration, topics, thumbnail, program, channel, clipStart, clipEnd, audioUrl, audioFile }) {
   const en = lang === 'en'
   const isAdmin = path === '/admin'
   const mediaUploadDate = schemaMediaDateTime(iso)
@@ -1339,6 +1384,7 @@ function render({ path, title, desc, type = 'website', iso, cat, image, robots, 
     <meta name="twitter:description" content="${esc(desc)}" />
     <meta name="twitter:image" content="${img}" />
     <meta name="twitter:creator" content="@drahmadkw" />
+    ${scholar && !robots ? scholarHead(scholar) : ''}
     <script type="application/ld+json">${JSON.stringify(ld)}</script>
   `
 

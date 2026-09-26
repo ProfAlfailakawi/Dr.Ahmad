@@ -343,7 +343,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
 ]
 
 const isPrimaryNavActive = (item: NavItem, pathname: string) => {
-  if (item.to === '/thought') return pathname === '/thought' || pathname === '/thought-paths' || pathname === '/decade' || pathname === '/impact' || pathname.startsWith('/impact/')
+  if (item.to === '/thought') return pathname === '/thought' || pathname === '/thought-paths' || pathname === '/paths' || pathname.startsWith('/paths/') || pathname === '/decade' || pathname === '/impact' || pathname.startsWith('/impact/')
   return pathname === item.to
 }
 
@@ -744,6 +744,7 @@ function SearchPalette({ close }: { close: () => void }) {
     { to: '/contact#booking-form', title: 'الحجز والتواصل', meta: 'صفحة', kind: 'page' as const, text: 'حجز موعد محاضرة ورشة لقاء تواصل استشارة' },
     { to: '/atlas', title: 'سماء المقالات', meta: 'خريطة', kind: 'page' as const, text: 'سماء المقالات خريطة الارشيف الزمن' },
     { to: '/thought-paths', title: 'مسارات الفكرة', meta: 'مسار', kind: 'page' as const, text: 'مسارات الفكر الفكرة موضوع تعليم تربية تقنية هوية مجتمع' },
+    { to: '/paths', title: 'مسارات التعلّم', meta: 'مسار', kind: 'page' as const, text: 'مسارات التعلم تعلم بترتيب خطوات مقال حلقة بودكاست موسوعة فصل كتاب ذكاء اصطناعي معلم رقمي طفل شاشة امتحان درجات' },
   ], [articles, books, papers])
 
   const results = useMemo(() => {

@@ -13,7 +13,8 @@ import { SelectionTools } from '../components/IdeaFeatures'
 import GlyphLoader from '../components/GlyphLoader'
 import { openAudioPlayer } from '../components/AudioPlayer'
 import { markArticleRead } from '../components/ReaderResonance'
-import { JsonLd, useSeo } from '../components/seo'
+import { JsonLd, useScholarMeta, useSeo } from '../components/seo'
+import { articleCitation, citationToBibTeX, scholarMetaTags } from '../lib/scholar-citation.mjs'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
@@ -819,6 +820,8 @@ export default function ArticleDetail() {
     type: 'article',
     image: slug ? `/og/articles/${slug}.png` : undefined,
   })
+  const scholarRecord = useMemo(() => a ? articleCitation(a, { site: SITE_URL }) : null, [a])
+  useScholarMeta(scholarRecord ? scholarMetaTags(scholarRecord) : null)
   useTrackView(`/articles/${slug || ''}`, a?.title || 'مقال', Boolean(a))
 
   useEffect(() => {
@@ -1019,7 +1022,7 @@ export default function ArticleDetail() {
                       <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3h7v7" /><path d="M21 3l-9 9" /><path d="M18 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h5" /></svg>
                     </a>
                   )}
-                  <CiteButton compact title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
+                  <CiteButton compact bibtex={scholarRecord ? citationToBibTeX(scholarRecord) : undefined} title={a.title} year={a.iso.slice(0, 4)} container="الموقع الرسمي للدكتور أحمد حسين الفيلكاوي" url={`${SITE_URL}/articles/${a.slug}`} contextUrl={liveLink(article.source) || ''} />
                   <button type="button" onClick={() => { setSerenity(false); window.dispatchEvent(new CustomEvent('reader:close-overlays')); printSiteContent({ selector: '.article-journey', title: a.title }) }} className="article-tool-icon" aria-label="طباعة المقال كورقة أكاديمية" title="طباعة المقال">
                     <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round"><path d="M7 8V3h10v5"/><path d="M6 17H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>
                   </button>

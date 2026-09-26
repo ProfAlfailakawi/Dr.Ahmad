@@ -312,6 +312,7 @@ function Signatures() {
   const sigs = [
     { to: '/atlas', t: 'سماء المقالات' },
     { to: '/thought-paths', t: 'مسار الفكرة' },
+    { to: '/paths', t: 'مسارات التعلّم' },
     { to: '/ask', t: 'العقل الحي' },
     { to: '/decade', t: 'وثيقة العقد' },
     { to: '/questions', t: 'سؤال يُقلق التعليم' },

@@ -1132,3 +1132,10 @@ export const LAYER_AFTER_PREPOSITION_FORMS: ArabicCountForms = {
   few: 'طبقات',
   many: 'طبقة',
 }
+
+export const STEP_FORMS: ArabicCountForms = {
+  one: 'خطوة',
+  two: 'خطوتان',
+  few: 'خطوات',
+  many: 'خطوة',
+}

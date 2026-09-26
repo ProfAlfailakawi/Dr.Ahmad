@@ -23,6 +23,7 @@ const Search = lazy(() => import('./pages/Search'))
 const AskLibrary = lazy(() => import('./pages/AskLibrary'))
 const Decade = lazy(() => import('./pages/Decade'))
 const ThoughtPaths = lazy(() => import('./pages/ThoughtPaths'))
+const LearningPaths = lazy(() => import('./pages/LearningPaths'))
 const ConceptLife = lazy(() => import('./pages/ConceptLife'))
 const ThoughtOverview = lazy(() => import('./pages/ThoughtOverview'))
 const Media = lazy(() => import('./pages/Media'))
@@ -670,6 +671,7 @@ const routeChunkLoaders: Array<[RegExp, () => Promise<unknown>]> = [
   [/^\/atlas\/?$/, () => import('./pages/Atlas')],
   [/^\/cv\/?$/, () => import('./pages/CV')],
   [/^\/thought-paths\/?$/, () => import('./pages/ThoughtPaths')],
+  [/^\/paths(?:\/[^/]+)?\/?$/, () => import('./pages/LearningPaths')],
   [/^\/radar\/?$/, () => import('./pages/Radar')],
   [/^\/questions\/?$/, () => import('./pages/Questions')],
   [/^\/contact\/?$/, () => import('./pages/Contact')],
@@ -744,6 +746,8 @@ function AnimatedRoutes() {
         <Route path="/ask" element={<AskLibrary />} />
         <Route path="/decade" element={<Decade />} />
         <Route path="/thought-paths" element={<ThoughtPaths />} />
+        <Route path="/paths" element={<LearningPaths />} />
+        <Route path="/paths/:id" element={<LearningPaths />} />
         {/* سيرة مفهوم: تبدأ من الفكرة لا من المادة، وتعرض رحلتها في الزمن. */}
         <Route path="/concept/:term" element={<ConceptLife />} />
         <Route path="/thought" element={<ThoughtOverview />} />

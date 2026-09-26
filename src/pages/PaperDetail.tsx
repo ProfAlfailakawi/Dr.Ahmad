@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import { motion, useMotionValue, useMotionValueEvent, useReducedMotion, useScroll } from 'framer-motion'
 import { FadeUp, Page, Reveal, sharedViewName } from '../components/ui'
-import { JsonLd, useSeo } from '../components/seo'
+import { JsonLd, useScholarMeta, useSeo } from '../components/seo'
+import { citationToBibTeX, paperCitation, scholarMetaTags } from '../lib/scholar-citation.mjs'
 import { CiteButton, OwnerEdit } from '../components/extras'
 import { profile, SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
@@ -108,6 +109,8 @@ export default function PaperDetail() {
   }, [books, p])
 
   useSeo({ title: p?.title ?? 'بحث', description: p?.abstractAr || p?.meta, path: `/research/${slug}`, type: 'article' })
+  const scholarRecord = useMemo(() => p ? paperCitation(p, { site: SITE_URL }) : null, [p])
+  useScholarMeta(scholarRecord ? scholarMetaTags(scholarRecord) : null)
 
   const revealSection = (section: ResearchSection, id: string) => {
     setOpenSection(section)
@@ -391,7 +394,7 @@ export default function PaperDetail() {
                 )}
 
                 <div className="mt-6">
-                  <CiteButton title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={citationUrl} authors={researchers} contextLabel="تصدير الاقتباس الأكاديمي" />
+                  <CiteButton bibtex={scholarRecord ? citationToBibTeX(scholarRecord) : undefined} title={p.title} year={year || 'د.ت.'} container={journal || 'بحث محكّم'} url={citationUrl} authors={researchers} contextLabel="تصدير الاقتباس الأكاديمي" />
                 </div>
               </div>
             </FadeUp>

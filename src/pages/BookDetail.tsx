@@ -2,8 +2,9 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, Reveal, sharedViewName } from '../components/ui'
 import { BranchGrove, useBranches } from '../components/ComposeScene'
-import { JsonLd, useSeo } from '../components/seo'
-import { OwnerEdit } from '../components/extras'
+import { JsonLd, useScholarMeta, useSeo } from '../components/seo'
+import { CiteButton, OwnerEdit } from '../components/extras'
+import { bookCitation, citationToBibTeX, scholarMetaTags } from '../lib/scholar-citation.mjs'
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import tocData from '../data/book-toc-links.json'
@@ -186,6 +187,8 @@ export default function BookDetail() {
   const [searchParams] = useSearchParams()
   const isSearchState = Boolean(searchParams.get('q'))
   useSeo({ title: book?.title ?? 'كتاب', description: book?.desc, path: `/publications/${slug}`, image: book?.cover, robots: isSearchState ? 'noindex, follow' : undefined })
+  const scholarRecord = book ? bookCitation(book as Record<string, unknown>, { site: SITE_URL }) : null
+  useScholarMeta(scholarRecord && !isSearchState ? scholarMetaTags(scholarRecord) : null)
   if (!book && loading) return <Page className="content-books"><div className="px-6 pt-44 text-center text-soft"><GlyphLoader size={32} label="يجهّز صفحة الكتاب…" /></div></Page>
   if (!book) return <Page><div className="px-6 pt-44 text-center text-soft">لم يُعثر على الكتاب.</div></Page>
 
@@ -297,6 +300,19 @@ export default function BookDetail() {
                     <span>عرض عيّنة الكتاب</span>
                     <span className="text-[.72rem] text-soft">PDF</span>
                   </a>
+                )}
+                {scholarRecord && (
+                  <CiteButton
+                    compact
+                    compactLabel="استشهد بالكتاب"
+                    bibtex={citationToBibTeX(scholarRecord)}
+                    title={book.title}
+                    year={scholarRecord.year || 'د.ت.'}
+                    container={scholarRecord.publisher || 'كتاب'}
+                    url={`${SITE_URL}/publications/${book.slug}`}
+                    authors={['الفيلكاوي، أحمد حسين', ...scholarRecord.authors.slice(1)].join('؛ ')}
+                    contextLabel="تصدير RIS"
+                  />
                 )}
               </div>
               </div>

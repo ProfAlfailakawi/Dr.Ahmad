@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGzip } from 'node:zlib'
 import { POLICY, evaluateCandidate } from './scripts/editorial-policy.mjs'
-import { PROOFREAD_INSTRUCTION, acceptProofread, arabicCountPhrase, articleMetrics, buildOrthographyIndex, citationSpans, deriveExcerpt, DEVICE_FORMS, FILE_FORMS, judgeStyle, orthographySlips, PROBLEM_FORMS, refineToStyle, resolveStyleDna, RULE_FORMS, styleBrief, styleReportLines, SUBSCRIBER_FORMS, VERIFIED_FILE_FORMS, WARNING_FORMS, withVoiceMemory, WORD_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from './src/lib/style-dna.mjs'
+import { PROOFREAD_INSTRUCTION, acceptProofread, arabicCountPhrase, articleMetrics, bareText, buildOrthographyIndex, citationSpans, deriveExcerpt, DEVICE_FORMS, FILE_FORMS, judgeStyle, orthographySlips, PROBLEM_FORMS, refineToStyle, resolveStyleDna, RULE_FORMS, styleBrief, styleReportLines, SUBSCRIBER_FORMS, VERIFIED_FILE_FORMS, WARNING_FORMS, withVoiceMemory, WORD_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from './src/lib/style-dna.mjs'
 import { buildMimicLexicon, mimicVoice } from './src/lib/style-mimic.mjs'
 import { createWhatsAppController } from './src/server/whatsapp-controller.mjs'
 import { communicationsHealth, createAdminCommunications } from './src/server/admin-communications.mjs'
@@ -3444,7 +3444,7 @@ const ARTICLE_FAMILIES = [
     id: 'thesis',
     move: 'thesis',
     label: 'الأطروحة المكثّفة',
-    plan: 'افتح بجملةٍ واحدة تحمل أطروحة المقال كلها كأنها عنوانه: قصيرة، تقرّر ولا تشرح. ثم افتح ما انطوت عليه فقرةً بعد فقرة: ما نراه كل يوم، ثم ما لا يظهر فيه، ثم ما يسنده من «من_مراجعك» أو من «من_عندك» إن وُجد. واختم بما حدّده الختام أدناه، وليرجع إلى جملة المطلع وقد اكتسبت معناها.',
+    plan: 'افتح بجملةٍ واحدة تحمل أطروحة المقال كلها كأنها عنوانه: قصيرة، تقرّر ولا تشرح. ثم افتح ما انطوت عليه فقرةً بعد فقرة: ما نراه كل يوم، ثم ما لا يظهر فيه، ثم ما يسنده من «من_مراجعك» أو من «من_عندك» إن وُجد. واختم بما حدّده الختام أدناه، بجملةٍ جديدة لا تعيد جملة المطلع ولا كلماتها.',
   },
   {
     id: 'scene',
@@ -3572,6 +3572,21 @@ async function repairArticleWords(article, input, context, attempt, fetchImpl) {
    فكرية إنسانية») لا يصف أحداً، فكان النموذج يكتب عربية النماذج. البديل:
    وصفةٌ رقمية من بصمته + حَكَمٌ يقيس المخرَج بالمسطرة نفسها + جولات تصحيحٍ
    موجّهة بأرقام النقص لا بعباراتٍ عامة. */
+/* ٢٦ سبتمبر ٢٠٢٦ — جولة J: سحبت المسوداتُ الأفكارَ العامة إلى المدرسة. مقاسٌ بـschoolParagraphShare: في
+   مقالاته الستة عشر ذات العناوين العامة من آخر عشرين، وسيط الفقرات المدرسية ٢٧٪، وما تجاوز ٦٠٪ منها
+   اثنان؛ وفي الأفكار العامة الست من أهداف ٢٠٢٦ («تعبٌ جديد…» ١٤٪، «الجدية…» ١٤٪، «العودة…» ١٧٪، «السنة…»
+   صفر) جعلتها المسودات ٨٣٪ و٦٠٪ و٨٨٪ و٨٣٪، وعدّه الحَكَم الأعمى «سحباً قسرياً إلى الصف». الفكرة مدرسيةٌ
+   إن حملت مفرداتها؛ و«التقويم» ليست منها عمداً (تقويم السنة). */
+/* السوابق محدودة: عطفٌ ثم جرٌّ اختياريان («وبـ»)، ثم «ال» أو «لل» اختياريتان (CodeQL: التكرار المفتوح لبدائل متداخلة
+   مثل «ل» و«لل» يتراجع أُسّياً). */
+const SCHOOL_WORDS = /(?<!\p{L})[وف]?[بلك]?(?:ال|لل)?(?:مدرس|مدارس|مدرسي|صف|صفوف|معلم|معلمين|معلمون|طالب|طلاب|طلب|تلاميذ|تلميذ|حص|امتحان|اختبار|منهج|مناهج|قياد|تعليم|تعلم|دراسي|جامع|درس|دروس|واجب)(?:ة|ه|ات|ها|هم|نا|ين|ون|ي|ية|يه|ا)?(?:ها|هم|نا)?(?!\p{L})/u
+export const isSchoolIdea = (idea = '') => SCHOOL_WORDS.test(bareText(String(idea)))
+export const schoolParagraphShare = (body = '') => {
+  const paragraphs = String(body).trim().split(/\n\s*\n/).filter(Boolean)
+  return paragraphs.length ? paragraphs.filter((paragraph) => SCHOOL_WORDS.test(bareText(paragraph))).length / paragraphs.length : 0
+}
+const GENERAL_IDEA_RULE = '· الفكرة لم تذكر المدرسة، فلا تفترض الصفّ إطاراً لها: ابدأ من الإنسان في حياته اليومية وعمله وبيته كما يكتب مقالاته العامة، ففيها وسيطُ فقرات الصفّ والمعلّم والطالب نحو الربع. وإن احتاجت الحجةُ المدرسةَ فلتكن جزءاً منها لا إطاراً لها.'
+
 export async function generatePerfectArticle(input, fetchImpl = fetch) {
   const dna = resolveStyleDna(input.styleDna)
   const currentEvents = await currentContextForIdea(`${input.idea} ${input.angle}`, input.selectedEventIds, fetchImpl)
@@ -3595,6 +3610,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
 
   /* مراجع العالم تُذكر للكاتب حين تصله فعلاً: بنكٌ فارغ لا يُعلَن قسماً لا وجود له (Codex). */
   const hasGlobal = (knowledge.من_مراجع_العالم || []).length > 0
+  const schoolIdea = isSchoolIdea(`${input.idea} ${input.angle || ''}`)
   /* عدد المراجع بنسبته هو (وسيطٌ ثلاثة حين يستشهد، جولة J) لا سقف «مرجعٍ أو اثنين». */
   const perArticle = dna.recent?.citationsPerArticle
   const citationCountRule = perArticle?.p50 >= 2
@@ -3610,10 +3626,11 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
        مسوداتٍ من عشر فقرةً عن القيادة والإدارة (٣٫٢١ لكل ألف كلمة مقابل ٠٫١٣ في آخر عشرين مقالاً
        له)، وعدّها الحَكَم الأعمى انحرافاً عن الفكرة. */
     '· «audience» مَن يقرأ المقال لا موضوعٌ يُضاف إليه: لا تنقل الحجة إلى القيادات أو الإدارة أو الميزانيات أو القرار الإداري ما لم يكن ذلك في الفكرة نفسها.',
+    schoolIdea ? '' : GENERAL_IDEA_RULE,
     '· الحدث الراهن اختياري: اربطه فقط إن كان الارتباط عضوياً. لا تستخدم سوى العنوان والملخص والمصدر والرابط المقدّم.',
     '· العنوان قويّ غير صحفيٍّ مبتذل، والمقتطف بين ٩٠ و١٩٠ حرفاً وبنبرة المقال نفسها.',
     '· «نماذج_صوت» مقالان كاملان من مقالاتك: اسمع منهما النَّفَس وطول الجملة والوقفة «…» والانقلاب «بل» والانتقال بين الفقرات. يُمنع نقل أي عبارةٍ أو مثالٍ أو فكرةٍ منهما؛ المطلوب أن يشبه المقالُ الجديدُ صوتَهما لا كلامَهما.',
-    `· «من_مراجعك» داخل «معرفتك»: دراساتٌ استشهدتَ بها أنت في مقالاتك المنشورة، ومعها المعنى الذي نسبته إليها. في مقالاتك الحديثة تستشهد هكذا: «اسم الباحث باللاتينية (السنة)». اختر المرجع الأقرب إلى موضوع هذا المقال تحديداً لا مرجعاً عاماً يصلح لكل موضوع؛ ولا تستشهد بمرجعٍ لمجرد أنه مشهور. إن خدم مرجعٌ منها فكرتك فاستشهد به بالمعنى نفسه وبصياغةٍ جديدة. ولا تستشهد أبداً بدراسةٍ أو رقمٍ أو مجلةٍ ليست فيها${hasGlobal ? ' أو في «من_مراجع_العالم»' : ''} أو في «من_عندك».`,
+    `· «من_مراجعك» داخل «معرفتك»: دراساتٌ استشهدتَ بها أنت في مقالاتك المنشورة، ومعها المعنى الذي نسبته إليها. في مقالاتك الحديثة تستشهد هكذا: «Tang et al. (2023)» أو «Howard وآخرين (2021)» أو «Ryan وDeci (2000)»: اسم الباحث باللاتينية دائماً، ولا «وآخرون» ولا «وزملاؤه» ولا اسمٌ بحروفٍ عربية (صفرٌ منها في مقالاتك)، والأرقام أرقامٌ لاتينية كما وردت لا كلمات. اختر المرجع الأقرب إلى موضوع هذا المقال تحديداً لا مرجعاً عاماً يصلح لكل موضوع؛ ولا تستشهد بمرجعٍ لمجرد أنه مشهور. إن خدم مرجعٌ منها فكرتك فاستشهد به بالمعنى نفسه وبصياغةٍ جديدة. ولا تستشهد أبداً بدراسةٍ أو رقمٍ أو مجلةٍ ليست فيها${hasGlobal ? ' أو في «من_مراجع_العالم»' : ''} أو في «من_عندك».`,
     hasGlobal ? `· «من_مراجع_العالم» داخل «معرفتك»: دراساتٌ وتقارير عالمية من مجلاتٍ محكّمة ومنظماتٍ دولية، تحقّقنا من كلٍّ منها من صفحته الأصلية. استشهد بمرجعٍ منها إن خدم فكرتك تحديداً: باسمه وسنته كما في «مرجع»، وبنتيجته كما في «ما_وجدته» بأرقامها نفسها وحذرها نفسه (الارتباط ارتباطٌ لا سبب)، بصياغتك أنت. لا تزد عليها رقماً أو تعميماً ولا تنسب إليها ما لم تقله. ${citationCountRule}` : '',
     '· «من_عندك» إن وصل: مادةٌ كتبها الدكتور بنفسه لهذا المقال (مناسبته، أو موقفٌ عاشه، أو جملةٌ سمعها، أو مصدرٌ برقمه). هي أصدق ما في المقال فاجعلها في قلبه: انقلها بأمانة، وما رواه فيها بضمير المتكلم يُروى كذلك، ولا تزد عليها تفصيلاً أو قولاً أو رقماً لم يذكره. وهي وحدها ما يجوز أن يُروى بضمير المتكلم.',
     '· «معرفتك» مقاطع من متون كتبك التسعة في تكنولوجيا التعليم ومن فقرات مقالاتك ومن لقاءاتك (تفريغٌ آليّ قد يحمل كلام المحاور أو نشرة الأخبار؛ خذ منه موقفك أنت فقط): هي رصيدك أنت في تخصصك. ابنِ الحجة على مفاهيمها ومواقفك فيها بكلماتٍ جديدة، ولا تنقل منها جملةً حرفياً، ولا تنقل منها رقماً، ولا تقل «في كتابي» ولا «في لقاءٍ لي». وإن لم يصلك منها شيء فاكتب من فكرتك.',
@@ -3637,7 +3654,7 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     if (roll < ask + perhaps) return 'الختام في هذا المقال: جملةٌ تفتح أفقاً تبدأ «وربما يبدأ… يوم…».'
     if (roll < ask + perhaps + antithesis) return 'الختام في هذا المقال: انقلابٌ واحد بـ«بل» يقلب الفكرة، في جملةٍ أو جملتين. لا تستعمل فيه «فاسأل نفسك» ولا «وربما يبدأ» ولا «لسنا بحاجة».'
     if (roll < ask + perhaps + antithesis + question) return 'الختام في هذا المقال: سؤالٌ واحد مفتوح بلا «فاسأل نفسك»، يترك الفكرة معلّقةً عند القارئ.'
-    return 'الختام في هذا المقال: جملةٌ تقريرية مكثّفة تثبّت الفكرة أو تعيدها إلى مطلعها، بلا «بل» ولا سؤال ولا «فاسأل نفسك» ولا «وربما يبدأ».'
+    return 'الختام في هذا المقال: جملةٌ تقريرية مكثّفة تثبّت الفكرة بلفظٍ جديد لا يعيد جملة المطلع، بلا «بل» ولا سؤال ولا «فاسأل نفسك» ولا «وربما يبدأ».'
   }
 
   /* وقفة المطلع بنسبته: جملة مطلعه تحمل «…» في نصف مقالاته الأخيرة، وحملتها المسودات في
@@ -3858,9 +3875,13 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
     const seen = new Set()
     return offered.filter((item) => !seen.has(item.مرجع) && seen.add(item.مرجع)).slice(0, 3)
   }
+  /* الفكرة العامة التي صارت مقالاً مدرسياً: ما تجاوز ٦٠٪ من مقالاته العامة اثنان من ستة عشر، ومن مسودات
+     جولة J أربعٌ من ست. */
+  const schoolDrift = (draft) => !schoolIdea && schoolParagraphShare(draft.body || '') > .6
   for (let round = 1; round <= maxRounds && canAfford(15_000); round += 1) {
     const suggestions = citationSuggestions(best.draft)
-    if (best.verdict.ready && best.lengthOff <= wordTolerance && !best.originalityBroken && best.repetition.duplicateSentenceRate <= 0 && !suggestions.length) break
+    const drifted = schoolDrift(best.draft)
+    if (best.verdict.ready && best.lengthOff <= wordTolerance && !best.originalityBroken && best.repetition.duplicateSentenceRate <= 0 && !suggestions.length && !drifted) break
     for (const item of suggestions) suggestedSources.push(`${item.مرجع} ${item.المصدر || ''} ${item.ما_وجدته}`)
 
     const orders = []
@@ -3868,6 +3889,9 @@ export async function generatePerfectArticle(input, fetchImpl = fetch) {
       orders.push(`أعد الكتابة بزاوية جديدة جذرياً؛ أقرب منشور «${best.similarity.matches[0]?.title || best.draft.title}». لا تكرر عنوانه ولا افتتاحيته ولا خاتمته.`)
     }
     orders.push(...best.verdict.corrections)
+    if (drifted) {
+      orders.push(`الفكرة لم تذكر المدرسة، و${Math.round(schoolParagraphShare(best.draft.body) * 100)}٪ من فقراتك تدور في الصف والمعلّم والطالب والقيادة. أعد أكثرها إلى الإنسان في حياته اليومية كما هي الفكرة، ولتبقَ المدرسة جزءاً لا إطاراً، نحو نصف الفقرات على الأكثر.`)
+    }
     if (suggestions.length) {
       orders.push(`مقالاتك الأخيرة تستشهد بدراسةٍ مسمّاة في ${Math.round(citationShare * 100)}٪ منها، وهذا النص بلا استشهاد. في «مراجع_مقترحة» مراجع تحقّقنا منها: إن خدم أحدها فكرتك المركزية فأسند به حجتك في جملةٍ أو جملتين داخل فقرةٍ قائمة، باسمه وسنته كما في «مرجع» وبنتيجته وحذرها كما في «ما_وجدته»، لا في فقرةٍ مستقلة ولا بأرقامٍ ليست فيه. وإن لم يخدمها أيٌّ منها فلا تستشهد بشيء.`)
     }

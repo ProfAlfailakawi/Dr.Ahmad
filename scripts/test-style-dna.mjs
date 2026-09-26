@@ -824,6 +824,43 @@ await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'توقعات �
 })
 assert.ok(countRule.includes('نحو 3 مراجع') && !countRule.includes('مرجعٌ أو اثنان'), 'الوصفة تطلب عدد مراجعه هو لا سقف اثنين')
 
+/* جولة K: صيغة الاستشهاد، والخاتمة التي تعيد المطلع، والفكرة العامة التي تُسحب إلى الصف. */
+const citeDraft = strongBody.replace('وأخطر ما في الأمر أنه هادئ.', 'ويؤكد Yeager وآخرون (2019) أن الأمر هادئ.')
+assert.ok(judgeStyle(citeDraft, eraDna, { generated: true }).corrections.some((line) => line.includes('بصيغته هو')), '«وآخرون» في المسودة تُضبط: صيغته «et al.» أو «وآخرين»')
+const echoDraft = `${strongBody.split('\n\n').slice(0, -1).join('\n\n')}\n\nدخل المعلّم الصفّ كعادته وألقى التحية التي يلقيها منذ عشرين سنة.`
+assert.ok(judgeStyle(echoDraft, eraDna, { generated: true }).corrections.some((line) => line.includes('لا تُعد جملة المطلع')), 'الخاتمة التي تعيد كلمات المطلع تُضبط')
+const hisNewFlags = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => /بصيغته هو|لا تُعد جملة المطلع/.test(line))).length
+assert.ok(hisNewFlags <= 3, `ولا تكاد تُنسب إلى مقالاته (${hisNewFlags} من ${dated.length})`)
+assert.ok(!briefH.includes('واجعل فقرةً أو اثنتين') && briefH.includes('لا تعيد الخاتمة جملة المطلع'), 'الوصفة لا تأمر بالفقرات المفردة ولا بإعادة المطلع')
+assert.ok(eraRecent.rareFormulas.includes('أليس / أيُعقل / أوليس'), '«أليس/أيُعقل» صيغةٌ نادرة عنده')
+const { isSchoolIdea, schoolParagraphShare } = await import(resolve(root, 'server.mjs'))
+assert.deepEqual(['التوقّعات التي تصنع طالباً', 'حين يصبح الامتحان هو الهدف', 'العودة التي لا تُصلِح ما قبلها', 'السنة التي لا تبدأ من التقويم'].map(isSchoolIdea), [true, true, false, false], 'الفكرة المدرسية تُعرف بمفرداتها، و«التقويم» تقويم السنة')
+assert.ok(schoolParagraphShare(strongBody) > .5, 'حصة الفقرات المدرسية تُقاس')
+assert.deepEqual(['للمدرسة دورها', 'وبالمعلمين نبدأ', 'مدارسنا', 'الحصة الأولى', 'صفقة العمر', 'الحصار', 'طلبت منه'].map(isSchoolIdea), [true, true, true, true, false, false, false], 'السوابق («للـ»، «وبالـ») والتاء المربوطة تُعرف، ولا تُلتبس «صفقة» و«الحصار»')
+const schoolRedos = Date.now()
+isSchoolIdea(`${'لل'.repeat(20_000)}x`)
+schoolParagraphShare('وبال'.repeat(5_000))
+assert.ok(Date.now() - schoolRedos < 250, `مصنّف المدرسة خطّيّ (${Date.now() - schoolRedos} ms، CodeQL)`)
+let generalRule = ''
+let driftOrder = ''
+await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'العودة التي لا تُصلِح ما قبلها', angle: '' }, async (url, init) => {
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+  const instruction = JSON.parse(init.body).messages[0]?.content || ''
+  if (!generalRule && instruction.includes('قواعد المضمون')) generalRule = instruction
+  if (instruction.includes('الفكرة لم تذكر المدرسة، و')) driftOrder = instruction
+  return makeResponse(strongBody)
+})
+assert.ok(generalRule.includes('فلا تفترض الصفّ إطاراً لها'), 'الفكرة العامة تُكتب عن الإنسان لا عن الصف')
+assert.ok(driftOrder, 'ومسودتها المدرسية (strongBody) تُعاد في جولة التصحيح')
+let schoolRule = ''
+await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'حين يصبح الامتحان هو الهدف', angle: '' }, async (url, init) => {
+  if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }
+  const instruction = JSON.parse(init.body).messages[0]?.content || ''
+  if (!schoolRule && instruction.includes('قواعد المضمون')) schoolRule = instruction
+  return makeResponse(strongBody)
+})
+assert.ok(schoolRule && !schoolRule.includes('فلا تفترض الصفّ إطاراً لها'), 'والفكرة المدرسية لا تُمنع من صفّها')
+
 /* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
 const closingKinds = new Map()
 for (let variation = 0; variation < 40; variation += 1) {

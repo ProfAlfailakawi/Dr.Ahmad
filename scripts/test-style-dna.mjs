@@ -880,7 +880,7 @@ assert.ok(judgeStyle(heavy, eraDna, { generated: true }).corrections.some((line)
 const hisTanween = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('خفّف التشكيل'))).length
 assert.ok(hisTanween <= 4, `ولا تكاد تُنسب إلى مقالاته (${hisTanween} من ${dated.length})`)
 assert.ok(PROOFREAD_INSTRUCTION.includes('إضافة حركةٍ أو تنوينٍ'), 'المدقّق ممنوعٌ من إضافة التشكيل')
-const voweled = strongBody.replace('فرارٌ', 'فرارٌ').replace(/(\p{L}{5,})(?= )/gu, (word, match, offset) => (offset % 5 === 0 ? `${match}ٌ` : match))
+const voweled = strongBody.replace(/(\p{L}{5,})(?= )/gu, (word, match, offset) => (offset % 5 === 0 ? `${match}ٌ` : match))
 assert.ok(!acceptProofread(strongBody, voweled, eraDna).accepted, 'تصحيحٌ يضيف تشكيلاً بالجملة يُرفض')
 assert.ok(briefH.includes('التشكيل عنده خفيف'), 'الوصفة تصف خفّة تشكيله')
 

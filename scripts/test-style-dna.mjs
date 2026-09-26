@@ -836,6 +836,11 @@ assert.ok(eraRecent.rareFormulas.includes('أليس / أيُعقل / أوليس'
 const { isSchoolIdea, schoolParagraphShare } = await import(resolve(root, 'server.mjs'))
 assert.deepEqual(['التوقّعات التي تصنع طالباً', 'حين يصبح الامتحان هو الهدف', 'العودة التي لا تُصلِح ما قبلها', 'السنة التي لا تبدأ من التقويم'].map(isSchoolIdea), [true, true, false, false], 'الفكرة المدرسية تُعرف بمفرداتها، و«التقويم» تقويم السنة')
 assert.ok(schoolParagraphShare(strongBody) > .5, 'حصة الفقرات المدرسية تُقاس')
+assert.deepEqual(['للمدرسة دورها', 'وبالمعلمين نبدأ', 'مدارسنا', 'الحصة الأولى', 'صفقة العمر', 'الحصار', 'طلبت منه'].map(isSchoolIdea), [true, true, true, true, false, false, false], 'السوابق («للـ»، «وبالـ») والتاء المربوطة تُعرف، ولا تُلتبس «صفقة» و«الحصار»')
+const schoolRedos = Date.now()
+isSchoolIdea(`${'لل'.repeat(20_000)}x`)
+schoolParagraphShare('وبال'.repeat(5_000))
+assert.ok(Date.now() - schoolRedos < 250, `مصنّف المدرسة خطّيّ (${Date.now() - schoolRedos} ms، CodeQL)`)
 let generalRule = ''
 let driftOrder = ''
 await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'العودة التي لا تُصلِح ما قبلها', angle: '' }, async (url, init) => {

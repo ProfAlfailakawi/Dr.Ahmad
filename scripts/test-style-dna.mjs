@@ -861,6 +861,15 @@ await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'حين يصب�
 })
 assert.ok(schoolRule && !schoolRule.includes('فلا تفترض الصفّ إطاراً لها'), 'والفكرة المدرسية لا تُمنع من صفّها')
 
+/* جولة K: قوالب الانتقال التي سمّاها الحَكَم صفرٌ في أرشيفه كله، ونصوص خطط البناء نفسها لا تحمل واحداً منها
+   (كانت «ما لا يظهر في المشهد» منها، فنسختها خمس مسوداتٍ من عشر). والوصفة تطبع القائمة كاملة لا أول ٢٤. */
+const templatePhrases = ['ما لا يظهر', 'في هذا المشهد', 'لا تكمن في', 'ما تخفيه', 'أخطر مما', 'وحده يستحق']
+assert.ok(templatePhrases.every((phrase) => BANNED_PHRASES.includes(phrase)), 'قوالب الانتقال في المحظورات')
+assert.equal(dated.filter((item) => templatePhrases.some((phrase) => bareText(item.body).includes(bareText(phrase)))).length, 0, 'وهي صفرٌ في مقالاته')
+assert.ok(briefH.includes('ما لا يظهر') && briefH.includes('يستحق وقفة'), 'الوصفة تطبع المحظورات كلها لا أولها')
+const familiesSource = server.slice(server.indexOf('const ARTICLE_FAMILIES = ['), server.indexOf('export function chooseFamilies'))
+assert.deepEqual(BANNED_PHRASES.filter((phrase) => phrase.length > 3 && bareText(familiesSource).includes(bareText(phrase))), [], 'خطط البناء لا تحمل عبارةً محظورة ينسخها الكاتب')
+
 /* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
 const closingKinds = new Map()
 for (let variation = 0; variation < 40; variation += 1) {

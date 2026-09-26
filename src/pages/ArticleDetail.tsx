@@ -13,8 +13,8 @@ import { SelectionTools } from '../components/IdeaFeatures'
 import GlyphLoader from '../components/GlyphLoader'
 import { openAudioPlayer } from '../components/AudioPlayer'
 import { markArticleRead } from '../components/ReaderResonance'
-import { JsonLd, useScholarMeta, useSeo } from '../components/seo'
-import { articleCitation, citationToBibTeX, scholarMetaTags } from '../lib/scholar-citation.mjs'
+import { JsonLd, useSeo } from '../components/seo'
+import { articleCitation, citationToBibTeX } from '../lib/scholar-citation.mjs'
 import { fetchOwnerCounts, useTrackView } from '../lib/views'
 import { useAdminAuth } from '../lib/admin-auth'
 import { articleSystem, ideaTokens } from '../lib/intelligence'
@@ -821,7 +821,7 @@ export default function ArticleDetail() {
     image: slug ? `/og/articles/${slug}.png` : undefined,
   })
   const scholarRecord = useMemo(() => a ? articleCitation(a, { site: SITE_URL }) : null, [a])
-  useScholarMeta(scholarRecord ? scholarMetaTags(scholarRecord) : null)
+  // مقالات الرأي الصحفية لا تُعلَن لـ Google Scholar (قرار المالك)؛ BibTeX يبقى للاستشهاد اليدوي.
   useTrackView(`/articles/${slug || ''}`, a?.title || 'مقال', Boolean(a))
 
   useEffect(() => {

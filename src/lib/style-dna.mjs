@@ -174,6 +174,8 @@ export const BANNED_PHRASES = [
   'ارتباطٌ لا سبب', 'ويسند هذا', 'ويسند ذلك',
   /* جولة M: «ونحن حين…» في أربع مسوداتٍ من عشر، وصفرٌ في مقالاته الـ١٤٣. */
   'ونحن حين',
+  /* جولة N: «ما ينبغي أن نراه مكانه» من نص خطة «النفي المزدوج» نفسها، في مسودتين؛ صفرٌ في مقالاته. */
+  'ينبغي أن نراه',
   'صيدة', 'صيد',
 ]
 
@@ -1498,10 +1500,16 @@ export function judgeStyle(body, rawDna, options = {}) {
   const lastParagraphWords = echoWords(paragraphsOf(text).at(-1) || '')
   const openingEcho = options.generated && openingWords.size >= 3 ? lastParagraphWords.filter((word) => openingWords.has(word)).length / openingWords.size : 0
   const echoHit = openingEcho >= .67
+  /* جولة N: «وقلت في لقاءٍ إذاعي أن…» — المسودة نسبت إليه قولاً بضمير المتكلم من تفريغ لقاءاته، والقاعدة تمنع
+     «في لقاءٍ لي» و«في كتابي». صفرٌ في مقالاته الـ١٤٣؛ وفي المسودة إحالةٌ لم يتحقق منها أحد، فهي قاطعة. */
+  const selfReference = options.generated
+    ? (bareVoice.match(/(?<!\p{L})(?:و|ف)?(?:قلت|ذكرت|أشرت|تحدثت)(?!\p{L})[^.؟!\n]{0,20}(?<!\p{L})(?:لقاء|حوار|مقابلة|برنامج|كتابي)(?!\p{L})|(?<!\p{L})في (?:لقاء|حوار|مقابلة) (?:إذاعي|تلفزيوني|لي|صحفي)(?!\p{L})|(?<!\p{L})في كتابي(?!\p{L})/u) || [])[0]
+    : ''
   const tanweenCeiling = dna.recent?.tanweenPer1000?.p85
   const tanweenRate = Math.round((String(text).match(/[\u064C\u064D]/g) || []).length / Math.max(1, countWords(text)) * 1000)
   const tanweenHit = Boolean(options.generated && tanweenCeiling && tanweenRate > tanweenCeiling)
-  const voiceSlips = retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length + orphanHits.length + stockHits.length + (rareHits.length ? 1 : 0) + (citeFormHits.length ? 1 : 0) + (echoHit ? 1 : 0) + (tanweenHit ? 1 : 0)
+  if (selfReference) fatal.push(`إحالةٌ إلى لقاءٍ أو كتابٍ له: «${selfReference}»`)
+  const voiceSlips = (selfReference ? 1 : 0) + retiredHits.length + anecdoteHits.length + dialogueHits.length + dialectHits.length + orphanHits.length + stockHits.length + (rareHits.length ? 1 : 0) + (citeFormHits.length ? 1 : 0) + (echoHit ? 1 : 0) + (tanweenHit ? 1 : 0)
   if (dna.recent || voiceSlips) {
     add('currentVoice', 'صوته اليوم', voiceSlips ? Math.max(0, 1 - .5 * voiceSlips) : 1, 8,
       [...retiredHits, ...anecdoteHits, ...dialogueHits, ...dialectHits.map((quote) => `«${quote}»`), ...orphanHits, ...stockHits, ...rareHits, ...citeFormHits.map((hit) => `«${hit}»`), ...(echoHit ? [`الخاتمة تعيد المطلع ${Math.round(openingEcho * 100)}٪`] : []), ...(tanweenHit ? [`تنوين ${tanweenRate}/ألف`] : [])].join(' · ') || 'نظيف', 'صفر',
@@ -1511,6 +1519,7 @@ export function judgeStyle(body, rawDna, options = {}) {
         dialogueHits.length ? `احذف الحوار المختلق (${dialogueHits.map((hit) => `«${hit}»`).join(' · ')}): لا يُجري على ألسنة الناس سؤالاً وجواباً؛ صِف ما يحدث وصفاً عامّاً بلا أقوال.` : '',
         orphanHits.length ? `ادمج الفقرة اليتيمة التي تبدأ بـ«بعض» في ما قبلها أو احذفها (${orphanHits.map((hit) => `«${hit}…»`).join(' · ')}): فقراته المفردة انعطافٌ لا حكمةٌ معلّقة.` : '',
         stockHits.length ? `احذف الجملة الجاهزة (${stockHits.map((hit) => `«${hit}»`).join(' · ')}) وما تجرّه من فقرةٍ تكرّر المشهد في مكانٍ آخر: خذ مكاناً واحداً وتعمّق فيه.` : '',
+        selfReference ? `احذف الإحالة إلى لقاءٍ أو كتابٍ له («${selfReference}»): لا يحيل في مقالاته إلى لقاءاته ولا كتبه، ومادتها تُكتب فكرةً بلفظٍ جديد لا قولاً منسوباً إليه.` : '',
         citeFormHits.length ? `اكتب الاستشهاد بصيغته هو: «Tang et al. (2023)» أو «Howard وآخرين (2021)»، واسم الباحث باللاتينية دائماً (${citeFormHits.map((hit) => `«${hit}»`).join(' · ')} صفرٌ في مقالاته).` : '',
         tanweenHit ? `خفّف التشكيل: تنوين الضم والكسر ${tanweenRate} لكل ألف كلمة وعنده نحو ${dna.recent.tanweenPer1000.p50}؛ احذف ما لا يرفع لبساً، خاصةً على الصفات.` : '',
         echoHit ? 'لا تُعد جملة المطلع في الخاتمة: اختم بجملةٍ جديدة، فخاتمته لا تشترك مع مطلعه في كلمةٍ دالّة في سبعة عشر من آخر عشرين مقالاً.' : '',

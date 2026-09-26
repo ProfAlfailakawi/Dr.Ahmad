@@ -785,11 +785,14 @@ const suggested = repairRequests.find((request) => request.includes('«مراج�
 assert.ok(suggested && /Metcalfe \(2017\)|Keith وFrese \(2008\)|Sinha وKapur \(2021\)/.test(suggested), 'مسودةٌ بلا استشهاد تُعرض عليها مراجع من موضوعها الفعلي في جولة التصحيح')
 assert.ok(suggested.includes('فلا تستشهد بشيء'), 'والاستشهاد بها مشروطٌ بأن يخدم الفكرة لا أمرٌ مطلق')
 
-/* نسبتا الختام تُقاسان في الفقرة الأخيرة: كانتا تعدّان العبارة أينما وقعت (٤٠٪ و٣٠٪). */
+/* نسبتا الختام تُقاسان في منطقة الختام (آخر ثلاث فقرات): لا في المقال كله (كانت ٤٠٪ و٣٠٪ بمعنى «أينما وقعت»)،
+   ولا في الفقرة الأخيرة وحدها (٣ و٢ من ٢٠، فغابت «فاسأل نفسك» من المسودات كلها في جولة M). */
 const eraRecent = eraDna.recent
-const endsWith = (pattern) => dated.slice().sort((left, right) => right.iso.localeCompare(left.iso)).slice(0, 20).filter((item) => pattern.test(item.body.trim().split(/\n\s*\n/).at(-1))).length / 20
-assert.equal(eraRecent.askYourselfShare, Math.round(endsWith(/اسأل نفسك/u) * 100) / 100, `«فاسأل نفسك» نسبة خواتيمه لا نسبة ورودها (${eraRecent.askYourselfShare})`)
-assert.equal(eraRecent.perhapsBeginsShare, Math.round(endsWith(/ربما يبدأ/u) * 100) / 100, `و«ربما يبدأ» كذلك (${eraRecent.perhapsBeginsShare})`)
+const inZone = (pattern) => dated.slice().sort((left, right) => right.iso.localeCompare(left.iso)).slice(0, 20).filter((item) => pattern.test(item.body.trim().split(/\n\s*\n/).slice(-3).join('\n'))).length / 20
+assert.equal(eraRecent.askYourselfShare, Math.round(inZone(/اسأل نفسك/u) * 100) / 100, `«فاسأل نفسك» نسبتها في منطقة الختام (${eraRecent.askYourselfShare})`)
+assert.equal(eraRecent.perhapsBeginsShare, Math.round(inZone(/ربما يبدأ/u) * 100) / 100, `و«ربما يبدأ» كذلك (${eraRecent.perhapsBeginsShare})`)
+assert.ok(eraRecent.retired.includes('فهل'), '«فهل» متقاعدة: صفرٌ في آخر عشرين مقالاً له')
+assert.ok(BANNED_PHRASES.includes('ونحن حين'), '«ونحن حين» محظورة: صفرٌ في مقالاته الـ١٤٣')
 assert.ok(eraRecent.citationShare >= .5, `الاستشهاد المسمّى مقيسٌ في مقالاته الأخيرة (${eraRecent.citationShare})`)
 const briefH = styleBrief(eraDna, 350)
 assert.ok(!briefH.includes('ليس كذا') && briefH.includes('لا كذا'), 'قالب «…بل» في الوصفة بصيغته الغالبة عنده «لا كذا…بل كذا»')
@@ -861,6 +864,35 @@ await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'حين يصب�
 })
 assert.ok(schoolRule && !schoolRule.includes('فلا تفترض الصفّ إطاراً لها'), 'والفكرة المدرسية لا تُمنع من صفّها')
 
+/* جولة K: قوالب الانتقال التي سمّاها الحَكَم صفرٌ في أرشيفه كله، ونصوص خطط البناء نفسها لا تحمل واحداً منها
+   (كانت «ما لا يظهر في المشهد» منها، فنسختها خمس مسوداتٍ من عشر). والوصفة تطبع القائمة كاملة لا أول ٢٤. */
+const templatePhrases = ['ما لا يظهر', 'في هذا المشهد', 'لا تكمن في', 'ما تخفيه', 'أخطر مما', 'وحده يستحق']
+assert.ok(templatePhrases.every((phrase) => BANNED_PHRASES.includes(phrase)), 'قوالب الانتقال في المحظورات')
+assert.equal(dated.filter((item) => templatePhrases.some((phrase) => bareText(item.body).includes(bareText(phrase)))).length, 0, 'وهي صفرٌ في مقالاته')
+assert.ok(briefH.includes('ما لا يظهر') && briefH.includes('يستحق وقفة'), 'الوصفة تطبع المحظورات كلها لا أولها')
+const familiesSource = server.slice(server.indexOf('const ARTICLE_FAMILIES = ['), server.indexOf('export function chooseFamilies'))
+assert.deepEqual(BANNED_PHRASES.filter((phrase) => phrase.length > 3 && bareText(familiesSource).includes(bareText(phrase))), [], 'خطط البناء لا تحمل عبارةً محظورة ينسخها الكاتب')
+
+/* جولة L: التشكيل عنده خفيف، والمدقّق لا يزيده. */
+assert.ok(eraRecent.tanweenPer1000?.p50 > 0 && eraRecent.tanweenPer1000.p85 > eraRecent.tanweenPer1000.p50, `كثافة تنوينه مقيسة (${JSON.stringify(eraRecent.tanweenPer1000)})`)
+const heavy = strongBody.replace(/(\p{L}{4,})(?=[ ،.])/gu, (word, match, offset) => (offset % 3 === 0 ? `${match}ٍ` : match))
+assert.ok(judgeStyle(heavy, eraDna, { generated: true }).corrections.some((line) => line.includes('خفّف التشكيل')), 'المسودة المشكولة بالتنوين تُضبط')
+const hisTanween = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('خفّف التشكيل'))).length
+assert.ok(hisTanween <= 4, `ولا تكاد تُنسب إلى مقالاته (${hisTanween} من ${dated.length})`)
+assert.ok(PROOFREAD_INSTRUCTION.includes('إضافة حركةٍ أو تنوينٍ'), 'المدقّق ممنوعٌ من إضافة التشكيل')
+const voweled = strongBody.replace('فرارٌ', 'فرارٌ').replace(/(\p{L}{5,})(?= )/gu, (word, match, offset) => (offset % 5 === 0 ? `${match}ٌ` : match))
+assert.ok(!acceptProofread(strongBody, voweled, eraDna).accepted, 'تصحيحٌ يضيف تشكيلاً بالجملة يُرفض')
+assert.ok(briefH.includes('التشكيل عنده خفيف'), 'الوصفة تصف خفّة تشكيله')
+
+/* جولة L: المرجع المقترح من موضوع المسودة يجب أن يشارك الفكرة الأصلية كلمةً على الأقل، فلا يُلصق Rosenthal
+   بمقالٍ عن التعب. والعبارات الجاهزة التي جاءت من نص القاعدة نفسها صارت محظورة. */
+const graftQuery = 'حين تتحوّل العبارة المكرّرة إلى توقّعٍ مسبق من المعلم عن طلابه'
+assert.ok(domainKnowledge(graftQuery, { books: 0, articles: 0, interviews: 0 }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Rosenthal')), 'بلا قيدٍ: موضوع المسودة يجلب Rosenthal')
+assert.ok(!domainKnowledge(graftQuery, { books: 0, articles: 0, interviews: 0, mustMatch: 'تعبٌ جديد بعبارات قديمة' }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Rosenthal')), 'ومع قيد الفكرة لا يُلصق بمقالٍ عن التعب')
+assert.ok(!domainKnowledge('التقويم التكويني والاختبار الذاتي يرسّخان التعلّم', { books: 0, articles: 0, interviews: 0, mustMatch: 'السنة التي لا تبدأ من التقويم' }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Roediger')), '«التقويم» الملتبس لا يربط أثر الاختبار بمقالٍ عن السنة')
+assert.ok(!server.includes('(الارتباط ارتباطٌ لا سبب)') && BANNED_PHRASES.includes('ارتباطٌ لا سبب'), 'عبارة الحذر لا تُملى حرفياً، وهي محظورة')
+assert.ok(eraRecent.rareFormulas.includes('…فحسب، بل…'), '«…فحسب، بل…» صيغةٌ نادرة عنده')
+
 /* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
 const closingKinds = new Map()
 for (let variation = 0; variation < 40; variation += 1) {
@@ -871,10 +903,12 @@ for (let variation = 0; variation < 40; variation += 1) {
     return makeResponse(strongBody)
   })
 }
+const askClosings = [...closingKinds].filter(([kind]) => kind.startsWith('قبيل النهاية')).reduce((sum, [, count]) => sum + count, 0)
 const closingTotal = [...closingKinds.values()].reduce((sum, count) => sum + count, 0)
 const inversionClosings = [...closingKinds].filter(([kind]) => kind.startsWith('انقلابٌ')).reduce((sum, [, count]) => sum + count, 0)
 assert.ok(closingKinds.size >= 4, `خمسة أنواعٍ من الختام تتوزّع (${closingKinds.size})`)
 assert.ok(inversionClosings / closingTotal <= .6, `ختام «بل» بنسبته لا غالباً (${inversionClosings}/${closingTotal})`)
+assert.ok(askClosings / closingTotal >= .2 && askClosings / closingTotal <= .6, `«فاسأل نفسك» في منطقة الختام بنسبته نحو ٤٠٪ (${askClosings}/${closingTotal})`)
 let sawWorldRule = false
 await generatePerfectArticle({ ...input, idea: 'فكرةٌ لا يطابقها مرجعٌ عالمي قط: زخرفة الأواني النحاسية' }, async (url, init) => {
   if (new URL(String(url)).hostname !== 'api.cloudflare.com') return { ok: false, status: 503, json: async () => ({}) }

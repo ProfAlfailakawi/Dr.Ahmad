@@ -880,7 +880,7 @@ assert.ok(judgeStyle(heavy, eraDna, { generated: true }).corrections.some((line)
 const hisTanween = dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).corrections.some((line) => line.includes('خفّف التشكيل'))).length
 assert.ok(hisTanween <= 4, `ولا تكاد تُنسب إلى مقالاته (${hisTanween} من ${dated.length})`)
 assert.ok(PROOFREAD_INSTRUCTION.includes('إضافة حركةٍ أو تنوينٍ'), 'المدقّق ممنوعٌ من إضافة التشكيل')
-const voweled = strongBody.replace('فرارٌ', 'فرارٌ').replace(/(\p{L}{5,})(?= )/gu, (word, match, offset) => (offset % 5 === 0 ? `${match}ٌ` : match))
+const voweled = strongBody.replace(/(\p{L}{5,})(?= )/gu, (word, match, offset) => (offset % 5 === 0 ? `${match}ٌ` : match))
 assert.ok(!acceptProofread(strongBody, voweled, eraDna).accepted, 'تصحيحٌ يضيف تشكيلاً بالجملة يُرفض')
 assert.ok(briefH.includes('التشكيل عنده خفيف'), 'الوصفة تصف خفّة تشكيله')
 
@@ -892,6 +892,12 @@ assert.ok(!domainKnowledge(graftQuery, { books: 0, articles: 0, interviews: 0, m
 assert.ok(!domainKnowledge('التقويم التكويني والاختبار الذاتي يرسّخان التعلّم', { books: 0, articles: 0, interviews: 0, mustMatch: 'السنة التي لا تبدأ من التقويم' }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Roediger')), '«التقويم» الملتبس لا يربط أثر الاختبار بمقالٍ عن السنة')
 assert.ok(!server.includes('(الارتباط ارتباطٌ لا سبب)') && BANNED_PHRASES.includes('ارتباطٌ لا سبب'), 'عبارة الحذر لا تُملى حرفياً، وهي محظورة')
 assert.ok(eraRecent.rareFormulas.includes('…فحسب، بل…'), '«…فحسب، بل…» صيغةٌ نادرة عنده')
+
+/* جولة N: الإحالة إلى لقاءٍ أو كتابٍ له قاطعةٌ في المسودة، وصفرٌ في مقالاته؛ وعبارة خطة «النفي المزدوج» محظورة. */
+const selfRefDraft = strongBody.replace('وأخطر ما في الأمر أنه هادئ.', 'وقلت في لقاءٍ إذاعي إن أخطر ما في الأمر أنه هادئ.')
+assert.ok(judgeStyle(selfRefDraft, eraDna, { generated: true }).fatal.some((line) => line.includes('إحالةٌ إلى لقاءٍ')), 'الإحالة إلى لقاءٍ له في المسودة قاطعة')
+assert.equal(dated.filter((item) => judgeStyle(item.body, eraDna, { generated: true }).fatal.some((line) => line.includes('إحالةٌ إلى لقاءٍ'))).length, 0, 'ولا تُنسب إلى مقالاته')
+assert.ok(BANNED_PHRASES.includes('ينبغي أن نراه') && !server.includes('ما ينبغي أن نراه مكانه'), 'عبارة الخطة ليست في الخطة، وهي محظورة')
 
 /* الخواتيم بنسبها المقيسة: كان كل ما عدا «فاسأل نفسك» و«ربما يبدأ» يُؤمر بـ«…بل». */
 const closingKinds = new Map()

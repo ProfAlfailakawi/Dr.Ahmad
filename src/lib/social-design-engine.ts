@@ -319,8 +319,6 @@ export interface Palette {
   spectrum?: string[]
   /** علامة أن اللوحة مستخرجة من صورة، لا لوحة جاهزة. */
   dna?: boolean
-  /** لون الإبراز (الكلمة المحورية) إن اختلف عن لون الأساس: الجمر في لوحة الهوية. */
-  highlight?: string
   /** الغلاف الجوّي حين تكون اللوحة قلبَ «عالمِ تصميمٍ» متكامل. */
   atmo?: WorldAtmosphere
 }
@@ -555,9 +553,6 @@ export interface PlanOverlay {
   vignette?: number
   /** مقدار التعتيم الموجه للنص من 0 إلى 1. */
   readabilityShade?: number
-  /** إطارٌ مرسومٌ داخل الصورة نفسها (نسبٌ من اللوحة). العارض لا يرى البكسلات،
-      فمن دون هذا كان العنوان يركب حافة الإطار نصفه داخله ونصفه خارجه. */
-  frameBox?: { x: number; y: number; width: number; height: number }
 }
 
 export interface CompositionPlan {
@@ -1024,20 +1019,6 @@ export const PALETTES: Record<PaletteId, Palette> = {
   'silicon-night': { id: 'silicon-night', label: 'ليل السيليكون', background: '#0B1220', surface: '#111A2C', ink: '#EAF2FB', muted: '#93A5BC', accent: '#37D2E2', accentSoft: '#123A46', rule: '#233650', isDark: true },
 }
 
-/** لوحة الهوية الصارمة: الأزرق أساساً، والجمر إبرازاً، والحبر للنص — لا لون
-    خارجها. تُفرض على كل تصميمٍ يقوم على صورة، لأن لوحة الصورة المستخرجة كانت
-    تُدخل العنابيّ والزيتونيّ والذهبيّ (‎#B54826‎ ‎#6F6334‎ ‎#8C7038‎) إلى الهوية. */
-export function identityPalette(isDark = false): Palette {
-  const t = isDark ? DARK : LIGHT
-  const base = isDark ? PALETTES['brand-night'] : PALETTES['brand-paper']
-  return {
-    ...base,
-    highlight: t.ember,
-    spectrum: [t.accent, t.accentDeep, t.ember, t.ink],
-    dna: true,
-  }
-}
-
 /** اللوحة الفعلية للتصميم: البصمة البصرية المرفوعة إن وُجدت، وإلا لوحة الهوية المختارة. */
 export const resolvePalette = (plan: CompositionPlan): Palette => plan.paletteOverride || PALETTES[plan.palette]
 
@@ -1220,9 +1201,6 @@ const pickFromPool = <T,>(pool: readonly T[], seed: string, discriminator: strin
 
 /** اهتزازٌ صغيرٌ محكومٌ بالنص يفكّ تجمّد ترتيب العائلات حين تتساوى ملاءمتها. */
 const layoutJitter = (layoutId: LayoutFamilyId, seed: string) => (hashString(`${seed}:layout-jitter:${layoutId}`) % 1000) / 1000 * 11
-
-/** حتى هذا الطول يُرسم العنوان كاملاً مهما كان المقاس. */
-const TITLE_KEEP_WHOLE_WORDS = 24
 
 const truncateWords = (value: string, maximum: number) => {
   const words = normalizeWhitespace(value).split(/\s+/).filter(Boolean)
@@ -1874,11 +1852,7 @@ const contentForPlan = (analysis: SocialContentAnalysis, format: SocialFormatSpe
   const structure = analysis.structure
   const titleLimit = Math.max(7, Math.round(format.maxTitleWords * (layout.textBias === 'title' ? 0.72 : 1)))
   const bodyLimit = Math.max(12, Math.round(format.maxBodyWords * (layout.textBias === 'body' ? 1 : 0.75)))
-  /* العنوان الذي كتبه الدكتور لا تُحذف منه كلمة (الفكرة ذات الخمس عشرة كلمة كانت
-     تُقصّ عند السابعة أو الثالثة عشرة وتنتهي بـ«…»)؛ العارض يصغّر الخط أو
-     يضيف سطراً بدل ذلك. القصّ يبقى للنص الملصق الطويل وحده. */
-  const titleSource = layout.textBias === 'quote' && structure.quote ? structure.quote : structure.title
-  const title = wordsOf(titleSource).length <= TITLE_KEEP_WHOLE_WORDS ? titleSource.trim() : truncateWords(titleSource, titleLimit)
+  const title = truncateWords(layout.textBias === 'quote' && structure.quote ? structure.quote : structure.title, titleLimit)
   // المتن لا يكرر العنوان أبداً: النص القصير يترك العنوان وحيداً بدل عرض الجملة مرتين.
   const titleKey = normalizeArabicForDesign(title.replace(/…$/u, ''))
   const distinct = (value: string) => {
@@ -2557,14 +2531,9 @@ export function critiqueCompositionPlan(plan: CompositionPlan, peers: readonly C
   /* تصميم «العنوان وحده» خيار فني مشروع (ملاحظة الصديق): كان يُحاكم على متنٍ
      غير موجود فتهبط كثافته ظلماً — حمولته تُقاس على العنوان وحده بمثاليةٍ تليق به */
   const titleOnly = bodyWords === 0
-  /* العنوان الكامل لا يُقصّ بعد اليوم؛ ما زاد على حدّ القصّ القديم (٧٢٪ من سعة
-     المقاس) يصغُر خطُّه ولا يملأ مساحةً أكبر، فلا يُحسب كثافةً زائدة. */
-  const paintedTitleLoad = Math.min(titleLoad, .72)
-  const textLoad = titleOnly ? paintedTitleLoad : paintedTitleLoad * .58 + bodyLoad * .42
+  const textLoad = titleOnly ? titleLoad : titleLoad * .58 + bodyLoad * .42
   const lineLayout = compositionTextLayout(plan)
-  /* العارض لا يقصّ العنوان: يصغّر الخط ويضيف حتى سطرين. فالسعة الحقيقية
-     أوسع بسطرين من الحدّ الافتراضي، ولا يُعاقَب العنوان الكامل على طوله. */
-  const titleLineLoad = lineLayout.estimatedTitleLines / Math.max(1, lineLayout.titleMaxLines + 2)
+  const titleLineLoad = lineLayout.estimatedTitleLines / Math.max(1, lineLayout.titleMaxLines)
   const bodyLineLoad = structuredList ? 0 : lineLayout.estimatedBodyLines / Math.max(1, lineLayout.bodyMaxLines)
   const zones = [plan.geometry.titleZone, plan.geometry.bodyZone]
   const safe = zones.every((zone) => zone.x >= 0 && zone.y >= 0 && zone.x + zone.width <= 1.001 && zone.y + Math.min(.32, zone.maxLines * .055) <= .95)

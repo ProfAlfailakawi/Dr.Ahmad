@@ -83,17 +83,4 @@ export declare function mimicVoice(
   },
 ): MimicResult
 
-export interface MimicHunk {
-  id: number
-  from: string
-  to: string
-  aStart: number
-  aEnd: number
-  bStart: number
-  bEnd: number
-}
-
-export declare function diffHunks(before: string, after: string): MimicHunk[]
-export declare function composeReviewed(before: string, after: string, hunks: MimicHunk[], rejected?: number[]): string
-
 export default mimicVoice

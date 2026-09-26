@@ -244,7 +244,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           <div className="overflow-hidden rounded-[1.4rem] border border-hair bg-ink shadow-lg" style={{ width: 252, height: 448 }}>
             <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} aria-label="معاينة الريل" />
           </div>
-          <p className="text-center text-[.75rem] text-soft">معاينة حيّة بالمقاس الحقيقي 1080×1920 — التسجيل يجري على هذه اللوحة نفسها.</p>
+          <p className="text-center text-[.64rem] text-soft">معاينة حيّة بالمقاس الحقيقي 1080×1920 — التسجيل يجري على هذه اللوحة نفسها.</p>
         </div>}
       </div>
     </section>

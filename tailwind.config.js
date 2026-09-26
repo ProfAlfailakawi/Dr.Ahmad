@@ -21,8 +21,6 @@ export default {
         sans: ['"Tajawal"', 'system-ui', 'sans-serif'],
       },
       maxWidth: { shell: '1140px' },
-      /* منحنى الحركة الموحّد (DESIGN.md) هو الافتراضي لكل transition في Tailwind. */
-      transitionTimingFunction: { DEFAULT: 'cubic-bezier(0.2, 0.7, 0.2, 1)' },
       /* سلّم نصف القطر — كان 12px لكل شيء، فيفقد سلّمُ الارتفاع إحدى إشاراته:
          الحقلُ الصغير والسطحُ الكبير بالانحناء نفسه. الآن ثلاث درجات قريبة
          بعضها من بعض حتى تبقى اللغة واحدة: الصغير أدقّ، والكبير أهدأ. */

@@ -20,7 +20,6 @@ import {
   type SocialPlatform,
   type SocialCampaign,
 } from '../../lib/social-design-engine'
-import { LIGHT as IDENTITY_LIGHT, mix as mixColor } from '../../lib/design-system'
 import {
   downloadCompositionRaster,
   downloadCompositionSvg,
@@ -34,10 +33,7 @@ import {
   seasonIdentityFor,
   type BackgroundPattern,
 } from '../../lib/social-design-renderer'
-import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, identityPalette, PALETTES } from '../../lib/social-design-engine'
-import { motion, useReducedMotion } from 'framer-motion'
-import { EASE as STUDIO_EASE } from '../motion'
-import { DesignBirthStage } from './DesignBirthStage'
+import { type LayoutFamilyId, type InfographicVariantId, type StudioCommandParse, type PaletteId, type Palette, type PlanContent, type PlanOverlay, type AttentionMap, type DesignExplanation, parseStudioCommand, critiqueCompositionPlan, predictEngagement, computeAttentionMap, explainDesign, PALETTES } from '../../lib/social-design-engine'
 import { dressPlanInWorld, planWorldId, undressPlanFromWorld, type DesignWorld } from '../../lib/design-worlds'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import { analyzeStudioImageFromFile, analyzeStudioImageFromUrl, extractVisualDnaFromFile, type StudioImagePassport, type VisualDna } from '../../lib/visual-dna'
@@ -149,13 +145,6 @@ type ZeroDecisionSummary = {
   visualOrigin: StudioVisualOrigin
 }
 
-/* حالة التحديد بلون الهوية، واحدةٌ للخيارين ومستقرةٌ بعد إعادة التحميل. */
-const QUALITY_SELECTED = 'border-accent bg-accent/[.07] text-accent-deep ring-1 ring-accent/30'
-const QUALITY_IDLE = 'border-hair bg-paper text-ink hover:border-accent/40'
-const RUN_DURATION_KEY = 'dr-ahmad-studio-run-seconds-v1'
-const LOCAL_RESERVE_OWNER = 'تكوين أصلي مولد داخل المتصفح'
-const LOCAL_RESERVE_NOTICE = 'تعذّرت خدمة الصور مؤقتاً فاستُخدم المولّد المحلي.'
-
 type StudioImageMetadata = {
   source?: string
   owner?: string
@@ -187,8 +176,6 @@ type StudioImageMetadata = {
   targetHeight?: number
   nativeAspect?: boolean
   formatId?: string
-  /** إطارٌ مرسوم داخل الصورة (نسب) يمرَّر للعارض كي لا يركب العنوان حافته. */
-  frameBox?: PlanOverlay['frameBox']
 }
 
 type GeneratedStudioImage = {
@@ -578,19 +565,12 @@ async function verifyExternalVisuals(items: ExternalVisualResult[], limit = 10):
 
 function RemoteVisualThumbnail({ src, alt, className }: { src: string; alt: string; className: string }) {
   const [failed, setFailed] = useState(false)
-  if (failed || !src) return <div className={`${className} grid place-items-center bg-paper text-center text-[.75rem] leading-relaxed text-soft`}><span>تعذّر تحميل المعاينة<br />جرّب مصدراً آخر</span></div>
+  if (failed || !src) return <div className={`${className} grid place-items-center bg-paper text-center text-[.64rem] leading-relaxed text-soft`}><span>تعذّر تحميل المعاينة<br />جرّب مصدراً آخر</span></div>
   return <img src={src} alt={alt} className={className} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
 }
 
-/* شريط المراحل: حبرُ المرحلة الفعّالة لا يقفز — ينزلق من مرحلةٍ إلى أخرى كالقلم على
-   السطر (layoutId مشترك، بالمنحنى الموحّد)، والنص يتبدّل لونه معه. ومع تقليل الحركة
-   ينتقل الحبر فوراً بلا انزلاق. */
 function StageRail({ stage, onChange }: { stage: StudioStage; onChange: (stage: StudioStage) => void }) {
-  const still = useReducedMotion()
-  return <nav aria-label="مراحل استوديو التصميم" className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><ol className="flex min-w-max gap-2 rounded-[1.4rem] border border-hair bg-canvas/80 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]">{STUDIO_STAGES.map((item) => {
-    const active = stage === item.id
-    return <li key={item.id}><button type="button" onClick={() => onChange(item.id)} aria-current={active ? 'step' : undefined} className={`group relative min-w-[145px] rounded-[1.1rem] px-4 py-3 text-right transition-colors duration-300 ease-[cubic-bezier(.2,.7,.2,1)] ${active ? 'text-white' : 'text-soft hover:bg-paper hover:text-ink'}`}>{active && <motion.span layoutId="studio-stage-ink" aria-hidden="true" className="absolute inset-0 rounded-[1.1rem] bg-ink shadow-[0_12px_30px_rgba(15,23,42,.16)]" transition={{ duration: still ? 0 : 0.55, ease: STUDIO_EASE }} />}<span className="relative block"><span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[.58rem] font-black tracking-[.08em] transition-colors duration-300 ease-[cubic-bezier(.2,.7,.2,1)] ${active ? 'bg-white/[.14] text-white' : 'border border-hair bg-paper text-accent'}`}>{item.number}</span><strong className="mt-2 block text-[.82rem]">{item.label}</strong><span className={`mt-1 block text-[.62rem] transition-colors duration-300 ease-[cubic-bezier(.2,.7,.2,1)] ${active ? 'text-white/65' : 'text-soft'}`}>{item.description}</span></span></button></li>
-  })}</ol></nav>
+  return <nav aria-label="مراحل استوديو التصميم" className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><ol className="flex min-w-max gap-2 rounded-[1.4rem] border border-hair bg-canvas/80 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]">{STUDIO_STAGES.map((item) => <li key={item.id}><button type="button" onClick={() => onChange(item.id)} className={`group min-w-[145px] rounded-[1.1rem] px-4 py-3 text-right transition-all duration-300 ${stage === item.id ? 'bg-ink text-white shadow-[0_12px_30px_rgba(15,23,42,.16)]' : 'text-soft hover:bg-paper hover:text-ink'}`}><span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[.58rem] font-black tracking-[.08em] ${stage === item.id ? 'bg-white/14 text-white' : 'border border-hair bg-paper text-accent'}`}>{item.number}</span><strong className="mt-2 block text-[.82rem]">{item.label}</strong><span className={`mt-1 block text-[.62rem] ${stage === item.id ? 'text-white/65' : 'text-soft'}`}>{item.description}</span></button></li>)}</ol></nav>
 }
 
 const toneLabels: Record<ContentTone | 'auto', string> = {
@@ -735,9 +715,7 @@ function storeTasteLedger(ledger: TasteSignalLedger) {
   try { window.localStorage.setItem(TASTE_LEDGER_KEY, JSON.stringify(ledger)) } catch { /* الذاكرة اختيارية ولا تعطل التصدير */ }
 }
 
-/** `livingStill`: في القوائم تقف الأيقونة الحيّة على إطارها المكتمل وتحيا تحت المؤشر
-    فقط — عشرون بطاقة لا تعني عشرين حلقة رسمٍ تدور معاً. */
-function Preview({ plan, className = '', livingIcon, livingStill, arrange }: { plan: CompositionPlan; className?: string; livingIcon?: boolean; livingStill?: boolean; arrange?: boolean }) {
+function Preview({ plan, className = '', livingIcon, arrange }: { plan: CompositionPlan; className?: string; livingIcon?: boolean; arrange?: boolean }) {
   const [enabledPref] = useLivingIconEnabled()
   const showIcon = livingIcon ?? enabledPref
   return (
@@ -746,37 +724,8 @@ function Preview({ plan, className = '', livingIcon, livingStill, arrange }: { p
       style={{ aspectRatio: `${plan.format.width} / ${plan.format.height}` }}
     >
       <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: renderCompositionSvg(plan) }} />
-      {showIcon && <LivingMetaphorIcon plan={plan} still={livingStill} />}
+      {showIcon && <LivingMetaphorIcon plan={plan} />}
       {arrange && <MovableWordsLayer plan={plan} />}
-    </div>
-  )
-}
-
-const playedCampaignSpreads = new Set<string>()
-const prefersStillness = () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
-
-/* ═══════════ من الاعتماد إلى النشر: التصميم الواحد ينشطر إلى مقاسات الحملة ═══════════
-   بطاقات الحملة تبدأ متراكبةً في موضع البطاقة الأولى (جهة النسخة المعتمدة في
-   اتجاه RTL) ثم تنزلق كلٌّ إلى مقاسها بتتابعٍ هادئ. مرةً واحدة لكل حملة جديدة. */
-function CampaignSpreadStrip({ campaign }: { campaign: SocialCampaign }) {
-  const [spreading] = useState(() => !prefersStillness() && !playedCampaignSpreads.has(campaign.id))
-  useEffect(() => { playedCampaignSpreads.add(campaign.id) }, [campaign.id])
-  return (
-    <div className="flex min-w-max gap-3">
-      {campaign.assets.map((asset, index) => (
-        <motion.article
-          key={asset.id}
-          className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"
-          style={spreading ? { willChange: 'transform,opacity' } : undefined}
-          initial={spreading ? { x: index * 232, scale: 0.9, opacity: 0 } : false}
-          animate={{ x: 0, scale: 1, opacity: 1 }}
-          transition={{ duration: 0.9, delay: 0.06 + index * 0.07, ease: STUDIO_EASE }}
-        >
-          <Preview plan={asset.plan} livingStill />
-          <strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong>
-          <p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p>
-        </motion.article>
-      ))}
     </div>
   )
 }
@@ -818,7 +767,7 @@ function EditableText({ label, value, onCommit, multiline = false }: { label: st
   const shared = 'w-full rounded-xl border border-hair bg-paper px-3 py-2 text-[.8rem] text-ink outline-none focus:border-accent'
   return (
     <label className="grid gap-1">
-      <span className="text-[.75rem] font-semibold text-soft">{label}</span>
+      <span className="text-[.64rem] font-semibold text-soft">{label}</span>
       {multiline
         ? <textarea value={draft} rows={3} onChange={(event) => setDraft(event.target.value)} onBlur={commit} className={`${shared} resize-y leading-relaxed`} />
         : <input value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === 'Enter') (event.target as HTMLInputElement).blur() }} className={shared} />}
@@ -1129,53 +1078,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     return () => window.removeEventListener('pagehide', persistBeforeLeave)
   }, [draftReady, interruptedDraft])
 
-  /* ── عملٌ جارٍ لا تقطعه إعادة تحميل ──
-     أثناء التوليد تُعلَّم الصفحة مشغولة (aria-busy على الجذر)؛ محدّث التطبيق
-     (app-update) وعامل الخدمة (boot.js) يؤجّلان إعادة التحميل حتى تنتهي العملية.
-     كانت الصفحة تعيد تحميل نفسها بعد ٢٠–٣٠ ثانية من «ولّد من الصفر» فيضيع التقدم. */
-  useEffect(() => {
-    if (!zeroDecisionBusy) return
-    const root = document.documentElement
-    root.setAttribute('aria-busy', 'true')
-    root.dataset.studioBusy = 'generate'
-    return () => {
-      root.removeAttribute('aria-busy')
-      delete root.dataset.studioBusy
-    }
-  }, [zeroDecisionBusy])
-
-  /* الوقت المنقضي والمتبقي تقريباً: المتوسط من آخر دورات هذا الجهاز، وإلا ١٥٠ ثانية. */
-  const [zeroDecisionStartedAt, setZeroDecisionStartedAt] = useState<number | null>(null)
-  const [zeroDecisionNow, setZeroDecisionNow] = useState(() => Date.now())
-  const runStartedAtRef = useRef(Date.now())
-  useEffect(() => {
-    if (!zeroDecisionBusy) return
-    const timer = window.setInterval(() => setZeroDecisionNow(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [zeroDecisionBusy])
-  const expectedRunSeconds = useMemo(() => {
-    try {
-      const history = JSON.parse(localStorage.getItem(RUN_DURATION_KEY) || '[]') as number[]
-      const recent = history.filter((value) => Number.isFinite(value) && value > 5).slice(-6)
-      return recent.length ? Math.round(recent.reduce((sum, value) => sum + value, 0) / recent.length) : 150
-    } catch { return 150 }
-  }, [zeroDecisionBusy])
-  const rememberRunDuration = (seconds: number) => {
-    try {
-      const history = JSON.parse(localStorage.getItem(RUN_DURATION_KEY) || '[]') as number[]
-      localStorage.setItem(RUN_DURATION_KEY, JSON.stringify([...history, Math.round(seconds)].slice(-12)))
-    } catch { /* الذاكرة اختيارية */ }
-  }
-
-  /* «استئناف» يكمل العملية لا النص وحده: إن انقطع التوليد في منتصفه أعيد تشغيله
-     تلقائياً بالفكرة والوضع نفسيهما بعد أن تستقر الحالة المستعادة. */
-  const [resumeMode, setResumeMode] = useState<StudioVisualMode | null>(null)
-  const interruptedMidRun = Boolean(interruptedDraft && !['idle', 'done'].includes(String(interruptedDraft.zeroDecisionPhase || 'idle')))
-
   const restoreInterruptedDraft = () => {
     const draft = interruptedDraft
     if (!draft) return
-    const wasRunning = !['idle', 'done'].includes(String(draft.zeroDecisionPhase || 'idle'))
     suppressAutosaveRef.current = true
     setText(draft.text)
     setContext(draft.context)
@@ -1216,12 +1121,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     setZeroDecision(draft.zeroDecision)
     setZeroDecisionPhase(draft.zeroDecisionPhase)
     setInterruptedDraft(null)
-    if (wasRunning && draft.text.trim().length >= 2) {
-      setZeroDecisionPhase('idle')
-      setResumeMode(draft.visualMode === 'ready' ? 'ready' : 'generate')
-      setNotice('انقطع التوليد قبل اكتماله؛ أعيد تشغيله الآن تلقائياً بالفكرة نفسها.')
-      return
-    }
     setNotice('استُعيد التصميم غير المكتمل كما تركته — ويمكنك متابعة العمل من النقطة نفسها.')
   }
 
@@ -2443,15 +2342,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     }
     const textZone = options.textZone || (Number(options.candidateIndex || 0) % 3 === 0 ? 'right' : Number(options.candidateIndex || 0) % 3 === 1 ? 'bottom' : 'left')
     const direction = (seed + Number(options.candidateIndex || 0)) % 5
-    /* خمس تنويعات كلها من الهوية: الأزرق أساساً والجمر إبرازاً والحبر ميداناً.
-       كانت هنا ألوانٌ دخيلة (عنابي وفيروزي وبنفسجي) تتسرّب إلى التصميم كله. */
-    const I = IDENTITY_LIGHT
     const palettes = [
-      { paper: I.canvas, wash: I.accentSoft, field: I.ink, glow: I.ember, accent: I.ember, line: I.accentDeep },
-      { paper: I.canvas, wash: I.accentSoft, field: mixColor(I.ink, I.accentDeep, .35), glow: I.accent, accent: I.accent, line: I.accentDeep },
-      { paper: I.wash, wash: mixColor(I.wash, I.accent, .14), field: I.ink, glow: I.accent, accent: I.ember, line: I.accentDeep },
-      { paper: I.canvas, wash: mixColor(I.canvas, I.ember, .14), field: mixColor(I.ink, I.ember, .18), glow: I.ember, accent: I.accentDeep, line: I.ink },
-      { paper: I.wash, wash: I.accentSoft, field: mixColor(I.ink, I.accent, .22), glow: mixColor(I.accent, I.canvas, .25), accent: I.accent, line: I.ink },
+      { paper: '#F2EBDD', wash: '#E5D5BD', field: '#251E1A', glow: '#C8683D', accent: '#D0522B', line: '#3D3028' },
+      { paper: '#E9EDF0', wash: '#CBD7DC', field: '#071C2B', glow: '#18A7A0', accent: '#116A85', line: '#142B38' },
+      { paper: '#F3F0E8', wash: '#D9D3C7', field: '#17202B', glow: '#4169E1', accent: '#DD3F31', line: '#202328' },
+      { paper: '#ECE9DF', wash: '#CED1BF', field: '#1D2A24', glow: '#9DAA6B', accent: '#697449', line: '#29352D' },
+      { paper: '#ECE9E5', wash: '#D1D1D3', field: '#17171B', glow: '#7555D9', accent: '#4931A6', line: '#222127' },
     ] as const
     const palette = palettes[direction]
     const pageWash = ctx.createLinearGradient(0, 0, width, height)
@@ -2480,8 +2376,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     const frameX = textZone === 'right' ? margin : textZone === 'left' ? width * .47 : margin
     const frameY = margin
     const frameW = textZone === 'bottom' ? width - margin * 2 : width * .47
-    /* حين يكون النص أسفل الإطار يقصر الإطار كي يتسع العنوان تحته كاملاً. */
-    const frameH = textZone === 'bottom' ? height * .47 : height - margin * 2
+    const frameH = textZone === 'bottom' ? height * .57 : height - margin * 2
     const frameR = Math.min(width, height) * .032
 
     ctx.save()
@@ -2590,8 +2485,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
     const railX1 = textZone === 'right' ? width * .64 : textZone === 'left' ? width * .08 : margin
     const railX2 = textZone === 'right' ? width - margin : textZone === 'left' ? width * .4 : width - margin
-    /* خط السكة كان يعبر منطقة العنوان (‎.69h‎)؛ صار ملاصقاً لأسفل الإطار. */
-    const railY = textZone === 'bottom' ? frameY + frameH + height * .03 : margin
+    const railY = textZone === 'bottom' ? height * .69 : margin
     ctx.strokeStyle = `${palette.accent}B8`
     ctx.lineWidth = Math.max(2, Math.min(width, height) * .002)
     ctx.beginPath()
@@ -2650,7 +2544,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       passport,
       metadata: {
         source: 'مولد الأصول التحريرية داخل الاستوديو',
-        owner: LOCAL_RESERVE_OWNER,
+        owner: 'تكوين أصلي مولد داخل المتصفح',
         license: 'أصل تحريري مولد محلياً — بلا صورة مخزون أو قالب سابق',
         description: creativeBrief.issue,
         visualWorld: options.preferredWorld || 'local-reserve',
@@ -2661,10 +2555,8 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         conceptKey: visualSearchPlan.glossaryConcept,
         conceptLabel: visualSearchPlan.glossaryLabel,
         semanticScene: creativeBrief.visualReason,
-        /* لا رقمَ مطابقةٍ لم يُقس: المولّد المحلي لا يمرّ بفاحص المعنى. */
-        relevanceScore: null,
-        /* رسالة الخطأ الخام («HTTP 504»…) للسجل لا للدكتور. */
-        relevanceReason: LOCAL_RESERVE_NOTICE,
+        relevanceScore: 84,
+        relevanceReason: `استُخدم مولد احتياطي محلي لأن خدمة الصور تعذّرت: ${options.reason}`,
         generationAttempts: 4,
         semanticVerified: true,
         criticSource: 'browser-editorial-generator',
@@ -2679,9 +2571,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         targetHeight: height,
         nativeAspect: true,
         formatId: targetFormat.id,
-        frameBox: textZone === 'bottom'
-          ? { x: frameX / width, y: frameY / height, width: frameW / width, height: (railY + marker) / height - frameY / height }
-          : { x: frameX / width, y: frameY / height, width: frameW / width, height: frameH / height },
       },
       prompt: visualSearchPlan.generationPrompt,
       model: 'browser-original-editorial',
@@ -2891,15 +2780,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       textZone: zone,
       vignette,
       readabilityShade,
-      ...(metadata?.frameBox ? { frameBox: metadata.frameBox } : {}),
     }
     const next = {
       ...plan,
       layout,
       palette,
-      /* ألوان التصميم من الهوية وحدها (أزرق · جمر · حبر)؛ الصورة تحدد الفاتح
-         والداكن فقط لا الألوان — كانت لوحتها المستخرجة تُدخل ألواناً دخيلة. */
-      paletteOverride: identityPalette(darkSurface),
+      paletteOverride: imagePalette,
       density: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'minimal' : plan.density,
       content: { ...plan.content, source: /dr-?alfailakawi\.com/i.test(plan.content.source || '') ? '' : plan.content.source },
       framing: resolvedTreatment === 'cinematic' || resolvedTreatment === 'duotone' ? 'cinematic-crop' : 'open-canvas',
@@ -3527,10 +3413,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
     if (zeroDecisionBusy && !hop.fromGenerate && !hop.fromReady) return
     setVisualMode(requestedMode)
     setZeroDecisionBusy(true)
-    if (!hop.fromGenerate && !hop.fromReady) {
-      runStartedAtRef.current = Date.now()
-      setZeroDecisionStartedAt(runStartedAtRef.current)
-    }
     setZeroDecision(null)
     setReleasePack([])
     setCampaign(null)
@@ -3572,10 +3454,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             })
           } catch (error) {
             if (!shouldUseLocalReserveFallback(error)) throw error
-            const rejectedBySemantics = /semantic_rejected|visual_rejected|تعذّر اعتماد الصورة|HTTP 422/i.test(error instanceof Error ? error.message : String(error || ''))
-            setNotice(rejectedBySemantics
-              ? 'لم أجتز فاحص الصورة عبر الخدمة بعد أربعة تكوينات مختلفة؛ أنتقل تلقائياً إلى أصل تحريري جديد داخل الاستوديو، من دون إعادة تصميم قديم.'
-              : LOCAL_RESERVE_NOTICE)
+            setNotice('لم أجتز فاحص الصورة عبر الخدمة بعد أربعة تكوينات مختلفة؛ أنتقل تلقائياً إلى أصل تحريري جديد داخل الاستوديو، من دون إعادة تصميم قديم.')
             generated = await buildLocalReserveImage({
               reason: error instanceof Error ? error.message : 'external-generator-unavailable',
               candidateIndex: serial,
@@ -3594,9 +3473,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           if (hop.fromReady) throw error
           setVisualFailure('')
           setNotice('تعذّر توليد الصورة الأصلية الآن، فانتقلت تلقائياً إلى صورة جاهزة موثقة المصدر — المشهد يكتمل بلا توقف.')
-          /* ننتظر المسار البديل كاملاً: بلا await كان finally هنا يرفع علامة الانشغال
-             بينما البديل ما زال يعمل، فتعود إعادة التحميل ممكنةً وسط التوليد. */
-          return await runZeroDecisionMode('ready', { fromGenerate: true })
+          return runZeroDecisionMode('ready', { fromGenerate: true })
         }
         const uniqueGenerated = new Map<string, GeneratedStudioImage>()
         for (const generated of generatedSet) {
@@ -3686,9 +3563,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           if (!hop.fromGenerate) {
             setVisualFailure('')
             setNotice('لم أجد صورة جاهزة تليق بالفكرة من المصادر الموثقة، فأنتقل تلقائياً إلى توليد مشهد أصلي من الصفر — المشهد يكتمل بلا توقف.')
-            /* ننتظر المسار البديل كاملاً: بلا await كان finally هنا يرفع علامة الانشغال
-             بينما البديل ما زال يعمل، فتعود إعادة التحميل ممكنةً وسط التوليد. */
-          return await runZeroDecisionMode('generate', { fromReady: true })
+            return runZeroDecisionMode('generate', { fromReady: true })
           }
           const failure = 'لم أجد صورة جاهزة صالحة وموثقة لهذه الفكرة ضمن المهلة. لم أستبدلها بصورة مولدة أو بتصميم قديم.'
           setVisualOrigin('none')
@@ -3800,7 +3675,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       void archiveGeneratedDesigns([approved.plan], 'آخر تصميم معتمد تلقائياً')
       setStage('directions')
       setZeroDecisionPhase('done')
-      rememberRunDuration((Date.now() - runStartedAtRef.current) / 1000)
       teachTaste(approved.plan, 1)
       setNotice(requestedMode === 'generate'
         ? 'اكتملت الصورة الأصلية بعد اجتياز فحص المعنى والجودة، ثم حُسم أفضل إخراج.'
@@ -3817,14 +3691,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       setZeroDecisionBusy(false)
     }
   }
-
-  useEffect(() => {
-    if (!resumeMode || zeroDecisionBusy || text.trim().length < 2) return
-    const mode = resumeMode
-    setResumeMode(null)
-    void runZeroDecisionMode(mode)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeMode, text, zeroDecisionBusy])
 
   const runAutopilot = async (options: { passport?: StudioImagePassport | null; metadata?: StudioImageMetadata; visualSet?: GeneratedStudioImage[]; keepStage?: boolean; quiet?: boolean; allowExternalSearch?: boolean } = {}): Promise<AutoPilotCandidate[]> => {
     if (text.trim().length < 2) {
@@ -4050,8 +3916,6 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   const approvedImageSource = approvedHero?.sourceUrl || imageSource
   const approvedImageOwner = approvedHero?.owner || imageOwner
   const approvedImageLicense = approvedHero?.license || imageLicense
-  /* المولّد الاحتياطي ليس «AI GENERATED»: الشارة تقول ما حدث فعلاً. */
-  const approvedIsLocalReserve = approvedVisualOrigin === 'generated' && approvedImageOwner === LOCAL_RESERVE_OWNER
   const zeroDecisionSteps: { id: ZeroDecisionPhase; label: string; note: string }[] = [
     { id: 'understand', label: 'فهم المعنى', note: domainUnderstanding.recognizedTerms.length ? `${domainUnderstanding.recognizedTerms.slice(0, 3).map((item) => item.canonicalAr).join(' + ')} · ${domainUnderstanding.confidence}٪` : 'القضية والجمهور والأثر' },
     { id: 'prompt', label: 'إخراج الفكرة', note: visualMode === 'generate' ? 'برومبت فني أصلي ومختلف' : 'عبارات بحث تحريرية ذكية' },
@@ -4124,20 +3988,20 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             <div className="grid min-w-[230px] gap-2 sm:grid-cols-2 md:min-w-[340px]">
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">مسار التوليد</strong>صورة جديدة من الصفر</span>
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">قرار صفري</strong>أفضل نتيجة واحدة فقط</span>
-              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">صور جاهزة منتقاة</strong><bdi>Pexels</bdi> · <bdi>Wikimedia</bdi> · <bdi>Openverse</bdi></span>
+              <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">صور جاهزة منتقاة</strong>Pexels · Wikimedia · Openverse</span>
               <span className="rounded-2xl border border-hair bg-white/75 px-4 py-3 text-[.68rem] text-soft shadow-sm backdrop-blur"><strong className="block text-[.76rem] text-ink">محركات مخفية</strong>الناقد · الحملة · عدم التكرار</span>
             </div>
           </div>
         </div>
         <div className="relative mt-5"><StageRail stage={stage} onChange={handleStageChange} /></div>
-        {(correctionHold || correctionRefreshRequired) && <p className="mt-3 rounded-xl border border-ember/30 bg-ember/[.05] px-3 py-2 text-[.68rem] leading-relaxed text-ember" data-correction-hold="design">تصحيح جار لهذه المادة: المعاينة محفوظة، لكن التصدير وبناء الحملة محجوزان. افتح النسخة المصححة من مكتبة المقالات بعد توقيع الجواز البديل.</p>}
+        {(correctionHold || correctionRefreshRequired) && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] leading-relaxed text-amber-800" data-correction-hold="design">تصحيح جار لهذه المادة: المعاينة محفوظة، لكن التصدير وبناء الحملة محجوزان. افتح النسخة المصححة من مكتبة المقالات بعد توقيع الجواز البديل.</p>}
 
         {interruptedDraft && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/20 bg-accent/[.045] px-4 py-3 text-[.68rem] shadow-sm" role="status" aria-live="polite">
-            <span className="font-semibold text-ink">{interruptedMidRun ? 'انقطع توليدٌ قبل اكتماله — «استئناف» يعيد تشغيله تلقائياً' : 'عُثر على تصميم غير مكتمل'}</span>
+            <span className="font-semibold text-ink">عُثر على تصميم غير مكتمل</span>
             <span className="flex items-center gap-2">
-              <button type="button" className={`${primary} px-4 py-2 text-[.75rem]`} onClick={restoreInterruptedDraft}>استئناف</button>
-              <button type="button" className={`${ghost} px-4 py-2 text-[.75rem]`} onClick={dismissInterruptedDraft}>تجاهل</button>
+              <button type="button" className={`${primary} px-4 py-2 text-[.64rem]`} onClick={restoreInterruptedDraft}>استئناف</button>
+              <button type="button" className={`${ghost} px-4 py-2 text-[.64rem]`} onClick={dismissInterruptedDraft}>تجاهل</button>
             </span>
           </div>
         )}
@@ -4182,10 +4046,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     placeholder="اكتب العنوان أو الفكرة كما هي في ذهنك… يمكنك أن تطيل؛ لن يقاطعك الاستوديو ولن يبدأ قبل ضغط الزر."
                   />
                 </label>
-                {domainUnderstanding.recognizedTerms.length > 0 && <div className="mt-3 overflow-hidden rounded-2xl border border-accent/20 bg-[linear-gradient(135deg,rgb(var(--c-accent)/.07),rgb(var(--c-canvas)/.92))] px-4 py-3 shadow-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.75rem] font-black uppercase tracking-[.12em] text-accent-deep">الرسم المعرفي الشخصي فهم العبارة</p><h3 className="mt-1 text-[.86rem] font-bold text-ink">{domainUnderstanding.recognizedTerms.slice(0, 4).map((item) => item.canonicalAr).join(' + ')}</h3></div><div className="flex flex-wrap gap-1.5"><span className="rounded-full bg-accent/10 px-3 py-1 text-[.75rem] font-bold text-accent-deep">ثقة {domainUnderstanding.confidence}٪</span><span className="rounded-full border border-accent/20 bg-white/80 px-3 py-1 text-[.58rem] font-semibold text-accent-deep">سعة تركيبية {arabicCountPhrase(domainUnderstanding.conceptCapacity, CONCEPT_FORMS, (value) => new Intl.NumberFormat('ar-KW-u-nu-latn').format(value))}</span></div></div>
+                {domainUnderstanding.recognizedTerms.length > 0 && <div className="mt-3 overflow-hidden rounded-2xl border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,253,245,.96),rgba(255,255,255,.9))] px-4 py-3 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.6rem] font-black uppercase tracking-[.12em] text-emerald-700">الرسم المعرفي الشخصي فهم العبارة</p><h3 className="mt-1 text-[.86rem] font-bold text-ink">{domainUnderstanding.recognizedTerms.slice(0, 4).map((item) => item.canonicalAr).join(' + ')}</h3></div><div className="flex flex-wrap gap-1.5"><span className="rounded-full bg-emerald-100 px-3 py-1 text-[.6rem] font-bold text-emerald-700">ثقة {domainUnderstanding.confidence}٪</span><span className="rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[.58rem] font-semibold text-emerald-800">سعة تركيبية {arabicCountPhrase(domainUnderstanding.conceptCapacity, CONCEPT_FORMS, (value) => new Intl.NumberFormat('ar-KW-u-nu-latn').format(value))}</span></div></div>
                   <p className="mt-2 text-[.68rem] leading-relaxed text-soft">{domainUnderstanding.compoundMeaning}</p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">{domainUnderstanding.recognizedTerms.slice(0, 10).map((entry) => <span key={`${entry.kind}-${entry.id}`} className="rounded-full border border-accent/20 bg-white/80 px-2.5 py-1 text-[.75rem] text-soft">{entry.kind === 'concept' ? 'مفهوم' : entry.kind === 'audience' ? 'جمهور' : entry.kind === 'context' ? 'سياق' : entry.kind === 'action' ? 'غاية' : entry.kind === 'outcome' ? 'ناتج' : 'منهج'}: {entry.canonicalAr}</span>)}</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">{domainUnderstanding.recognizedTerms.slice(0, 10).map((entry) => <span key={`${entry.kind}-${entry.id}`} className="rounded-full border border-emerald-100 bg-white/80 px-2.5 py-1 text-[.56rem] text-soft">{entry.kind === 'concept' ? 'مفهوم' : entry.kind === 'audience' ? 'جمهور' : entry.kind === 'context' ? 'سياق' : entry.kind === 'action' ? 'غاية' : entry.kind === 'outcome' ? 'ناتج' : 'منهج'}: {entry.canonicalAr}</span>)}</div>
                 </div>}
                 <details className="mt-3 rounded-2xl border border-hair bg-paper/70 px-4 py-3">
                   <summary className="cursor-pointer text-[.72rem] font-semibold text-soft">أضف سياقاً اختيارياً فقط عند الحاجة</summary>
@@ -4194,14 +4058,14 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <div className="mt-5 rounded-[1.45rem] border border-hair bg-paper/80 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.7)]" role="tablist" aria-label="مصدر الصورة">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <button type="button" role="tab" aria-selected={visualMode === 'generate'} disabled={zeroDecisionBusy} onClick={() => { setVisualMode('generate'); setVisualFailure(''); setNotice('مسار التوليد يصنع صورة أصلية، ولا يعتمد بديلاً شكلياً إذا لم تجتز الصورة بوابات الجودة.') }} className={`relative overflow-hidden rounded-[1.15rem] border px-4 py-4 text-right transition ${visualMode === 'generate' ? 'border-ink bg-ink text-white shadow-[0_14px_32px_rgba(15,23,42,.16)]' : 'border-transparent bg-canvas text-ink hover:border-accent/30'}`}>
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[.75rem] font-black uppercase tracking-[.1em] ${visualMode === 'generate' ? 'bg-white/12 text-white' : 'bg-accent/10 text-accent'}`}>AI Original</span>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.1em] ${visualMode === 'generate' ? 'bg-white/12 text-white' : 'bg-accent/10 text-accent'}`}>AI Original</span>
                       <strong className="mt-3 block text-[.88rem]">توليد من الصفر</strong>
-                      <span className={`mt-1.5 block text-[.75rem] leading-relaxed ${visualMode === 'generate' ? 'text-white/65' : 'text-soft'}`}>مشهد جديد من الصفر يجتاز فحص المعنى والجودة.</span>
+                      <span className={`mt-1.5 block text-[.64rem] leading-relaxed ${visualMode === 'generate' ? 'text-white/65' : 'text-soft'}`}>مشهد جديد من الصفر يجتاز فحص المعنى والجودة.</span>
                     </button>
                     <button type="button" role="tab" aria-selected={visualMode === 'ready'} disabled={zeroDecisionBusy} onClick={() => { setVisualMode('ready'); setVisualFailure(''); setNotice('مسار الجاهز يبحث فقط في المصادر المفتوحة، ويفصح عن المصدر والترخيص بوضوح.') }} className={`relative overflow-hidden rounded-[1.15rem] border px-4 py-4 text-right transition ${visualMode === 'ready' ? 'border-accent bg-accent text-white shadow-[0_14px_32px_rgba(62,92,120,.18)]' : 'border-transparent bg-canvas text-ink hover:border-accent/30'}`}>
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[.75rem] font-black uppercase tracking-[.1em] ${visualMode === 'ready' ? 'bg-white/14 text-white' : 'bg-paper text-soft'}`}>Curated Source</span>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[.56rem] font-black uppercase tracking-[.1em] ${visualMode === 'ready' ? 'bg-white/14 text-white' : 'bg-paper text-soft'}`}>Curated Source</span>
                       <strong className="mt-3 block text-[.88rem]">صورة جاهزة</strong>
-                      <span className={`mt-1.5 block text-[.75rem] leading-relaxed ${visualMode === 'ready' ? 'text-white/72' : 'text-soft'}`}>اختيار ذكي من <bdi>Pexels</bdi> · <bdi>Wikimedia</bdi> · <bdi>Openverse</bdi> بعد فحص الرابط.</span>
+                      <span className={`mt-1.5 block text-[.64rem] leading-relaxed ${visualMode === 'ready' ? 'text-white/72' : 'text-soft'}`}>اختيار ذكي من Pexels وWikimedia وOpenverse بعد فحص الرابط.</span>
                     </button>
                   </div>
                   {visualMode === 'generate' && (
@@ -4214,10 +4078,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                           try { localStorage.setItem('dr-ahmad-image-generation-mode', 'daily') } catch { /* noop */ }
                           setNotice('الوضع اليومي لا يضع حداً داخلياً ويستخدم FLUX.2 الاقتصادي لتكبير الحصة المجانية عشرات المرات.')
                         }}
-                        className={`rounded-xl border px-4 py-3 text-right transition ${generationMode === 'daily' ? QUALITY_SELECTED : QUALITY_IDLE}`}
+                        className={`rounded-xl border px-4 py-3 text-right transition ${generationMode === 'daily' ? 'border-emerald-400 bg-emerald-50 text-emerald-900' : 'border-hair bg-paper text-ink'}`}
                       >
                         <strong className="block text-[.76rem]">اليومي الاقتصادي · الافتراضي</strong>
-                        <span className="mt-1 block text-[.75rem] leading-relaxed opacity-75">FLUX.2 سريع وقليل الاستهلاك · بلا عدّاد داخل الموقع.</span>
+                        <span className="mt-1 block text-[.61rem] leading-relaxed opacity-75">FLUX.2 سريع وقليل الاستهلاك · بلا عدّاد داخل الموقع.</span>
                       </button>
                       <button
                         type="button"
@@ -4227,10 +4091,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                           try { localStorage.setItem('dr-ahmad-image-generation-mode', 'masterpiece') } catch { /* noop */ }
                           setNotice('الدقة القصوى تستخدم Phoenix وفاحصاً سحابياً إضافياً؛ خصصها للنسخة النهائية لأنها تستهلك من رصيد Cloudflare أكثر.')
                         }}
-                        className={`rounded-xl border px-4 py-3 text-right transition ${generationMode === 'masterpiece' ? QUALITY_SELECTED : QUALITY_IDLE}`}
+                        className={`rounded-xl border px-4 py-3 text-right transition ${generationMode === 'masterpiece' ? 'border-violet-400 bg-violet-50 text-violet-900' : 'border-hair bg-paper text-ink'}`}
                       >
                         <strong className="block text-[.76rem]">الدقة القصوى · للنهائي</strong>
-                        <span className="mt-1 block text-[.75rem] leading-relaxed opacity-75">Phoenix + فحص دلالي سحابي · استهلاك أعلى للحصة الخارجية.</span>
+                        <span className="mt-1 block text-[.61rem] leading-relaxed opacity-75">Phoenix + فحص دلالي سحابي · استهلاك أعلى للحصة الخارجية.</span>
                       </button>
                     </div>
                   )}
@@ -4243,31 +4107,14 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 {notice && <p className="mt-4 rounded-2xl border border-accent/20 bg-accent/[.045] px-4 py-3 text-[.76rem] leading-relaxed text-accent">{notice}</p>}
               </div>
               <div className="border-t border-hair bg-[linear-gradient(180deg,rgba(62,92,120,.055),rgba(255,255,255,.3))] p-5 md:p-7 xl:border-r xl:border-t-0">
-                <div className="flex items-center justify-between gap-3"><div><p className="text-[.68rem] font-black uppercase tracking-[.12em] text-accent">خلف الكواليس</p><h3 className="mt-1 text-[.95rem] font-bold text-ink">كل هذا يحدث من نفسه</h3></div><span className={`rounded-full px-3 py-1 text-[.62rem] font-bold ${zeroDecisionPhase === 'done' ? 'bg-accent/10 text-accent-deep' : zeroDecisionBusy ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{zeroDecisionPhase === 'done' ? 'اكتمل' : zeroDecisionBusy ? 'يعمل الآن' : 'جاهز'}</span></div>
+                <div className="flex items-center justify-between gap-3"><div><p className="text-[.68rem] font-black uppercase tracking-[.12em] text-accent">خلف الكواليس</p><h3 className="mt-1 text-[.95rem] font-bold text-ink">كل هذا يحدث من نفسه</h3></div><span className={`rounded-full px-3 py-1 text-[.62rem] font-bold ${zeroDecisionPhase === 'done' ? 'bg-emerald-100 text-emerald-700' : zeroDecisionBusy ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{zeroDecisionPhase === 'done' ? 'اكتمل' : zeroDecisionBusy ? 'يعمل الآن' : 'جاهز'}</span></div>
                 <div className="mt-4 grid gap-2">
                   {zeroDecisionSteps.map((item, index) => {
                     const complete = zeroDecisionPhase === 'done' || (zeroDecisionPhaseIndex >= 0 && index < zeroDecisionPhaseIndex)
                     const active = zeroDecisionPhase !== 'done' && index === zeroDecisionPhaseIndex
-                    return <div key={item.id} className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition ${active ? 'border-accent/[.35] bg-white shadow-sm' : complete ? 'border-accent/20 bg-accent/[.05]' : 'border-hair bg-white/45'}`}><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[.65rem] font-black ${active ? 'bg-accent text-white' : complete ? 'bg-accent text-white' : 'border border-hair bg-paper text-soft'}`}>{complete ? '✓' : String(index + 1).padStart(2, '0')}</span><span><strong className="block text-[.72rem] text-ink">{item.label}</strong><span className="mt-0.5 block text-[.62rem] text-soft">{item.note}</span></span></div>
+                    return <div key={item.id} className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition ${active ? 'border-accent/[.35] bg-white shadow-sm' : complete ? 'border-emerald-200 bg-emerald-50/70' : 'border-hair bg-white/45'}`}><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-[.65rem] font-black ${active ? 'bg-accent text-white' : complete ? 'bg-emerald-500 text-white' : 'border border-hair bg-paper text-soft'}`}>{complete ? '✓' : String(index + 1).padStart(2, '0')}</span><span><strong className="block text-[.72rem] text-ink">{item.label}</strong><span className="mt-0.5 block text-[.62rem] text-soft">{item.note}</span></span></div>
                   })}
                 </div>
-                {zeroDecisionBusy && zeroDecisionStartedAt && (() => {
-                  const elapsed = Math.max(0, Math.round((zeroDecisionNow - zeroDecisionStartedAt) / 1000))
-                  const remaining = Math.max(0, expectedRunSeconds - elapsed)
-                  const step = Math.max(1, Math.min(zeroDecisionSteps.length, zeroDecisionPhaseIndex + 1))
-                  const percent = Math.min(97, Math.round(Math.max(elapsed / Math.max(1, expectedRunSeconds), (step - 1) / zeroDecisionSteps.length) * 100))
-                  const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-                  return (
-                    <div className="mt-4 rounded-2xl border border-accent/20 bg-canvas px-4 py-3" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label="تقدم التوليد" data-generation-progress="true">
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-[.75rem]">
-                        <strong className="text-ink">المرحلة {step} من {zeroDecisionSteps.length}: {zeroDecisionSteps[step - 1]?.label}</strong>
-                        <span className="text-soft">مضى {clock(elapsed)} · {remaining > 0 ? `متبقٍّ تقريباً ${clock(remaining)}` : 'يوشك أن ينتهي'}</span>
-                      </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-hair"><div className="h-full rounded-full bg-accent transition-[width] duration-700 motion-reduce:transition-none" style={{ width: `${percent}%` }} /></div>
-                      <p className="mt-2 text-[.75rem] leading-relaxed text-soft">لا تُحدَّث الصفحة أثناء التوليد؛ أي تحديثٍ متاح ينتظر حتى تكتمل النتيجة.</p>
-                    </div>
-                  )
-                })()}
                 {generatedPrompt && <details className="mt-4 rounded-2xl border border-hair bg-white/65 px-4 py-3"><summary className="cursor-pointer text-[.68rem] font-semibold text-ink">التوجيه البصري الذي كتبه المخرج للصورة</summary><p dir="ltr" className="mt-3 max-h-40 overflow-y-auto text-left text-[.62rem] leading-relaxed text-soft">{generatedPrompt}</p></details>}
               </div>
             </div>
@@ -4322,10 +4169,10 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <p className="text-[.68rem] font-bold text-accent">شخصية الهوية لهذه القطعة</p>
               <p className="mt-1 text-[.7rem] leading-relaxed text-soft">تُحفظ محلياً وتوجّه القرارات من دون تغيير هوية الموقع الأساسية.</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <label className="grid gap-1 text-[.75rem] text-soft">الشخصية<select className={input} value={creativeIdentity.persona} onChange={(event) => setCreativeIdentity((value) => ({ ...value, persona: event.target.value as CreativeIdentity['persona'] }))}><option value="academic">د. أحمد الأكاديمي</option><option value="human">د. أحمد الإنساني</option><option value="media">د. أحمد الإعلامي</option><option value="future">د. أحمد المستقبلي</option><option value="book">إطلاق كتاب</option><option value="research">بحث علمي</option><option value="quote">اقتباس</option><option value="event">حدث</option></select></label>
-                <label className="grid gap-1 text-[.75rem] text-soft">واقعية الصورة<select className={input} value={creativeIdentity.imageRealism} onChange={(event) => setCreativeIdentity((value) => ({ ...value, imageRealism: event.target.value as CreativeIdentity['imageRealism'] }))}><option value="documentary">وثائقية</option><option value="editorial">تحريرية</option><option value="abstract">تجريدية</option></select></label>
-                <label className="grid gap-1 text-[.75rem] text-soft">الإضاءة<select className={input} value={creativeIdentity.lighting} onChange={(event) => setCreativeIdentity((value) => ({ ...value, lighting: event.target.value as CreativeIdentity['lighting'] }))}><option value="natural">طبيعية</option><option value="dramatic">درامية</option><option value="soft">ناعمة</option></select></label>
-                <label className="grid gap-1 text-[.75rem] text-soft">المساحة السلبية<select className={input} value={creativeIdentity.negativeSpace} onChange={(event) => setCreativeIdentity((value) => ({ ...value, negativeSpace: event.target.value as CreativeIdentity['negativeSpace'] }))}><option value="generous">واسعة</option><option value="balanced">متوازنة</option><option value="compact">مضغوطة</option></select></label>
+                <label className="grid gap-1 text-[.64rem] text-soft">الشخصية<select className={input} value={creativeIdentity.persona} onChange={(event) => setCreativeIdentity((value) => ({ ...value, persona: event.target.value as CreativeIdentity['persona'] }))}><option value="academic">د. أحمد الأكاديمي</option><option value="human">د. أحمد الإنساني</option><option value="media">د. أحمد الإعلامي</option><option value="future">د. أحمد المستقبلي</option><option value="book">إطلاق كتاب</option><option value="research">بحث علمي</option><option value="quote">اقتباس</option><option value="event">حدث</option></select></label>
+                <label className="grid gap-1 text-[.64rem] text-soft">واقعية الصورة<select className={input} value={creativeIdentity.imageRealism} onChange={(event) => setCreativeIdentity((value) => ({ ...value, imageRealism: event.target.value as CreativeIdentity['imageRealism'] }))}><option value="documentary">وثائقية</option><option value="editorial">تحريرية</option><option value="abstract">تجريدية</option></select></label>
+                <label className="grid gap-1 text-[.64rem] text-soft">الإضاءة<select className={input} value={creativeIdentity.lighting} onChange={(event) => setCreativeIdentity((value) => ({ ...value, lighting: event.target.value as CreativeIdentity['lighting'] }))}><option value="natural">طبيعية</option><option value="dramatic">درامية</option><option value="soft">ناعمة</option></select></label>
+                <label className="grid gap-1 text-[.64rem] text-soft">المساحة السلبية<select className={input} value={creativeIdentity.negativeSpace} onChange={(event) => setCreativeIdentity((value) => ({ ...value, negativeSpace: event.target.value as CreativeIdentity['negativeSpace'] }))}><option value="generous">واسعة</option><option value="balanced">متوازنة</option><option value="compact">مضغوطة</option></select></label>
               </div>
               <p className="mt-3 rounded-xl bg-paper px-3 py-2 text-[.68rem] leading-relaxed text-soft">{identityContext(creativeIdentity)}</p>
             </section>
@@ -4334,7 +4181,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
 
         {hasInput && (
           <section className="mt-4 rounded-2xl border border-hair bg-canvas p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">ذكاء الصور · جواز الصورة</p><p className="mt-1 text-[.72rem] text-soft">يبحث عند طلبك في المصادر المفتوحة <strong className="text-ink"><bdi>Wikimedia Commons</bdi></strong> · <strong className="text-ink"><bdi>Pexels</bdi></strong> · <strong className="text-ink"><bdi>Openverse</bdi></strong>، أو يحلل الصورة التي ترفعها. بعدها يعيد بناء التكوين حول نقطة التركيز والمساحة الهادئة ويحتفظ بالمصدر والترخيص.</p></div><label className={`${ghost} cursor-pointer`}><input type="file" accept="image/*" className="hidden" disabled={imageBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void runImagePassport(file); event.currentTarget.value = '' }} />{imageBusy ? 'يحلل الصورة…' : 'حمّل صورة مرشحة'}</label></div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">ذكاء الصور · جواز الصورة</p><p className="mt-1 text-[.72rem] text-soft">يبحث عند طلبك في المصادر المفتوحة <strong className="text-ink">Wikimedia Commons</strong> و<strong className="text-ink">Pexels</strong> و<strong className="text-ink">Openverse</strong>، أو يحلل الصورة التي ترفعها. بعدها يعيد بناء التكوين حول نقطة التركيز والمساحة الهادئة ويحتفظ بالمصدر والترخيص.</p></div><label className={`${ghost} cursor-pointer`}><input type="file" accept="image/*" className="hidden" disabled={imageBusy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void runImagePassport(file); event.currentTarget.value = '' }} />{imageBusy ? 'يحلل الصورة…' : 'حمّل صورة مرشحة'}</label></div>
             <div className="mt-4 grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
               <section className="rounded-2xl border border-hair bg-paper/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">البحث البصري الذكي</p><p className="mt-1 text-[.68rem] leading-relaxed text-soft">يبني الاستوديو الاستعلام من القضية المركزية لا من كلمات عشوائية، ويقترح مصادر مجانية وموثقة أولاً.</p></div><button type="button" className={ghost} disabled={externalBusy} onClick={() => void runExternalSearch()}>{externalBusy ? 'يبحث…' : 'أعد البحث الآن'}</button></div>
@@ -4345,18 +4192,18 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 <div className="mt-3 rounded-xl border border-hair bg-canvas px-3 py-3">
                   <p className="text-[.62rem] font-semibold text-soft">عبارات البحث المقترحة</p>
                   <div className="mt-2 flex flex-wrap gap-2">{visualSearchPlan.queries.slice(0, 6).map((query) => <button key={query} type="button" className="rounded-full border border-hair px-3 py-1.5 text-[.62rem] text-soft transition hover:border-accent hover:text-accent" onClick={() => { setExternalQuery(query); void runExternalSearch(query) }}>{query}</button>)}</div>
-                  <p className="mt-3 text-[.75rem] leading-relaxed text-soft"><strong className="text-ink">منطق الاختيار:</strong> {visualSearchPlan.rationale}</p>
+                  <p className="mt-3 text-[.64rem] leading-relaxed text-soft"><strong className="text-ink">منطق الاختيار:</strong> {visualSearchPlan.rationale}</p>
                   <p className="mt-2 text-[.62rem] leading-relaxed text-soft"><strong className="text-ink">تجنب:</strong> {visualSearchPlan.avoidTerms.slice(0, 3).join(' · ')}</p>
                 </div>
                 <div className="mt-3 rounded-xl border border-hair bg-canvas px-3 py-3">
                   <p className="text-[.62rem] font-semibold text-soft">Prompt التوليد البصري</p>
                   <textarea readOnly rows={4} className={`${input} mt-2 min-h-28 resize-y text-[.72rem] leading-relaxed`} value={visualSearchPlan.generationPrompt} />
-                  <p className="mt-2 text-[.75rem] leading-relaxed text-soft">البحث المجاني يعمل الآن مباشرة. أمّا توليد صورة جديدة بالذكاء الاصطناعي فيحتاج مزوداً خلفياً موصولاً؛ عند غيابه يبقى هذا الـPrompt جاهزاً للنسخ.</p>
+                  <p className="mt-2 text-[.6rem] leading-relaxed text-soft">البحث المجاني يعمل الآن مباشرة. أمّا توليد صورة جديدة بالذكاء الاصطناعي فيحتاج مزوداً خلفياً موصولاً؛ عند غيابه يبقى هذا الـPrompt جاهزاً للنسخ.</p>
                 </div>
-                {externalError && <p className="mt-3 rounded-xl border border-ember/30 bg-ember/5 px-3 py-2 text-[.68rem] text-ember">{externalError}</p>}
+                {externalError && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.68rem] text-amber-900">{externalError}</p>}
               </section>
               <section className="rounded-2xl border border-hair bg-paper/60 p-4">
-                <div className="flex items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">المصادر المجانية المفعلة</p><p className="mt-1 text-[.68rem] leading-relaxed text-soft"><bdi>Wikimedia Commons</bdi> مفعّل. <bdi>Pexels</bdi> مفعّل بالمفتاح الحالي. <bdi>Openverse</bdi> {hasOpenverseProvider ? 'مفعّل أيضاً.' : 'سيظهر تلقائياً عند توفر نتائج مناسبة.'}</p></div><div className="rounded-full border border-hair px-3 py-1.5 text-[.62rem] text-soft">{externalProviderLabels.length ? externalProviderLabels.join(' · ') : 'Wikimedia Commons'}</div></div>
+                <div className="flex items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">المصادر المجانية المفعلة</p><p className="mt-1 text-[.68rem] leading-relaxed text-soft">Wikimedia Commons مفعّل. Pexels مفعّل بالمفتاح الحالي. {hasOpenverseProvider ? 'Openverse مفعّل أيضاً.' : 'Openverse سيظهر تلقائياً عند توفر نتائج مناسبة.'}</p></div><div className="rounded-full border border-hair px-3 py-1.5 text-[.62rem] text-soft">{externalProviderLabels.length ? externalProviderLabels.join(' · ') : 'Wikimedia Commons'}</div></div>
                 <div className="mt-3 grid gap-2 text-[.66rem] text-soft"><div className="rounded-xl border border-hair bg-canvas px-3 py-2"><strong className="block text-ink">المسار</strong>استعلام إنجليزي دلالي → فحص المصدر والدقة → استبعاد الصور العامة → أفضل مرشح فقط.</div><div className="rounded-xl border border-hair bg-canvas px-3 py-2"><strong className="block text-ink">جواز الصورة</strong>يعرض المصدر، المالك، الترخيص، ولماذا اختيرت الصورة قبل إدخالها إلى اللوحة.</div><div className="rounded-xl border border-hair bg-canvas px-3 py-2"><strong className="block text-ink">التنسيق الإبداعي</strong>يعاد بناء التكوين حول نقطة التركيز ومساحة القراءة؛ لا توضع الصورة كخلفية جامدة تحت النص.</div></div>
               </section>
             </div>
@@ -4365,7 +4212,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr]">
                 <RemoteVisualThumbnail src={bestExternalVisual.thumbnailUrl} alt={bestExternalVisual.title} className="aspect-[4/3] w-full rounded-2xl border border-hair object-cover" />
                 <div className="grid gap-2">
-                  <div className="flex flex-wrap items-center gap-2"><strong className="text-[.86rem] text-ink">{bestExternalVisual.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.75rem] text-soft">{bestExternalVisual.providerLabel}</span><span className="rounded-full border border-hair px-2 py-1 text-[.75rem] text-soft">{bestExternalVisual.orientation === 'landscape' ? 'أفقي' : bestExternalVisual.orientation === 'portrait' ? 'عمودي' : bestExternalVisual.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div>
+                  <div className="flex flex-wrap items-center gap-2"><strong className="text-[.86rem] text-ink">{bestExternalVisual.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{bestExternalVisual.providerLabel}</span><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{bestExternalVisual.orientation === 'landscape' ? 'أفقي' : bestExternalVisual.orientation === 'portrait' ? 'عمودي' : bestExternalVisual.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div>
                   <p className="text-[.68rem] leading-relaxed text-soft">{bestExternalVisual.description}</p>
                   <p className="text-[.62rem] leading-relaxed text-soft"><strong className="text-ink">سبب الترشيح:</strong> {bestExternalVisual.rationale}</p>
                   <div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(bestExternalVisual, 'cinematic')}>ابنِ المشهد مباشرة</button><button type="button" className={ghost} onClick={() => void applyExternalVisual(bestExternalVisual)}>حلّل الصورة فقط</button><a href={bestExternalVisual.pageUrl || bestExternalVisual.imageUrl} target="_blank" rel="noreferrer" className={ghost}>افتح المصدر</a></div>
@@ -4375,15 +4222,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             
             <details className="mt-3 rounded-xl border border-hair bg-paper/55" open={externalVisuals.length > 0}>
               <summary className="cursor-pointer list-none px-4 py-3 text-[.7rem] font-semibold text-ink">مرشحات خارجية مجانية <span className="ms-2 font-normal text-soft">مرتبة تلقائياً من البحث البصري الذكي</span></summary>
-              <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{externalBusy ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أبحث الآن في المصادر المجانية…</p> : externalVisuals.length ? externalVisuals.map((item, index) => <article key={item.id} className={`w-[220px] shrink-0 snap-start overflow-hidden rounded-2xl border bg-canvas ${index === 0 ? 'border-accent/30 shadow-[0_16px_40px_rgba(17,41,75,.08)]' : 'border-hair'}`}><RemoteVisualThumbnail src={item.thumbnailUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" /><div className="grid gap-2 p-3 text-right"><div className="flex items-start justify-between gap-2"><strong className="line-clamp-2 text-[.72rem] text-ink">{item.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.75rem] text-soft">{item.providerLabel}</span></div><div className="flex flex-wrap gap-2">{index === 0 ? <span className="rounded-full border border-accent/20 bg-accent/[.06] px-2 py-1 text-[.75rem] font-semibold text-accent">الأقوى الآن</span> : null}<span className="rounded-full border border-hair px-2 py-1 text-[.75rem] text-soft">{item.score}/99</span><span className="rounded-full border border-hair px-2 py-1 text-[.75rem] text-soft">{item.orientation === 'landscape' ? 'أفقي' : item.orientation === 'portrait' ? 'عمودي' : item.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div><p className="line-clamp-3 text-[.62rem] leading-relaxed text-soft">{item.description}</p><p className="text-[.58rem] leading-relaxed text-soft"><strong className="text-ink">لماذا اختيرت؟</strong> {item.rationale}</p><p className="text-[.75rem] text-soft">{item.author} · {item.license}</p><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(item, index === 0 ? 'cinematic' : 'editorial')}>ابنِ بها</button><button type="button" className={ghost} onClick={() => void applyExternalVisual(item)}>حلّل</button><a href={item.pageUrl || item.imageUrl} target="_blank" rel="noreferrer" className={ghost}>المصدر</a></div></div></article>) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد مرشحات خارجية بعد. اضغط «أعد البحث الآن» بعد اكتمال الفكرة. لا يبدأ البحث أثناء الكتابة حتى لا يعلق الهاتف.</p>}</div>
+              <div className="mobile-card-rail flex snap-x snap-mandatory gap-3 overflow-x-auto border-t border-hair p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{externalBusy ? <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">أبحث الآن في المصادر المجانية…</p> : externalVisuals.length ? externalVisuals.map((item, index) => <article key={item.id} className={`w-[220px] shrink-0 snap-start overflow-hidden rounded-2xl border bg-canvas ${index === 0 ? 'border-accent/30 shadow-[0_16px_40px_rgba(17,41,75,.08)]' : 'border-hair'}`}><RemoteVisualThumbnail src={item.thumbnailUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" /><div className="grid gap-2 p-3 text-right"><div className="flex items-start justify-between gap-2"><strong className="line-clamp-2 text-[.72rem] text-ink">{item.title}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.56rem] text-soft">{item.providerLabel}</span></div><div className="flex flex-wrap gap-2">{index === 0 ? <span className="rounded-full border border-accent/20 bg-accent/[.06] px-2 py-1 text-[.54rem] font-semibold text-accent">الأقوى الآن</span> : null}<span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.score}/99</span><span className="rounded-full border border-hair px-2 py-1 text-[.54rem] text-soft">{item.orientation === 'landscape' ? 'أفقي' : item.orientation === 'portrait' ? 'عمودي' : item.orientation === 'square' ? 'مربع' : 'غير محدد'}</span></div><p className="line-clamp-3 text-[.62rem] leading-relaxed text-soft">{item.description}</p><p className="text-[.58rem] leading-relaxed text-soft"><strong className="text-ink">لماذا اختيرت؟</strong> {item.rationale}</p><p className="text-[.56rem] text-soft">{item.author} · {item.license}</p><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void applyExternalVisual(item, index === 0 ? 'cinematic' : 'editorial')}>ابنِ بها</button><button type="button" className={ghost} onClick={() => void applyExternalVisual(item)}>حلّل</button><a href={item.pageUrl || item.imageUrl} target="_blank" rel="noreferrer" className={ghost}>المصدر</a></div></div></article>) : <p className="rounded-xl border border-dashed border-hair px-4 py-5 text-[.68rem] text-soft">لا توجد مرشحات خارجية بعد. اضغط «أعد البحث الآن» بعد اكتمال الفكرة. لا يبدأ البحث أثناء الكتابة حتى لا يعلق الهاتف.</p>}</div>
             </details>
             {imagePassport ? <div className="mt-4 grid gap-4 lg:grid-cols-[220px_1fr]">
               <div className="overflow-hidden rounded-2xl border border-hair bg-paper"><img src={imagePassport.dataUrl} alt="معاينة الصورة المرشحة" className="aspect-square h-full w-full object-cover" /></div>
               <div className="grid gap-3">
                 <div className="grid gap-2 sm:grid-cols-4"><span className="rounded-xl border border-hair px-3 py-2 text-[.66rem] text-soft"><strong className="block text-ink">{imagePassport.width}×{imagePassport.height}</strong>الأبعاد</span><span className="rounded-xl border border-hair px-3 py-2 text-[.66rem] text-soft"><strong className="block text-ink">{imagePassport.luminance}٪</strong>الإضاءة</span><span className="rounded-xl border border-hair px-3 py-2 text-[.66rem] text-soft"><strong className="block text-ink">{imagePassport.contrast}٪</strong>التباين</span><span className="rounded-xl border border-hair px-3 py-2 text-[.66rem] text-soft"><strong className="block text-ink">{imagePassport.edgeDensity}٪</strong>كثافة التفاصيل</span></div>
                 <div className="grid gap-2 sm:grid-cols-2"><input className={input} value={imageDescription} onChange={(event) => setImageDescription(event.target.value)} placeholder="صف المشهد لاختبار الكليشيه" /><input className={input} value={imageSource} onChange={(event) => setImageSource(event.target.value)} placeholder="المصدر أو الرابط" /><input className={input} value={imageOwner} onChange={(event) => setImageOwner(event.target.value)} placeholder="المالك أو المصور" /><input className={input} value={imageLicense} onChange={(event) => setImageLicense(event.target.value)} placeholder="نوع الترخيص" /></div>
-                <ul className="grid gap-1">{imagePassport.cropNotes.map((note) => <li key={note} className="text-[.75rem] leading-relaxed text-soft">— {note}</li>)}</ul>
-                {clicheWarnings.length > 0 ? <div className="rounded-xl border border-ember/30 bg-ember/5 px-3 py-2 text-[.7rem] leading-relaxed text-ember"><strong>تنبيه ضد الكليشيه:</strong> {clicheWarnings.map((item) => `${item.label}: ${item.alternative}`).join(' · ')}</div> : imageDescription && <p className="rounded-xl border border-accent/20 bg-accent/[.04] px-3 py-2 text-[.68rem] text-accent">لم يلتقط الفحص الوصفي أحد الكليشيهات الثمانية المعروفة. هذا فحص وصفي، لا حكم فني نهائي.</p>}
+                <ul className="grid gap-1">{imagePassport.cropNotes.map((note) => <li key={note} className="text-[.69rem] leading-relaxed text-soft">— {note}</li>)}</ul>
+                {clicheWarnings.length > 0 ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[.7rem] leading-relaxed text-amber-900"><strong>تنبيه ضد الكليشيه:</strong> {clicheWarnings.map((item) => `${item.label}: ${item.alternative}`).join(' · ')}</div> : imageDescription && <p className="rounded-xl border border-accent/20 bg-accent/[.04] px-3 py-2 text-[.68rem] text-accent">لم يلتقط الفحص الوصفي أحد الكليشيهات الثمانية المعروفة. هذا فحص وصفي، لا حكم فني نهائي.</p>}
                 <div className="grid gap-3"><div className="flex flex-wrap gap-2"><button type="button" className={primary} disabled={!selected} onClick={() => applyImageLedDirection('cinematic')}>مشهد سينمائي كامل</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('documentary')}>وثائقي إنساني</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('editorial')}>غلاف تحريري</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('duotone')}>ثنائي اللون فاخر</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('arch-scrim')}>قوس المحراب</button><button type="button" className={ghost} disabled={!selected} onClick={() => applyImageLedDirection('split-canvas')}>نصفا اللوحة</button><button type="button" className={ghost} disabled={!selected} onClick={() => addOverlay('image')}>أضفها كطبقة حرة</button></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-2 text-[.62rem] text-soft">المخرج يحدد منطقة النص من المساحة الهادئة ويثبت نقطة التركيز تلقائياً.</span><span className="self-center text-[.62rem] text-soft">المصدر: {imageSource || 'غير مسجل'} · الترخيص: {imageLicense || 'غير مسجل'}</span></div></div>
               </div>
             </div> : <p className="mt-3 rounded-xl border border-dashed border-hair px-4 py-5 text-center text-[.72rem] text-soft">ابدأ بصورة من مكتبتك أو صور المقالات والفعاليات. لا تُرفع الصورة إلى أي خادم.</p>}
@@ -4427,17 +4274,17 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
       {SIMPLIFIED_STUDIO && stage === 'directions' && (
         <section className={`${card} overflow-hidden`}>
           {approvedPlan ? <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)]">
-            <div className="rounded-[1.65rem] border border-hair bg-canvas p-3 shadow-[0_24px_70px_rgba(15,23,42,.08)]"><DesignBirthStage fingerprint={approvedPlan.fingerprint}><Preview plan={approvedPlan} className="w-full" /></DesignBirthStage></div>
+            <div className="rounded-[1.65rem] border border-hair bg-canvas p-3 shadow-[0_24px_70px_rgba(15,23,42,.08)]"><Preview plan={approvedPlan} className="w-full" /></div>
             <div className="grid content-start gap-4">
-              <div><div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.12em] text-accent-deep">Approved by Zero-Decision</div><h3 className="mt-4 font-display text-3xl font-bold leading-tight text-ink">هذه هي النتيجة التي اعتمدها المخرج.</h3><p className="mt-3 text-[.82rem] leading-loose text-soft">{zeroDecision?.note || 'تم اختيارها بعد مقارنة الجودة وقوة التوقف والقراءة والأصالة وملاءمة الفكرة والجمهور.'}</p></div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-professional-visual-gate="true"><div className="rounded-2xl border border-accent/20 bg-accent/5 px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent-deep">{zeroDecision?.professionalScore || professionalReleaseGate(approvedPlan).score}٪</strong><span className="text-[.62rem] text-accent-deep">عين المصمم</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
+              <div><div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[.62rem] font-black uppercase tracking-[.12em] text-emerald-700">Approved by Zero-Decision</div><h3 className="mt-4 font-display text-3xl font-bold leading-tight text-ink">هذه هي النتيجة التي اعتمدها المخرج.</h3><p className="mt-3 text-[.82rem] leading-loose text-soft">{zeroDecision?.note || 'تم اختيارها بعد مقارنة الجودة وقوة التوقف والقراءة والأصالة وملاءمة الفكرة والجمهور.'}</p></div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-professional-visual-gate="true"><div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center"><strong className="block font-display text-2xl text-emerald-700">{zeroDecision?.professionalScore || professionalReleaseGate(approvedPlan).score}٪</strong><span className="text-[.62rem] text-emerald-800">عين المصمم</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{approvedPlan.quality?.score || 0}٪</strong><span className="text-[.62rem] text-soft">جودة التكوين</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{predictEngagement(approvedPlan).score}٪</strong><span className="text-[.62rem] text-soft">قوة التوقف</span></div><div className="rounded-2xl border border-hair bg-canvas px-3 py-3 text-center"><strong className="block font-display text-2xl text-accent">{zeroDecision?.campaignQuality || campaign?.qualityScore || 0}٪</strong><span className="text-[.62rem] text-soft">جودة الحملة</span></div></div>
               <div className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.66rem] font-bold text-accent">لماذا هذه النسخة؟</p><ul className="mt-2 grid gap-1.5">{approvedPlan.rationale.slice(0,4).map((line) => <li key={line} className="text-[.7rem] leading-relaxed text-ink/80">• {line}</li>)}</ul></div>
-              <div className={`overflow-hidden rounded-2xl border p-4 ${approvedVisualOrigin === 'generated' ? 'border-accent/20 bg-[linear-gradient(135deg,rgb(var(--c-accent)/.07),rgb(var(--c-canvas)/.7))]' : approvedVisualOrigin === 'ready' ? 'border-accent/25 bg-[linear-gradient(135deg,rgb(var(--c-accent)/.07),rgb(var(--c-canvas)/.7))]' : 'border-hair bg-canvas'}`}>
-                <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">هوية الصورة</p><h4 className="mt-1 text-[.88rem] font-bold text-ink">{approvedIsLocalReserve ? 'تكوين محلي احتياطي' : approvedVisualOrigin === 'generated' ? 'مولدة من الصفر بالذكاء الاصطناعي' : approvedVisualOrigin === 'ready' ? 'صورة جاهزة منتقاة وموثقة' : 'تكوين بصري بلا صورة'}</h4><p className="mt-1.5 text-[.66rem] leading-relaxed text-soft">{approvedImageOwner || 'لا يوجد مالك خارجي'} · {approvedImageLicense || 'لا يوجد ترخيص خارجي'}</p></div><span className={`rounded-full px-3 py-1.5 text-[.75rem] font-black ${approvedVisualOrigin === 'generated' ? 'bg-accent/10 text-accent-deep' : approvedVisualOrigin === 'ready' ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{approvedIsLocalReserve ? 'تكوين محلي احتياطي' : approvedVisualOrigin === 'generated' ? 'AI GENERATED' : approvedVisualOrigin === 'ready' ? 'READY SOURCE' : 'TYPOGRAPHIC'}</span></div>
-                {approvedVisualOrigin === 'generated' && <div className="mt-3 grid gap-2 rounded-xl border border-accent/20 bg-white/55 px-3 py-2.5 text-[.62rem] text-soft sm:grid-cols-2"><span><strong className="text-ink">البصمة الفنية:</strong> {generatedVisualWorld || 'يحددها المخرج لكل فكرة'}</span><span><strong className="text-ink">مطابقة المعنى:</strong> {approvedIsLocalReserve ? 'لا تُقاس للمولّد المحلي' : generatedRelevanceScore == null ? 'فحص بصري داخلي' : `${generatedRelevanceScore}٪`}</span>{generatedRelevanceReason && <span className="sm:col-span-2"><strong className="text-ink">حكم المطابقة:</strong> {generatedRelevanceReason}</span>}<span className="sm:col-span-2 text-[.75rem]">بيانات النموذج والمصدر محفوظة في جواز التصميم ولا تُطبع داخل الصورة.</span></div>}
+              <div className={`overflow-hidden rounded-2xl border p-4 ${approvedVisualOrigin === 'generated' ? 'border-violet-200 bg-[linear-gradient(135deg,rgba(124,58,237,.07),rgba(255,255,255,.7))]' : approvedVisualOrigin === 'ready' ? 'border-accent/25 bg-[linear-gradient(135deg,rgba(62,92,120,.07),rgba(255,255,255,.7))]' : 'border-hair bg-canvas'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.66rem] font-bold text-accent">هوية الصورة</p><h4 className="mt-1 text-[.88rem] font-bold text-ink">{approvedVisualOrigin === 'generated' ? 'مولدة من الصفر بالذكاء الاصطناعي' : approvedVisualOrigin === 'ready' ? 'صورة جاهزة منتقاة وموثقة' : 'تكوين بصري بلا صورة'}</h4><p className="mt-1.5 text-[.66rem] leading-relaxed text-soft">{approvedImageOwner || 'لا يوجد مالك خارجي'} · {approvedImageLicense || 'لا يوجد ترخيص خارجي'}</p></div><span className={`rounded-full px-3 py-1.5 text-[.6rem] font-black ${approvedVisualOrigin === 'generated' ? 'bg-violet-100 text-violet-700' : approvedVisualOrigin === 'ready' ? 'bg-accent/10 text-accent' : 'bg-paper text-soft'}`}>{approvedVisualOrigin === 'generated' ? 'AI GENERATED' : approvedVisualOrigin === 'ready' ? 'READY SOURCE' : 'TYPOGRAPHIC'}</span></div>
+                {approvedVisualOrigin === 'generated' && <div className="mt-3 grid gap-2 rounded-xl border border-violet-100 bg-white/55 px-3 py-2.5 text-[.62rem] text-soft sm:grid-cols-2"><span><strong className="text-ink">البصمة الفنية:</strong> {generatedVisualWorld || 'يحددها المخرج لكل فكرة'}</span><span><strong className="text-ink">مطابقة المعنى:</strong> {generatedRelevanceScore == null ? 'فحص بصري داخلي' : `${generatedRelevanceScore}٪`}</span>{generatedRelevanceReason && <span className="sm:col-span-2"><strong className="text-ink">حكم المطابقة:</strong> {generatedRelevanceReason}</span>}<span className="sm:col-span-2 text-[.56rem]">بيانات النموذج والمصدر محفوظة في جواز التصميم ولا تُطبع داخل الصورة.</span></div>}
                 {approvedImageSource && <p dir="ltr" className="mt-3 truncate text-left text-[.58rem] text-accent">{approvedImageSource}</p>}
               </div>
-              <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={`${primary} rounded-[1.2rem] py-3.5`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>افتح التحرير</button><button type="button" className={`${ghost} rounded-[1.2rem] py-3.5`} onClick={() => handleStageChange('publish')}>انتقل إلى النشر</button><button type="button" className="rounded-[1.2rem] border border-accent/20 bg-accent/5 px-4 py-3 text-[.72rem] font-bold text-accent-deep transition hover:border-accent/50 disabled:opacity-50" onClick={() => void runZeroDecisionMode('generate')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'generate' ? 'يولّد من الصفر…' : 'أعد التوليد من الصفر'}</button><button type="button" className="rounded-[1.2rem] border border-accent/25 bg-accent/[.055] px-4 py-3 text-[.72rem] font-bold text-accent transition hover:border-accent/50 disabled:opacity-50" onClick={() => void runZeroDecisionMode('ready')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'ready' ? 'يبحث عن جاهز مختلف…' : 'اختر جاهزاً مختلفاً'}</button></div>
+              <div className="grid gap-2 sm:grid-cols-2"><button type="button" className={`${primary} rounded-[1.2rem] py-3.5`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>افتح التحرير</button><button type="button" className={`${ghost} rounded-[1.2rem] py-3.5`} onClick={() => handleStageChange('publish')}>انتقل إلى النشر</button><button type="button" className="rounded-[1.2rem] border border-violet-200 bg-violet-50 px-4 py-3 text-[.72rem] font-bold text-violet-700 transition hover:border-violet-400 disabled:opacity-50" onClick={() => void runZeroDecisionMode('generate')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'generate' ? 'يولّد من الصفر…' : 'أعد التوليد من الصفر'}</button><button type="button" className="rounded-[1.2rem] border border-accent/25 bg-accent/[.055] px-4 py-3 text-[.72rem] font-bold text-accent transition hover:border-accent/50 disabled:opacity-50" onClick={() => void runZeroDecisionMode('ready')} disabled={zeroDecisionBusy}>{zeroDecisionBusy && visualMode === 'ready' ? 'يبحث عن جاهز مختلف…' : 'اختر جاهزاً مختلفاً'}</button></div>
             </div>
           </div> : <div className="grid min-h-[360px] place-items-center rounded-[1.6rem] border border-dashed border-hair bg-canvas p-8 text-center"><div><h3 className="font-display text-2xl font-bold text-ink">لا توجد نتيجة معتمدة بعد.</h3><p className="mt-2 text-[.78rem] text-soft">ارجع إلى تبويب الفكرة واضغط «صمّم لي».</p><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة إلى الفكرة</button></div></div>}
           <DesignWorldsGallery
@@ -4455,7 +4302,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
           {approvedPlan ? <>
             <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[.68rem] font-black uppercase tracking-[.15em] text-accent">Publish without noise</p><h3 className="mt-1 font-display text-3xl font-bold text-ink">كل شيء جاهز للنشر من مكان واحد.</h3><p className="mt-2 max-w-2xl text-[.8rem] leading-loose text-soft">النسخة المعتمدة، المقاسات، والحملة السردية. لا خيارات تصميم إضافية هنا؛ فقط القرار النهائي والتنزيل.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => void exportPlan(approvedPlan, 'png')}>تنزيل PNG (ثابت)</button>{designVideoSupported() && <button type="button" className={ghost} disabled={videoBusy} title={designHasMotion(approvedPlan) ? 'يسجّل التصميم بأيقونته المتحركة فيديو MP4/WebM' : 'فعّل الأيقونة الحيّة أولاً كي تظهر الحركة'} onClick={() => void exportPlanVideo(approvedPlan)}>{videoBusy ? `يسجّل… ${videoPct}%` : '🎬 فيديو متحرّك'}</button>}<button type="button" className={ghost} onClick={() => void exportAllSizes(approvedPlan)}>كل المقاسات</button></div></div>
             <div className="mt-6 grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]"><div className="rounded-[1.4rem] border border-hair bg-canvas p-3"><Preview plan={approvedPlan} /><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(approvedPlan); setStage('edit') }}>التحرير</button><button type="button" className={ghost} onClick={() => void exportCompositionSvg(approvedPlan)}>SVG</button><button type="button" className={ghost} onClick={() => exportCompositionPdf(approvedPlan)}>PDF</button></div></div>
-              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{arabicCountPhrase(campaign.assets.length, CAMPAIGN_PIECE_FORMS)}، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.75rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.75rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><CampaignSpreadStrip campaign={campaign} /></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
+              <div>{campaign ? <><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold text-accent">الحملة السردية</p><p className="mt-1 text-[.72rem] text-soft">{arabicCountPhrase(campaign.assets.length, CAMPAIGN_PIECE_FORMS)}، لكل واحدة وظيفة بصرية مختلفة.</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">جودة {campaign.qualityScore}٪</span><span className="rounded-full border border-hair px-3 py-1.5 text-[.64rem] text-soft">تماسك {campaign.coherenceScore}٪</span><button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة</button><button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF</button></div></div><div className="mt-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><div className="flex min-w-max gap-3">{campaign.assets.map((asset) => <article key={asset.id} className="w-[220px] shrink-0 rounded-2xl border border-hair bg-canvas p-2.5"><Preview plan={asset.plan} /><strong className="mt-2 block text-[.72rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.62rem] leading-relaxed text-soft">{asset.purpose}</p></article>)}</div></div></> : <div className="grid min-h-[280px] place-items-center rounded-[1.5rem] border border-dashed border-hair bg-canvas p-6 text-center"><div><h4 className="font-display text-xl font-bold text-ink">الحملة لم تُبنَ بعد.</h4><p className="mt-2 text-[.72rem] text-soft">ابنها حول النسخة المعتمدة من دون تغيير التصميم الأساسي.</p><button type="button" className={`${primary} mt-4`} onClick={() => runCampaign(text, context, approvedPlan, { preserveSelection: true })}>ابنِ الحملة الآن</button></div></div>}</div></div>
           </> : <div className="grid min-h-[340px] place-items-center text-center"><div><h3 className="font-display text-2xl font-bold text-ink">ابدأ بالفكرة أولاً.</h3><button type="button" className={`${primary} mt-4`} onClick={() => setStage('idea')}>العودة</button></div></div>}
         </section>
       )}
@@ -4477,7 +4324,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   {commandParse.understood.map((item) => (
                     <span key={`${item.label}-${item.value}`} className="text-soft"><span className="font-semibold text-ink">{item.label}:</span> {item.value}</span>
                   ))}
-                  <span className="ms-auto rounded-full border border-accent/25 px-2.5 py-0.5 text-[.75rem] font-bold text-accent">ثقة {Math.round(commandParse.confidence * 100)}٪</span>
+                  <span className="ms-auto rounded-full border border-accent/25 px-2.5 py-0.5 text-[.64rem] font-bold text-accent">ثقة {Math.round(commandParse.confidence * 100)}٪</span>
                 </div>
                 {commandParse.assumptions.length > 0 && (
                   <p className="mt-1.5 text-[.66rem] font-light leading-relaxed text-soft">افتراضات: {commandParse.assumptions.join(' · ')}</p>
@@ -4499,18 +4346,18 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             <div className="flex flex-wrap items-center gap-2"><LivingIconToggle /><label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.7rem] text-soft">حد التصدير <input aria-label="حد جودة التصدير" className="w-14 bg-transparent text-center font-bold text-accent outline-none" type="number" min="70" max="98" value={qualityThreshold} onChange={(event) => { const next=Math.max(70,Math.min(98,Number(event.target.value)||82)); setQualityThreshold(next); localStorage.setItem(QUALITY_THRESHOLD_KEY,String(next)) }} />٪</label><span className="rounded-full border border-accent/25 bg-accent/[.05] px-4 py-2 text-[.72rem] font-semibold text-accent">لجنة الجودة {Math.round(plans.reduce((sum, plan) => sum + (plan.quality?.score || 0), 0) / plans.length)}٪</span><span className="rounded-full border border-hair px-4 py-2 text-[.72rem] text-soft">ذاكرة ذوقك {arabicCountPhrase(Object.keys(tasteLedger).length, DIRECTION_AFTER_PREPOSITION_FORMS)}</span>{Object.keys(tasteLedger).length > 0 && <button type="button" className={ghost} onClick={resetTaste}>إعادة ضبط الذوق</button>}<button type="button" className={ghost} onClick={() => void runAutopilot()} disabled={autopilotBusy}>{autopilotBusy ? 'يعيد بناء الأفضل…' : 'أعد بناء 5 نهايات'}</button><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يبني الحزمة العليا…' : 'ابنِ Final / Safer / Viral'}</button><button type="button" className={ghost} onClick={() => void runZeroDecisionMode()} disabled={zeroDecisionBusy}>{zeroDecisionBusy ? 'يحسم القرار…' : 'القرار الصفري'}</button><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy || (!autopilotPack.length && !plans.length)}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'صدّر 3 نهائيات'}</button><button type="button" className={primary} disabled={campaignBusy} onClick={() => { buildCampaign(); setStage('publish') }}>{campaignBusy ? 'يبني الحملة…' : 'حوّلها إلى حملة سردية'}</button><button type="button" className={ghost} onClick={() => setShowSaved((value) => !value)}>المحفوظة {savedPlans.length}</button><button type="button" className={ghost} onClick={() => generate()}>توليد دفعة مختلفة</button></div>
           </div>
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
-            {artDirections.map((direction, index) => <article key={direction.id} className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[.62rem] font-bold text-accent">الرؤية {index + 1}</span><h4 className="mt-1 text-[.9rem] font-bold text-ink">{direction.title}</h4></div><span className="rounded-full bg-paper px-2 py-1 text-[.62rem] font-semibold text-accent">قرب الهوية {direction.identityFit}٪</span></div><p className="mt-2 text-[.72rem] leading-relaxed text-soft">{direction.description}</p><dl className="mt-3 grid gap-2"><div><dt className="text-[.75rem] font-semibold text-soft">الشعور</dt><dd className="text-[.68rem] text-ink">{direction.feeling}</dd></div><div><dt className="text-[.75rem] font-semibold text-soft">الصورة المطلوبة</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.imageNeed}</dd></div><div><dt className="text-[.75rem] font-semibold text-soft">الخطر</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.risk}</dd></div></dl><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => generate({ tone: direction.tone, platform: direction.platform, preferLayout: direction.preferLayout })}>أعد بناء هذه الرؤية</button></article>)}
+            {artDirections.map((direction, index) => <article key={direction.id} className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[.62rem] font-bold text-accent">الرؤية {index + 1}</span><h4 className="mt-1 text-[.9rem] font-bold text-ink">{direction.title}</h4></div><span className="rounded-full bg-paper px-2 py-1 text-[.62rem] font-semibold text-accent">قرب الهوية {direction.identityFit}٪</span></div><p className="mt-2 text-[.72rem] leading-relaxed text-soft">{direction.description}</p><dl className="mt-3 grid gap-2"><div><dt className="text-[.6rem] font-semibold text-soft">الشعور</dt><dd className="text-[.68rem] text-ink">{direction.feeling}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الصورة المطلوبة</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.imageNeed}</dd></div><div><dt className="text-[.6rem] font-semibold text-soft">الخطر</dt><dd className="text-[.68rem] leading-relaxed text-ink">{direction.risk}</dd></div></dl><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => generate({ tone: direction.tone, platform: direction.platform, preferLayout: direction.preferLayout })}>أعد بناء هذه الرؤية</button></article>)}
           </div>
           {autopilotPack.length > 0 && <div className="mt-4 grid gap-3 xl:grid-cols-5 md:grid-cols-2"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 xl:col-span-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Creative Director Autopilot</p><h4 className="mt-1 text-[1rem] font-bold text-ink">خمس نهايات لا خمس محاولات عشوائية.</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">الطيار الآلي يبني خمس نسخ نهائية: آمنة، تحريرية، فاخرة، عالية التوقف، ونسخة دليل — ثم يختار منها الأجدر بالعرض، ويستطيع الآن تصدير أفضل 3 نهائيات بضغطة واحدة.</p></div><div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-accent/20 bg-white/70 px-3 py-1.5 text-[.66rem] font-semibold text-accent">الأفضل الآن {autopilotPack[0]?.label || '—'} · {autopilotPack[0]?.worldScore || 0}٪</span><button type="button" className={ghost} onClick={() => void exportAutoFinals()} disabled={autoFinalsBusy}>{autoFinalsBusy ? 'يصدر النهائيات…' : 'تنزيل أفضل 3'}</button></div></div></div>{autopilotPack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.76rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.worldScore}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-2 flex flex-wrap gap-1.5 text-[.58rem] text-soft"><span className="rounded-full border border-hair px-2 py-1">جودة {item.qualityScore}٪</span><span className="rounded-full border border-hair px-2 py-1">توقف {item.stopScore}٪</span></div><button type="button" className={`${ghost} mt-3 w-full`} onClick={() => { setSelected(item.plan); setStage('edit') }}>افتح هذه النسخة</button></article>)}</div>}
-          {releasePack.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 md:col-span-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Absolute Release Pack</p><h4 className="mt-1 text-[1rem] font-bold text-ink">ثلاث نسخ لا يحتاج بعدها الفريق إلى سؤال: ماذا ننشر؟</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">هذه الحزمة ليست تبديلاً سطحياً؛ كل نسخة بُنيت لوظيفة نشر مختلفة: المرجع الرسمي، النسخة الأكثر أماناً، والنسخة الأعلى قابلية للتوقف والانتشار.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يعيد بناء الحزمة…' : 'أعد بناء الحزمة'}</button><button type="button" className={primary} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل Final / Safer / Viral'}</button></div></div></div>{releasePack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><button type="button" className="block w-full text-right" onClick={() => { setSelected(item.plan); setStage('edit') }}><Preview plan={item.plan} livingStill /></button><div className="pt-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.8rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.score}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(item.plan); setStage('edit') }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(item.plan, 'png')}>PNG</button></div></div></article>)}</div>}
-          {zeroDecision && <section className="mt-4 rounded-2xl border border-accent/20 bg-accent/[.05] p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent-deep">Zero-Decision Mode</p><h4 className="mt-1 text-[1rem] font-bold text-ink">النظام حسم قرار النشر بدلاً عنك.</h4><p className="mt-1 max-w-3xl text-[.74rem] leading-relaxed text-soft">{zeroDecision.note}</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-accent/20 bg-white px-3 py-1.5 text-[.75rem] font-semibold text-accent-deep">النسخة المعتمدة: {zeroDecision.approved.label}</span><span className="rounded-full border border-accent/20 bg-white px-3 py-1.5 text-[.75rem] font-semibold text-accent-deep">درجة النسخة {zeroDecision.approved.score}٪</span><span className="rounded-full border border-accent/20 bg-white px-3 py-1.5 text-[.75rem] font-semibold text-accent-deep">الحملة {zeroDecision.campaignQuality}٪</span></div></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => { setSelected(zeroDecision.approved.plan); setStage('edit') }}>افتح النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportPlan(zeroDecision.approved.plan, 'png')}>تنزيل النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل الحزمة كاملة'}</button><span className={`rounded-full px-3 py-2 text-[.66rem] font-semibold ${zeroDecision.campaignReady ? 'bg-accent/10 text-accent-deep' : 'bg-ember/10 text-ember'}`}>{zeroDecision.campaignReady ? 'الحملة جاهزة مبدئياً' : 'الحملة تحتاج مراجعة نهائية'}</span></div></section>}
+          {releasePack.length > 0 && <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-2xl border border-accent/20 bg-accent/[.04] p-4 md:col-span-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-accent">Absolute Release Pack</p><h4 className="mt-1 text-[1rem] font-bold text-ink">ثلاث نسخ لا يحتاج بعدها الفريق إلى سؤال: ماذا ننشر؟</h4><p className="mt-1 text-[.72rem] leading-relaxed text-soft">هذه الحزمة ليست تبديلاً سطحياً؛ كل نسخة بُنيت لوظيفة نشر مختلفة: المرجع الرسمي، النسخة الأكثر أماناً، والنسخة الأعلى قابلية للتوقف والانتشار.</p></div><div className="flex flex-wrap gap-2"><button type="button" className={ghost} onClick={() => void buildReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'يعيد بناء الحزمة…' : 'أعد بناء الحزمة'}</button><button type="button" className={primary} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل Final / Safer / Viral'}</button></div></div></div>{releasePack.map((item) => <article key={item.id} className="rounded-2xl border border-hair bg-canvas p-3"><button type="button" className="block w-full text-right" onClick={() => { setSelected(item.plan); setStage('edit') }}><Preview plan={item.plan} /></button><div className="pt-3"><div className="flex items-center justify-between gap-2"><strong className="text-[.8rem] text-ink">{item.label}</strong><span className="rounded-full border border-hair px-2 py-1 text-[.58rem] text-soft">{item.score}٪</span></div><p className="mt-2 text-[.66rem] leading-relaxed text-soft">{item.note}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setSelected(item.plan); setStage('edit') }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(item.plan, 'png')}>PNG</button></div></div></article>)}</div>}
+          {zeroDecision && <section className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[.68rem] font-bold uppercase tracking-[.16em] text-emerald-700">Zero-Decision Mode</p><h4 className="mt-1 text-[1rem] font-bold text-ink">النظام حسم قرار النشر بدلاً عنك.</h4><p className="mt-1 max-w-3xl text-[.74rem] leading-relaxed text-soft">{zeroDecision.note}</p></div><div className="flex flex-wrap gap-2"><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">النسخة المعتمدة: {zeroDecision.approved.label}</span><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">درجة النسخة {zeroDecision.approved.score}٪</span><span className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[.64rem] font-semibold text-emerald-700">الحملة {zeroDecision.campaignQuality}٪</span></div></div><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={primary} onClick={() => { setSelected(zeroDecision.approved.plan); setStage('edit') }}>افتح النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportPlan(zeroDecision.approved.plan, 'png')}>تنزيل النسخة المعتمدة</button><button type="button" className={ghost} onClick={() => void exportReleasePack()} disabled={releasePackBusy}>{releasePackBusy ? 'ينزّل الحزمة…' : 'تنزيل الحزمة كاملة'}</button><span className={`rounded-full px-3 py-2 text-[.66rem] font-semibold ${zeroDecision.campaignReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{zeroDecision.campaignReady ? 'الحملة جاهزة مبدئياً' : 'الحملة تحتاج مراجعة نهائية'}</span></div></section>}
           <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-hair bg-canvas p-3"><span className="me-auto text-[.68rem] font-semibold text-soft">مفاتيح إبداع غير عادية:</span><button type="button" className={ghost} onClick={() => { setNotice('أبتعد عن تاريخك البصري بمقدار مضبوط مع إبقاء الهوية.'); generate({ tone: 'bold', preferLayout: 'quiet-orbit' }) }}>اكسر ذوقي بذكاء</button><button type="button" className={ghost} onClick={() => generate({ tone: 'human', density: 'minimal', preferLayout: 'human-note' })}>لا تجعلها تبدو مصممة</button><button type="button" className={ghost} onClick={() => generate({ tone: 'deep', density: 'minimal', preferLayout: 'cinematic-window' })}>التصميم الصامت</button></div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {plans.map((plan) => (
               <article key={plan.id} className="group grid content-start gap-3 rounded-[1.4rem] border border-hair bg-canvas p-3 transition hover:-translate-y-1 hover:border-accent/40 hover:shadow-lg">
-                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(plan) }} aria-label={`افتح ${plan.directionLabel}`}><Preview plan={plan} livingStill /></button>
+                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(plan) }} aria-label={`افتح ${plan.directionLabel}`}><Preview plan={plan} /></button>
                 <div className="px-1 pb-1">
-                  <div className="flex items-start justify-between gap-3"><div><strong className="block text-[.82rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.68rem] text-soft">{plan.format.label}</span></div><div className="flex flex-col items-end gap-1"><span className="rounded-full bg-paper px-2 py-1 text-[.75rem] font-semibold text-accent">تقييم داخلي {plan.quality?.score || 0}٪</span><span className="text-[.62rem] text-soft">{Math.round(plan.novelty * 100)}٪ جديد</span></div></div>
+                  <div className="flex items-start justify-between gap-3"><div><strong className="block text-[.82rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.68rem] text-soft">{plan.format.label}</span></div><div className="flex flex-col items-end gap-1"><span className="rounded-full bg-paper px-2 py-1 text-[.64rem] font-semibold text-accent">تقييم داخلي {plan.quality?.score || 0}٪</span><span className="text-[.62rem] text-soft">{Math.round(plan.novelty * 100)}٪ جديد</span></div></div>
                   <p className="mt-2 line-clamp-2 text-[.72rem] leading-relaxed text-soft">{plan.rationale.join(' · ')}</p>
                   <div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setStage('edit'); setSelected(plan) }}>تكبير وتعديل</button><button type="button" className={ghost} onClick={() => void exportPlan(plan, 'png')}>PNG</button></div>
                 </div>
@@ -4533,17 +4380,17 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">جودة {campaign.qualityScore}٪</span>
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تماسك {campaign.coherenceScore}٪</span>
               <span className="rounded-full border border-hair px-3 py-2 text-[.7rem] text-soft">تنوع {campaign.diversityScore}٪</span>
-              <span className={`rounded-full px-3 py-2 text-[.7rem] font-semibold ${campaign.ready ? 'bg-accent/10 text-accent' : 'bg-ember/5 text-ember'}`}>{campaign.ready ? 'جاهزة للنشر' : 'تحتاج إعادة توليد'}</span>
+              <span className={`rounded-full px-3 py-2 text-[.7rem] font-semibold ${campaign.ready ? 'bg-accent/10 text-accent' : 'bg-amber-50 text-amber-800'}`}>{campaign.ready ? 'جاهزة للنشر' : 'تحتاج إعادة توليد'}</span>
               <button type="button" className={primary} disabled={!campaign.ready} onClick={() => void exportCampaignRaster(campaign)}>تنزيل الحملة PNG</button>
               <button type="button" className={ghost} disabled={!campaign.ready} onClick={() => exportCampaignPdf(campaign)}>PDF للحملة</button>
             </div>
           </div>
-          {!campaign.ready && campaign.warnings.length > 0 && <p className="mt-4 rounded-2xl border border-ember/30 bg-ember/5 px-4 py-3 text-[.76rem] leading-relaxed text-ember">{campaign.warnings.join(' · ')}</p>}
+          {!campaign.ready && campaign.warnings.length > 0 && <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[.76rem] leading-relaxed text-amber-900">{campaign.warnings.join(' · ')}</p>}
           <div className="mt-5 overflow-x-auto pb-2"><ol className="flex min-w-max items-center gap-2" aria-label="الخط الزمني المقترح للحملة">{campaign.assets.map((asset, index) => <li key={`timeline-${asset.id}`} className="flex items-center gap-2"><div className="rounded-2xl border border-hair bg-canvas px-4 py-3"><span className="block text-[.62rem] font-bold text-accent">اليوم {index + 1}</span><strong className="mt-1 block text-[.74rem] text-ink">{asset.label}</strong><span className="mt-1 block max-w-[160px] text-[.62rem] leading-relaxed text-soft">{asset.purpose}</span></div>{index < campaign.assets.length - 1 && <span aria-hidden className="text-soft/50">←</span>}</li>)}</ol></div>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {campaign.assets.map((asset) => (
               <article key={asset.id} className="rounded-[1.4rem] border border-hair bg-canvas p-3">
-                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(asset.plan) }}><Preview plan={asset.plan} livingStill /></button>
+                <button type="button" className="block w-full text-right" onClick={() => { setStage('edit'); setSelected(asset.plan) }}><Preview plan={asset.plan} /></button>
                 <div className="px-1 pt-3"><strong className="block text-[.8rem] text-ink">{asset.label}</strong><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{asset.purpose}</p><div className="mt-3 flex gap-2"><button type="button" className={`${ghost} flex-1`} onClick={() => { setStage('edit'); setSelected(asset.plan) }}>فتح</button><button type="button" className={ghost} onClick={() => void exportPlan(asset.plan, 'png')}>PNG</button></div></div>
               </article>
             ))}
@@ -4555,7 +4402,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
         <section className={card} aria-labelledby="saved-social-designs-title">
           <div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold uppercase tracking-[.16em] text-accent">Saved directions</p><h3 id="saved-social-designs-title" className="mt-1 font-display text-2xl font-bold text-ink">نسخك المختارة</h3></div><button type="button" className={ghost} onClick={() => setShowSaved(false)}>إخفاء</button></div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {savedPlans.map((plan) => <button key={plan.fingerprint} type="button" onClick={() => { setStage('edit'); setSelected(plan) }} className="rounded-[1.3rem] border border-hair bg-canvas p-3 text-right transition hover:border-accent/40 hover:shadow-lg"><Preview plan={plan} livingStill /><strong className="mt-3 block text-[.78rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.66rem] text-soft">{plan.format.label}</span></button>)}
+            {savedPlans.map((plan) => <button key={plan.fingerprint} type="button" onClick={() => { setStage('edit'); setSelected(plan) }} className="rounded-[1.3rem] border border-hair bg-canvas p-3 text-right transition hover:border-accent/40 hover:shadow-lg"><Preview plan={plan} /><strong className="mt-3 block text-[.78rem] text-ink">{plan.directionLabel}</strong><span className="mt-1 block text-[.66rem] text-soft">{plan.format.label}</span></button>)}
           </div>
         </section>
       )}
@@ -4580,7 +4427,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
             } as CSSProperties}
           >
             <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-hair px-3 py-2.5 md:px-6 md:py-3">
-              <div className="min-w-0"><p className="text-[.58rem] font-bold uppercase tracking-[.12em] text-accent md:text-[.75rem] md:tracking-[.16em]">المرحلة 03 · التحرير</p><h3 className="mt-1 truncate font-display text-[1rem] font-bold text-ink md:text-2xl">{selected.directionLabel}</h3></div>
+              <div className="min-w-0"><p className="text-[.58rem] font-bold uppercase tracking-[.12em] text-accent md:text-[.64rem] md:tracking-[.16em]">المرحلة 03 · التحرير</p><h3 className="mt-1 truncate font-display text-[1rem] font-bold text-ink md:text-2xl">{selected.directionLabel}</h3></div>
               <div className="hidden flex-wrap items-center gap-2 md:flex"><button type="button" className={ghost} onClick={() => { setSelected(null); setStage('directions') }}>الاتجاهات</button><button type="button" className={primary} onClick={() => { buildCampaign(); setSelected(null); setStage('publish') }}>إلى النشر</button><button type="button" className={ghost} onClick={() => setSelected(null)}>إغلاق</button></div>
               <div className="flex items-center gap-1.5 md:hidden">
                 <button type="button" onClick={() => { setSelected(null); setStage('directions') }} className="rounded-full border border-hair bg-canvas px-2.5 py-1.5 text-[.62rem] font-semibold text-soft">الاتجاهات</button>
@@ -4601,13 +4448,13 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
               <aside className={`${mobileEditorPanel === 'layers' ? 'grid' : 'hidden'} min-h-0 content-start gap-3 overflow-y-auto rounded-[1.25rem] border border-hair bg-canvas p-3 lg:grid lg:max-h-full`} aria-label="لوحة الطبقات">
                 <div className="flex items-center justify-between gap-2"><div><p className="text-[.7rem] font-bold text-accent">الطبقات</p><p className="mt-1 text-[.62rem] text-soft">ترتيب، قفل، محاذاة، أقنعة وصور.</p></div><button type="button" onClick={() => setFreeMode((value) => !value)} className={`rounded-full px-2.5 py-1 text-[.62rem] font-semibold ${freeMode ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>{freeMode ? 'السحب فعّال' : 'فعّل السحب'}</button></div>
                 <div className="flex flex-wrap gap-1.5"><button type="button" className={ghost} onClick={() => addOverlay('text')}>نص</button><button type="button" className={ghost} onClick={() => addOverlay('rule')}>خط</button><button type="button" className={ghost} onClick={() => addOverlay('circle')}>دائرة</button><button type="button" className={ghost} onClick={() => addOverlay('rect')}>إطار</button><button type="button" className={ghost} onClick={() => addOverlay('image')}>صورة</button></div>
-                {selectedOverlayIds.length > 0 && <div className="rounded-xl border border-hair bg-paper p-2.5"><div className="flex items-center justify-between gap-2"><span className="text-[.62rem] font-semibold text-soft">{selectedOverlayIds.length} محددة</span><button type="button" className="text-[.75rem] text-soft hover:text-accent" onClick={() => setSelectedOverlayIds([])}>إلغاء التحديد</button></div><div className="mt-2 flex flex-wrap gap-1"><button type="button" className={ghost} onClick={groupSelectedOverlays}>تجميع</button><button type="button" className={ghost} onClick={ungroupSelectedOverlays}>فك المجموعة</button><button type="button" className={ghost} onClick={() => distributeSelectedOverlays('x')}>توزيع أفقي</button><button type="button" className={ghost} onClick={() => distributeSelectedOverlays('y')}>توزيع رأسي</button><button type="button" className={ghost} disabled={!overlayStyleClipboard} onClick={pasteOverlayStyle}>ألصق النمط</button></div></div>}
-                <div className="grid gap-2">{(selected.overlays || []).length ? [...(selected.overlays || [])].sort((a,b)=>(b.zIndex||0)-(a.zIndex||0)).map((overlay) => <div key={overlay.id} className={`rounded-xl border p-2.5 ${activeOverlay === overlay.id ? 'border-accent bg-accent/[.04]' : selectedOverlayIds.includes(overlay.id) ? 'border-accent/40 bg-accent/[.02]' : 'border-hair bg-paper'}`}><div className="flex items-center justify-between gap-2"><div className="flex min-w-0 flex-1 items-center gap-2"><input type="checkbox" aria-label="تحديد الطبقة" checked={selectedOverlayIds.includes(overlay.id)} onChange={() => toggleOverlaySelection(overlay.id)} className="accent-current" /><button type="button" className="min-w-0 flex-1 truncate text-right text-[.68rem] font-semibold text-ink" onClick={() => { setActiveOverlay(overlay.id); setSelectedOverlayIds((current) => current.includes(overlay.id) ? current : [overlay.id]); setFreeMode(true) }}>{overlay.kind === 'text' ? String(overlay.text || 'نص').slice(0,22) : overlay.kind === 'image' ? `صورة: ${overlay.name || 'مرشحة'}` : overlay.kind === 'rule' ? 'خط' : overlay.kind === 'circle' ? 'دائرة' : 'إطار'}</button></div><button type="button" className="text-[.62rem] text-soft hover:text-red-500" onClick={() => removeOverlay(overlay.id)}>حذف</button></div>{activeOverlay === overlay.id && <div className="mt-2 grid gap-2"><div className="flex flex-wrap gap-1"><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, 1)}>للأمام</button><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, -1)}>للخلف</button><button type="button" className={ghost} onClick={() => duplicateOverlay(overlay)}>نسخ</button><button type="button" className={ghost} onClick={() => copyOverlayStyle(overlay)}>نسخ النمط</button><button type="button" className={ghost} onClick={() => patchOverlay(overlay.id, { locked: !overlay.locked })}>{overlay.locked ? 'فك القفل' : 'قفل'}</button></div><div className="grid grid-cols-3 gap-1">{(['right','center','left','top','middle','bottom'] as const).map((target) => <button key={target} type="button" className="rounded-lg border border-hair px-1 py-1 text-[.58rem] text-soft hover:border-accent hover:text-accent" onClick={() => alignOverlay(overlay.id, target)}>{({right:'يمين',center:'وسط أفقي',left:'يسار',top:'أعلى',middle:'وسط رأسي',bottom:'أسفل'} as const)[target]}</button>)}</div><label className="grid gap-1 text-[.75rem] text-soft">دوران<input className="studio-range" type="range" min="-180" max="180" value={overlay.rotation || 0} onChange={(event) => patchOverlay(overlay.id, { rotation: Number(event.target.value) })} /></label><label className="grid gap-1 text-[.75rem] text-soft">شفافية<input className="studio-range" type="range" min="5" max="100" value={Math.round(overlay.opacity*100)} onChange={(event) => patchOverlay(overlay.id, { opacity:Number(event.target.value)/100 })} /></label>{overlay.kind === 'image' && <><label className="grid gap-1 text-[.75rem] text-soft">دور الصورة<select className={input} value={overlay.imageRole || 'foreground'} onChange={(event) => patchOverlay(overlay.id,{ imageRole:event.target.value as PlanOverlay['imageRole'], x:event.target.value === 'background' ? 0 : overlay.x, y:event.target.value === 'background' ? 0 : overlay.y, width:event.target.value === 'background' ? 1 : overlay.width, height:event.target.value === 'background' ? 1 : overlay.height, mask:event.target.value === 'background' ? 'none' : overlay.mask })}><option value="foreground">طبقة حرة</option><option value="background">صورة بطولية كاملة</option></select></label>{overlay.imageRole === 'background' && <><label className="grid gap-1 text-[.75rem] text-soft">المعالجة<select className={input} value={overlay.imageTreatment || 'cinematic'} onChange={(event) => patchOverlay(overlay.id,{ imageTreatment:event.target.value as PlanOverlay['imageTreatment']})}><option value="cinematic">سينمائية</option><option value="documentary">وثائقية</option><option value="editorial">تحريرية</option><option value="duotone">ثنائية اللون</option><option value="none">طبيعية</option></select></label><label className="grid gap-1 text-[.75rem] text-soft">منطقة النص<select className={input} value={overlay.textZone || 'right'} onChange={(event) => patchOverlay(overlay.id,{ textZone:event.target.value as PlanOverlay['textZone']})}><option value="right">يمين</option><option value="left">يسار</option><option value="top">أعلى</option><option value="bottom">أسفل</option><option value="center">وسط</option></select></label><label className="grid gap-1 text-[.75rem] text-soft">قوة التعتيم<input className="studio-range" type="range" min="10" max="95" value={Math.round((overlay.readabilityShade ?? .72)*100)} onChange={(event)=>patchOverlay(overlay.id,{readabilityShade:Number(event.target.value)/100})}/></label><label className="grid gap-1 text-[.75rem] text-soft">الحواف السينمائية<input className="studio-range" type="range" min="0" max="80" value={Math.round((overlay.vignette ?? .34)*100)} onChange={(event)=>patchOverlay(overlay.id,{vignette:Number(event.target.value)/100})}/></label></>}<label className="grid gap-1 text-[.75rem] text-soft">الدمج<select className={input} value={overlay.blendMode || 'normal'} onChange={(event) => patchOverlay(overlay.id,{ blendMode:event.target.value as PlanOverlay['blendMode']})}><option value="normal">عادي</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="soft-light">Soft Light</option><option value="luminosity">Luminosity</option></select></label><label className="grid gap-1 text-[.75rem] text-soft">القناع<select className={input} value={overlay.mask || 'rounded'} onChange={(event) => patchOverlay(overlay.id,{ mask:event.target.value as PlanOverlay['mask']})}><option value="none">بدون</option><option value="rounded">مستدير</option><option value="circle">دائري</option></select></label><label className="grid gap-1 text-[.75rem] text-soft">نقطة التركيز أفقياً<input className="studio-range" type="range" min="0" max="100" value={Math.round((overlay.focalX ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalX:Number(event.target.value)/100})}/></label><label className="grid gap-1 text-[.75rem] text-soft">نقطة التركيز رأسياً<input className="studio-range" type="range" min="0" max="100" value={Math.round((overlay.focalY ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalY:Number(event.target.value)/100})}/></label><div className="rounded-lg border border-hair bg-canvas px-2.5 py-2 text-[.58rem] leading-relaxed text-soft"><strong className="block text-ink">جواز الصورة</strong>{overlay.owner || 'مالك غير مسجل'} · {overlay.license || 'ترخيص غير مسجل'}{overlay.sourceUrl && <span dir="ltr" className="mt-1 block truncate text-accent">{overlay.sourceUrl}</span>}</div></>}</div>}</div>) : <p className="rounded-xl border border-dashed border-hair p-4 text-center text-[.65rem] leading-relaxed text-soft">لا طبقات إضافية. التصميم الأساسي محفوظ كما هو.</p>}</div>
+                {selectedOverlayIds.length > 0 && <div className="rounded-xl border border-hair bg-paper p-2.5"><div className="flex items-center justify-between gap-2"><span className="text-[.62rem] font-semibold text-soft">{selectedOverlayIds.length} محددة</span><button type="button" className="text-[.6rem] text-soft hover:text-accent" onClick={() => setSelectedOverlayIds([])}>إلغاء التحديد</button></div><div className="mt-2 flex flex-wrap gap-1"><button type="button" className={ghost} onClick={groupSelectedOverlays}>تجميع</button><button type="button" className={ghost} onClick={ungroupSelectedOverlays}>فك المجموعة</button><button type="button" className={ghost} onClick={() => distributeSelectedOverlays('x')}>توزيع أفقي</button><button type="button" className={ghost} onClick={() => distributeSelectedOverlays('y')}>توزيع رأسي</button><button type="button" className={ghost} disabled={!overlayStyleClipboard} onClick={pasteOverlayStyle}>ألصق النمط</button></div></div>}
+                <div className="grid gap-2">{(selected.overlays || []).length ? [...(selected.overlays || [])].sort((a,b)=>(b.zIndex||0)-(a.zIndex||0)).map((overlay) => <div key={overlay.id} className={`rounded-xl border p-2.5 ${activeOverlay === overlay.id ? 'border-accent bg-accent/[.04]' : selectedOverlayIds.includes(overlay.id) ? 'border-accent/40 bg-accent/[.02]' : 'border-hair bg-paper'}`}><div className="flex items-center justify-between gap-2"><div className="flex min-w-0 flex-1 items-center gap-2"><input type="checkbox" aria-label="تحديد الطبقة" checked={selectedOverlayIds.includes(overlay.id)} onChange={() => toggleOverlaySelection(overlay.id)} className="accent-current" /><button type="button" className="min-w-0 flex-1 truncate text-right text-[.68rem] font-semibold text-ink" onClick={() => { setActiveOverlay(overlay.id); setSelectedOverlayIds((current) => current.includes(overlay.id) ? current : [overlay.id]); setFreeMode(true) }}>{overlay.kind === 'text' ? String(overlay.text || 'نص').slice(0,22) : overlay.kind === 'image' ? `صورة: ${overlay.name || 'مرشحة'}` : overlay.kind === 'rule' ? 'خط' : overlay.kind === 'circle' ? 'دائرة' : 'إطار'}</button></div><button type="button" className="text-[.62rem] text-soft hover:text-red-500" onClick={() => removeOverlay(overlay.id)}>حذف</button></div>{activeOverlay === overlay.id && <div className="mt-2 grid gap-2"><div className="flex flex-wrap gap-1"><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, 1)}>للأمام</button><button type="button" className={ghost} onClick={() => moveOverlayLayer(overlay.id, -1)}>للخلف</button><button type="button" className={ghost} onClick={() => duplicateOverlay(overlay)}>نسخ</button><button type="button" className={ghost} onClick={() => copyOverlayStyle(overlay)}>نسخ النمط</button><button type="button" className={ghost} onClick={() => patchOverlay(overlay.id, { locked: !overlay.locked })}>{overlay.locked ? 'فك القفل' : 'قفل'}</button></div><div className="grid grid-cols-3 gap-1">{(['right','center','left','top','middle','bottom'] as const).map((target) => <button key={target} type="button" className="rounded-lg border border-hair px-1 py-1 text-[.58rem] text-soft hover:border-accent hover:text-accent" onClick={() => alignOverlay(overlay.id, target)}>{({right:'يمين',center:'وسط أفقي',left:'يسار',top:'أعلى',middle:'وسط رأسي',bottom:'أسفل'} as const)[target]}</button>)}</div><label className="grid gap-1 text-[.6rem] text-soft">دوران<input type="range" min="-180" max="180" value={overlay.rotation || 0} onChange={(event) => patchOverlay(overlay.id, { rotation: Number(event.target.value) })} /></label><label className="grid gap-1 text-[.6rem] text-soft">شفافية<input type="range" min="5" max="100" value={Math.round(overlay.opacity*100)} onChange={(event) => patchOverlay(overlay.id, { opacity:Number(event.target.value)/100 })} /></label>{overlay.kind === 'image' && <><label className="grid gap-1 text-[.6rem] text-soft">دور الصورة<select className={input} value={overlay.imageRole || 'foreground'} onChange={(event) => patchOverlay(overlay.id,{ imageRole:event.target.value as PlanOverlay['imageRole'], x:event.target.value === 'background' ? 0 : overlay.x, y:event.target.value === 'background' ? 0 : overlay.y, width:event.target.value === 'background' ? 1 : overlay.width, height:event.target.value === 'background' ? 1 : overlay.height, mask:event.target.value === 'background' ? 'none' : overlay.mask })}><option value="foreground">طبقة حرة</option><option value="background">صورة بطولية كاملة</option></select></label>{overlay.imageRole === 'background' && <><label className="grid gap-1 text-[.6rem] text-soft">المعالجة<select className={input} value={overlay.imageTreatment || 'cinematic'} onChange={(event) => patchOverlay(overlay.id,{ imageTreatment:event.target.value as PlanOverlay['imageTreatment']})}><option value="cinematic">سينمائية</option><option value="documentary">وثائقية</option><option value="editorial">تحريرية</option><option value="duotone">ثنائية اللون</option><option value="none">طبيعية</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">منطقة النص<select className={input} value={overlay.textZone || 'right'} onChange={(event) => patchOverlay(overlay.id,{ textZone:event.target.value as PlanOverlay['textZone']})}><option value="right">يمين</option><option value="left">يسار</option><option value="top">أعلى</option><option value="bottom">أسفل</option><option value="center">وسط</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">قوة التعتيم<input type="range" min="10" max="95" value={Math.round((overlay.readabilityShade ?? .72)*100)} onChange={(event)=>patchOverlay(overlay.id,{readabilityShade:Number(event.target.value)/100})}/></label><label className="grid gap-1 text-[.6rem] text-soft">الحواف السينمائية<input type="range" min="0" max="80" value={Math.round((overlay.vignette ?? .34)*100)} onChange={(event)=>patchOverlay(overlay.id,{vignette:Number(event.target.value)/100})}/></label></>}<label className="grid gap-1 text-[.6rem] text-soft">الدمج<select className={input} value={overlay.blendMode || 'normal'} onChange={(event) => patchOverlay(overlay.id,{ blendMode:event.target.value as PlanOverlay['blendMode']})}><option value="normal">عادي</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="soft-light">Soft Light</option><option value="luminosity">Luminosity</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">القناع<select className={input} value={overlay.mask || 'rounded'} onChange={(event) => patchOverlay(overlay.id,{ mask:event.target.value as PlanOverlay['mask']})}><option value="none">بدون</option><option value="rounded">مستدير</option><option value="circle">دائري</option></select></label><label className="grid gap-1 text-[.6rem] text-soft">نقطة التركيز أفقياً<input type="range" min="0" max="100" value={Math.round((overlay.focalX ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalX:Number(event.target.value)/100})}/></label><label className="grid gap-1 text-[.6rem] text-soft">نقطة التركيز رأسياً<input type="range" min="0" max="100" value={Math.round((overlay.focalY ?? .5)*100)} onChange={(event)=>patchOverlay(overlay.id,{focalY:Number(event.target.value)/100})}/></label><div className="rounded-lg border border-hair bg-canvas px-2.5 py-2 text-[.58rem] leading-relaxed text-soft"><strong className="block text-ink">جواز الصورة</strong>{overlay.owner || 'مالك غير مسجل'} · {overlay.license || 'ترخيص غير مسجل'}{overlay.sourceUrl && <span dir="ltr" className="mt-1 block truncate text-accent">{overlay.sourceUrl}</span>}</div></>}</div>}</div>) : <p className="rounded-xl border border-dashed border-hair p-4 text-center text-[.65rem] leading-relaxed text-soft">لا طبقات إضافية. التصميم الأساسي محفوظ كما هو.</p>}</div>
               </aside>
               <div className={`${mobileEditorPanel === 'preview' ? 'grid' : 'hidden'} min-h-0 content-center justify-items-center overflow-hidden rounded-[1.25rem] border border-hair bg-canvas p-2.5 md:p-4 lg:grid lg:max-h-full`}>
                 {/* «أرني كما يراه المتابع» (النقطة ٢٠) + «خريطة الانتباه» (النقطة ٨) */}
                 <div className="mb-2 flex w-full items-center justify-between gap-2 md:mb-3">
-                  <span className="text-[.75rem] font-semibold text-soft md:text-[.66rem]">{phoneView ? 'كما يراه المتابع' : 'المعاينة الكاملة'}</span>
+                  <span className="text-[.64rem] font-semibold text-soft md:text-[.66rem]">{phoneView ? 'كما يراه المتابع' : 'المعاينة الكاملة'}</span>
                   <div className="flex items-center gap-1.5 md:flex-wrap md:gap-2">
                     {professionalCheckOpen && <button type="button" onClick={() => setAttentionOn((value) => !value)} disabled={phoneView} title="محاكاة بصرية تقديرية وليست تتبع عين بشرياً" className={`rounded-full px-3 py-1 text-[.66rem] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${attentionOn && !phoneView ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>{attentionOn ? 'إخفاء مسار الانتباه' : 'محاكاة مسار الانتباه'}</button>}
                     <button type="button" onClick={() => setPhoneView((value) => !value)} className={`rounded-full px-3 py-1 text-[.66rem] font-semibold transition ${phoneView ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}>{phoneView ? '✓ عرض الاستوديو' : '📱 أرني كما يراه المتابع'}</button>
@@ -4628,7 +4475,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   </div>
                   <div className="min-w-0">
                     <p className="text-[.66rem] font-semibold text-ink">اختبار المصغَّر — كما يمر في الخلاصة</p>
-                    <p className={`mt-1 text-[.75rem] leading-relaxed ${thumbnailVerdict.ok ? 'text-soft' : 'text-ember dark:text-ember'}`}>{thumbnailVerdict.note}</p>
+                    <p className={`mt-1 text-[.64rem] leading-relaxed ${thumbnailVerdict.ok ? 'text-soft' : 'text-amber-700 dark:text-amber-400'}`}>{thumbnailVerdict.note}</p>
                   </div>
                 </div>
                 {phoneView && (
@@ -4675,12 +4522,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                 </div>
               </div>
               <div className={`${mobileEditorPanel === 'properties' ? 'grid' : 'hidden'} min-h-0 content-start gap-3 overflow-y-auto pb-5 lg:grid lg:max-h-full lg:gap-4 lg:pl-1`} aria-label="خصائص التصميم">
-                <button type="button" onClick={() => setProfessionalCheckOpen((value) => !value)} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-right transition ${professionalCheckOpen ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-ink hover:border-accent'}`}><span><strong className="block text-[.74rem]">فحص احترافي</strong><span className="mt-1 block text-[.75rem] opacity-75">تقييم داخلي ومحاكاة تقديرية؛ ليست بيانات نشر فعلية ولا تتبع عين بشرياً.</span></span><span aria-hidden>{professionalCheckOpen ? '−' : '+'}</span></button>
+                <button type="button" onClick={() => setProfessionalCheckOpen((value) => !value)} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-right transition ${professionalCheckOpen ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-ink hover:border-accent'}`}><span><strong className="block text-[.74rem]">فحص احترافي</strong><span className="mt-1 block text-[.64rem] opacity-75">تقييم داخلي ومحاكاة تقديرية؛ ليست بيانات نشر فعلية ولا تتبع عين بشرياً.</span></span><span aria-hidden>{professionalCheckOpen ? '−' : '+'}</span></button>
                 <div className={professionalCheckOpen ? 'grid gap-4' : 'hidden'}>
-                <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">تقييم داخلي للتكوين</p><p className="mt-1 text-[.72rem] text-ink/60">قواعد محلية للتباين والقراءة والتوازن؛ ليست اختباراً بشرياً.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{explanation && (explanation.reasons.length > 0 || !explanation.healthy) ? <div className="mt-3 rounded-xl border border-accent/20 bg-canvas/70 p-3"><p className="text-[.72rem] font-semibold text-ink/90">🔍 لماذا هذه النتيجة؟ {explanation.verdict}</p>{explanation.reasons.length ? <ul className="mt-2 grid gap-2">{explanation.reasons.map((reason) => <li key={reason.dimension} className="rounded-lg border border-hair bg-paper/70 px-3 py-2"><div className="flex items-center justify-between gap-2"><strong className="text-[.7rem] text-ink">{reason.severity === 'critical' ? '⛔' : '⚠️'} {reason.dimension}</strong><span className={`rounded-full px-2 py-0.5 text-[.75rem] font-bold ${reason.severity === 'critical' ? 'bg-red-500/15 text-red-600' : 'bg-ember/10 text-ember'}`}>{reason.score}٪</span></div><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{reason.why}</p><p className="mt-1 text-[.68rem] leading-relaxed text-accent">↳ {reason.fix}</p></li>)}</ul> : null}{!explanation.healthy ? <p className="mt-2 rounded-lg bg-accent/[.08] px-3 py-2 text-[.68rem] font-semibold text-accent">أهمّ خطوةٍ الآن: {explanation.nextStep}</p> : null}</div> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.75rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/[.85]">• {line}</li>)}</ul></div> : null}</section>
-                {globalCritic && <section className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">حكم الناقد العالمي</p><p className="mt-1 text-[.72rem] text-ink/60">درجة مركبة من الجودة والقراءة وقوة التوقف والتميّز عن تاريخك.</p></div><strong className="font-display text-3xl text-accent">{globalCritic.score}٪</strong></div><p className="mt-3 text-[.74rem] leading-relaxed text-ink/[.85]">{globalCritic.verdict}</p><div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.66rem] text-ink">{globalCritic.imageDriven ? 'مشهد بصري بطولي' : 'تكوين طباعي/مركب'}</span><span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.66rem] text-ink">قوة التوقف {globalCritic.stop.score}٪</span>{globalCritic.score >= qualityThreshold ? <span className="rounded-full border border-accent/40 bg-accent/5 px-3 py-1 text-[.66rem] font-semibold text-accent-deep">جاهز للتصدير وفق الحد الحالي</span> : <span className="rounded-full border border-ember/30 bg-ember/5 px-3 py-1 text-[.66rem] font-semibold text-ember">لم يبلغ حد التصدير الحالي بعد</span>}</div><p className="mt-3 rounded-xl bg-accent/[.06] px-3 py-2 text-[.68rem] leading-relaxed text-accent">أهم دفعة الآن: {globalCritic.nextStep}</p></section>}
-                {designLineage && <section className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">سلالة التصميم</p><p className="mt-1 text-[.72rem] text-ink/60">هل هذه النسخة امتداد ذكي أم تكرار لما سبق؟</p></div><strong className="font-display text-2xl text-accent">{designLineage.similarity}٪</strong></div><p className="mt-3 text-[.72rem] leading-relaxed text-ink/[.85]">{designLineage.message}</p><span className="mt-3 inline-flex rounded-full border border-hair bg-paper px-3 py-1 text-[.75rem] text-soft">{designLineage.family}</span></section>}
-                {designProvenance && <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">شهادة منشأ التصميم</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.75rem] font-semibold text-soft">المصدر</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink break-all">{designProvenance.source}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.75rem] font-semibold text-soft">المالك / الترخيص</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.owner} · {designProvenance.license}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.75rem] font-semibold text-soft">المعالجة البطولية</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.heroMode}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.75rem] font-semibold text-soft">بنية الكاروسيل</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.slides ? `${designProvenance.slides} شريحة` : 'ليس كاروسيلاً'}</p></div></div>{designProvenance.reasons.length ? <ul className="mt-3 grid gap-1">{designProvenance.reasons.map((reason) => <li key={reason} className="text-[.7rem] leading-relaxed text-ink/80">• {reason}</li>)}</ul> : null}</section>}
+                <section className="rounded-2xl border border-accent/30 bg-accent/[.09] p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">تقييم داخلي للتكوين</p><p className="mt-1 text-[.72rem] text-ink/60">قواعد محلية للتباين والقراءة والتوازن؛ ليست اختباراً بشرياً.</p></div><strong className="font-display text-3xl text-accent">{selected.quality?.score || 0}٪</strong></div><div className="mt-3 flex flex-wrap gap-2">{selected.quality?.strengths.map((item) => <span key={item} className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.66rem] font-medium text-ink">✓ {item}</span>)}</div>{selected.quality?.issues.length ? <p className="mt-3 text-[.72rem] leading-relaxed text-ink/80">{selected.quality.issues.join(' · ')}</p> : null}{explanation && (explanation.reasons.length > 0 || !explanation.healthy) ? <div className="mt-3 rounded-xl border border-accent/20 bg-canvas/70 p-3"><p className="text-[.72rem] font-semibold text-ink/90">🔍 لماذا هذه النتيجة؟ {explanation.verdict}</p>{explanation.reasons.length ? <ul className="mt-2 grid gap-2">{explanation.reasons.map((reason) => <li key={reason.dimension} className="rounded-lg border border-hair bg-paper/70 px-3 py-2"><div className="flex items-center justify-between gap-2"><strong className="text-[.7rem] text-ink">{reason.severity === 'critical' ? '⛔' : '⚠️'} {reason.dimension}</strong><span className={`rounded-full px-2 py-0.5 text-[.6rem] font-bold ${reason.severity === 'critical' ? 'bg-red-500/15 text-red-600' : 'bg-amber-500/15 text-amber-700'}`}>{reason.score}٪</span></div><p className="mt-1 text-[.68rem] leading-relaxed text-soft">{reason.why}</p><p className="mt-1 text-[.68rem] leading-relaxed text-accent">↳ {reason.fix}</p></li>)}</ul> : null}{!explanation.healthy ? <p className="mt-2 rounded-lg bg-accent/[.08] px-3 py-2 text-[.68rem] font-semibold text-accent">أهمّ خطوةٍ الآن: {explanation.nextStep}</p> : null}</div> : null}{selected.rationale?.length ? <div className="mt-4 rounded-xl border border-hair bg-paper/70 p-3"><p className="text-[.64rem] font-bold text-accent">قراءة المخرج الفنّي</p><ul className="mt-2 grid gap-1">{selected.rationale.slice(0, 3).map((line) => <li key={line} className="text-[.72rem] leading-relaxed text-ink/[.85]">• {line}</li>)}</ul></div> : null}</section>
+                {globalCritic && <section className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">حكم الناقد العالمي</p><p className="mt-1 text-[.72rem] text-ink/60">درجة مركبة من الجودة والقراءة وقوة التوقف والتميّز عن تاريخك.</p></div><strong className="font-display text-3xl text-accent">{globalCritic.score}٪</strong></div><p className="mt-3 text-[.74rem] leading-relaxed text-ink/[.85]">{globalCritic.verdict}</p><div className="mt-3 flex flex-wrap gap-2"><span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.66rem] text-ink">{globalCritic.imageDriven ? 'مشهد بصري بطولي' : 'تكوين طباعي/مركب'}</span><span className="rounded-full border border-hair bg-paper px-3 py-1 text-[.66rem] text-ink">قوة التوقف {globalCritic.stop.score}٪</span>{globalCritic.score >= qualityThreshold ? <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[.66rem] font-semibold text-emerald-700">جاهز للتصدير وفق الحد الحالي</span> : <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[.66rem] font-semibold text-amber-700">لم يبلغ حد التصدير الحالي بعد</span>}</div><p className="mt-3 rounded-xl bg-accent/[.06] px-3 py-2 text-[.68rem] leading-relaxed text-accent">أهم دفعة الآن: {globalCritic.nextStep}</p></section>}
+                {designLineage && <section className="rounded-2xl border border-hair bg-canvas p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-[.7rem] font-bold text-accent">سلالة التصميم</p><p className="mt-1 text-[.72rem] text-ink/60">هل هذه النسخة امتداد ذكي أم تكرار لما سبق؟</p></div><strong className="font-display text-2xl text-accent">{designLineage.similarity}٪</strong></div><p className="mt-3 text-[.72rem] leading-relaxed text-ink/[.85]">{designLineage.message}</p><span className="mt-3 inline-flex rounded-full border border-hair bg-paper px-3 py-1 text-[.64rem] text-soft">{designLineage.family}</span></section>}
+                {designProvenance && <section className="rounded-2xl border border-hair bg-canvas p-4"><p className="text-[.7rem] font-bold text-accent">شهادة منشأ التصميم</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">المصدر</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink break-all">{designProvenance.source}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">المالك / الترخيص</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.owner} · {designProvenance.license}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">المعالجة البطولية</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.heroMode}</p></div><div className="rounded-xl border border-hair bg-paper/70 px-3 py-2"><p className="text-[.6rem] font-semibold text-soft">بنية الكاروسيل</p><p className="mt-1 text-[.7rem] leading-relaxed text-ink">{designProvenance.slides ? `${designProvenance.slides} شريحة` : 'ليس كاروسيلاً'}</p></div></div>{designProvenance.reasons.length ? <ul className="mt-3 grid gap-1">{designProvenance.reasons.map((reason) => <li key={reason} className="text-[.7rem] leading-relaxed text-ink/80">• {reason}</li>)}</ul> : null}</section>}
                 {/* مختبر الأداء (أ-٣): يتنبّأ بقوة التوقّف والتفاعل — لا يكرّر الناقد (الجودة) بل يكمّله */}
                 {forecast && (
                   <section className="rounded-2xl border border-hair bg-canvas p-4">
@@ -4693,7 +4540,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                         <div key={signal.id} className="flex items-center gap-2">
                           <span className="w-28 shrink-0 text-[.66rem] text-soft">{signal.label}</span>
                           <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[color:var(--c-hair)]"><span className={`block h-full rounded-full ${signal.score >= 70 ? 'bg-accent' : 'bg-accent/40'}`} style={{ width: `${signal.score}%` }} /></span>
-                          <span className="w-9 shrink-0 text-left text-[.75rem] font-semibold tabular-nums text-ink/70">{signal.score}٪</span>
+                          <span className="w-9 shrink-0 text-left text-[.64rem] font-semibold tabular-nums text-ink/70">{signal.score}٪</span>
                         </div>
                       ))}
                     </div>
@@ -4715,7 +4562,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     <button type="button" className={ghost} onClick={() => addOverlay('circle')}>+ دائرة</button>
                     <button type="button" className={ghost} onClick={() => addOverlay('rect')}>+ إطار</button>
                   </div>
-                  <p className="mt-2 text-[.75rem] font-semibold text-soft">مشاهد انبهار جاهزة — بألوان اللوحة نفسها:</p>
+                  <p className="mt-2 text-[.64rem] font-semibold text-soft">مشاهد انبهار جاهزة — بألوان اللوحة نفسها:</p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     <button type="button" className={ghost} onClick={() => addFlourish('gilded-arcs')}>أقواس مذهّبة</button>
                     <button type="button" className={ghost} onClick={() => addFlourish('orbit')}>مدار هادئ</button>
@@ -4740,9 +4587,9 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                                 {(['ink', 'accent', 'muted', 'paper'] as const).map((color) => (
                                   <button key={color} type="button" title={color} onClick={() => patchOverlay(overlay.id, { color })} className={`h-5 w-5 rounded-full border-2 ${overlay.color === color ? 'border-accent' : 'border-hair'}`} style={{ background: color === 'ink' ? '#15161A' : color === 'accent' ? '#3E5C78' : color === 'muted' ? '#626A76' : '#FCFBF7' }} />
                                 ))}
-                                <label className="flex items-center gap-1.5 text-[.75rem] text-soft">شفافية<input type="range" min="10" max="100" value={Math.round(overlay.opacity * 100)} onChange={(event) => patchOverlay(overlay.id, { opacity: Number(event.target.value) / 100 })} className="studio-range w-20 accent-[#3E5C78]" /></label>
+                                <label className="flex items-center gap-1.5 text-[.64rem] text-soft">شفافية<input type="range" min="10" max="100" value={Math.round(overlay.opacity * 100)} onChange={(event) => patchOverlay(overlay.id, { opacity: Number(event.target.value) / 100 })} className="w-20 accent-[#3E5C78]" /></label>
                                 {overlay.kind === 'text' && (
-                                  <label className="flex items-center gap-1.5 text-[.75rem] text-soft">حجم<input type="range" min="15" max="90" value={Math.round((overlay.size || .03) * 1000)} onChange={(event) => patchOverlay(overlay.id, { size: Number(event.target.value) / 1000 })} className="studio-range w-20 accent-[#3E5C78]" /></label>
+                                  <label className="flex items-center gap-1.5 text-[.64rem] text-soft">حجم<input type="range" min="15" max="90" value={Math.round((overlay.size || .03) * 1000)} onChange={(event) => patchOverlay(overlay.id, { size: Number(event.target.value) / 1000 })} className="w-20 accent-[#3E5C78]" /></label>
                                 )}
                               </div>
                             </div>
@@ -4767,34 +4614,34 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     <EditableText label="المتن" multiline value={selected.content.body} onCommit={(next) => editContent({ body: next })} />
                     <div className="grid gap-1.5">
                       <EditableText label="الاقتباس" multiline value={selected.content.quote} onCommit={(next) => editContent({ quote: next })} />
-                      <button type="button" onClick={() => editContent({ quote: '' })} disabled={!selected.content.quote} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.75rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الاقتباس</button>
+                      <button type="button" onClick={() => editContent({ quote: '' })} disabled={!selected.content.quote} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الاقتباس</button>
                     </div>
                     {selected.content.points?.length ? <EditableText label="نقاط الإنفوجرافيك — سطر لكل نقطة" multiline value={selected.content.points.join('\n')} onCommit={(next) => editContent({ points: next.split('\n').map((item) => item.trim()).filter(Boolean) })} /> : null}
-                    {selected.content.slides.length > 1 && <details className="rounded-xl border border-hair bg-paper/70 p-2.5" data-studio-carousel-text-editor="true"><summary className="cursor-pointer list-none text-[.75rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">تحرير كلمات شرائح الكاروسيل ({selected.content.slides.length})</summary><div className="mt-2 grid gap-2">{selected.content.slides.map((slide, index) => <div key={slide.id} className="grid gap-2 rounded-xl border border-hair bg-canvas p-2.5"><span className="text-[.58rem] font-semibold text-accent">شريحة {index + 1}</span><EditableText label="الشارة" value={slide.kicker} onCommit={(next) => editCarouselSlide(index, { kicker: next })} /><EditableText label="العنوان" multiline value={slide.title} onCommit={(next) => editCarouselSlide(index, { title: next })} /><EditableText label="النص" multiline value={slide.body} onCommit={(next) => editCarouselSlide(index, { body: next })} /></div>)}</div></details>}
+                    {selected.content.slides.length > 1 && <details className="rounded-xl border border-hair bg-paper/70 p-2.5" data-studio-carousel-text-editor="true"><summary className="cursor-pointer list-none text-[.64rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">تحرير كلمات شرائح الكاروسيل ({selected.content.slides.length})</summary><div className="mt-2 grid gap-2">{selected.content.slides.map((slide, index) => <div key={slide.id} className="grid gap-2 rounded-xl border border-hair bg-canvas p-2.5"><span className="text-[.58rem] font-semibold text-accent">شريحة {index + 1}</span><EditableText label="الشارة" value={slide.kicker} onCommit={(next) => editCarouselSlide(index, { kicker: next })} /><EditableText label="العنوان" multiline value={slide.title} onCommit={(next) => editCarouselSlide(index, { title: next })} /><EditableText label="النص" multiline value={slide.body} onCommit={(next) => editCarouselSlide(index, { body: next })} /></div>)}</div></details>}
                     <div className="grid grid-cols-2 gap-2.5">
                       <div className="grid gap-1.5">
                         <EditableText label="الدعوة — مثل «اقرأ المادة كاملة»" value={selected.content.cta} onCommit={(next) => editContent({ cta: next })} />
-                        <button type="button" onClick={() => editContent({ cta: '' })} disabled={!selected.content.cta} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.75rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الدعوة</button>
+                        <button type="button" onClick={() => editContent({ cta: '' })} disabled={!selected.content.cta} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الدعوة</button>
                       </div>
                       <EditableText label="الكلمة البطلة" value={selected.content.heroWord} onCommit={(next) => editContent({ heroWord: next })} />
                     </div>
                     <div className="grid gap-1.5">
                       <EditableText label="الشارة أعلى التصميم — مثل «كتاب/مقال…»" value={selected.content.kicker} onCommit={(next) => editContent({ kicker: next })} />
-                      <button type="button" onClick={() => editContent({ kicker: '' })} disabled={!selected.content.kicker} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.75rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الشارة</button>
+                      <button type="button" onClick={() => editContent({ kicker: '' })} disabled={!selected.content.kicker} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-35">إخفاء الشارة</button>
                     </div>
                     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                       <div className="grid gap-1.5">
                         <EditableText label="اسم المؤلف / التوقيع" value={selected.content.author} onCommit={(next) => editContent({ author: next, authorHidden: false })} />
-                        <button type="button" onClick={() => editContent({ authorHidden: !selected.content.authorHidden })} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.75rem] font-semibold text-soft transition hover:border-accent hover:text-accent">{selected.content.authorHidden ? 'إظهار التوقيع' : 'إخفاء التوقيع'}</button>
+                        <button type="button" onClick={() => editContent({ authorHidden: !selected.content.authorHidden })} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent">{selected.content.authorHidden ? 'إظهار التوقيع' : 'إخفاء التوقيع'}</button>
                       </div>
                       <div className="grid gap-1.5">
                         <EditableText label="المصدر / النطاق" value={selected.content.source || 'dr-alfailakawi.com'} onCommit={(next) => editContent({ source: next, sourceHidden: false })} />
-                        <button type="button" onClick={() => editContent({ sourceHidden: !selected.content.sourceHidden })} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.75rem] font-semibold text-soft transition hover:border-accent hover:text-accent">{selected.content.sourceHidden ? 'إظهار المصدر' : 'إخفاء المصدر'}</button>
+                        <button type="button" onClick={() => editContent({ sourceHidden: !selected.content.sourceHidden })} className="justify-self-start rounded-full border border-hair px-2.5 py-1 text-[.6rem] font-semibold text-soft transition hover:border-accent hover:text-accent">{selected.content.sourceHidden ? 'إظهار المصدر' : 'إخفاء المصدر'}</button>
                       </div>
                     </div>
                   </div>
                   <div className="mt-3">
-                    <p className="text-[.75rem] font-semibold text-soft">المنظومة اللونية — بنقرة، والناقد يعيد الحكم فوراً</p>
+                    <p className="text-[.64rem] font-semibold text-soft">المنظومة اللونية — بنقرة، والناقد يعيد الحكم فوراً</p>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {(Object.keys(PALETTES) as PaletteId[]).map((paletteId) => {
                         const paletteSpec = PALETTES[paletteId]
@@ -4814,12 +4661,12 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   </div>
                   {/* البصمة البصرية: ألوانٌ من صورة الدكتور تكسو كل الاتجاهات — بلا رفعٍ لأي خادم */}
                   <div className="mt-3 border-t border-hair pt-3">
-                    <p className="text-[.75rem] font-semibold text-soft">بصمة بصرية — ألوانٌ من صورة تكسو كل الاتجاهات</p>
+                    <p className="text-[.64rem] font-semibold text-soft">بصمة بصرية — ألوانٌ من صورة تكسو كل الاتجاهات</p>
                     {dna ? (
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <span className="flex overflow-hidden rounded-full border border-hair">{dna.swatches.slice(0, 5).map((color, index) => <span key={index} className="h-5 w-5" style={{ background: color }} />)}</span>
                         <span className="rounded-full border border-accent/30 bg-accent/[.06] px-2.5 py-1 text-[.62rem] font-semibold text-accent">مطبّقة فعلياً على {arabicCountPhrase(plans.length, DIRECTION_AFTER_PREPOSITION_FORMS)}</span>
-                        <span className="text-[.75rem] text-soft">خلفية · توهجات · زوايا · توقيع لوني</span>
+                        <span className="text-[.6rem] text-soft">خلفية · توهجات · زوايا · توقيع لوني</span>
                         <button type="button" onClick={saveDnaFave} className="rounded-full border border-accent/40 px-2.5 py-1 text-[.62rem] font-semibold text-accent transition hover:bg-accent hover:text-white">★ احفظ في المفضّلة</button>
                         <button type="button" onClick={clearVisualDna} className="rounded-full border border-hair px-2.5 py-1 text-[.62rem] font-semibold text-soft transition hover:border-accent hover:text-accent">أزل البصمة</button>
                       </div>
@@ -4831,7 +4678,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                     )}
                     {dnaFaves.length > 0 && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="text-[.75rem] text-soft">بصماتك المفضّلة:</span>
+                        <span className="text-[.6rem] text-soft">بصماتك المفضّلة:</span>
                         {dnaFaves.map((fave, index) => (
                           <button key={index} type="button" title="طبّق هذه البصمة على كل الاتجاهات" onClick={() => { setDna(fave); applyDnaOverride(fave.palette); setNotice('طُبّقت بصمةٌ مفضّلة على كل الاتجاهات.') }} className="h-6 w-6 rounded-full border-2 border-hair transition hover:scale-110" style={{ background: `linear-gradient(135deg, ${fave.palette.background} 50%, ${fave.palette.accent} 50%)` }} />
                         ))}
@@ -4842,7 +4689,7 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
                   {/* اتجاه الإنفوجرافيك الفنّي: اختيارٌ يدويّ يتقدّم على الانتقاء التلقائي — يظهر للإنفوجرافيك فقط */}
                   {selected.layout === 'infographic' && (
                     <div className="mt-3 border-t border-hair pt-3">
-                      <p className="text-[.75rem] font-semibold text-soft">اتجاه الإنفوجرافيك الفنّي — بنقرة</p>
+                      <p className="text-[.64rem] font-semibold text-soft">اتجاه الإنفوجرافيك الفنّي — بنقرة</p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {INFO_VARIANTS.map(({ id, label }) => {
                           const active = (selected.infoVariant || infographicVariantOf(selected)) === id

@@ -34,24 +34,6 @@ export interface StyleDna {
   closings: { questionRate: number; antithesisRate: number; appealRate: number }
   perArticle: Record<string, StyleBand>
   era?: { halfLifeYears: number; weightedSample: number; recentArticles: number }
-  /* صوته اليوم: من آخر عشرين مقالاً مؤرّخاً، ويتجدد كلما نشر. */
-  recent?: {
-    sample: number
-    retired: string[]
-    semicolonShare: number
-    askYourselfShare: number
-    perhapsBeginsShare: number
-    openers: string[]
-    paragraphsMedian?: number
-    paragraphsP75?: number
-    paragraphWordsMedian?: number
-    /* حركة الجملة الأولى في مقالاته: بها تُوزَّع بُنى المقالات المولَّدة. */
-    openingShares?: Partial<Record<OpeningMove, number>>
-    /* نسبة مقالاته الأخيرة التي تحمل جملة مطلعها وقفة «…». */
-    openingPauseShare?: number
-    /* نطاقات صوته اليوم (مئينات آخر عشرين مقالاً): منها الوصفة وأوامر الإصلاح. */
-    bands?: Partial<Record<'ellipsisPer100' | 'medianSentence' | 'shortRate' | 'singleRate' | 'questions', { p15: number; p35: number; p50: number; p65: number; p85: number }>>
-  }
   banned: string[]
   bannedVoice: string[]
 }
@@ -82,8 +64,6 @@ export interface StyleVerdict {
   corrections: string[]
   fatal: string[]
   metrics: StyleMetrics
-  /** احتمال أن يكون النص آلياً وفق «أثر الآلة» (٠–١). */
-  machineProbability?: number
 }
 
 export declare const BANNED_PHRASES: string[]
@@ -96,10 +76,6 @@ export declare function wordsOf(value?: string): string[]
 export declare function countWords(value?: string): number
 export declare function sentencesOf(value?: string): string[]
 export declare function paragraphsOf(value?: string): string[]
-
-export type OpeningMove = 'thesis' | 'scene' | 'we' | 'negation' | 'question' | 'quote'
-export declare const OPENING_MOVES: OpeningMove[]
-export declare function openingMove(text?: string): OpeningMove
 
 export declare function measureStyleDna(articles: ({ body?: string; iso?: string; date?: string } | string)[]): StyleDna | null
 export declare function articleMetrics(body: string, options?: { collective?: string[] }): StyleMetrics
@@ -124,56 +100,8 @@ export declare function judgeStyle(
     sources?: ({ body?: string; title?: string; summary?: string; excerpt?: string } | string)[]
     orthography?: Map<string, number> | null
     threshold?: number
-    /* المسودة من صنع المحرك: تُحاسَب على الحكاية الشخصية المختلقة، وما يكتبه هو لا. */
-    generated?: boolean
-    /* مادته هو لهذا المقال (موقفٌ عاشه، جملةٌ سمعها): ما جاء منها لا يُحاسَب. */
-    authorMaterial?: string
   },
 ): StyleVerdict
-
-export declare const MACHINE_TRACE: {
-  version: number
-  intercept: number
-  threshold: number
-  strong: number
-  features: { key: string; label: string; w: number; mu: number; sd: number }[]
-}
-export declare function machineTrace(metrics: Partial<StyleMetrics> | Record<string, unknown>): {
-  probability: number
-  reasons: { key: string; label: string; fix: string }[]
-}
-
-export declare const STYLE_THRESHOLD_FALLBACK: number
-
-export interface StyleCalibration {
-  measured: boolean
-  sampleSize: number
-  /* درجات مقالاته قبل السقف، مرتّبةً تصاعدياً. */
-  raw: number[]
-  naturalness: number[]
-  threshold: number
-  median: number | null
-  naturalFloor: number
-  machineFloor: number
-}
-
-export interface NaturalnessVerdict {
-  score: number
-  /* نسبة مقالاته التي تقع دون هذا النص طبيعيةً. */
-  rank: number | null
-  level: 'empty' | 'natural' | 'touch' | 'machine'
-  label: string
-  note: string
-}
-
-export declare function naturalnessScore(verdict: StyleVerdict | null): number
-export declare function percentileRank(sorted: number[], value: number): number | null
-export declare function calibrateStyle(
-  articles: ({ body?: string } | string)[],
-  dna: StyleDna | null,
-  options?: { orthography?: Map<string, number> | null },
-): StyleCalibration
-export declare function judgeNaturalness(verdict: StyleVerdict | null, calibration?: StyleCalibration | null): NaturalnessVerdict
 
 export declare function unsupportedClaims(
   body: string,

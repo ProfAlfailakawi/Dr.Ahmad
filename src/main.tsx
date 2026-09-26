@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client'
 import '@fontsource-variable/alexandria'
 import App from './App'
 import ErrorBoundary, { healStaleBundles, isStaleBundleError } from './components/ErrorBoundary'
-import { installAppUpdate } from './lib/app-update'
 import { installDomResilience } from './lib/dom-resilience'
 import { hasMissingAppChunk, watchResourceFailures } from './lib/load-failures'
 import { startWebVitalsMonitoring } from './lib/web-vitals'
@@ -25,10 +24,6 @@ watchResourceFailures()
 
 /* تسامحُ إزالة العقد مع ما يعدّله المتصفح أو إضافاته خارج React. */
 installDomResilience()
-
-/* التحديث الذاتي الصامت: بصمة الإصدار ومنارتها ثم التحديث والتصعيد عند اللزوم.
-   شفاء الحزم اليتيمة له مساره أعلاه، فلا يُركَّب مرتين. */
-installAppUpdate({ chunkRecovery: false })
 
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()

@@ -321,25 +321,6 @@ function extractLiteralAnchors(input: string, recognizedTerms: RecognizedDomainT
   return anchors.slice(0, 5)
 }
 
-/** يعيد المرساة المعالجة إلى كلمات المستخدم كما كتبها: المعالجة (ة→ه، حذف حروف
-    الجر) للتحليل والمطابقة فقط، ولا يراها الدكتور — كان الملخص يعرض
-    «القراءه العميقه … الطالب الكسل المعرفي». */
-function anchorsAsWritten(input: string, anchors: string[]) {
-  const original = String(input || '').split(/\s+/).map((word) => word.replace(/^[«"'(\[]+|[»"')\].,،:;؛!?؟…]+$/gu, '')).filter(Boolean)
-  const keys = original.map((word) => stripLeadingConjunction(normalizeDomainTerm(word)))
-  return anchors.map((anchor) => {
-    const tokens = anchor.split(/\s+/).filter(Boolean)
-    if (!tokens.length) return anchor
-    const start = keys.findIndex((key) => key === tokens[0])
-    if (start < 0) return anchor
-    let end = -1
-    for (let index = keys.length - 1; index >= start; index -= 1) {
-      if (keys[index] === tokens[tokens.length - 1]) { end = index; break }
-    }
-    return end >= start ? original.slice(start, end + 1).join(' ') : anchor
-  })
-}
-
 function moodWorlds(moods: DomainMood[]) {
   const worlds: string[] = []
   if (moods.some((mood) => ['bright', 'optimistic'].includes(mood))) worlds.push('daylight-learning', 'sunlit-campus', 'color-field-editorial')
@@ -390,7 +371,6 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     ...facets.map((item) => ({ id: item.facet.id, kind: item.facet.kind, canonicalAr: item.facet.canonicalAr, canonicalEn: item.facet.canonicalEn, score: Math.round(item.score), matchedAlias: item.alias })),
   ]
   const literalAnchors = extractLiteralAnchors(input, recognizedTerms)
-  const anchorsShown = anchorsAsWritten(input, literalAnchors)
 
   if (!primary && !facets.length) return empty
 
@@ -408,7 +388,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     actions.length ? `العملية أو الغاية: ${actions.map((item) => item.canonicalAr).join('، ')}.` : '',
     outcomes.length ? `الناتج المراد فهمه أو تحسينه: ${outcomes.map((item) => item.canonicalAr).join('، ')}.` : '',
     methods.length ? `النموذج أو المنهج المرتبط: ${methods.map((item) => item.canonicalAr).join('، ')}.` : '',
-    anchorsShown.length ? `الموضوع الحرفي الذي لا يجوز إسقاطه من الصورة: ${anchorsShown.join('، ')}.` : '',
+    literalAnchors.length ? `الموضوع الحرفي الذي لا يجوز إسقاطه من الصورة: ${literalAnchors.join('، ')}.` : '',
   ].filter(Boolean).join(' ')
 
   const recognizedFrom = recognizedTerms.slice(0, 8).map((item) => `${item.canonicalAr}${item.canonicalEn ? ` (${item.canonicalEn})` : ''}`).join(' · ')
@@ -416,7 +396,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     ...(primary?.visualScenes || []),
     ...matches.slice(1).flatMap((entry) => entry.visualScenes.slice(0, 1)),
     ...facets.map((item) => item.facet.visualHint || '').filter(Boolean),
-    ...(anchorsShown.length ? [`تقاطع بصري واضح بين ${primary?.canonicalAr || recognizedTerms[0]?.canonicalAr || 'المفهوم'} و${anchorsShown.join(' و')}`] : []),
+    ...(literalAnchors.length ? [`تقاطع بصري واضح بين ${primary?.canonicalAr || recognizedTerms[0]?.canonicalAr || 'المفهوم'} و${literalAnchors.join(' و')}`] : []),
   ]).slice(0, 14)
   const moods = unique([
     ...(primary?.moods || []),
@@ -428,7 +408,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     ...(primary?.avoid || []),
     ...matches.flatMap((entry) => entry.avoid),
     ...(positive ? ['الجو الحزين الافتراضي', 'الممرات المظلمة', 'الفصول الفارغة الكئيبة', 'العزلة غير المطلوبة', 'تكرار الثيم نفسه'] : []),
-    ...(anchorsShown.length ? [`إسقاط الموضوع الحرفي من الصورة: ${anchorsShown.join('، ')}`, 'اختزال العنوان في المصطلح الأساسي وحده'] : []),
+    ...(literalAnchors.length ? [`إسقاط الموضوع الحرفي من الصورة: ${literalAnchors.join('، ')}`, 'اختزال العنوان في المصطلح الأساسي وحده'] : []),
     'كليشيه بصري عام لا يشرح المفهوم المتخصص',
     'نصوص أو شعارات مولدة داخل الصورة',
   ]).slice(0, 28)
@@ -444,7 +424,7 @@ export function interpretDrAhmadDomain(input: string, context = ''): DrAhmadDoma
     primary ? `المجال: ${primary.domain}.` : '',
     `الفهم المتخصص: ${compoundMeaning}`,
     matches.length > 1 ? `مفاهيم مرتبطة يجب تمييزها: ${matches.slice(1).map((entry) => entry.canonicalAr).join('، ')}.` : '',
-    anchorsShown.length ? `مرساة حرفية إلزامية: ${anchorsShown.join('، ')}.` : '',
+    literalAnchors.length ? `مرساة حرفية إلزامية: ${literalAnchors.join('، ')}.` : '',
   ].filter(Boolean).join(' ')
 
   return {

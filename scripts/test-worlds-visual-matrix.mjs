@@ -27,7 +27,7 @@ let auditsOut=transpile(await read('src/lib/world-audits.ts'),'world-audits.ts')
 let diversityOut=transpile(await read('src/lib/perceptual-diversity.ts'),'perceptual-diversity.ts');diversityOut=rep(diversityOut,'./social-design-engine',engineUrl);diversityOut=rep(diversityOut,'./procedural-world-engine',procUrl);const diversity=await import(dataUrl(diversityOut))
 
 const seasonUrl=dataUrl(`export const currentSeason=()=>({id:'none',label:'',kind:'none'});export const seasonStrokePath=()=>'';`)
-let rendererOut=transpile(await read('src/lib/social-design-renderer.ts'),'social-design-renderer.ts');rendererOut=rep(rendererOut,'./social-design-engine',engineUrl);rendererOut=rep(rendererOut,'./seasons',seasonUrl);rendererOut=rep(rendererOut,'./design-system',designSystemUrl);const renderer=await import(dataUrl(rendererOut))
+let rendererOut=transpile(await read('src/lib/social-design-renderer.ts'),'social-design-renderer.ts');rendererOut=rep(rendererOut,'./social-design-engine',engineUrl);rendererOut=rep(rendererOut,'./seasons',seasonUrl);const renderer=await import(dataUrl(rendererOut))
 
 const metaphorUrl=dataUrl(transpile(await read('src/lib/reel-metaphors.ts'),'reel-metaphors.ts'))
 let reelScenesOut=transpile(await read('src/lib/reel-scenes.ts'),'reel-scenes.ts')

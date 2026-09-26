@@ -3163,6 +3163,8 @@ function knowledgeIndex() {
 }
 
 /** أقرب ما قاله هو في الفكرة، من كل مصدرٍ على حدة، بتنوّعٍ (مقطعان على الأكثر من الكتاب الواحد). */
+const AMBIGUOUS_ANCHORS = new Set(['تقويم'])
+
 export function domainKnowledge(idea, { angle = '', books = 4, articles = 2, interviews = 2, citations = 2, globals = 2, exclude = [], mustMatch = '' } = {}) {
   const { documents, frequency, averageLength } = knowledgeIndex()
   /* الفكرة وحدها تشترط المطابقة؛ الزاوية ترجّح ولا تُقصي: «التلعيب» بزاوية «القيادة
@@ -3182,7 +3184,9 @@ export function domainKnowledge(idea, { angle = '', books = 4, articles = 2, int
   const skip = new Set(exclude)
   /* mustMatch: نصٌّ يجب أن يشارك المقطعُ كلماته في كلمةٍ واحدة على الأقل (جولة L: بحثٌ بموضوع المسودة جلب
      Rosenthal لمقالٍ عن التعب وCerasoli لمقالٍ عن العودة، فعدّها الحَكَم الأعمى استشهاداً ملصقاً). */
-  const anchorTerms = mustMatch ? [...new Set(knowledgeTerms(mustMatch))] : []
+  /* «التقويم» كلمةٌ بمعنيين (تقويم السنة وتقويم التعلّم): لا تصلح رابطاً وحدها. جولة M: فكرة «السنة التي لا
+     تبدأ من التقويم» استُشهد فيها بـRoediger وKarpicke عن أثر الاختبار. */
+  const anchorTerms = mustMatch ? [...new Set(knowledgeTerms(mustMatch))].filter((term) => !AMBIGUOUS_ANCHORS.has(term)) : []
   const scored = []
   for (const document of documents) {
     if (skip.has(document.group) || skip.has(document.slug)) continue

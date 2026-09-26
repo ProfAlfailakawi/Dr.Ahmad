@@ -886,6 +886,7 @@ assert.ok(briefH.includes('التشكيل عنده خفيف'), 'الوصفة ت�
 const graftQuery = 'حين تتحوّل العبارة المكرّرة إلى توقّعٍ مسبق من المعلم عن طلابه'
 assert.ok(domainKnowledge(graftQuery, { books: 0, articles: 0, interviews: 0 }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Rosenthal')), 'بلا قيدٍ: موضوع المسودة يجلب Rosenthal')
 assert.ok(!domainKnowledge(graftQuery, { books: 0, articles: 0, interviews: 0, mustMatch: 'تعبٌ جديد بعبارات قديمة' }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Rosenthal')), 'ومع قيد الفكرة لا يُلصق بمقالٍ عن التعب')
+assert.ok(!domainKnowledge('التقويم التكويني والاختبار الذاتي يرسّخان التعلّم', { books: 0, articles: 0, interviews: 0, mustMatch: 'السنة التي لا تبدأ من التقويم' }).من_مراجع_العالم.some((item) => item.مرجع.startsWith('Roediger')), '«التقويم» الملتبس لا يربط أثر الاختبار بمقالٍ عن السنة')
 assert.ok(!server.includes('(الارتباط ارتباطٌ لا سبب)') && BANNED_PHRASES.includes('ارتباطٌ لا سبب'), 'عبارة الحذر لا تُملى حرفياً، وهي محظورة')
 assert.ok(eraRecent.rareFormulas.includes('…فحسب، بل…'), '«…فحسب، بل…» صيغةٌ نادرة عنده')
 

@@ -1,5 +1,7 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+// @ts-ignore -- إضافة بلا أنواع: تحقن بصمة البناء وتطبعها في dist/build-id.json و sw.js
+import { buildStamp } from './scripts/build-stamp.mjs'
 
 function encyclopediaApiPlugin(): Plugin {
   return {
@@ -48,7 +50,7 @@ function encyclopediaApiPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), encyclopediaApiPlugin()],
+  plugins: [react(), encyclopediaApiPlugin(), buildStamp()],
   server: {
     /* ٣٠٠٠ هو المنفذ الوحيد المسموح بالاتصال به خارجياً في بيئة AI Studio. */
     port: 3000,

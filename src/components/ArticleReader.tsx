@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { getDb, getFirebaseAuth } from '../lib/firebase'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { SocialIcon } from './icons'
+import GlyphLoader from './GlyphLoader'
 import { highlightMergeVerdict } from '../lib/quote-merge'
 import type { ArticleRecord, PaperRecord } from '../lib/cms'
 import { buildConceptArchivePreview } from '../lib/concept-weave'
@@ -1469,7 +1470,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
 
               {sheet === 'card' ? (
                 <div className="mt-5">
-                  {!cardUrl && <div className="flex aspect-[4/5] items-center justify-center rounded-2xl border border-hair bg-wash text-[.78rem] text-soft">{cardBusy ? 'أصنع البطاقة…' : 'لحظة…'}</div>}
+                  {!cardUrl && <div className="flex aspect-[4/5] flex-col items-center justify-center gap-3 rounded-2xl border border-hair bg-wash text-[.78rem] text-soft"><GlyphLoader size={32} label={cardBusy ? 'أصنع البطاقة…' : 'يجهّز المعاينة…'} />{cardBusy && <span aria-hidden="true">أصنع البطاقة…</span>}</div>}
                   {cardUrl && (
                     <>
                       <img decoding="async" src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />

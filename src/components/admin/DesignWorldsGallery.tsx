@@ -6,14 +6,46 @@ import { WorldAudit } from '../../lib/world-audits'
 import { analyzeWorldSemantics } from '../../lib/world-semantics'
 import { worldPreviewPlan } from '../../lib/design-worlds'
 import { renderCompositionSvg } from '../../lib/social-design-renderer'
+import { mix as mixColor } from '../../lib/design-system'
 
+/* ── تباين أزرار البطاقة من لوحة العالم نفسه ──
+   البطاقة تلبس أرضية عالمها، وكانت أزرارها بلون واحد (رمادي فاتح) فتختفي في
+   العوالم الفاتحة. الآن يُختار لون النص والحدّ من لوحة العالم بقياس التباين:
+   ٤٫٥:١ للنص و٣:١ للأيقونات والحدود (WCAG). */
+const channel=(v:number)=>{const c=v/255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)}
+const luminance=(hex:string)=>{const m=/^#?([0-9a-f]{6})$/i.exec(hex.trim());if(!m)return .5;const n=parseInt(m[1],16);return .2126*channel((n>>16)&255)+.7152*channel((n>>8)&255)+.0722*channel(n&255)}
+export const contrastRatio=(a:string,b:string)=>{const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+const pickReadable=(bg:string,candidates:string[],min:number)=>candidates.find((c)=>contrastRatio(c,bg)>=min)||[...candidates].sort((l,r)=>contrastRatio(r,bg)-contrastRatio(l,bg))[0]
+/** زرٌّ ملوّن بلون العالم: نصه الأوضح من لوحته، وإن لم يبلغ ٤٫٥:١ عُتّم الزر أو فُتّح نحو حبر العالم أو أرضيته حتى يبلغه. */
+function primaryButtonColors(wp:DesignWorld['palette']){
+  const inks=[wp.background,wp.ink]
+  let bg=wp.accent
+  let fg=pickReadable(bg,inks,4.5)
+  for(let step=1;step<=10&&contrastRatio(fg,bg)<4.5;step+=1){
+    const towards=luminance(fg)>luminance(bg)?wp.ink:wp.background
+    bg=mixColor(wp.accent,luminance(fg)>luminance(bg)?(luminance(wp.ink)<luminance(wp.background)?wp.ink:wp.background):towards,step*.08)
+    fg=pickReadable(bg,inks,4.5)
+  }
+  return {bg,fg}
+}
+function cardUi(wp:DesignWorld['palette']){
+  const text=pickReadable(wp.background,[wp.ink,wp.muted],4.5)
+  const border=pickReadable(wp.background,[wp.muted,wp.ink],3)
+  return {text,soft:pickReadable(wp.background,[wp.muted,wp.ink],4.5),border,chipBg:wp.surface,chipText:pickReadable(wp.surface,[wp.ink,wp.muted],4.5),chipBorder:pickReadable(wp.surface,[wp.muted,wp.ink],3),primary:primaryButtonColors(wp)}
+}
+
+const WORLDS_PREVIEW_COUNT=9
 const POSTER_CACHE_LIMIT=96
 const posterCache=new Map<string,string>()
 function posterOf(world:DesignWorld,idea:string){
   const key=`${world.id}:${idea.slice(0,96)}`
   const cached=posterCache.get(key)
   if(cached){posterCache.delete(key);posterCache.set(key,cached);return cached}
-  const svg=renderCompositionSvg(worldPreviewPlan(world,idea||undefined),{ariaLabel:`ملصق عالم ${world.label}`})
+  /* الاسم والرابط لا يُرسمان داخل الملصق المصغّر (كانا يظهران بنحو ٤ بكسل)؛
+     تعرضهما البطاقة نصاً حقيقياً بحجمٍ مقروء فوق المعاينة. */
+  const base=worldPreviewPlan(world,idea||undefined)
+  const plan={...base,content:{...base.content,authorHidden:true,sourceHidden:true}}
+  const svg=renderCompositionSvg(plan,{ariaLabel:`ملصق عالم ${world.label}`})
   posterCache.set(key,svg)
   while(posterCache.size>POSTER_CACHE_LIMIT){const oldest=posterCache.keys().next().value as string|undefined;if(oldest)posterCache.delete(oldest);else break}
   return svg
@@ -33,6 +65,7 @@ function useVisible<T extends HTMLElement>(){
 
 export interface DesignWorldsGalleryProps { activeWorldId?:DesignWorldId|string|null; onDress:(world:DesignWorld)=>void; onGenerate?:(world:DesignWorld)=>void; onClear?:()=>void; compact?:boolean; idea?:string; semanticPlatform?:'post'|'reel' }
 const tiny='rounded-full border border-white/15 px-2.5 py-1 text-[.58rem] font-bold text-slate-200 transition hover:border-sky-300/60 hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
+const cardChip='rounded-full border px-2.5 py-1 text-[.75rem] font-bold transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
 const field='min-w-0 rounded-xl border border-white/10 bg-slate-950/55 px-2.5 py-2 text-[.62rem] text-slate-200 outline-none focus:border-sky-300/50'
 const labelMap:Record<string,string>={still:'ساكن',balanced:'متزن',pulsing:'نابض',rising:'متصاعد','controlled-explosive':'انفجاري محسوب',paper:'ورق',glass:'زجاج',metal:'معدن',stone:'حجر',ink:'حبر',light:'ضوء',sand:'رمل',water:'ماء',textile:'نسيج',clay:'طين',breathe:'تنفّس',grow:'نمو',connect:'اتصال',split:'انقسام',rise:'صعود',orbit:'دوران',weave:'نسج',reveal:'كشف',balance:'توازن',pulse:'نبض'}
 
@@ -42,11 +75,13 @@ function WorldCard({world,idea,active,favorite,compare,onFavorite,onCompare,onDr
   const motionRef=useRef<HTMLSpanElement|null>(null)
   const rafRef=useRef(0)
   const wp=world.palette
+  const ui=useMemo(()=>cardUi(wp),[wp])
   useEffect(()=>{
     cancelAnimationFrame(rafRef.current)
     const layer=motionRef.current
     if(!layer||!live||!visible)return
     if(typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches)return
+    layer.style.transition=''
     const started=performance.now()
     const motion=world.motionDna[0]
     const tick=(now:number)=>{
@@ -58,19 +93,28 @@ function WorldCard({world,idea,active,favorite,compare,onFavorite,onCompare,onDr
       rafRef.current=requestAnimationFrame(tick)
     }
     rafRef.current=requestAnimationFrame(tick)
-    return()=>cancelAnimationFrame(rafRef.current)
+    /* مغادرة المؤشر: الطبقة كانت تتجمّد على آخر إطار فيبقى وهجٌ باهت على كل بطاقة
+       مُرَّ فوقها؛ الآن تنطفئ بهدوء إلى سكونها (opacity-0) بالمنحنى الموحّد. */
+    return()=>{
+      cancelAnimationFrame(rafRef.current)
+      layer.style.transition='opacity .45s cubic-bezier(.2,.7,.2,1), transform .45s cubic-bezier(.2,.7,.2,1)'
+      layer.style.opacity=''
+      layer.style.transform=''
+    }
   },[live,visible,world.motionDna])
   return <article ref={ref} onMouseEnter={()=>setLive(true)} onMouseLeave={()=>setLive(false)} onFocus={()=>setLive(true)} onBlur={()=>setLive(false)} className={`group relative overflow-hidden rounded-xl border transition ${active?'ring-2 ring-sky-300/70':''}`} style={{background:wp.background,borderColor:active?wp.accent:wp.rule}}>
-    <div className="absolute left-2 top-2 z-20 flex gap-1"><button type="button" className={tiny} onClick={onFavorite} aria-label="حفظ المفضلة">{favorite?'★':'☆'}</button><button type="button" className={tiny} onClick={onCompare} aria-pressed={compare} aria-label="أضف للمقارنة">⇄</button></div>
+    {/* شريط أعلى البطاقة خارج المعاينة: الشارة وأزرار المفضلة والمقارنة لا تغطي شيئاً من التصميم —
+        كانت الشارة فوق تذييل الملصق فتغطي اسم المؤلف (٥ من ٩ بطاقات). */}
+    <div className="flex items-center justify-between gap-2 px-2 py-1.5" style={{borderBottom:`1px solid ${wp.rule}`}}><span className="rounded-full px-2 py-1 text-[.75rem] font-bold" style={{background:ui.chipBg,color:ui.chipText,border:`1px solid ${ui.chipBorder}`}} data-world-badge="true">{world.familyLabel}</span><span className="flex gap-1"><button type="button" className={cardChip} style={{background:ui.chipBg,color:ui.chipText,borderColor:ui.chipBorder}} onClick={onFavorite} aria-label="حفظ المفضلة">{favorite?'★':'☆'}</button><button type="button" className={cardChip} style={{background:ui.chipBg,color:ui.chipText,borderColor:ui.chipBorder}} onClick={onCompare} aria-pressed={compare} aria-label="أضف للمقارنة">⇄</button></span></div>
     <button type="button" onClick={onDress} className="block w-full text-right" title={`${world.description}\n${world.philosophy}`}>
       <span className="relative block overflow-hidden" style={{aspectRatio:'4 / 5',background:wp.background}}>
         {visible?<span className="absolute inset-0 block" dangerouslySetInnerHTML={{__html:posterOf(world,idea)}}/>:<span className="absolute inset-0 animate-pulse" style={{background:`linear-gradient(145deg,${wp.background},${wp.surface},${wp.background})`}}/>}
         <span ref={motionRef} aria-hidden="true" className="pointer-events-none absolute inset-[8%] rounded-[28%] opacity-0 will-change-transform" style={{background:`radial-gradient(circle at 72% 20%,${wp.accent}55,transparent 42%),linear-gradient(135deg,transparent 32%,${wp.accentSoft}22 50%,transparent 68%)`}}/>
-        <span className="absolute bottom-2 right-2 z-10 rounded-full px-2 py-1 text-[.48rem] font-bold" style={{background:wp.surface,color:wp.ink,border:`1px solid ${wp.rule}`}}>{world.familyLabel}</span>
+        <span className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-0.5 px-2 pb-1.5 pt-4 text-center text-[.75rem] leading-tight" style={{background:`linear-gradient(0deg,${wp.background} 58%,transparent)`}} data-world-footer="true"><span className="font-bold" style={{color:ui.text}}>د. أحمد حسين الفيلكاوي</span><bdi dir="ltr" style={{color:ui.text}}>dr-alfailakawi.com</bdi></span>
       </span>
-      <span className="block px-3 pb-2 pt-2" style={{borderTop:`1px solid ${wp.rule}`}}><span className="block font-display text-[.78rem] font-bold" style={{color:wp.ink}}>{world.labelAr}</span><span className="block text-[.48rem] uppercase tracking-[.08em]" style={{color:wp.muted}}>{world.labelEn}</span><span className="mt-1 block text-[.55rem] leading-relaxed" style={{color:wp.muted}}>{world.tagline}</span></span>
+      <span className="block px-3 pb-2 pt-2" style={{borderTop:`1px solid ${wp.rule}`}}><span className="block font-display text-[.78rem] font-bold" style={{color:ui.text}}>{world.labelAr}</span><span className="block text-[.75rem] uppercase tracking-[.08em]" style={{color:ui.soft}}>{world.labelEn}</span><span className="mt-1 block text-[.75rem] leading-relaxed" style={{color:ui.soft}}>{world.tagline}</span></span>
     </button>
-    <div className="grid gap-1 px-3 pb-2"><button type="button" className="w-full rounded-full px-2 py-1 text-[.54rem] font-bold" style={{background:wp.accent,color:wp.isDark?'#0A0D12':'#fff'}} onClick={onDress}>ألبس الفكرة هذا العالم</button><button type="button" className={tiny} onClick={()=>setLive((x)=>!x)}>{live?'أوقف المعاينة':'حرّك المعاينة'}</button>{onGenerate?<button type="button" className={tiny} onClick={onGenerate}>ولادة كاملة</button>:null}</div>
+    <div className="grid gap-1 px-3 pb-2"><button type="button" className="w-full rounded-full px-2 py-1 text-[.75rem] font-bold" style={{background:ui.primary.bg,color:ui.primary.fg}} onClick={onDress}>ألبس الفكرة هذا العالم</button><button type="button" className={cardChip} style={{color:ui.text,borderColor:ui.border}} onClick={()=>setLive((x)=>!x)}>{live?'أوقف المعاينة':'حرّك المعاينة'}</button>{onGenerate?<button type="button" className={cardChip} style={{color:ui.text,borderColor:ui.border}} onClick={onGenerate}>ولادة كاملة</button>:null}</div>
   </article>
 }
 
@@ -81,6 +125,9 @@ export default function DesignWorldsGallery({activeWorldId,onDress,onGenerate,on
   const [compare,setCompare]=useState<string[]>([]); const [variant,setVariant]=useState<ProceduralWorldResult|null>(null); const [fusionRatio,setFusionRatio]=useState(60); const [surpriseRound,setSurpriseRound]=useState(0); const [notice,setNotice]=useState('')
   const [density,setDensity]=useState(45); const [energyValue,setEnergyValue]=useState(45); const [depth,setDepth]=useState(45); const [temperature,setTemperature]=useState(45); const [speed,setSpeed]=useState(45)
   const [locks,setLocks]=useState<WorldLocks>({})
+  /* القسم كان يمتد نحو ١١٬٠٠٠ بكسل (٦٤ عالماً) بين النتيجة واستوديو الريل؛ تُعرض
+     تسعة عوالم أولاً ويُفتح الباقي عند الطلب. */
+  const [showAll,setShowAll]=useState(false)
   const active=resolveWorld(activeWorldId)
   const masters=useMemo(()=>MASTER_WORLD_ORDER.map((id)=>DESIGN_WORLDS[id]),[])
   const moods=useMemo(()=>Array.from(new Set(masters.flatMap((w)=>w.emotionalTone))).sort(),[masters])
@@ -101,14 +148,15 @@ export default function DesignWorldsGallery({activeWorldId,onDress,onGenerate,on
   const cache=proceduralWorldCacheStats()
   return <section className="mt-3 overflow-hidden rounded-2xl border border-hair bg-slate-950 text-right" dir="rtl" data-world-master-count="64" data-procedural-world-engine="true" data-seed-cache="lru">
     <div className="px-4 pb-3 pt-4">
-      <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-display text-base font-bold text-slate-100">عوالم التصميم</h3><span className="rounded-full border border-sky-300/25 bg-sky-300/10 px-2 py-1 text-[.55rem] font-bold text-sky-200">64 Master Worlds · 16 عائلة</span></div><p className="mt-1 max-w-3xl text-[.62rem] leading-relaxed text-slate-400">المعنى أولاً: <strong className="text-slate-200">{semantic.centralIdea}</strong> · الفعل <strong className="text-sky-200">{semantic.semanticMotionVerb}</strong> · {semantic.visualMetaphor}</p></div><div className="flex flex-wrap gap-1.5"><button type="button" className={tiny} onClick={distant}>ولّد نسخة بعيدة إدراكياً</button><button type="button" className={tiny} onClick={surprise}>فاجئني · Controlled</button>{activeWorldId&&onClear?<button type="button" className={tiny} onClick={onClear}>أزل العالم</button>:null}</div></div>
+      <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-display text-base font-bold text-slate-100">عوالم التصميم</h3><span className="rounded-full border border-sky-300/25 bg-sky-300/10 px-2 py-1 text-[.75rem] font-bold text-sky-200"><bdi>64 Master Worlds</bdi> · <bdi>16</bdi> عائلة</span></div><p className="mt-1 max-w-3xl text-[.62rem] leading-relaxed text-slate-400">المعنى أولاً: <strong className="text-slate-200">{semantic.centralIdea}</strong> · الفعل <strong className="text-sky-200">{semantic.semanticMotionVerb}</strong> · {semantic.visualMetaphor}</p></div><div className="flex flex-wrap gap-1.5"><button type="button" className={tiny} onClick={distant}>ولّد نسخة بعيدة إدراكياً</button><button type="button" className={tiny} onClick={surprise}>فاجئني · Controlled</button>{activeWorldId&&onClear?<button type="button" className={tiny} onClick={onClear}>أزل العالم</button>:null}</div></div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><input className={field} value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="ابحث بالاسم أو المعنى…"/><select className={field} value={family} onChange={(e)=>setFamily(e.target.value)}><option value="all">كل العائلات</option>{WORLD_FAMILY_OPTIONS.map((x)=><option key={x.id} value={x.id}>{x.label}</option>)}</select><select className={field} value={mood} onChange={(e)=>setMood(e.target.value)}><option value="all">كل المزاجات</option>{moods.map((x)=><option key={x}>{x}</option>)}</select><select className={field} value={material} onChange={(e)=>setMaterial(e.target.value)}><option value="all">كل المواد</option>{materials.map((x)=><option key={x} value={x}>{labelMap[x]||x}</option>)}</select><select className={field} value={energy} onChange={(e)=>setEnergy(e.target.value)}><option value="all">كل الطاقات</option>{['still','balanced','pulsing','rising','controlled-explosive'].map((x)=><option key={x} value={x}>{labelMap[x]}</option>)}</select><select className={field} value={motion} onChange={(e)=>setMotion(e.target.value)}><option value="all">كل الحركات</option>{motions.map((x)=><option key={x} value={x}>{labelMap[x]||x}</option>)}</select></div>
-      <div className="mt-3 grid gap-2 lg:grid-cols-5">{[['الكثافة',density,setDensity],['الطاقة',energyValue,setEnergyValue],['العمق',depth,setDepth],['الحرارة',temperature,setTemperature],['سرعة الحركة',speed,setSpeed]].map(([label,value,setter])=><label key={String(label)} className="rounded-xl border border-white/10 bg-white/[.025] px-2 py-1.5 text-[.52rem] text-slate-400"><span className="flex justify-between"><span>{String(label)}</span><span>{String(value)}%</span></span><input className="w-full" type="range" min="0" max="100" value={Number(value)} onChange={(e)=>(setter as (value:number)=>void)(Number(e.target.value))}/></label>)}</div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-[.55rem] text-slate-400"><span>Lock:</span>{([['typography','الخط'],['palette','اللون'],['layout','التكوين']] as const).map(([key,label])=><button type="button" key={key} className={`${tiny} ${locks[key]?'border-sky-300/60 text-sky-200':''}`} onClick={()=>setLocks((x)=>({...x,[key]:!x[key]}))}>{locks[key]?'🔒':'○'} {label}</button>)}<span className="mr-auto">{filtered.length} عالم ظاهر · {favorites.length} مفضلة · Seed cache {cache.size}/{cache.limit} · المعاينات تتوقف خارج الشاشة</span></div>
-      {compare.length>0?<div className="mt-3 rounded-xl border border-white/10 bg-white/[.025] p-2 text-[.58rem] text-slate-300"><div className="flex flex-wrap items-center gap-2"><strong>المقارنة:</strong>{compare.map((id)=><span key={id} className="rounded-full bg-white/10 px-2 py-1">{DESIGN_WORLDS[id]?.labelAr}</span>)}{compare.length===2?<><label className="flex items-center gap-2">نسبة الأول <input type="range" min="25" max="75" value={fusionRatio} onChange={(e)=>setFusionRatio(Number(e.target.value))}/><span>{fusionRatio}%</span></label><button type="button" className={tiny} disabled={!fusionCompatibility?.allowed} onClick={fuse}>ادمج عالمين</button><span className={fusionCompatibility?.allowed?'text-emerald-300':'text-amber-200'}>{fusionCompatibility?.allowed?`Fusion ${fusionCompatibility.score}/100`:(fusionCompatibility?.critical[0]||'Fusion غير متوافق')}</span></>:<span>اختر عالمين للـFusion أو ثلاثة للمقارنة.</span>}</div></div>:null}
+      <div className="mt-3 grid gap-2 lg:grid-cols-5">{[['الكثافة',density,setDensity],['الطاقة',energyValue,setEnergyValue],['العمق',depth,setDepth],['الحرارة',temperature,setTemperature],['سرعة الحركة',speed,setSpeed]].map(([label,value,setter])=><label key={String(label)} className="rounded-xl border border-white/10 bg-white/[.025] px-2 py-1.5 text-[.75rem] text-slate-400"><span className="flex justify-between"><span>{String(label)}</span><span>{String(value)}%</span></span><input className="studio-range w-full" type="range" min="0" max="100" value={Number(value)} onChange={(e)=>(setter as (value:number)=>void)(Number(e.target.value))}/></label>)}</div>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-[.75rem] text-slate-400"><span>Lock:</span>{([['typography','الخط'],['palette','اللون'],['layout','التكوين']] as const).map(([key,label])=><button type="button" key={key} className={`${tiny} ${locks[key]?'border-sky-300/60 text-sky-200':''}`} onClick={()=>setLocks((x)=>({...x,[key]:!x[key]}))}>{locks[key]?'🔒':'○'} {label}</button>)}<span className="mr-auto">{filtered.length} عالم ظاهر · {favorites.length} مفضلة · Seed cache {cache.size}/{cache.limit} · المعاينات تتوقف خارج الشاشة</span></div>
+      {compare.length>0?<div className="mt-3 rounded-xl border border-white/10 bg-white/[.025] p-2 text-[.58rem] text-slate-300"><div className="flex flex-wrap items-center gap-2"><strong>المقارنة:</strong>{compare.map((id)=><span key={id} className="rounded-full bg-white/10 px-2 py-1">{DESIGN_WORLDS[id]?.labelAr}</span>)}{compare.length===2?<><label className="flex items-center gap-2">نسبة الأول <input className="studio-range" type="range" min="25" max="75" value={fusionRatio} onChange={(e)=>setFusionRatio(Number(e.target.value))}/><span>{fusionRatio}%</span></label><button type="button" className={tiny} disabled={!fusionCompatibility?.allowed} onClick={fuse}>ادمج عالمين</button><span className={fusionCompatibility?.allowed?'text-emerald-300':'text-amber-200'}>{fusionCompatibility?.allowed?`Fusion ${fusionCompatibility.score}/100`:(fusionCompatibility?.critical[0]||'Fusion غير متوافق')}</span></>:<span>اختر عالمين للـFusion أو ثلاثة للمقارنة.</span>}</div></div>:null}
       {notice?<div className="mt-2 rounded-xl border border-amber-300/20 bg-amber-300/[.06] px-3 py-2 text-[.58rem] text-amber-100" role="status">{notice}</div>:null}
-      {variant&&audit?<div className="mt-3 grid gap-2 rounded-xl border border-sky-300/15 bg-sky-300/[.045] p-3 text-[.57rem] text-slate-300 md:grid-cols-4"><div><strong className="text-slate-100">سبب الاختيار</strong><br/>{variant.semantic.reasons[0]}</div><div><strong className="text-slate-100">semanticVerb</strong><br/>{variant.semanticVerb}</div><div><strong className="text-slate-100">Quality Score</strong><br/>{audit.score}/100 · {audit.grade}</div><div><strong className="text-slate-100">بصمة التنويع</strong><br/><span className="break-all opacity-75">{variant.perceptualSignature.slice(0,92)}…</span></div>{audit.warnings.length?<div className="md:col-span-4 text-amber-200">تحذيرات: {audit.warnings.join(' · ')}</div>:null}</div>:null}
+      {variant&&audit?<div className="mt-3 grid gap-2 rounded-xl border border-sky-300/15 bg-sky-300/[.045] p-3 text-[.75rem] text-slate-300 md:grid-cols-4"><div><strong className="text-slate-100">سبب الاختيار</strong><br/>{variant.semantic.reasons[0]}</div><div><strong className="text-slate-100">semanticVerb</strong><br/>{variant.semanticVerb}</div><div><strong className="text-slate-100">Quality Score</strong><br/>{audit.score}/100 · {audit.grade}</div><div><strong className="text-slate-100">بصمة التنويع</strong><br/><span className="break-all opacity-75">{variant.perceptualSignature.slice(0,92)}…</span></div>{audit.warnings.length?<div className="md:col-span-4 text-amber-200">تحذيرات: {audit.warnings.join(' · ')}</div>:null}</div>:null}
     </div>
-    <div className={`grid gap-3 border-t border-white/10 p-4 ${compact?'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6':'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>{filtered.map((world)=><WorldCard key={world.id} world={world} idea={idea} active={activeWorldId===world.id||variant?.masterWorldId===world.id} favorite={favorites.includes(world.id)} compare={compare.includes(world.id)} onFavorite={()=>toggleFavorite(world.id)} onCompare={()=>toggleCompare(world.id)} onDress={()=>dress(world)} onGenerate={onGenerate?()=>onGenerate(world):undefined}/>)}</div>
+    <div className={`grid gap-3 border-t border-white/10 p-4 ${compact?'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6':'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'}`}>{(showAll?filtered:filtered.slice(0,WORLDS_PREVIEW_COUNT)).map((world)=><WorldCard key={world.id} world={world} idea={idea} active={activeWorldId===world.id||variant?.masterWorldId===world.id} favorite={favorites.includes(world.id)} compare={compare.includes(world.id)} onFavorite={()=>toggleFavorite(world.id)} onCompare={()=>toggleCompare(world.id)} onDress={()=>dress(world)} onGenerate={onGenerate?()=>onGenerate(world):undefined}/>)}</div>
+    {filtered.length>WORLDS_PREVIEW_COUNT?<div className="flex flex-wrap items-center justify-center gap-3 border-t border-white/10 px-4 py-3"><span className="text-[.75rem] text-slate-300">{showAll?`تُعرض العوالم كلها (${filtered.length})`:`يُعرض ${WORLDS_PREVIEW_COUNT} من ${filtered.length} عالماً`}</span><button type="button" className="rounded-full border border-slate-300/60 px-4 py-1.5 text-[.75rem] font-bold text-slate-100 transition hover:border-white hover:text-white" aria-expanded={showAll} onClick={()=>setShowAll((x)=>!x)}>{showAll?'اطوِ العوالم':'عرض المزيد'}</button></div>:null}
   </section>
 }

@@ -5,6 +5,7 @@ import { normalizeEncyclopediaText } from '../lib/encyclopedia-video-index'
 import type { EncyclopediaPassageMatch, EncyclopediaSlideMatch } from '../lib/encyclopedia-knowledge-search'
 import { encyclopediaSlideRangeLabel } from '../lib/encyclopedia-teaching-map'
 import { ComposeScene } from './ComposeScene'
+import GlyphLoader from './GlyphLoader'
 import { SocialIcon } from './icons'
 
 const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
@@ -139,7 +140,10 @@ export function EncyclopediaKnowledgeResults({
               {exactMoment ? (
                 <blockquote className="mt-2 line-clamp-4 border-s-2 border-accent ps-3 text-[.68rem] leading-[1.85] text-soft">{highlighted(primaryMoment?.excerpt || '', query, primaryMoment?.matchedTerms || [])}</blockquote>
               ) : status === 'loading' ? (
-                <p className="mt-2 text-[.65rem] leading-relaxed text-soft">يجري البحث داخل الفهرس الزمني الثابت.</p>
+                <div className="mt-2 flex items-center gap-2.5" aria-busy="true">
+                  <GlyphLoader size={24} label="يجري البحث داخل الفهرس الزمني الثابت" />
+                  <p className="text-[.65rem] leading-relaxed text-soft" aria-hidden="true">يجري البحث داخل الفهرس الزمني الثابت.</p>
+                </div>
               ) : status === 'error' ? (
                 <p className="mt-2 text-[.65rem] leading-relaxed text-soft">تعذّر البحث النصي الآن؛ عُرض أقرب فيديو من الفهرس دون توقيت مختلق.</p>
               ) : null}

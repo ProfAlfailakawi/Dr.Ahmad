@@ -8193,6 +8193,7 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     .search-query-suggestion, .card-live__chip, main select,
     .radio-variant, button.rounded-full.px-3.py-1\.5
   ) {
+    min-inline-size: 44px;
     min-block-size: 44px;
   }
   html .site-footer__text-link {

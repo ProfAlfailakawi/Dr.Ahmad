@@ -1,5 +1,5 @@
 /**
- * «العتبة» — تقديمٌ سينمائيّ يُعرض مرة واحدة عند أول زيارة.
+ * «العتبة» — تقديمٌ سينمائيّ اختياريّ يُفتح عبر /?intro=1 (رابط التذييل).
  *
  * ليس نافذةً تشرح ثلاث أدوات، بل عرضٌ قصير يُري الزائر الموقعَ وهو يعمل:
  * كل مشهدٍ نموذجٌ حيٌّ مصغّر للميزة نفسها، وكل مشهدٍ بابٌ يُدخِله إليها بنقرة.
@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router'
 import { EASE } from '../motion'
 import KuficMark from '../KuficMark'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, BOOK_PLAIN_FORMS, PAPER_FORMS } from '../../lib/arabic-count.ts'
+import skyData from '../../data/threshold-sky.json'
 
 /* مرة واحدة لكل جهاز/متصفح: العلم يُحفظ في localStorage فلا يعود التقديم بعد
    الإغلاق أو الإكمال — لا مع تحديث الصفحة، ولا مع جلسةٍ جديدة، ولا في يومٍ آخر —
@@ -47,13 +48,56 @@ function IgnitionVisual() {
   )
 }
 
-/** سماء المقالات: نجومٌ تظهر تباعاً، ثم تُرسم الخطوط بينها. */
-const SKY_STARS = [
+/** سماء المقالات: نجومٌ تظهر تباعاً، ثم تُرسم الخطوط بينها.
+    النجوم مقالاتٌ حقيقية، والخطوط صلاتٌ موثّقة بينها من knowledge-graph.json
+    (يشتقّها scripts/build-threshold-sky.mjs أثناء البناء) — لا خطوط عشوائية. */
+const SKY_SLOTS = [
   [78, 62], [148, 118], [96, 186], [206, 74], [232, 158], [178, 226],
   [286, 116], [318, 210], [262, 44], [368, 78], [396, 162], [346, 250],
   [438, 118], [128, 254], [204, 288], [462, 214], [58, 128], [300, 274],
 ] as const
-const SKY_LINKS = [[0, 1], [1, 2], [1, 3], [3, 4], [4, 5], [4, 6], [6, 7], [3, 8], [6, 9], [9, 10], [10, 11], [10, 12], [2, 13], [5, 14], [12, 15], [0, 16], [7, 17]] as const
+/* تخطيطٌ ثابت: جذر الشجرة في أقرب موضعٍ للوسط، وكل نجمةٍ في أقرب موضعٍ شاغرٍ من
+   نجمتها الأم، فتبقى الخطوط قصيرةً هادئة. */
+const { SKY_STARS, SKY_LINKS } = (() => {
+  const count = Math.min(skyData.stars.length, SKY_SLOTS.length)
+  const links = (skyData.links as number[][]).filter(([x, y]) => x < count && y < count)
+  const free = new Set(SKY_SLOTS.map((_, i) => i))
+  const place: number[] = []
+  const nearest = (px: number, py: number) => {
+    let best = -1, dist = Infinity
+    for (const i of free) {
+      const d = (SKY_SLOTS[i][0] - px) ** 2 + (SKY_SLOTS[i][1] - py) ** 2
+      if (d < dist) { dist = d; best = i }
+    }
+    free.delete(best)
+    return best
+  }
+  const order: number[] = []
+  const seen = new Set<number>()
+  for (let start = 0; start < count; start++) {
+    if (seen.has(start)) continue
+    seen.add(start); order.push(start)
+    for (let q = order.length - 1; q < order.length; q++) {
+      for (const [x, y] of links) {
+        const next = x === order[q] ? y : y === order[q] ? x : -1
+        if (next >= 0 && !seen.has(next)) { seen.add(next); order.push(next) }
+      }
+    }
+  }
+  const parent = new Map<number, number>()
+  for (const [x, y] of links) {
+    if (order.indexOf(x) < order.indexOf(y)) { if (!parent.has(y)) parent.set(y, x) } else if (!parent.has(x)) parent.set(x, y)
+  }
+  for (const star of order) {
+    const from = parent.get(star)
+    const anchor = from === undefined ? [260, 160] : SKY_SLOTS[place[from]]
+    place[star] = nearest(anchor[0], anchor[1])
+  }
+  return {
+    SKY_STARS: Array.from({ length: count }, (_, i) => SKY_SLOTS[place[i]]),
+    SKY_LINKS: links,
+  }
+})()
 
 function SkyVisual() {
   return (
@@ -429,6 +473,9 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
         }
       }
     } catch { /* وضع التصفح الخاص: يُعرض التقديم ولا يُخزَّن. */ }
+    /* التقديم اختياريّ: لا يُعرض تلقائياً في الزيارة الأولى، ويبقى متاحاً
+       دائماً عبر /?intro=1 (رابط التذييل). */
+    if (!forced) return
     /* 420→240: مهلة الفتح تُضاف كاملةً إلى زمن أكبر عنصرٍ في الصفحة. */
     const timer = window.setTimeout(() => setOpen(true), forced ? 60 : 240)
     return () => window.clearTimeout(timer)

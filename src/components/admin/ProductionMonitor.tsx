@@ -3,6 +3,7 @@ import type { ArticleRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import type { AdminTab } from './AdminArchitecture'
 import { arabicCountPhrase, RULE_FORMS, SAVED_COPY_FORMS } from '../../lib/arabic-count.ts'
+import { Plus } from 'lucide-react'
 
 type HealthLevel = 'healthy' | 'attention' | 'warning' | 'critical'
 type WorkflowState = {
@@ -754,7 +755,7 @@ export function ProductionMonitor({
           <details className="group mt-3 rounded-xl border border-hair bg-canvas">
             <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-[.68rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">
               <span>{backups.length ? arabicCountPhrase(backups.length, SAVED_COPY_FORMS) : 'لا توجد نسخة بعد'}</span>
-              <span className="text-soft transition group-open:rotate-45">＋</span>
+              <span className="text-soft transition group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
             </summary>
             <div className="grid gap-2 border-t border-hair p-3">
               {backups.map((backup) => (
@@ -783,7 +784,7 @@ export function ProductionMonitor({
             </div>
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.6rem] text-soft">{incidents.length} سجل</span>
-              <span className="text-soft transition group-open:rotate-45">＋</span>
+              <span className="text-soft transition group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
             </div>
           </summary>
           <div className="mt-4 grid gap-2 border-t border-hair pt-4">
@@ -838,7 +839,7 @@ export function ProductionMonitor({
                   <details className="group mt-3 rounded-xl border border-hair bg-canvas">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-[.7rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">
                       <span>التشخيص بالتفصيل</span>
-                      <span className="text-soft transition group-open:rotate-45">＋</span>
+                      <span className="text-soft transition group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                     </summary>
                     <div className="grid gap-3 border-t border-hair px-3 py-4 sm:grid-cols-2">
                       <div>
@@ -893,7 +894,7 @@ export function ProductionMonitor({
               <p className="text-[.67rem] font-bold text-accent">حدود الأمان</p>
               <h3 className="mt-1 font-display text-lg font-bold text-ink">ما الذي لا يفعله الإصلاح العام؟</h3>
             </div>
-            <span className="text-soft transition group-open:rotate-45">＋</span>
+            <span className="text-soft transition group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
           </summary>
           <div className="mt-4 grid gap-2 border-t border-hair pt-4 sm:grid-cols-3">
             {[

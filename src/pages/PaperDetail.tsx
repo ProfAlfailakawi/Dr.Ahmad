@@ -12,6 +12,8 @@ import { useAdminAuth } from '../lib/admin-auth'
 import GlyphLoader from '../components/GlyphLoader'
 import { safeLink } from '../lib/dead-links'
 import { ResearchSectionNavigator, type ResearchLayer } from '../components/ResearchSectionNavigator'
+import { ArrowRight, ArrowUpLeft, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { DnaStepper, type DnaStep } from '../components/dna/DnaKit'
 import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
 import { SocialIcon } from '../components/icons'
 import { NextStep } from '../components/NextStep'
@@ -71,7 +73,7 @@ function EvidenceStamp({ evidence, fallback = 'المصدر الأصلي' }: { e
   const label = evidence?.label || `موثّق من ${fallback}`
   return (
     <span className="research-evidence-stamp" title={evidence?.quote || label}>
-      <span aria-hidden>✓</span>
+      <Check aria-hidden size={13} strokeWidth={1.6} />
       <span>{label}</span>
     </span>
   )
@@ -166,6 +168,15 @@ export default function PaperDetail() {
   const { isAdmin } = useAdminAuth()
   const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
+  /* مسار البحث مرسوماً: الخطوة مكتملة حين يمتلئ حقلها، والحالية هي البطاقة المفتوحة. */
+  const openCardKey = readerKey || Object.keys(expandedCards).find((key) => expandedCards[key]) || ''
+  const researchSteps: DnaStep[] = ([
+    ['researchQuestion', 'سؤال'], ['sample', 'عينة'], ['methodology', 'منهج'],
+    ['keyFinding', 'نتيجة'], ['contribution', 'إسهام'], ['limitations', 'حدود'],
+  ] as const).map(([key, label]) => {
+    const card = dataCards.find((item) => item.key === key)
+    return { key, label, title: card?.label, state: openCardKey === key ? 'current' : card ? 'done' : 'pending' }
+  })
 
   const isManualScrolling = useRef(false)
   const manualScrollTimeout = useRef<number | null>(null)
@@ -241,7 +252,7 @@ export default function PaperDetail() {
         <div className="mx-auto max-w-[960px]">
           <FadeUp>
             <div className="flex items-center justify-between gap-4">
-              <Link to="/research" viewTransition className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent">← كل المساهمات العلمية</Link>
+              <Link to="/research" viewTransition className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent"><ArrowRight aria-hidden size={15} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />كل المساهمات العلمية</Link>
             </div>
           </FadeUp>
 
@@ -253,7 +264,7 @@ export default function PaperDetail() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-accent/10 px-3.5 py-1 text-[.72rem] font-extrabold text-accent">بحث محكّم</span>
                     {studyType && <span className="rounded-full border border-hair px-3.5 py-1 text-[.72rem] font-semibold text-ink">{studyType}</span>}
-                    {evidenceCount > 0 && isAdmin && <span className="rounded-full border border-accent/20 bg-accent/[.04] px-3.5 py-1 text-[.72rem] font-bold text-accent">✓ {arabicCountPhrase(evidenceCount, PROOF_FORMS)}</span>}
+                    {evidenceCount > 0 && isAdmin && <span className="rounded-full border border-accent/20 bg-accent/[.04] px-3.5 py-1 text-[.72rem] font-bold text-accent"><Check aria-hidden size={13} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />{arabicCountPhrase(evidenceCount, PROOF_FORMS)}</span>}
                   </div>
                   <div className="flex items-center gap-3">
                     {year && <span className="font-display text-[.9rem] font-bold text-accent">{year}</span>}
@@ -305,7 +316,7 @@ export default function PaperDetail() {
                   {journal && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong dir="auto" className="mt-1 block min-w-0 whitespace-normal text-[.88rem] font-bold leading-[1.85] text-ink [overflow-wrap:anywhere]">{journal}</strong></div>}
                   {year && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year}</strong></div>}
                   {doi && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong dir="ltr" className="mt-1 block min-w-0 font-mono text-[.8rem] text-accent [overflow-wrap:anywhere]">{doi}</strong></div>}
-                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-600'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : '✓ موثق ومطابق للمصدر'}</strong></div>}
+                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-600'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : <><Check aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />موثق ومطابق للمصدر</>}</strong></div>}
                 </div>
               </div>
             </FadeUp>
@@ -322,6 +333,8 @@ export default function PaperDetail() {
                     </div>
                     <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">{arabicCountPhrase(dataCards.length, DIMENSION_FORMS)}</span>
                   </div>
+
+                  <DnaStepper steps={researchSteps} size="sm" ariaLabel="مسار البحث: سؤال، عينة، منهج، نتيجة، إسهام، حدود" className="research-dna-steps mt-5" />
 
                   <div className="research-smart-reader mt-5" aria-label="قارئ البحث الذكي">
                     <div className="research-smart-reader-rail">
@@ -341,7 +354,7 @@ export default function PaperDetail() {
                           <button type="button" aria-expanded={isExpanded} aria-controls={`research-card-${card.key}`} onClick={() => toggleCard(card.key)} className="flex w-full items-center justify-between gap-2 text-start">
                             <h3 className="text-[.8rem] font-bold text-accent">{card.label}</h3>
                             <span className="shrink-0 text-[.72rem] font-bold text-soft transition-colors group-hover:text-accent">
-                              {isExpanded ? 'إخفاء ▴' : 'عرض التفاصيل ▾'}
+                              {isExpanded ? <>إخفاء <ChevronUp aria-hidden size={14} strokeWidth={1.6} className="inline" /></> : <>عرض التفاصيل <ChevronDown aria-hidden size={14} strokeWidth={1.6} className="inline" /></>}
                             </span>
                           </button>
                           {isExpanded ? (
@@ -387,7 +400,7 @@ export default function PaperDetail() {
                     {sourceLinks.map((item) => (
                       <a key={item.id} href={item.url} target="_blank" rel="noreferrer" className="flex min-w-0 flex-col items-start gap-2 overflow-hidden rounded-2xl border border-hair bg-canvas px-5 py-4 transition hover:border-accent hover:bg-paper sm:flex-row sm:items-center sm:justify-between">
                         <span className="min-w-0 text-[.85rem] font-bold text-ink [overflow-wrap:anywhere]">{item.label}</span>
-                        <span className="shrink-0 text-[.8rem] font-semibold text-accent">فتح المصدر الأصلي ↗</span>
+                        <span className="shrink-0 text-[.8rem] font-semibold text-accent">فتح المصدر الأصلي <ArrowUpLeft aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 inline" /></span>
                       </a>
                     ))}
                   </div>

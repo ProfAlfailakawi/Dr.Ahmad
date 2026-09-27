@@ -1,0 +1,123 @@
+/* DNA kit → site palette. Aliases only: tokens come from index.css (--c-*). */
+html:root,
+html.dark,
+html.admin-light {
+  --dna-canvas: rgb(var(--c-canvas));
+  --dna-surface: rgb(var(--c-canvas));
+  --dna-surface-2: rgb(var(--c-wash));
+  --dna-ink: rgb(var(--c-ink));
+  --dna-muted: rgb(var(--c-soft));
+  --dna-line: var(--c-hair);
+  --dna-line-2: rgb(var(--c-ink) / .16);
+  --dna-accent: rgb(var(--c-accent));
+  --dna-accent-soft: rgb(var(--c-accent) / .1);
+  --dna-on-accent: rgb(var(--c-canvas));
+  --dna-core: rgb(var(--c-accent));
+  --dna-on-core: rgb(var(--c-canvas));
+  --dna-info: rgb(var(--c-accent));
+  --dna-info-soft: rgb(var(--c-accent) / .1);
+  --dna-shadow: 0 1px 2px rgb(var(--c-ink) / .04), 0 12px 30px -18px rgb(var(--c-ink) / .2);
+}
+html:not(.dark) {
+  --dna-surface: #ffffff;
+}
+html.dark {
+  --dna-surface: rgb(var(--c-wash));
+  --dna-surface-2: rgb(var(--c-canvas));
+  --dna-warn: #d8b068;
+  --dna-warn-soft: rgba(216, 176, 104, .14);
+  --dna-danger: #e08e86;
+  --dna-danger-soft: rgba(224, 142, 134, .14);
+}
+html.dark [data-dna-tone] {
+  --t-bg: color-mix(in srgb, var(--t-fg) 20%, transparent);
+  --t-fgc: color-mix(in srgb, var(--t-fg) 55%, #ffffff);
+}
+/* Neutralise legacy global svg/button rules inside kit components. */
+.dna svg { flex: none; }
+.dna button { box-shadow: none; }
+
+/* «بوصلة الفكر»: نبرة العقد من لون فئة المحور (--atlas-*). */
+.compass-hub [data-dna-tone='axis'] {
+  --t-fg: rgb(var(--hub-axis));
+  --t-bgl: rgb(var(--hub-axis) / .12);
+}
+.compass-seg-wrap { max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; }
+@media (max-width: 560px) {
+  /* الجوال: مداراتٌ أقل كي لا تتزاحم النقاط مع بلاطات العقد. */
+  .compass-hub .dna-hubd,
+  .compass-hub .dna-hubo3 { display: none; }
+}
+.compass-seg-wrap .dna-segb { min-block-size: 44px; font-family: inherit; }
+
+/* غرفة القيادة: رأس حالة أبيض + أربع بلاطات قرار. */
+.admin-command-head { padding: 22px 22px 18px; }
+.admin-command-head .dna-htitle { font-family: "El Messiri", serif; font-size: clamp(1.25rem, 2.6vw, 1.7rem); line-height: 1.45; }
+.admin-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-decision-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--dna-line);
+  border-radius: var(--dna-r);
+  background: var(--dna-surface);
+  color: var(--dna-ink);
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .2s, background-color .2s;
+}
+.admin-decision-tile:hover { border-color: var(--dna-accent); }
+.admin-decision-tile:focus-visible { outline: 2px solid var(--dna-accent); outline-offset: 2px; }
+.admin-decision-text { display: grid; gap: 2px; min-inline-size: 0; }
+.admin-decision-text strong { font-size: 1.35rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.admin-decision-text span { font-size: .78rem; color: var(--dna-muted); line-height: 1.4; }
+.admin-decision-tile[data-empty='true'] .admin-decision-text strong { color: var(--dna-muted); }
+.admin-decision-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-block-start: 12px;
+  border-block-start: 1px dashed var(--dna-line-2);
+  font-size: .76rem;
+  line-height: 1.7;
+  color: var(--dna-muted);
+}
+.admin-decision-note svg { flex: none; color: var(--dna-accent); }
+@media (max-width: 760px) {
+  .admin-decision-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .admin-command-head { padding: 16px; }
+  .admin-decision-tile { gap: 10px; padding: 10px 12px; min-block-size: 60px; }
+  .admin-decision-tile .dna-tile { --s: 36px; }
+  .admin-decision-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .74rem; }
+}
+
+/* الحلقة الحالية لا تنبض إلا حين يكون الشيء حيّاً فعلاً (توليدٌ جارٍ). */
+.dna-steps:not(.dna-steps-live) .dna-stepi[data-state='current'] .dna-node { animation: none; }
+
+/* مراحل البودكاست السبع على الجوال: نقاطٌ فقط، واسم المرحلة الحالية مكتوب فوق العنوان. */
+@media (max-width: 560px) {
+  .podcast-stage-steps .dna-lbl {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* الكيت يصفّر هوامش .dna-steps؛ نعيد مسافة التنفس في مواضعنا. */
+.podcast-stage-steps { margin-block-start: 18px; }
+.research-dna-steps { margin-block-start: 22px; }

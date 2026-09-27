@@ -8,6 +8,7 @@ import { normalizeArabic } from '../lib/cms'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Question, LAUNCH_DATE, staticQuestions } from '../questions-data'
 import { arabicCountPhrase, DAY_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
+import { ArrowLeft } from 'lucide-react'
 export { LAUNCH_DATE, staticQuestions }
 
 const clean = (value = '') => value.replace(/\s+/g, ' ').trim()
@@ -164,7 +165,7 @@ export default function Questions() {
                 className="inline-flex items-center gap-2 rounded-full border border-accent/[.35] px-5 py-2.5 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
               >
                 ابحث عن هذا السؤال في أرشيفي
-                <span aria-hidden>←</span>
+                <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </Link>
             </div>
           </FadeUp>

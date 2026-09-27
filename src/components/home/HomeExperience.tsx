@@ -11,6 +11,7 @@ import { categoryLabel } from '../../lib/content-taxonomy'
 import { SocialIcon } from '../icons'
 import { arabicCountPhrase, NEW_ARTICLE_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 import { coverSrcSet } from '../../lib/cover-image'
+import { ArrowLeft } from 'lucide-react'
 
 type Persona = 'reader' | 'scholar' | 'org'
 const PERSONAS: { key: Persona; label: string; title: string; desc: string; links: { to: string; label: string }[] }[] = [
@@ -165,7 +166,7 @@ export function ThoughtCompassStation({ articles, books, papers }: { articles: A
         </div>
         <div className="mt-9 grid gap-8 lg:grid-cols-[1fr_.38fr] lg:gap-12">
           <div className="divide-y divide-hair border-y border-hair">
-            {relatedArticles.map((article, index) => <FadeUp key={article.slug} delay={index * .06}><Link to={`/articles/${article.slug}`} className="group flex items-start gap-5 py-5"><span className="font-display text-[1.2rem] font-bold text-accent/70">0{index + 1}</span><span className="flex-1"><span className="block font-display text-[1.12rem] font-medium leading-[1.65] text-ink group-hover:text-accent">{article.title}</span><span className="mt-1 block text-[.78rem] text-soft">مقال · {article.date}</span></span><span className="text-accent">←</span></Link></FadeUp>)}
+            {relatedArticles.map((article, index) => <FadeUp key={article.slug} delay={index * .06}><Link to={`/articles/${article.slug}`} className="group flex items-start gap-5 py-5"><span className="font-display text-[1.2rem] font-bold text-accent/70">0{index + 1}</span><span className="flex-1"><span className="block font-display text-[1.12rem] font-medium leading-[1.65] text-ink group-hover:text-accent">{article.title}</span><span className="mt-1 block text-[.78rem] text-soft">مقال · {article.date}</span></span><span className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link></FadeUp>)}
           </div>
           <FadeUp delay={0.12}>
             <div className="rounded-2xl border border-hair bg-wash p-6">

@@ -9,6 +9,7 @@ import { findIdeaRevisions, type IdeaRevision } from '../lib/idea-revision'
 import { liveLink } from '../lib/dead-links'
 import { staticQuestions } from '../questions-data'
 import { arabicCountPhrase, TOPICAL_CONNECTION_FORMS } from '../lib/arabic-count.ts'
+import { ArrowUpRight } from 'lucide-react'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 const updateDate = new Intl.DateTimeFormat('ar-KW-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -267,7 +268,7 @@ function IdeaUpdatesPanel({ updates }: { updates: RemoteIdeaUpdate[] }) {
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[.68rem] text-soft">
           <span className="font-semibold text-accent">{lead.relation || leadMeta.index}</span>
           {lead.source && <><span className="text-hair">·</span><span>{lead.source}</span></>}
-          <span className="ms-auto shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">↗</span>
+          <span className="ms-auto shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1"><ArrowUpRight aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
         </div>
       </a>
 
@@ -285,7 +286,7 @@ function IdeaUpdatesPanel({ updates }: { updates: RemoteIdeaUpdate[] }) {
                   <h4 dir="auto" className="text-start font-display text-[.91rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{item.title}</h4>
                   <p className="mt-1 text-[.74rem] font-light leading-[1.75] text-soft">{item.relation || meta.index}{item.source ? ` · ${item.source}` : ''}</p>
                 </div>
-                <span className="hidden pt-1 text-accent transition-transform duration-300 group-hover:-translate-x-1 sm:block">↗</span>
+                <span className="hidden pt-1 text-accent transition-transform duration-300 group-hover:-translate-x-1 sm:block"><ArrowUpRight aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </a>
             )
           })}
@@ -332,7 +333,7 @@ function TimePanel({ article, model, close }: { article: ArticleRecord; model: R
                     <div className="mt-3 space-y-2">
                       {verifiedEvidence(prediction.evidence).map((evidence) => (
                         <a key={evidence.url} href={evidence.url} target="_blank" rel="noreferrer" className="group flex items-start justify-between gap-4 text-[.8rem] leading-[1.7] text-soft transition-colors hover:text-accent">
-                          <span>{evidence.title}</span><span className="shrink-0">↗</span>
+                          <span>{evidence.title}</span><span className="shrink-0"><ArrowUpRight aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                         </a>
                       ))}
                     </div>

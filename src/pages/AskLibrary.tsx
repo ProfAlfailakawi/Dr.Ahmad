@@ -22,6 +22,7 @@ import { buildKnowledgeGraph, graphNeighbors, graphSearch, type KnowledgeGraph, 
 import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from '../lib/smart-search'
 import { arabicCountPhrase, EVIDENCE_FORMS, SOURCE_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 import { saveAskLibraryMemory } from '../lib/ask-library-memory'
+import { ArrowLeft, Plus, RotateCcw } from 'lucide-react'
 
 const tokenize = (value: string) => smartRoots(value)
 
@@ -754,7 +755,7 @@ export default function AskLibrary() {
                               </p>
                               <div className="mt-5 flex flex-wrap gap-2">
                                 <button type="button" onClick={() => { void copyArchiveAnswer(); trackUsage('living_mind_result_used', { type: 'copy_answer' }) }} aria-label="نسخ الجواب بمصادره" title={answerCopied ? 'نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'} className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition hover:border-accent hover:text-accent ${answerCopied ? 'border-accent bg-accent text-white' : 'border-hair text-ink'}`}><SocialIcon name={answerCopied ? 'Check' : 'Copy'} size={17} /></button>
-                                <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/[.35] px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden>←</span></Link>
+                                <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/[.35] px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
                               </div>
                             </motion.div>
                           ) : null}
@@ -880,7 +881,7 @@ export default function AskLibrary() {
                             aria-hidden
                             className="text-soft transition-transform group-open:rotate-45"
                           >
-                            ＋
+                            <Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" />
                           </span>
                         </summary>
                         <div className="pb-2 pt-4">
@@ -1002,7 +1003,7 @@ export default function AskLibrary() {
                   onClick={again}
                   className="min-h-11 border-b border-hair px-1 text-[.86rem] font-medium text-soft transition-colors hover:border-accent hover:text-accent"
                 >
-                  اسأل سؤالاً آخر ↺
+                  اسأل سؤالاً آخر <RotateCcw aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" />
                 </button>
               </div>
             )}

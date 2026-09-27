@@ -1,3 +1,4 @@
+import { ArrowUpRight } from 'lucide-react'
 /* شارة «على الهواء الآن» — النافذة التي يطلّ منها الزائر على الإذاعة قبل أن
    يدخلها. لا تعرض عنوان الحلقة وحده (ذاك سطرٌ بارد)، بل الجملة التي تُقال في
    هذه اللحظة نفسها: من فتح الصفحة يرى فكرةً حيّة، لا إعلاناً عن فكرة.
@@ -130,7 +131,7 @@ export default function OnAirNow() {
                   {spoken.t}
                 </span>
               </span>
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent" aria-hidden="true">↗</span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors group-hover:border-accent" aria-hidden="true"><ArrowUpRight aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
             </div>
             <span className="onair-progress" aria-hidden="true"><i style={{ width: `${progress}%` }} /></span>
           </Link>

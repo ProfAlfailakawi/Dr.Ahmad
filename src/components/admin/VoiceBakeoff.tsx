@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getDb } from '../../lib/firebase'
 import { beginAdminTask } from '../../lib/admin-task-state'
 import audioMeta from '../../data/audio-meta.json'
+import { Pause, Play } from 'lucide-react'
 
 type Option = { key: string; label?: string; durationSec: number; audio: string; audioHash: string; eligible: boolean }
 type Manifest = {
@@ -170,7 +171,7 @@ export function VoiceBakeoffCard() {
                 aria-label={playing === opt.key ? 'إيقاف' : 'تشغيل'}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-canvas transition-colors hover:bg-accent-deep"
               >
-                <span className="text-[.9rem] leading-none">{playing === opt.key ? '❚❚' : '▶'}</span>
+                <span className="text-[.9rem] leading-none">{playing === opt.key ? <Pause aria-hidden size={16} strokeWidth={1.6} /> : <Play aria-hidden size={16} strokeWidth={1.6} />}</span>
               </button>
               <div className="min-w-0 flex-1">
                 <p className="text-[.95rem] font-semibold text-ink">

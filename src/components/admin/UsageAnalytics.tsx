@@ -14,6 +14,7 @@ import type { AdminUsageRow, Delta, DormancyBucket, ToolUsage } from '../../lib/
 import { adminToolLabel } from './admin-navigation'
 /* الامتداد `.ts` مقصود — انظر ملاحظة استيراد المكتبة في arabic-count. */
 import { arabicCountPhrase, DAY_AFTER_PREPOSITION_FORMS, DAY_FORMS } from '../../lib/arabic-count.ts'
+import { ArrowLeft } from 'lucide-react'
 
 /**
  * لوحة «الاستخدام الفعلي» — نصفٌ للزوار ونصفٌ لأدوات الأدمن.
@@ -566,7 +567,7 @@ export function UsageAnalytics() {
                         <li key={item.path.join('-')} className="flex flex-wrap items-center gap-1.5">
                           {item.path.map((step, index) => (
                             <span key={`${step}-${index}`} className="flex items-center gap-1.5">
-                              {index > 0 && <span aria-hidden className="text-accent">←</span>}
+                              {index > 0 && <span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>}
                               <span className="rounded-full border border-hair bg-canvas px-2.5 py-1 text-[.7rem] text-ink">{adminToolLabel(step)}</span>
                             </span>
                           ))}

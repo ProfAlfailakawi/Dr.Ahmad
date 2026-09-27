@@ -21,6 +21,7 @@ import { buildImpactMirror } from '../../lib/impact-mirror.mjs'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, RELATED_PAPER_FORMS, SENTENCE_WITH_ECHO_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
 import { manageArticleAudio } from '../../lib/audio-management'
 import { requestContentPublicationSync } from '../../lib/content-publication-sync'
+import { Plus, Sparkles, TriangleAlert } from 'lucide-react'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -1296,7 +1297,7 @@ ${form.outlet || ''}`
               )}
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.body?.trim()} className={secondary}>
-                  {form._aiBusy === '1' ? 'أفكّر…' : '✦ تجهيز التصنيف والمقتطف الآن'}
+                  {form._aiBusy === '1' ? 'أفكّر…' : <><Sparkles aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />تجهيز التصنيف والمقتطف الآن</>}
                 </button>
                 {form._aiReady === '1' && <span className="text-[.78rem] text-accent">✓ التصنيف والمقتطف جاهزان تلقائياً{form._aiFallback === '1' ? ' (احتياط محلي)' : ''}.</span>}
                 {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
@@ -1321,7 +1322,7 @@ ${form.outlet || ''}`
               <Field label="لماذا كُتب الكتاب؟"><textarea className={`${input} min-h-24 leading-loose`} value={form.whyWritten || ''} onChange={(event) => set('whyWritten', event.target.value)} /></Field>
               <Field label="فهرس المحتويات" hint="عنوان واحد في كل سطر؛ لا تُدخل رقماً إلا بعد مطابقته بالنسخة المعتمدة."><textarea className={`${input} min-h-48 leading-loose`} value={form.toc || ''} onChange={(event) => set('toc', event.target.value)} /></Field>
               <div className="flex flex-wrap items-center gap-3">
-                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.title?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح وصفاً'}</button>
+                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.title?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : <><Sparkles aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />اقترح وصفاً</>}</button>
                 <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>
                 {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
               </div>
@@ -1403,7 +1404,7 @@ ${form.outlet || ''}`
                 <details className="group mt-5 overflow-hidden rounded-2xl border border-hair bg-canvas">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-[.82rem] font-bold text-ink marker:hidden [&::-webkit-details-marker]:hidden">
                     <span>عرض البيانات المستخرجة وتعديلها عند الضرورة</span>
-                    <span className="text-accent transition-transform group-open:rotate-45">＋</span>
+                    <span className="text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                   </summary>
                   <div className="grid gap-4 border-t border-hair p-4">
                     <Field label="الموضوع بالعربية"><input className={input} value={form.meta || ''} onChange={(event) => set('meta', event.target.value)} /></Field>
@@ -1481,7 +1482,7 @@ ${form.outlet || ''}`
                   }} />
               </Field>
               <div className="flex flex-wrap items-center gap-3">
-                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.url?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أقرأ الرابط…' : '✦ جلب العنوان والقناة'}</button>
+                <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.url?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أقرأ الرابط…' : <><Sparkles aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />جلب العنوان والقناة</>}</button>
                 <span className="text-[.75rem] text-soft">راجع الحقول أعلاه وعدّلها قبل الحفظ.</span>
                 {form._aiError && <span className="text-[.78rem] text-soft">{form._aiError}</span>}
               </div>
@@ -1510,7 +1511,7 @@ ${form.outlet || ''}`
                 </div>
                 {readiness.leaked && (
                   <p className="mt-2.5 rounded-lg border border-red-300/50 bg-canvas px-3 py-2 text-[.76rem] font-semibold text-red-600">
-                    ⚠ إنذار أمني: حقل عام يحمل بصمة المنظومة الخاصة («{readiness.leaked}»). احذفها قبل النشر — حزام البناء سيوقف الموقع كله إن بقيت.
+                    <TriangleAlert aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />إنذار أمني: حقل عام يحمل بصمة المنظومة الخاصة («{readiness.leaked}»). احذفها قبل النشر — حزام البناء سيوقف الموقع كله إن بقيت.
                   </p>
                 )}
                 {passportPreview && <p className="mt-2 text-[.7rem] leading-relaxed text-soft">{passportPreview.releaseReady ? '✓ جواز النشر مكتمل وسيُعاد توقيعه على هذه النسخة لحظة النشر.' : `الجواز سيثبت أن الطبقات المعلّقة هي: ${passportPreview.blocking.join('، ')}.`}</p>}

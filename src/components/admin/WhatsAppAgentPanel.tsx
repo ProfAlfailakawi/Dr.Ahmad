@@ -4,6 +4,7 @@ import { BroadcastStudio } from './BroadcastStudio'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
 import { ALIAS_FORMS, arabicCountPhrase, CONCEPT_FORMS, CONVERSATION_AFTER_PREPOSITION_FORMS, MINUTE_FORMS, MUTED_CONVERSATION_FORMS, OCCURRENCE_FORMS, RECENT_DAY_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
+import { MessageCircle, MessageCircleOff, Plus } from 'lucide-react'
 
 type DiagnosticCheck = {
   id: string
@@ -1042,7 +1043,7 @@ export function WhatsAppAgentPanel() {
             </h2>
             <p className="mt-2 max-w-2xl text-[.82rem] leading-relaxed text-soft">تُدار خدمة الاتصال والجلسة على الخادم المخصص، بعيداً عن المتصفح وGitHub.</p>
           </div>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
         </summary>
 
         <div className="mt-5 border-t border-hair pt-5">
@@ -1174,7 +1175,7 @@ export function WhatsAppAgentPanel() {
               <h3 className="font-display text-xl font-semibold text-ink">جرّب البوت قبل أن يتكلم.</h3>
               <p className="mt-1 max-w-xl text-[.78rem] leading-relaxed text-soft">اكتب رسالةً كما يكتبها الناس، فأخبرك: هل يردّ أم يصمت، ولماذا. لا شيء يُرسل لأحد.</p>
             </div>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
           </summary>
           <div className="mt-4 flex flex-wrap gap-2">
             <input className={`${input} flex-1`} value={simulateText} placeholder="مثلاً: السلام عليكم · آخر مقال · أبحاث الدكتور" onChange={(event) => setSimulateText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void runSimulator() }} />
@@ -1183,7 +1184,7 @@ export function WhatsAppAgentPanel() {
           {simulation && (
             <div className="mt-3 grid gap-2 rounded-xl border border-hair bg-canvas px-4 py-3">
               <p className="text-[.9rem] font-semibold text-ink">
-                {simulation.willReply ? '🗣 يردّ' : '🤐 يصمت'}
+                {simulation.willReply ? <><MessageCircle aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />يردّ</> : <><MessageCircleOff aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />يصمت</>}
                 <span className="mr-2 text-[.78rem] font-normal text-soft">· {simulation.why}</span>
               </p>
               {simulation.preview && <p className="whitespace-pre-wrap text-[.82rem] leading-relaxed text-ink">{simulation.preview}</p>}
@@ -1209,7 +1210,7 @@ export function WhatsAppAgentPanel() {
             <h3 className="mt-1 font-display text-xl font-semibold text-ink">ماذا سأل الناس؟ وما الذي لم يجدوه؟</h3>
             <p className="mt-1 max-w-2xl text-[.78rem] leading-relaxed text-soft">بلا أسماء ولا أرقام. ما لم يجده البوت هو أثمن ما في الصفحة: كل سطر فكرة مقالٍ ينتظر.</p>
           </div>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent">＋</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
         </summary>
         <div className="mt-5 grid gap-4">
           {weeklyBusy && <p className="text-[.78rem] text-soft">أجمع تقرير الأسبوع…</p>}
@@ -1283,7 +1284,7 @@ export function WhatsAppAgentPanel() {
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{learning.learned} تعلّمها</span>
               <span className="rounded-full border border-hair px-3 py-1 text-[.7rem] text-soft">{learning.observing} يراقبها</span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent">＋</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
             </div>
           </summary>
           <div className="mt-5 grid gap-3">

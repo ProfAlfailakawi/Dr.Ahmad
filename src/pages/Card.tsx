@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Page, SocialIcon } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { profile, socials, academicProfiles, links, site } from '../data'
+import { ArrowLeft, Check } from 'lucide-react'
 
 /*
  * البطاقة الرقمية `/card`: صفحةٌ مستقلّةٌ للمؤتمرات واللقاءات — اسمك وصفتك،
@@ -68,7 +69,7 @@ export default function Card() {
             className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3 text-[.9rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
           >
             {saved ? (
-              <><span aria-hidden>✓</span> حُفظت جهة الاتصال</>
+              <><span aria-hidden><Check aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span> حُفظت جهة الاتصال</>
             ) : (
               <>
                 <svg aria-hidden width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg>
@@ -109,7 +110,7 @@ export default function Card() {
                   </span>
                   <span className="text-[.86rem] font-semibold text-ink">{item.label}</span>
                 </span>
-                <span className="text-[.8rem] text-soft transition-transform duration-300 group-hover:-translate-x-1" aria-hidden>←</span>
+                <span className="text-[.8rem] text-soft transition-transform duration-300 group-hover:-translate-x-1" aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </a>
             ))}
           </div>

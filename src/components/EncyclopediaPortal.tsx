@@ -38,6 +38,7 @@ import { EncyclopediaKnowledgeResults } from './EncyclopediaKnowledgeResults'
 import { EncyclopediaResultBrowser } from './EncyclopediaResultBrowser'
 import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
 import { coverSrcSet } from '../lib/cover-image'
+import { Plus } from 'lucide-react'
 
 const CHANNEL_URL = 'https://www.youtube.com/@موسوعةتكنولوجياالتعليم/videos'
 const ENCYCLOPEDIA_SAMPLE_PDF = '/files/encyclopedia.pdf?v=20260803-4'
@@ -454,7 +455,7 @@ function DoorRow({
             {formatArabicNumber(door.units.length)} فصول · {doorVideos.length > 0 ? `${formatArabicNumber(doorVideos.length)} فيديو` : 'عروض ومواد تدريسية'}
           </span>
         </span>
-        <span aria-hidden className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
+        <span aria-hidden className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
       </summary>
 
       <div ref={contentRef} className="min-w-0 pb-8 ps-[4.2rem] md:ps-[5.6rem]">

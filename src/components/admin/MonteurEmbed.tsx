@@ -5,6 +5,7 @@ import { useCmsContent } from '../../lib/content'
 import { loadArticleBodies } from '../../lib/article-bodies'
 import { watchMonteurProjects, saveMonteurProject, monteurSourceHash, type MonteurPlan, type MonteurProject } from '../../lib/monteur-library'
 import { arabicCountPhrase, REEL_SCENE_FORMS } from '../../lib/arabic-count.ts'
+import { Sparkles } from 'lucide-react'
 
 type Draft = { slug: string; title: string; body: string; plan: MonteurPlan }
 type MonteurApi = {
@@ -170,7 +171,7 @@ export function MonteurEmbed({ title, body }: { title: string; body: string }) {
     <div className="grid gap-3">
       <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); void storyboard(true) }}>
         <input className="min-w-0 flex-1 rounded-full border border-hair bg-canvas px-4 py-3 text-sm text-ink outline-none focus:border-accent" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="فكرة من تخصصك… مثل: المعلم في عصر الذكاء" aria-label="موضوع الفيديو" maxLength={1000} />
-        <button className={primary} disabled={!ready || busy || !user} type="submit">{busy ? 'يبتكر…' : '✦ ابتكر من الفكرة'}</button>
+        <button className={primary} disabled={!ready || busy || !user} type="submit">{busy ? 'يبتكر…' : <><Sparkles aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />ابتكر من الفكرة</>}</button>
       </form>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className={ghost} disabled={!ready || busy} onClick={() => { markDirty(false); api.current?.setText(`${title}\n\n${body}`.trim()); setMessage('معاينة من النص؛ يمكنك حفظها في المكتبة.') }}>من النص أعلاه</button>

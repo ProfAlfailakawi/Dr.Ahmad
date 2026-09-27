@@ -5,6 +5,7 @@ import type { ArticleRecord } from '../../lib/cms'
 import { useCmsContent } from '../../lib/content'
 import { Pagination, usePagedList } from '../Pagination'
 import { arabicCountPhrase, ATTENTION_WARNING_FORMS } from '../../lib/arabic-count.ts'
+import { TriangleAlert } from 'lucide-react'
 
 type Kind = 'الكل' | AnalyticsKind
 
@@ -249,7 +250,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           </div>
           {health.issueCount > 0 && health.issues && (
             <ul className="mt-4 grid gap-1.5 border-t border-hair pt-4 text-[.85rem] text-soft">
-              {health.issues.slice(0, 10).map((i, n) => <li key={n}>⚠ {i}</li>)}
+              {health.issues.slice(0, 10).map((i, n) => <li key={n}><TriangleAlert aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />{i}</li>)}
             </ul>
           )}
         </section>
@@ -382,7 +383,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           {summary.trend.map((day) => (
             <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
               <span className="text-[.72rem] text-soft">{ar(day.count)}</span>
-              <span className="w-full max-w-10 rounded-t-md bg-accent/[.08]0 transition-[height]" style={{ height: `${day.count ? Math.max((day.count / trendMax) * 120, 5) : 2}px` }} />
+              <span className="w-full max-w-10 rounded-t-md bg-accent/60 transition-[height]" style={{ height: `${day.count ? Math.max((day.count / trendMax) * 120, 5) : 2}px` }} />
               <time className="text-[.58rem] text-soft sm:text-[.65rem]" dateTime={day.date}>{day.date.slice(5).replace('-', '/')}</time>
             </div>
           ))}

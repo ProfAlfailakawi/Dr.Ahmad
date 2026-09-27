@@ -44,10 +44,13 @@ export type AdminNavSection = {
   items: AdminNavItem[]
 }
 
+/* اسم أيقونة خطية (lucide) لا رمز يونيكود: تُرسم في AdminArchitecture. */
+export type AdminAreaIcon = 'gauge' | 'send' | 'library' | 'users'
+
 export type AdminNavGroup = {
   area: AdminArea
   label: string
-  icon: string
+  icon: AdminAreaIcon
   sections: AdminNavSection[]
 }
 
@@ -57,7 +60,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
   {
     area: 'system',
     label: 'النظام',
-    icon: '◉',
+    icon: 'gauge',
     sections: [{
       id: 'system-core',
       items: [
@@ -71,7 +74,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
   {
     area: 'publishing',
     label: 'الإنتاج والنشر',
-    icon: '↗',
+    icon: 'send',
     sections: [
       {
         id: 'creation',
@@ -127,7 +130,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
   {
     area: 'library',
     label: 'المكتبة',
-    icon: '▦',
+    icon: 'library',
     sections: [{
       id: 'library-content',
       items: [
@@ -143,7 +146,7 @@ export const ADMIN_GROUPS: AdminNavGroup[] = [
   {
     area: 'audience',
     label: 'الجمهور',
-    icon: '◎',
+    icon: 'users',
     sections: [{
       id: 'audience-tools',
       items: [

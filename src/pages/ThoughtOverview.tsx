@@ -8,6 +8,7 @@ import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { arabicCountPhrase, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS } from '../lib/arabic-count.ts'
+import { ArrowLeft } from 'lucide-react'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -203,10 +204,10 @@ export default function ThoughtOverview() {
           <FadeUp delay={0.12}>
             <nav className="mt-6 grid overflow-hidden rounded-[1.4rem] border border-hair bg-paper sm:grid-cols-2" aria-label="استكشاف أعمق للخريطة الفكرية">
               <Link to="/atlas" className="group flex min-h-16 items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-wash sm:border-l sm:border-hair">
-                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">افتح سماء المقالات</strong><span className="mt-1 block text-[.7rem] text-soft">استكشاف بصري تفاعلي للأرشيف</span></span><span aria-hidden className="text-accent">←</span>
+                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">افتح سماء المقالات</strong><span className="mt-1 block text-[.7rem] text-soft">استكشاف بصري تفاعلي للأرشيف</span></span><span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </Link>
               <Link to="/impact" className="group flex min-h-16 items-center justify-between gap-4 border-t border-hair px-5 py-4 transition-colors hover:bg-wash sm:border-t-0">
-                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">استكشف سجل الأثر</strong><span className="mt-1 block text-[.7rem] text-soft">الدليل الخارجي الموثّق</span></span><span aria-hidden className="text-accent">←</span>
+                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">استكشف سجل الأثر</strong><span className="mt-1 block text-[.7rem] text-soft">الدليل الخارجي الموثّق</span></span><span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </Link>
             </nav>
           </FadeUp>

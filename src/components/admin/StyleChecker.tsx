@@ -23,6 +23,7 @@ import {
   type StyleVerdict,
 } from '../../lib/style-dna.mjs'
 import { buildMimicLexicon, composeReviewed, diffHunks, mimicVoice, type MimicHunk, type MimicResult } from '../../lib/style-mimic.mjs'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 
 const DRAFT_KEY = 'admin-style-checker-draft-v1'
 const card = 'min-w-0 rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
@@ -498,7 +499,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
             <p className="text-[.68rem] text-soft">المعالجة فورية محلياً داخل جهازك بدون إرسال النص لأي جهة.</p>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={actionBtn} onClick={applyLocalMimic} disabled={!body.trim()}>
-                ✨ محاكاة أسلوبي وصقل النص محلياً
+                <Sparkles aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />محاكاة أسلوبي وصقل النص محلياً
               </button>
               <button type="button" className={ghost} onClick={applyLocalPolish} disabled={!body.trim()}>
                 صقل الترقيم والإيقاع
@@ -601,7 +602,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
                   <span className="shrink-0 rounded-full border border-accent/20 bg-accent/[.05] px-2.5 py-1 text-[.6rem] font-semibold text-accent">{mimicKindLabel[change.kind] || 'تعديل'}</span>
                   <span className="text-[.62rem] text-soft">الفقرة {change.paragraph}</span>
                   <span className="text-[.8rem] text-ink">«{change.from}»</span>
-                  <span className="text-soft">←</span>
+                  <span className="text-soft"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                   <span className="text-[.8rem] text-accent">{change.to ? `«${change.to}»` : 'حُذفت'}</span>
                   <span className="basis-full text-[.68rem] leading-relaxed text-soft">{change.reason}</span>
                 </div>
@@ -626,7 +627,7 @@ export function StyleChecker({ articles }: { articles: ArticleRecord[] }) {
                   return (
                     <li key={hunk.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 ${refused ? 'border-hair opacity-70' : 'border-accent/25 bg-accent/[.03]'}`}>
                       <span className={`text-[.8rem] ${refused ? 'text-ink' : 'text-soft line-through decoration-soft/50'}`}>{hunk.from.trim() ? `«${hunk.from.trim()}»` : '(لا شيء)'}</span>
-                      <span className="text-soft">←</span>
+                      <span className="text-soft"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                       <span className={`text-[.8rem] ${refused ? 'text-soft line-through decoration-soft/50' : 'text-accent'}`}>{hunk.to.trim() ? `«${hunk.to.trim()}»` : hunk.to ? '(فاصل)' : 'حُذفت'}</span>
                       <button type="button" disabled={!reviewLive} onClick={() => toggleHunk(hunk.id)} className="mr-auto rounded-full border border-hair px-3 py-1 text-[.66rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45">
                         {refused ? 'اقبله' : 'ردّه'}

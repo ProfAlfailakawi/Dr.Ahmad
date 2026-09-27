@@ -2,7 +2,9 @@ import { JsonLd, useSeo } from '../components/seo'
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
+import { ArrowLeft, ArrowUpRight, BookOpen, Compass, FileText, FlaskConical } from 'lucide-react'
+import { DnaHubMap, DnaSegmented, type DnaTone } from '../components/dna/DnaKit'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialDock, SocialIcon, TebyanProjectLink } from '../components/ui'
 import { profile, roundDown10, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
@@ -280,14 +282,14 @@ function SinceLastVisit() {
           <Link to={`/articles/${continuation.article.slug}`} className="group grid min-h-14 w-[88vw] max-w-[32rem] shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:flex md:min-h-12 md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="col-start-1 block font-semibold leading-[1.45] text-accent md:inline">كنت تتبع أثر {continuation.label}</span>
             <span className="col-start-1 line-clamp-1 min-w-0 leading-[1.45] text-ink transition-colors group-hover:text-accent md:inline md:flex-1">أكمل من هنا: «{continuation.article.title}»</span>
-            <span className="col-start-2 row-span-2 row-start-1 shrink-0 self-center text-accent transition-transform group-hover:-translate-x-0.5 md:inline">←</span>
+            <span className="col-start-2 row-span-2 row-start-1 shrink-0 self-center text-accent transition-transform group-hover:-translate-x-0.5 md:inline"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
           </Link>
         )}
         {resume && (
           <Link to={`/articles/${resume.slug}`} className="group flex min-h-12 w-[88vw] max-w-[32rem] shrink-0 items-center gap-2.5 rounded-xl border border-hair bg-canvas px-4 py-2.5 text-[.78rem] text-soft transition-colors hover:border-accent md:w-auto md:max-w-none md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-[.82rem]">
             <span className="font-semibold text-accent">تابع من حيث توقفت</span>
             <span className="min-w-0 flex-1 truncate text-ink transition-colors group-hover:text-accent">«{resume.title}»</span>
-            <span className="shrink-0 text-accent transition-transform group-hover:-translate-x-0.5">←</span>
+            <span className="shrink-0 text-accent transition-transform group-hover:-translate-x-0.5"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
           </Link>
         )}
         {bits.length > 0 && (
@@ -431,8 +433,16 @@ function axisDeepDive(axis: string, papers: PaperRecord[], books: BookRecord[]) 
   }
 }
 
+/* لون المحور في الخريطة = لون فئته في سماء المقالات (--atlas-*). */
+const AXIS_TONE_VAR: Record<string, string> = {
+  'التعليم': 'education', 'التربية': 'pedagogy', 'مجتمع': 'society', 'تقنية': 'technology',
+  'هوية': 'identity', 'إعلام': 'media', 'بحث': 'research',
+}
+const AXIS_TONE = 'axis' as DnaTone
+
 function ThoughtCompass() {
   const { articles, books, papers } = useCmsContent()
+  const navigate = useNavigate()
   const axes = useMemo(() => dynamicArticleCategories(articles, false).map((key) => ({ key, label: categoryLabel(key) })), [articles])
   const [active, setActive] = useState('التعليم')
   useEffect(() => {
@@ -453,9 +463,24 @@ function ThoughtCompass() {
   const quickLinks = [
     { to: '/thought-paths', label: 'مسار الفكرة الكامل', tag: 'مسار' },
     { to: '/articles', label: `كل ما كتبته في ${axisLabel}`, tag: 'أرشيف' },
-    dive.paper ? { to: `/research/${dive.paper.slug}`, label: dive.paper.title, tag: 'بحث' } : null,
-    dive.book ? { to: `/publications/${dive.book.slug}`, label: dive.book.title, tag: 'كتاب' } : null,
-  ].filter(Boolean) as { to: string; label: string; tag: string }[]
+  ]
+  const hubNodes = [
+    ...related.map((a) => ({
+      key: `a-${a.slug}`, icon: <FileText aria-hidden size={20} strokeWidth={1.6} />, tone: AXIS_TONE,
+      label: a.title, title: a.title, ariaLabel: `اقرأ مقال: ${a.title}`,
+      onClick: () => navigate(`/articles/${a.slug}`),
+    })),
+    ...(dive.paper ? [{
+      key: `p-${dive.paper.slug}`, icon: <FlaskConical aria-hidden size={20} strokeWidth={1.6} />, tone: AXIS_TONE,
+      label: dive.paper.title, title: `بحث: ${dive.paper.title}`, ariaLabel: `بحث: ${dive.paper.title}`,
+      onClick: () => navigate(`/research/${dive.paper!.slug}`),
+    }] : []),
+    ...(dive.book ? [{
+      key: `b-${dive.book.slug}`, icon: <BookOpen aria-hidden size={20} strokeWidth={1.6} />, tone: AXIS_TONE,
+      label: dive.book.title, title: `كتاب: ${dive.book.title}`, ariaLabel: `كتاب: ${dive.book.title}`,
+      onClick: () => navigate(`/publications/${dive.book!.slug}`),
+    }] : []),
+  ]
 
   return (
     <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[86px]">
@@ -468,21 +493,34 @@ function ThoughtCompass() {
         </FadeUp>
 
         <FadeUp delay={0.1}>
-          <div className="editorial-tablist rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:gap-2.5 md:overflow-visible md:px-0">
-            {axes.map((a) => (
-              <button
-                key={a.key}
-                onMouseEnter={() => setActive(a.key)}
-                onClick={() => setActive(a.key)}
-                data-hover
-                className={`editorial-tab shrink-0 px-3 py-2 font-display text-[.92rem] md:px-4 md:text-[1.02rem] ${active === a.key ? 'is-active' : ''}`}
-              >
-                {a.label}
-              </button>
-            ))}
+          <div
+            className="compass-seg-wrap"
+            onMouseOver={(event) => {
+              /* كما كانت الألسنة: المرور على المحور يبدّله، والنقر كذلك. */
+              const tab = (event.target as HTMLElement).closest('.dna-segb')
+              const axis = tab ? axes[Array.prototype.indexOf.call(tab.parentElement?.children || [], tab)] : undefined
+              if (axis && axis.key !== active) setActive(axis.key)
+            }}
+          >
+            <DnaSegmented
+              ariaLabel="محاور الفكر"
+              options={axes.map((a) => ({ value: a.key, label: a.label }))}
+              value={active}
+              onChange={setActive}
+            />
           </div>
         </FadeUp>
 
+        <FadeUp delay={0.12}>
+          <div className="compass-hub mt-6 md:mt-8" style={{ '--hub-axis': `var(--atlas-${AXIS_TONE_VAR[active] || 'education'})` } as CSSProperties}>
+            <DnaHubMap
+              ariaLabel={`خريطة محور ${axisLabel}`}
+              center={{ icon: <Compass aria-hidden size={26} strokeWidth={1.6} />, label: axisLabel, ariaLabel: `المحور: ${axisLabel}` }}
+              nodes={hubNodes}
+              animate={false}
+            />
+          </div>
+        </FadeUp>
         <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-4 md:mx-0 md:mt-10 md:gap-5 md:px-0">
           {related.map((a, i) => (
             <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="w-[56vw] max-w-[248px] shrink-0 md:w-[31%] md:max-w-none">
@@ -497,12 +535,12 @@ function ThoughtCompass() {
           ))}
         </div>
         <FadeUp delay={0.15}>
-          <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
+          <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0">
             {quickLinks.map((item) => (
               <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[62vw] max-w-[252px] shrink-0 flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
                 <span className="editorial-micro-label w-fit text-[.66rem] text-soft">{item.tag}</span>
                 <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
-                <span aria-hidden className="text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
+                <ArrowLeft aria-hidden size={17} strokeWidth={1.6} className="self-end text-accent transition-transform group-hover:-translate-x-1" />
               </Link>
             ))}
             <span aria-hidden className="w-px shrink-0 md:hidden" />
@@ -903,7 +941,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
         <div className="mx-auto max-w-shell">
           <SectionHead label="المساهمات العلمية" title="من السؤال إلى الدليل." to="/research" cta="عرض الكل" />
           <ol className="mt-2">
-            {topPapers.map((paper, i) => <FadeUp key={paper.slug} delay={Math.min(i * 0.06, 0.24)}><li className={i ? 'border-t border-hair' : ''}><Link to={`/research/${paper.slug}`} className="group flex items-baseline gap-6 py-6"><span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70">{arNum(i + 1)}</span><span className="flex-1"><span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{paper.title}</span><span className="mt-1 block text-[.8rem] text-soft">{paper.meta}</span></span><span className="text-soft">←</span></Link></li></FadeUp>)}
+            {topPapers.map((paper, i) => <FadeUp key={paper.slug} delay={Math.min(i * 0.06, 0.24)}><li className={i ? 'border-t border-hair' : ''}><Link to={`/research/${paper.slug}`} className="group flex items-baseline gap-6 py-6"><span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70">{arNum(i + 1)}</span><span className="flex-1"><span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{paper.title}</span><span className="mt-1 block text-[.8rem] text-soft">{paper.meta}</span></span><span className="text-soft"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link></li></FadeUp>)}
           </ol>
         </div>
       </section>
@@ -988,7 +1026,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
                   <span className="mt-1 block font-display text-[1.03rem] font-semibold leading-[1.55] text-ink md:text-[1.2rem]">مدخل واحد إلى سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
                 </span>
               </span>
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-all group-hover:border-accent group-hover:-translate-x-0.5">←</span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-all group-hover:border-accent group-hover:-translate-x-0.5"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
             </button>
           </FadeUp>
         </div>
@@ -1105,7 +1143,7 @@ export default function Home() {
                     <span className="block truncate font-display text-[.95rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
                     <span className="mt-0.5 block truncate text-[.7rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
                   </Link>
-                  <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent">↗</Link>
+                  <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent"><ArrowUpRight aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></Link>
                 </div>
               </FadeUp>
             </div>

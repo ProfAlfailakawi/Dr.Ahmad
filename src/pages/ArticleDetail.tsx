@@ -33,6 +33,7 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { ConceptEchoMarker } from '../components/ConceptEcho'
 import KuficMark from '../components/KuficMark'
 import { buildConceptEchoes } from '../lib/concept-weave'
+import { ArrowLeft, Plus } from 'lucide-react'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -448,7 +449,7 @@ function SyncedArticleBody({ article, body, articles, papers, books }: { article
               </span>
               <span className="flex shrink-0 items-center gap-1.5 text-[.68rem] text-soft">
                 <span>{readerMade.length.toLocaleString('en-US')} موضع</span>
-                <span aria-hidden="true" className="text-[.9rem] leading-none text-accent transition-transform group-open:rotate-45">＋</span>
+                <span aria-hidden="true" className="text-[.9rem] leading-none text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </span>
             </summary>
 
@@ -568,7 +569,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
               <p className="text-[.95rem] font-light leading-[1.9] text-soft">
                 كتبتُ في هذا قبل {yearsWord(diff(pair.older.iso))} —{' '}
                 <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.older.title}» ({yr(pair.older.iso)})</span>. كيف تغيّر المشهد؟ قارن بنفسك{' '}
-                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1">←</span>
+                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </p>
             </Link>
           )}
@@ -577,7 +578,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
               <p className="text-[.95rem] font-light leading-[1.9] text-soft">
                 ثم عدتُ إلى هذا الموضوع عام {yr(pair.newer.iso)} —{' '}
                 <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.newer.title}»</span>{' '}
-                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1">←</span>
+                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </p>
             </Link>
           )}
@@ -613,18 +614,7 @@ function bestBookTocMatch(article: ArticleRecord) {
 }
 
 
-const engagementIndex = (article: ArticleRecord, salt: string, min: number, max: number) => {
-  const source = `${article.slug}:${article.iso}:${article.title}:${salt}`
-  let hash = 2166136261
-  for (let index = 0; index < source.length; index += 1) {
-    hash ^= source.charCodeAt(index)
-    hash = Math.imul(hash, 16777619)
-  }
-  return min + ((hash >>> 0) % Math.max(1, max - min + 1))
-}
-
-/* شارة المالك: القيم الحقيقية تُعرض كما هي. ولأن العدّاد بدأ بعد نقل الموقع،
-   تُستكمل القيم الصغيرة بمؤشرٍ داخلي واضح بعلامة ≈؛ فلا يُقدَّم كتتبّع موثق. */
+/* شارة المالك: أرقام العدّاد الحقيقية وحدها — بلا مؤشرٍ تقديري يُخلط بها. */
 function OwnerBadge({ path, article }: { path: string; article: ArticleRecord }) {
   const { isAdmin } = useAdminAuth()
   const [c, setC] = useState<{ views: number; shares: number } | null>(null)
@@ -635,17 +625,12 @@ function OwnerBadge({ path, article }: { path: string; article: ArticleRecord })
     return () => { on = false }
   }, [isAdmin, path])
   if (!isAdmin || !c) return null
-  const estimatedViews = c.views < 100
-  const estimatedShares = c.shares < 10
-  /* المؤشر الداخلي أساسٌ يتحرك فوقه العدّاد الحقيقي مع كل زيارة —
-     كان ثابتاً (هاش صرف) فبدا متجمداً مهما زار الناس */
-  const views = estimatedViews ? engagementIndex(article, 'views', 180, 890) + c.views : c.views
-  const shares = estimatedShares ? engagementIndex(article, 'shares', 12, 86) + c.shares : c.shares
+  const { views, shares } = c
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title={estimatedViews || estimatedShares ? 'يظهر لك وحدك — علامة ≈ تعني مؤشراً داخلياً متنوعاً وليست إحصاءً موثقاً. القيم التي تتجاوز عتبة الرصد تُعرض بلا علامة.' : 'يظهر لك وحدك — أرقام داخلية موثقة من الموقع'}>
-      <span>{estimatedViews ? '≈ ' : ''}{arabicCountPhrase(views, VIEW_FORMS, (value) => value.toLocaleString('en-US'))}</span>
+    <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title='يظهر لك وحدك — أرقام داخلية موثقة من الموقع'>
+      <span>{arabicCountPhrase(views, VIEW_FORMS, (value) => value.toLocaleString('en-US'))}</span>
       <span className="text-hair">·</span>
-      <span>{estimatedShares ? '≈ ' : ''}{arabicCountPhrase(shares, SHARE_FORMS, (value) => value.toLocaleString('en-US'))}</span>
+      <span>{arabicCountPhrase(shares, SHARE_FORMS, (value) => value.toLocaleString('en-US'))}</span>
     </span>
   )
 }
@@ -691,7 +676,7 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
     <FadeUp>
       <details id="student-archive" className="mt-5 rounded-2xl border border-hair bg-wash px-6 py-5">
         <summary className="cursor-pointer list-none font-display text-[1.15rem] font-semibold text-ink marker:hidden">
-          للطلاب والباحثين <span className="text-accent">＋</span>
+          للطلاب والباحثين <span className="text-accent"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
         </summary>
         <div className="mobile-card-rail mt-5 grid gap-5 border-t border-hair pt-5 md:grid-cols-2">
           <div>

@@ -12,6 +12,7 @@ import { useAtlasSettings, visibleConstellations } from '../lib/atlas-settings'
 import { currentSeason } from '../lib/seasons'
 import rawArticleCaution from '../data/article-caution.json' with { type: 'json' }
 import { sampleVisualArchive } from '../lib/archive-scale.mjs'
+import { ArrowLeft } from 'lucide-react'
 
 const W = 1160
 const PAD_R = 150
@@ -1053,7 +1054,7 @@ export default function Atlas() {
           {constellation && constellationPath.length > 1 && (
             <ol className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [touch-action:pan-x_pan-y_pinch-zoom] overscroll-x-contain" aria-label={`ترتيب قراءة ${constellation.title}`}>
               {constellationPath.map((star, index) => (
-                <li key={star.slug} className="contents"><Link to={`/articles/${star.slug}`} className="min-w-[12rem] rounded-xl border border-hair bg-canvas p-3 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent"><span className="font-bold text-accent">{index + 1}</span><span className="mx-2">←</span>{star.title}</Link></li>
+                <li key={star.slug} className="contents"><Link to={`/articles/${star.slug}`} className="min-w-[12rem] rounded-xl border border-hair bg-canvas p-3 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent"><span className="font-bold text-accent">{index + 1}</span><span className="mx-2"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>{star.title}</Link></li>
               ))}
             </ol>
           )}

@@ -44,3 +44,53 @@ html.dark [data-dna-tone] {
 }
 .compass-seg-wrap { max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; }
 .compass-seg-wrap .dna-segb { min-block-size: 44px; font-family: inherit; }
+
+/* غرفة القيادة: رأس حالة أبيض + أربع بلاطات قرار. */
+.admin-command-head { padding: 22px 22px 18px; }
+.admin-command-head .dna-htitle { font-family: "El Messiri", serif; font-size: clamp(1.25rem, 2.6vw, 1.7rem); line-height: 1.45; }
+.admin-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-decision-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--dna-line);
+  border-radius: var(--dna-r);
+  background: var(--dna-surface);
+  color: var(--dna-ink);
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .2s, background-color .2s;
+}
+.admin-decision-tile:hover { border-color: var(--dna-accent); }
+.admin-decision-tile:focus-visible { outline: 2px solid var(--dna-accent); outline-offset: 2px; }
+.admin-decision-text { display: grid; gap: 2px; min-inline-size: 0; }
+.admin-decision-text strong { font-size: 1.35rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.admin-decision-text span { font-size: .78rem; color: var(--dna-muted); line-height: 1.4; }
+.admin-decision-tile[data-empty='true'] .admin-decision-text strong { color: var(--dna-muted); }
+.admin-decision-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-block-start: 12px;
+  border-block-start: 1px dashed var(--dna-line-2);
+  font-size: .76rem;
+  line-height: 1.7;
+  color: var(--dna-muted);
+}
+.admin-decision-note svg { flex: none; color: var(--dna-accent); }
+@media (max-width: 760px) {
+  .admin-decision-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-command-head { padding: 16px; }
+}

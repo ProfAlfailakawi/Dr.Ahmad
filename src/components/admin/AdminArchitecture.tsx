@@ -6,6 +6,8 @@ import { createAnalyticsNamer, decodeAnalyticsPath } from '../../lib/analytics-l
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import { EASE } from '../motion'
 import { DrAhmadRoom } from './DrAhmadRoom'
+import { AudioLines, ClipboardCheck, FilePenLine, Inbox, ShieldAlert, Volume2 } from 'lucide-react'
+import { DnaIconTile, DnaLive, DnaStatusHeader, type DnaTone } from '../dna/DnaKit'
 
 export type { AdminArea, AdminTab } from './admin-navigation'
 export { ADMIN_GROUPS, areaOfTab, defaultTabForArea } from './admin-navigation'
@@ -392,6 +394,14 @@ export function TodayDashboard({ articles, books, papers, media, onOpen }: { art
     audioNeedsReview ? { label: `${audioNeedsReview} صوت يحتاج مراجعة`, note: 'قرار اعتماد أو إعادة توليد.', tab: 'audio-library' as AdminTab } : null,
     data.recentMessages ? { label: arabicCountPhrase(data.recentMessages, MESSAGE_PLAIN_FORMS), note: 'رد أو تحويل أو اعتماد كشهادة.', tab: 'inbox' as AdminTab } : null,
   ].filter(Boolean) as { label: string; note: string; tab: AdminTab }[]
+  /* القرارات الأربعة دائماً مرئية كبلاطات بعدّاداتها؛ N مجموعها. */
+  const decisions: { key: string; count: number; label: string; full: string; note: string; tab: AdminTab; icon: React.ReactNode; tone: DnaTone }[] = [
+    { key: 'drafts', count: drafts, label: 'مسودات', full: `${drafts} مسودة`, note: 'قرار نشر أو تأجيل.', tab: 'articles', icon: <FilePenLine size={20} strokeWidth={1.6} />, tone: 'accent' },
+    { key: 'sources', count: data.sourceDecisions, label: 'مصادر مشبوهة', full: arabicCountPhrase(data.sourceDecisions, SUSPICIOUS_SOURCE_FORMS), note: 'اعتماد بديل أو تركه للمراجعة.', tab: 'content-health', icon: <ShieldAlert size={20} strokeWidth={1.6} />, tone: 'warn' },
+    { key: 'audio', count: audioNeedsReview, label: 'صوت للمراجعة', full: `${audioNeedsReview} صوت يحتاج مراجعة`, note: 'قرار اعتماد أو إعادة توليد.', tab: 'audio-library', icon: <AudioLines size={20} strokeWidth={1.6} />, tone: 'sand' },
+    { key: 'inbox', count: data.recentMessages, label: 'رسائل', full: arabicCountPhrase(data.recentMessages, MESSAGE_PLAIN_FORMS), note: 'رد أو تحويل أو اعتماد كشهادة.', tab: 'inbox', icon: <Inbox size={20} strokeWidth={1.6} />, tone: 'slate' },
+  ]
+  const decisionTotal = decisions.reduce((sum, item) => sum + item.count, 0)
 
   const pulse = useMemo(() => {
     const outgoingFromArticles = data.journeys.filter((row) => row.from.startsWith('/articles/')).reduce((sum, row) => sum + row.count, 0)
@@ -435,19 +445,30 @@ export function TodayDashboard({ articles, books, papers, media, onOpen }: { art
   return (
     <div className="grid gap-5">
       <DrAhmadRoom articles={articles} books={books} papers={papers} media={media} onOpen={onOpen} />
-      <section className="relative overflow-hidden rounded-3xl border border-hair bg-ink p-7 text-white md:p-10">
-        <div className="pointer-events-none absolute -left-16 -top-24 h-64 w-64 rounded-full bg-white/[.06] blur-3xl" />
-        <div className="relative flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="text-[.76rem] font-semibold text-white/60">غرفة القيادة الصامتة</p>
-            <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,3rem)] font-bold leading-[1.35]">{tasks.length ? `اليوم لديك ${arabicCountPhrase(tasks.length, DECISION_FORMS)} فقط.` : 'لا توجد مشكلات عاجلة.'}</h2>
-            <p className="mt-3 max-w-2xl text-[.9rem] font-light leading-[1.9] text-white/65">هذا الصندوق يعرض القرارات لا كل النواقص. نقص التغطية الصوتية يبقى مسار تطوير مستقلاً، لا إنذاراً أحمر.</p>
-          </div>
-          {loading && <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-[.72rem] text-white/65"><span className="pulse relative h-1.5 w-1.5 rounded-full bg-white/70" />يتصل بالنظام…</span>}
-        </div>
-        {tasks.length ? <ol className="relative mt-8 grid gap-2.5 md:grid-cols-2">{tasks.map((task, index) => <li key={task.label}><button onClick={() => onOpen(task.tab)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.05] px-4 py-3 text-right transition-colors hover:bg-white/[.1]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[.75rem]">{index + 1}</span><span className="min-w-0 flex-1"><span className="block text-[.86rem] font-medium">{task.label}</span><span className="mt-0.5 block text-[.72rem] text-white/55">{task.note}</span></span><span className="ms-auto">←</span></button></li>)}</ol> : <p className="relative mt-7 text-[.88rem] text-white/70">يمكنك الآن الكتابة أو المغادرة. النظام لا يطلب تدخلك العاجل.</p>}
-        {missingAudio > 0 && <p className="relative mt-4 rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-[.78rem] leading-relaxed text-white/62">تغطية الصوت: {arabicCountPhrase(missingAudio, MATERIAL_WAITING_AUDIO_FORMS)}. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}
-      </section>
+      <DnaStatusHeader
+        className="admin-command-head"
+        headingLevel={2}
+        icon={<ClipboardCheck size={22} strokeWidth={1.6} />}
+        tone={decisionTotal ? 'accent' : 'mint'}
+        title={decisionTotal ? `اليوم لديك ${arabicCountPhrase(decisionTotal, DECISION_FORMS)}` : 'لا توجد مشكلات عاجلة'}
+        subtitle={<span title="هذا الصندوق يعرض القرارات لا كل النواقص. نقص التغطية الصوتية يبقى مسار تطوير مستقلاً، لا إنذاراً أحمر.">غرفة القيادة الصامتة · {tasks.length ? 'القرارات لا كل النواقص' : 'يمكنك الآن الكتابة أو المغادرة. النظام لا يطلب تدخلك العاجل.'}</span>}
+        actions={loading ? <DnaLive on label="يتصل بالنظام…" /> : null}
+      >
+        <ol className="admin-decision-grid">
+          {decisions.map((item) => (
+            <li key={item.key}>
+              <button type="button" onClick={() => onOpen(item.tab)} title={`${item.full} — ${item.note}`} aria-label={`${item.full}: ${item.note}`} className="admin-decision-tile" data-empty={item.count ? undefined : 'true'}>
+                <DnaIconTile icon={item.icon} tone={item.count ? item.tone : 'neutral'} size="md" />
+                <span className="admin-decision-text">
+                  <strong>{item.count}</strong>
+                  <span>{item.label}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        {missingAudio > 0 && <p className="admin-decision-note"><Volume2 aria-hidden size={15} strokeWidth={1.6} />تغطية الصوت: {arabicCountPhrase(missingAudio, MATERIAL_WAITING_AUDIO_FORMS)}. تظهر كمؤشر تطوير، لا كخلل عاجل.</p>}
+      </DnaStatusHeader>
 
       <section className="overflow-hidden rounded-3xl border border-hair bg-wash px-5 py-6 sm:px-7 md:px-8" aria-label="نبض الموقع">
         <p className="text-[.72rem] font-semibold text-accent">نبض الموقع</p>

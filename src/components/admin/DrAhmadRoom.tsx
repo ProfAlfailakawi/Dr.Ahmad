@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
@@ -17,7 +18,7 @@ type SavedSession = {
   createdAt?: { seconds?: number }
 }
 
-const input = 'w-full rounded-2xl border border-white/15 bg-white/[.06] px-5 py-4 text-[1rem] leading-loose text-white outline-none transition placeholder:text-white/38 focus:border-white/45'
+const input = 'w-full rounded-2xl border border-hair bg-wash px-5 py-4 text-[1rem] leading-loose text-ink outline-none transition placeholder:text-soft focus:border-accent'
 const actionClass = 'min-h-11 rounded-full border border-hair bg-canvas px-4 py-2 text-[.75rem] font-semibold text-ink transition hover:border-accent hover:text-accent disabled:opacity-45'
 
 function shortDate(value?: { seconds?: number }) {
@@ -215,27 +216,26 @@ export function DrAhmadRoom({
   ], [])
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-ink/10 bg-ink text-white" data-dr-ahmad-room="true">
+    <section className="dna-surface overflow-hidden text-ink" data-dr-ahmad-room="true">
       <div className="relative px-5 py-7 sm:px-7 md:px-10 md:py-10">
-        <div className="pointer-events-none absolute -left-20 -top-28 h-72 w-72 rounded-full bg-white/[.05] blur-3xl" />
         <div className="relative">
-          <p className="text-[.72rem] font-semibold text-white/52">غرفة د. أحمد الذكية</p>
+          <p className="flex items-center gap-2 text-[.72rem] font-semibold text-accent"><Sparkles aria-hidden size={15} strokeWidth={1.6} />غرفة د. أحمد الذكية</p>
           <h2 className="mt-2 font-display text-[clamp(1.55rem,4vw,2.65rem)] font-bold leading-[1.45]">ماذا تريد أن تنجز اليوم يا د. أحمد؟</h2>
-          <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-white/55">اكتب النتيجة التي تريدها. الغرفة تختار الأنظمة داخلياً وتعيد حزمة قرار وتنفيذ، لا محادثة عامة.</p>
+          <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-soft">اكتب النتيجة التي تريدها. الغرفة تختار الأنظمة داخلياً وتعيد حزمة قرار وتنفيذ، لا محادثة عامة.</p>
           <textarea value={command} onChange={(event) => setCommand(event.target.value)} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') void run() }} className={`${input} mt-6 min-h-32`} placeholder="مثال: لدي لقاء تلفزيوني عن الذكاء الاصطناعي في التعليم…" />
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => void run()} disabled={busy || command.trim().length < 4} className="min-h-11 rounded-full bg-white px-6 py-2 text-[.82rem] font-bold text-ink transition hover:bg-white/90 disabled:opacity-45">{busy ? 'أبني الحزمة…' : 'أنجز الطلب'}</button>
+            <button type="button" onClick={() => void run()} disabled={busy || command.trim().length < 4} className="dna-btnp min-h-11 px-6 text-[.82rem]">{busy ? 'أبني الحزمة…' : 'أنجز الطلب'}</button>
             <details className="group">
-              <summary className="cursor-pointer list-none rounded-full border border-white/15 px-4 py-2 text-[.72rem] text-white/58">أمثلة سريعة</summary>
-              <div className="mt-2 grid max-w-3xl gap-1.5 rounded-2xl border border-white/10 bg-white/[.05] p-2 sm:grid-cols-2">{examples.map((example) => <button key={example} type="button" onClick={() => setCommand(example)} className="rounded-xl px-3 py-2 text-right text-[.7rem] leading-relaxed text-white/68 hover:bg-white/[.06] hover:text-white">{example}</button>)}</div>
+              <summary className="dna-btn min-h-11 cursor-pointer list-none text-[.72rem]">أمثلة سريعة</summary>
+              <div className="mt-2 grid max-w-3xl gap-1.5 rounded-2xl border border-hair bg-wash p-2 sm:grid-cols-2">{examples.map((example) => <button key={example} type="button" onClick={() => setCommand(example)} className="rounded-xl px-3 py-2 text-right text-[.7rem] leading-relaxed text-soft hover:bg-canvas hover:text-ink">{example}</button>)}</div>
             </details>
-            {notice && <span className="text-[.7rem] text-white/55">{notice}</span>}
+            {notice && <span className="text-[.7rem] text-soft">{notice}</span>}
           </div>
         </div>
       </div>
 
       {result && (
-        <div className="grid gap-4 border-t border-white/10 bg-canvas p-4 text-ink sm:p-6 md:p-8" data-decision-package="true">
+        <div className="grid gap-4 border-t border-hair bg-canvas p-4 text-ink sm:p-6 md:p-8" data-decision-package="true">
           <section className="rounded-2xl border border-hair bg-wash p-5">
             <p className="text-[.68rem] font-semibold text-accent">الخلاصة التنفيذية</p>
             <p className="mt-2 max-w-5xl text-[.9rem] leading-[1.9] text-ink">{result.executiveSummary}</p>
@@ -259,7 +259,7 @@ export function DrAhmadRoom({
         </div>
       )}
 
-      {history.length > 0 && <details className="border-t border-white/10 bg-ink px-5 py-4"><summary className="cursor-pointer list-none text-[.68rem] text-white/48">آخر الجلسات المحفوظة · {history.length}</summary><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{history.map((item) => <div key={item.id} className="rounded-xl border border-white/10 px-3 py-2"><strong className="line-clamp-2 block text-[.68rem] text-white/72">{item.request || 'جلسة محفوظة'}</strong><span className="mt-1 block text-[.6rem] text-white/38">{shortDate(item.createdAt)} · {item.status || 'ready'}</span></div>)}</div></details>}
+      {history.length > 0 && <details className="border-t border-dashed border-hair px-5 py-4"><summary className="cursor-pointer list-none text-[.68rem] text-soft">آخر الجلسات المحفوظة · {history.length}</summary><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{history.map((item) => <div key={item.id} className="rounded-xl border border-hair bg-wash px-3 py-2"><strong className="line-clamp-2 block text-[.68rem] text-ink">{item.request || 'جلسة محفوظة'}</strong><span className="mt-1 block text-[.6rem] text-soft">{shortDate(item.createdAt)} · {item.status || 'ready'}</span></div>)}</div></details>}
     </section>
   )
 }

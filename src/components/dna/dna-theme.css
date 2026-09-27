@@ -1,0 +1,38 @@
+/* DNA kit → site palette. Aliases only: tokens come from index.css (--c-*). */
+html:root,
+html.dark,
+html.admin-light {
+  --dna-canvas: rgb(var(--c-canvas));
+  --dna-surface: rgb(var(--c-canvas));
+  --dna-surface-2: rgb(var(--c-wash));
+  --dna-ink: rgb(var(--c-ink));
+  --dna-muted: rgb(var(--c-soft));
+  --dna-line: var(--c-hair);
+  --dna-line-2: rgb(var(--c-ink) / .16);
+  --dna-accent: rgb(var(--c-accent));
+  --dna-accent-soft: rgb(var(--c-accent) / .1);
+  --dna-on-accent: rgb(var(--c-canvas));
+  --dna-core: rgb(var(--c-accent));
+  --dna-on-core: rgb(var(--c-canvas));
+  --dna-info: rgb(var(--c-accent));
+  --dna-info-soft: rgb(var(--c-accent) / .1);
+  --dna-shadow: 0 1px 2px rgb(var(--c-ink) / .04), 0 12px 30px -18px rgb(var(--c-ink) / .2);
+}
+html:not(.dark) {
+  --dna-surface: #ffffff;
+}
+html.dark {
+  --dna-surface: rgb(var(--c-wash));
+  --dna-surface-2: rgb(var(--c-canvas));
+  --dna-warn: #d8b068;
+  --dna-warn-soft: rgba(216, 176, 104, .14);
+  --dna-danger: #e08e86;
+  --dna-danger-soft: rgba(224, 142, 134, .14);
+}
+html.dark [data-dna-tone] {
+  --t-bg: color-mix(in srgb, var(--t-fg) 20%, transparent);
+  --t-fgc: color-mix(in srgb, var(--t-fg) 55%, #ffffff);
+}
+/* Neutralise legacy global svg/button rules inside kit components. */
+.dna svg { flex: none; }
+.dna button { box-shadow: none; }

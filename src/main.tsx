@@ -8,6 +8,8 @@ import { installDomResilience } from './lib/dom-resilience'
 import { hasMissingAppChunk, watchResourceFailures } from './lib/load-failures'
 import { startWebVitalsMonitoring } from './lib/web-vitals'
 import './index.css'
+import './components/dna/dna.css'
+import './components/dna/dna-theme.css'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
    حزمةً تغيّر اسمها فتغيب المتون (صفحة «قيد الإضافة» الزائفة). فشلُ التحميل

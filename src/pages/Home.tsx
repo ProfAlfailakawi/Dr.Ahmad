@@ -493,7 +493,15 @@ function ThoughtCompass() {
         </FadeUp>
 
         <FadeUp delay={0.1}>
-          <div className="compass-seg-wrap">
+          <div
+            className="compass-seg-wrap"
+            onMouseOver={(event) => {
+              /* كما كانت الألسنة: المرور على المحور يبدّله، والنقر كذلك. */
+              const tab = (event.target as HTMLElement).closest('.dna-segb')
+              const axis = tab ? axes[Array.prototype.indexOf.call(tab.parentElement?.children || [], tab)] : undefined
+              if (axis && axis.key !== active) setActive(axis.key)
+            }}
+          >
             <DnaSegmented
               ariaLabel="محاور الفكر"
               options={axes.map((a) => ({ value: a.key, label: a.label }))}

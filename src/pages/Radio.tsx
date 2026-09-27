@@ -382,7 +382,7 @@ export default function Radio() {
           {upcoming.map((row, i) => (
             <div key={i} className={`radio-nx${i === 0 ? ' radio-first' : ''}`}>
               <time>{row.at}</time>
-              <p>{row.title}</p>
+              <p title={row.title}>{row.title}</p>
             </div>
           ))}
         </div>

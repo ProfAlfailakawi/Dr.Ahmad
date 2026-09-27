@@ -8151,3 +8151,54 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 .studio-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: rgb(var(--c-accent)); border: 2px solid rgb(var(--c-canvas)); }
 .studio-range { -webkit-appearance: none; appearance: none; }
 .studio-range:focus-visible { outline: 2px solid rgb(var(--c-accent)); outline-offset: 3px; border-radius: 999px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE PASS — 2026-09
+   للهاتف والجهاز اللوحي فقط: الحاسوب لا يتغيّر فيه شيء.
+   ١) أرضيّة للحرف: لا نصّ مقروء تحت 12px على الشاشات الصغيرة.
+   ٢) مساحة لمس 44px لما بقي دونها من الأزرار والروابط.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  html :is(
+    [class~="text-[.58rem]"], [class~="text-[.6rem]"], [class~="text-[.61rem]"],
+    [class~="text-[.62rem]"], [class~="text-[.64rem]"], [class~="text-[.65rem]"],
+    [class~="text-[.66rem]"], [class~="text-[.68rem]"], [class~="text-[.7rem]"],
+    [class~="text-[.71rem]"], [class~="text-[.72rem]"], [class~="text-[0.72rem]"],
+    [class~="text-[.73rem]"], [class~="text-[.74rem]"],
+    .site-menu-discovery, .site-footer__rights, .site-footer__text-link,
+    .home-footer-rights, .impact-map-label, .impact-map-eyebrow, .card-live__lbl,
+    .archive-editorial-kicker, .archive-editorial-year, .media-editorial-row__meta,
+    .radio-variant, .search-query-suggestion, .reader-aa-discovery-label,
+    .tho-skip, .ent-skip, .human-core__tagline, .research-index-result,
+    main label
+  ) {
+    font-size: max(.75rem, 12px);
+  }
+  /* نصّ «مدخل المعرفة» التوضيحي يلتفّ على الهاتف بدل أن يُقصّ. */
+  html .knowledge-entry-note { white-space: normal; overflow: visible; text-overflow: clip; }
+}
+
+@media (max-width: 1023px) and (pointer: coarse) {
+  html :is(
+    .site-social-dock__trigger, .my-space-trigger,
+    .home-footer-tools__item.is-icon-only, .tebyan-link, .schedule-link,
+    a.inline-flex.h-10.w-10, button.inline-flex.h-10.w-10, a.flex.h-10.w-10
+  ) {
+    min-inline-size: 44px !important;
+    min-block-size: 44px !important;
+  }
+  html :is(
+    .editorial-tab, .tho-skip, .research-understand-link, .site-footer__mark,
+    button.rounded-full.border, a.rounded-full.border, a.inline-flex.min-h-9,
+    .search-query-suggestion, .card-live__chip, main select,
+    .radio-variant, button.rounded-full.px-3.py-1\.5
+  ) {
+    min-inline-size: 44px;
+    min-block-size: 44px;
+  }
+  html .site-footer__text-link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+  }
+}

@@ -95,7 +95,7 @@ function QuestionRow({ episode, playing, expanded, kuwaitiReady, onOpen }: {
           <span className={`measure block font-display text-[1.04rem] leading-[1.75] transition-colors ${playing ? 'text-accent' : 'text-ink'}`}>
             {episode.question || episode.title}
           </span>
-          <span className="mt-1 block truncate text-[.71rem] text-soft">
+          <span className="mt-1 block truncate text-[.71rem] text-soft" title={episode.question ? episode.title : undefined}>
             {episode.question ? <>{episode.title}<span className="mx-1.5 opacity-45">·</span></> : null}
             {clock(episode.durationSec)}
             {episode.durationSec ? <span className="mx-1.5 opacity-45">·</span> : null}
@@ -278,7 +278,7 @@ export default function Listen() {
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Play" size={16} /></span>
               <span className="min-w-0">
                 <span className="block text-[.84rem] font-semibold text-ink">افتح المجلس</span>
-                <span className="mt-0.5 block truncate text-[.71rem] text-soft">
+                <span className="mt-0.5 block truncate text-[.71rem] text-soft" title={resume.title}>
                   {resumeIsContinuation ? `يكمل: ${resume.title}` : resume.title}
                 </span>
               </span>

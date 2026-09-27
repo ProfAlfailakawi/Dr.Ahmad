@@ -2,7 +2,9 @@ import { JsonLd, useSeo } from '../components/seo'
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
+import { ArrowLeft, BookOpen, Compass, FileText, FlaskConical } from 'lucide-react'
+import { DnaHubMap, DnaSegmented, type DnaTone } from '../components/dna/DnaKit'
 import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, SectionHead, SocialDock, SocialIcon, TebyanProjectLink } from '../components/ui'
 import { profile, roundDown10, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
@@ -431,8 +433,16 @@ function axisDeepDive(axis: string, papers: PaperRecord[], books: BookRecord[]) 
   }
 }
 
+/* لون المحور في الخريطة = لون فئته في سماء المقالات (--atlas-*). */
+const AXIS_TONE_VAR: Record<string, string> = {
+  'التعليم': 'education', 'التربية': 'pedagogy', 'مجتمع': 'society', 'تقنية': 'technology',
+  'هوية': 'identity', 'إعلام': 'media', 'بحث': 'research',
+}
+const AXIS_TONE = 'axis' as DnaTone
+
 function ThoughtCompass() {
   const { articles, books, papers } = useCmsContent()
+  const navigate = useNavigate()
   const axes = useMemo(() => dynamicArticleCategories(articles, false).map((key) => ({ key, label: categoryLabel(key) })), [articles])
   const [active, setActive] = useState('التعليم')
   useEffect(() => {
@@ -453,9 +463,24 @@ function ThoughtCompass() {
   const quickLinks = [
     { to: '/thought-paths', label: 'مسار الفكرة الكامل', tag: 'مسار' },
     { to: '/articles', label: `كل ما كتبته في ${axisLabel}`, tag: 'أرشيف' },
-    dive.paper ? { to: `/research/${dive.paper.slug}`, label: dive.paper.title, tag: 'بحث' } : null,
-    dive.book ? { to: `/publications/${dive.book.slug}`, label: dive.book.title, tag: 'كتاب' } : null,
-  ].filter(Boolean) as { to: string; label: string; tag: string }[]
+  ]
+  const hubNodes = [
+    ...related.map((a) => ({
+      key: `a-${a.slug}`, icon: <FileText aria-hidden size={20} strokeWidth={1.6} />, tone: AXIS_TONE,
+      label: a.title, title: a.title, ariaLabel: `اقرأ مقال: ${a.title}`,
+      onClick: () => navigate(`/articles/${a.slug}`),
+    })),
+    ...(dive.paper ? [{
+      key: `p-${dive.paper.slug}`, icon: <FlaskConical aria-hidden size={20} strokeWidth={1.6} />, tone: AXIS_TONE,
+      label: dive.paper.title, title: `بحث: ${dive.paper.title}`, ariaLabel: `بحث: ${dive.paper.title}`,
+      onClick: () => navigate(`/research/${dive.paper!.slug}`),
+    }] : []),
+    ...(dive.book ? [{
+      key: `b-${dive.book.slug}`, icon: <BookOpen aria-hidden size={20} strokeWidth={1.6} />, tone: AXIS_TONE,
+      label: dive.book.title, title: `كتاب: ${dive.book.title}`, ariaLabel: `كتاب: ${dive.book.title}`,
+      onClick: () => navigate(`/publications/${dive.book!.slug}`),
+    }] : []),
+  ]
 
   return (
     <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[86px]">
@@ -468,21 +493,26 @@ function ThoughtCompass() {
         </FadeUp>
 
         <FadeUp delay={0.1}>
-          <div className="editorial-tablist rail -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:gap-2.5 md:overflow-visible md:px-0">
-            {axes.map((a) => (
-              <button
-                key={a.key}
-                onMouseEnter={() => setActive(a.key)}
-                onClick={() => setActive(a.key)}
-                data-hover
-                className={`editorial-tab shrink-0 px-3 py-2 font-display text-[.92rem] md:px-4 md:text-[1.02rem] ${active === a.key ? 'is-active' : ''}`}
-              >
-                {a.label}
-              </button>
-            ))}
+          <div className="compass-seg-wrap">
+            <DnaSegmented
+              ariaLabel="محاور الفكر"
+              options={axes.map((a) => ({ value: a.key, label: a.label }))}
+              value={active}
+              onChange={setActive}
+            />
           </div>
         </FadeUp>
 
+        <FadeUp delay={0.12}>
+          <div className="compass-hub mt-6 md:mt-8" style={{ '--hub-axis': `var(--atlas-${AXIS_TONE_VAR[active] || 'education'})` } as CSSProperties}>
+            <DnaHubMap
+              ariaLabel={`خريطة محور ${axisLabel}`}
+              center={{ icon: <Compass aria-hidden size={26} strokeWidth={1.6} />, label: axisLabel, ariaLabel: `المحور: ${axisLabel}` }}
+              nodes={hubNodes}
+              animate={false}
+            />
+          </div>
+        </FadeUp>
         <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-4 md:mx-0 md:mt-10 md:gap-5 md:px-0">
           {related.map((a, i) => (
             <FadeUp key={a.slug} delay={Math.min(i * 0.06, 0.2)} className="w-[56vw] max-w-[248px] shrink-0 md:w-[31%] md:max-w-none">
@@ -497,12 +527,12 @@ function ThoughtCompass() {
           ))}
         </div>
         <FadeUp delay={0.15}>
-          <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0">
+          <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0">
             {quickLinks.map((item) => (
               <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[62vw] max-w-[252px] shrink-0 flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
                 <span className="editorial-micro-label w-fit text-[.66rem] text-soft">{item.tag}</span>
                 <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
-                <span aria-hidden className="text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
+                <ArrowLeft aria-hidden size={17} strokeWidth={1.6} className="self-end text-accent transition-transform group-hover:-translate-x-1" />
               </Link>
             ))}
             <span aria-hidden className="w-px shrink-0 md:hidden" />

@@ -36,3 +36,11 @@ html.dark [data-dna-tone] {
 /* Neutralise legacy global svg/button rules inside kit components. */
 .dna svg { flex: none; }
 .dna button { box-shadow: none; }
+
+/* «بوصلة الفكر»: نبرة العقد من لون فئة المحور (--atlas-*). */
+.compass-hub [data-dna-tone='axis'] {
+  --t-fg: rgb(var(--hub-axis));
+  --t-bgl: rgb(var(--hub-axis) / .12);
+}
+.compass-seg-wrap { max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; }
+.compass-seg-wrap .dna-segb { min-block-size: 44px; font-family: inherit; }

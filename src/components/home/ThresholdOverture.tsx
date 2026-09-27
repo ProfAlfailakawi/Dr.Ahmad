@@ -56,11 +56,11 @@ const SKY_SLOTS = [
   [286, 116], [318, 210], [262, 44], [368, 78], [396, 162], [346, 250],
   [438, 118], [128, 254], [204, 288], [462, 214], [58, 128], [300, 274],
 ] as const
-/* تخطيطٌ ثابت: جذر الشجرة في أقرب موضعٍ للوسط، وكل نجمةٍ في أقرب موضعٍ شاغرٍ من
-   نجمتها الأم، فتبقى الخطوط قصيرةً هادئة. */
+/* تخطيطٌ ثابت وحتميّ: تبدأ كل نجمةٍ في أقرب موضعٍ شاغرٍ من نجمتها الأم، ثم
+   تُبادَل المواضع ما دام التبديل يقصّر الخطوط ويقلّل تقاطعها — فتبقى السماء هادئة. */
 const { SKY_STARS, SKY_LINKS } = (() => {
   const count = Math.min(skyData.stars.length, SKY_SLOTS.length)
-  const links = (skyData.links as number[][]).filter(([x, y]) => x < count && y < count)
+  const links = (skyData.links as number[][]).filter(([x, y]) => x < count && y < count && x !== y)
   const free = new Set(SKY_SLOTS.map((_, i) => i))
   const place: number[] = []
   const nearest = (px: number, py: number) => {
@@ -93,8 +93,32 @@ const { SKY_STARS, SKY_LINKS } = (() => {
     const anchor = from === undefined ? [260, 160] : SKY_SLOTS[place[from]]
     place[star] = nearest(anchor[0], anchor[1])
   }
+  const at = (star: number) => SKY_SLOTS[place[star]]
+  const cross = (a: readonly number[], b: readonly number[], c: readonly number[], d: readonly number[]) => {
+    const o = (p: readonly number[], q: readonly number[], r: readonly number[]) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]))
+    return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0
+  }
+  const cost = () => {
+    let total = 0
+    for (const [x, y] of links) total += Math.hypot(at(x)[0] - at(y)[0], at(x)[1] - at(y)[1])
+    for (let i = 0; i < links.length; i++) for (let j = i + 1; j < links.length; j++) {
+      const [a, b] = links[i], [c, d] = links[j]
+      if (a === c || a === d || b === c || b === d) continue
+      if (cross(at(a), at(b), at(c), at(d))) total += 400
+    }
+    return total
+  }
+  let current = cost()
+  for (let round = 0, improved = true; round < 12 && improved; round++) {
+    improved = false
+    for (let i = 0; i < count; i++) for (let j = i + 1; j < count; j++) {
+      ;[place[i], place[j]] = [place[j], place[i]]
+      const next = cost()
+      if (next < current - 0.5) { current = next; improved = true } else [place[i], place[j]] = [place[j], place[i]]
+    }
+  }
   return {
-    SKY_STARS: Array.from({ length: count }, (_, i) => SKY_SLOTS[place[i]]),
+    SKY_STARS: Array.from({ length: count }, (_, i) => at(i)),
     SKY_LINKS: links,
   }
 })()

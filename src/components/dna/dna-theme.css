@@ -43,6 +43,11 @@ html.dark [data-dna-tone] {
   --t-bgl: rgb(var(--hub-axis) / .12);
 }
 .compass-seg-wrap { max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; }
+@media (max-width: 560px) {
+  /* الجوال: مداراتٌ أقل كي لا تتزاحم النقاط مع بلاطات العقد. */
+  .compass-hub .dna-hubd,
+  .compass-hub .dna-hubo3 { display: none; }
+}
 .compass-seg-wrap .dna-segb { min-block-size: 44px; font-family: inherit; }
 
 /* غرفة القيادة: رأس حالة أبيض + أربع بلاطات قرار. */

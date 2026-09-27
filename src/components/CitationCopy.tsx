@@ -4,6 +4,7 @@ import { useMorphTransition } from './morph'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { site } from '../data'
 import { buildBibTeX, downloadCitationFile, safeCitationFilename } from '../lib/bibtex'
+import { Plus } from 'lucide-react'
 
 type CitationStyle = 'apa' | 'mla' | 'bibtex'
 
@@ -114,7 +115,7 @@ export function CitationCopy({ title, path, iso, date, source, url }: CitationCo
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-hair text-soft transition-colors group-hover:border-accent group-hover:text-accent">
           <SocialIcon name="Cite" size={16} />
         </span>
-        <span aria-hidden="true" className="text-accent transition-transform duration-300 group-open:rotate-45">＋</span>
+        <span aria-hidden="true" className="text-accent transition-transform duration-300 group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
       </summary>
 
       <div id={panelId} className="border-t border-hair pb-4 pt-4">

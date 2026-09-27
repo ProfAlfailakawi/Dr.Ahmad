@@ -3,6 +3,7 @@ import { useAdminAuth } from '../../lib/admin-auth'
 import { getDb } from '../../lib/firebase'
 import audio from '../../data/audio.json'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, READY_PATH_FORMS } from '../../lib/arabic-count.ts'
+import { ArrowUpRight } from 'lucide-react'
 
 /*
  * قافلة الصوت — لوحة إدارة صريحة. نعرض فهد ونورة والحوار كلٌّ على حدة،
@@ -153,7 +154,7 @@ function DetailPanel({ selection, rows, onClose }: { selection: DetailSelection;
               <i className="h-2 w-2 rounded-full" style={{ background: row.noura ? NOURA : 'var(--c-wash, #e5e5e5)' }} />
               <i className="h-2 w-2 rounded-full" style={{ background: row.dialogue ? DIALOGUE : 'var(--c-wash, #e5e5e5)' }} />
               <i className="h-2 w-2 rounded-full" style={{ background: row.dialogueKuwaiti ? KUWAITI : 'var(--c-wash, #e5e5e5)' }} />
-              <span className="mr-1 text-[.7rem] text-accent">↗</span>
+              <span className="mr-1 text-[.7rem] text-accent"><ArrowUpRight aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
             </span>
           </a>
         ))}

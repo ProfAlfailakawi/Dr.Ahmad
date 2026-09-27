@@ -11,6 +11,7 @@ import { useCvLinks } from '../lib/settings'
 import { SocialIcon } from './icons'
 import { ClarifiedIconAction } from './ClarifiedIconAction'
 import KuficMark from './KuficMark'
+import { ArrowLeft } from 'lucide-react'
 
 export { EASE } from './motion'
 export { SocialIcon } from './icons'
@@ -233,7 +234,7 @@ export function SectionHead({ label, title, to, cta = 'الكل' }: { label: str
       {to && (
         <Link to={to} className="group shrink-0 pb-2 text-[.92rem] font-semibold text-accent">
           {cta}
-          <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1.5"> ←</span>
+          <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1.5"> <ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
         </Link>
       )}
     </div>
@@ -811,9 +812,9 @@ function SearchPalette({ close }: { close: () => void }) {
         </div>
 
         <nav aria-label="مسارات البحث" className="search-palette-shortcuts">
-          <Link to={deepTo} onClick={close} className="search-palette-shortcut"><span>البحث المتقدم</span><span aria-hidden>←</span></Link>
-          <Link to={askTo} onClick={close} className="search-palette-shortcut"><span>اسأل الأرشيف</span><span aria-hidden>←</span></Link>
-          <Link to={bookTo} onClick={close} className="search-palette-shortcut"><span>ابحث في كتاب</span><span aria-hidden>←</span></Link>
+          <Link to={deepTo} onClick={close} className="search-palette-shortcut"><span>البحث المتقدم</span><span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
+          <Link to={askTo} onClick={close} className="search-palette-shortcut"><span>اسأل الأرشيف</span><span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
+          <Link to={bookTo} onClick={close} className="search-palette-shortcut"><span>ابحث في كتاب</span><span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
         </nav>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[48vh]">

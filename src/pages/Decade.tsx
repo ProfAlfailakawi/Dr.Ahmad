@@ -11,6 +11,7 @@ import { loadArticleBodies } from '../lib/article-bodies'
 import { predictionRecordsFor, type IdeaLifeRemoteRecord } from '../lib/idea-life'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, CHAPTER_FORMS, PREDICTION_FORMS, TEXT_FORMS, YEAR_IMPACT_FORMS } from '../lib/arabic-count.ts'
+import { RotateCcw } from 'lucide-react'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -264,7 +265,7 @@ export default function Decade() {
             </button>
             {idea && (
               <button type="button" onClick={() => { setDraft(''); updateQuery('', mode, '') }} className="text-[.82rem] text-soft transition-colors hover:text-accent">
-                العقد كاملاً ↺
+                العقد كاملاً <RotateCcw aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" />
               </button>
             )}
           </form>

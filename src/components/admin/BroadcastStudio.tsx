@@ -16,6 +16,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { arabicCountPhrase, CAMPAIGN_FORMS, ENTITY_AFTER_PREPOSITION_FORMS, MESSAGE_FORMS, MINUTE_FORMS, SECOND_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
+import { Headphones } from 'lucide-react'
 
 type List = { id: string; name: string; note?: string; kind?: string; count?: number }
 type Preview = { samples: { name: string; body: string }[]; willSend: number; suppressed: number }
@@ -302,7 +303,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
                   onClick={() => setText(episodeMessage(episode))}
                   className="rounded-full border border-hair bg-wash px-3 py-1.5 text-[.76rem] text-ink transition-colors hover:border-accent hover:text-accent"
                 >
-                  🎧 {episode.title.slice(0, 32)}
+                  <Headphones aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />{episode.title.slice(0, 32)}
                 </button>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { playDesignBirth, type BirthController, type BirthPhase } from './design-birth'
+import { RotateCcw } from 'lucide-react'
 
 /* ═══════════ لحظة الولادة: التصميم الحقيقي يبني نفسه أمام العين ═══════════
    عند اكتمال التوليد لا تظهر النتيجة قفزةً واحدة: عناصر لوحة SVG نفسها —
@@ -59,7 +60,7 @@ export function DesignBirthStage({ fingerprint, children }: { fingerprint: strin
           className="design-birth-replay absolute bottom-3 left-3 z-20 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-hair bg-canvas/[.92] px-3.5 text-[.75rem] font-semibold text-soft backdrop-blur hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           aria-label="أعد عرض ولادة التصميم"
         >
-          <span aria-hidden="true">↺</span>
+          <span aria-hidden="true"><RotateCcw aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
           شاهد ولادته
         </button>
       )}

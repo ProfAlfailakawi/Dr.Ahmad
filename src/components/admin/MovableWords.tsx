@@ -9,6 +9,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { type CompositionPlan } from '../../lib/social-design-engine'
 import { readWordOffsets, writeWordOffset, clearWordOffsets } from '../../lib/design-overrides'
+import { RotateCcw } from 'lucide-react'
 
 const MOVE_KEY = 'reel:move-words:v1'
 const MOVE_EVENT = 'move-words-change'
@@ -160,7 +161,7 @@ export function MovableWordsLayer({ plan }: { plan: CompositionPlan }) {
           onPointerDown={resetAll}
           className="pointer-events-auto absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full border border-accent bg-white/95 px-2.5 py-1 text-[.6rem] font-bold text-accent shadow"
           title="أعد كل الكلمات لأماكنها الأصلية"
-        >↺ رجّع الكلمات</button>
+        ><RotateCcw aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />رجّع الكلمات</button>
       )}
     </div>
   )

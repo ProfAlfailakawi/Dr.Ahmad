@@ -33,6 +33,7 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { ConceptEchoMarker } from '../components/ConceptEcho'
 import KuficMark from '../components/KuficMark'
 import { buildConceptEchoes } from '../lib/concept-weave'
+import { ArrowLeft, Plus } from 'lucide-react'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -448,7 +449,7 @@ function SyncedArticleBody({ article, body, articles, papers, books }: { article
               </span>
               <span className="flex shrink-0 items-center gap-1.5 text-[.68rem] text-soft">
                 <span>{readerMade.length.toLocaleString('en-US')} موضع</span>
-                <span aria-hidden="true" className="text-[.9rem] leading-none text-accent transition-transform group-open:rotate-45">＋</span>
+                <span aria-hidden="true" className="text-[.9rem] leading-none text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </span>
             </summary>
 
@@ -568,7 +569,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
               <p className="text-[.95rem] font-light leading-[1.9] text-soft">
                 كتبتُ في هذا قبل {yearsWord(diff(pair.older.iso))} —{' '}
                 <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.older.title}» ({yr(pair.older.iso)})</span>. كيف تغيّر المشهد؟ قارن بنفسك{' '}
-                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1">←</span>
+                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </p>
             </Link>
           )}
@@ -577,7 +578,7 @@ function TimeDialogue({ a, articles }: { a: ArticleTimeSeed; articles: ArticleTi
               <p className="text-[.95rem] font-light leading-[1.9] text-soft">
                 ثم عدتُ إلى هذا الموضوع عام {yr(pair.newer.iso)} —{' '}
                 <span className="font-medium text-ink transition-colors group-hover:text-accent">«{pair.newer.title}»</span>{' '}
-                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1">←</span>
+                <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </p>
             </Link>
           )}
@@ -675,7 +676,7 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
     <FadeUp>
       <details id="student-archive" className="mt-5 rounded-2xl border border-hair bg-wash px-6 py-5">
         <summary className="cursor-pointer list-none font-display text-[1.15rem] font-semibold text-ink marker:hidden">
-          للطلاب والباحثين <span className="text-accent">＋</span>
+          للطلاب والباحثين <span className="text-accent"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
         </summary>
         <div className="mobile-card-rail mt-5 grid gap-5 border-t border-hair pt-5 md:grid-cols-2">
           <div>

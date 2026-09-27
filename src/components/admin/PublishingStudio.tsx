@@ -54,6 +54,7 @@ import { audioProofAssets } from '../../lib/audio-proof'
 import { buildMultimodalMeaningCourt, type MultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
 import { buildImpactMirror, type EditorialImpactMirror, type ImpactObservationSource } from '../../lib/impact-mirror.mjs'
 import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, ARTICLE_PLAIN_FORMS, AUDIO_NEAR_MATERIAL_FORMS, BOOK_PLAIN_FORMS, CALIBRATION_RESULT_FORMS, CLAIM_FORMS, DIRECTION_FORMS, EVIDENCE_FORMS, EVENT_FORMS, LAST_SAVED_DECISION_FORMS, LINK_FORMS, OPPORTUNITY_FORMS, PAPER_PLAIN_FORMS, PARAGRAPH_FORMS, PENDING_ITEM_FORMS, PUBLISHED_ARTICLE_AFTER_PREPOSITION_FORMS, SAVED_DECISION_FORMS, STUBBORN_WIN_FORMS, WORD_PLAIN_FORMS } from '../../lib/arabic-count.ts'
+import { Plus } from 'lucide-react'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -2028,7 +2029,7 @@ function WeeklyPackCard({
         </div>
       </div>
       <details className="group mt-5 rounded-2xl border border-hair bg-canvas p-4">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-ink"><span>افتح خط الرحلة والترابط بين أيامها</span><span className="text-accent transition-transform group-open:rotate-45">＋</span></summary>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-ink"><span>افتح خط الرحلة والترابط بين أيامها</span><span className="text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></summary>
         <ol className="mt-4 grid gap-3">
           {campaign.stages.map((item, index) => (
             <li key={`${item.day}-${item.platform}`} className="grid gap-3 rounded-xl border border-hair bg-wash p-4 md:grid-cols-[7rem_minmax(0,1fr)_auto] md:items-start">
@@ -2354,7 +2355,7 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
 
         <details className="group mt-3 rounded-xl border border-hair bg-paper" data-standalone-text-editor="true">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-[.66rem] font-semibold text-accent [&::-webkit-details-marker]:hidden">
-            <span>تحرير كل الكلمات الظاهرة في هذا التصميم</span><span className="text-soft transition group-open:rotate-45">＋</span>
+            <span>تحرير كل الكلمات الظاهرة في هذا التصميم</span><span className="text-soft transition group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
           </summary>
           <div className="grid gap-2 border-t border-hair p-3">
             <p className="text-[.6rem] leading-relaxed text-soft">أي حقل تتركه فارغاً يختفي من التصميم. التغيير خاص بهذه الرؤية فقط ولا يمس المقال أو الفكرة الأصلية.</p>

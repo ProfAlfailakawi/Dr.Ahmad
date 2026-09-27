@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pagination, usePagedList } from '../Pagination'
 import { arabicCountPhrase, CARD_FORMS, LINE_FORMS, LIST_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
+import { BellOff, Plus } from 'lucide-react'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
@@ -209,7 +210,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
             فتبني قوائمك هنا وترسل رسائل فرديةً مخصّصة: تصل لمن لم يحفظ رقمك، وتناديه باسمه، ولا يرى أحدٌ رقم أحد.
           </p>
         </div>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">＋</span>
+        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
       </summary>
       <div className="mt-1 flex justify-end">
         <button type="button" className={secondary} disabled={busy} onClick={() => { void loadLists(); void loadContacts(search) }}>↻ حدّث</button>
@@ -257,7 +258,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 <div className="flex flex-wrap gap-2">
                   {memberPages.pageItems.map((member) => (
                     <span key={member.id} className="flex items-center gap-2 rounded-full border border-hair bg-wash px-3 py-1.5 text-[.78rem] text-ink">
-                      {member.suppressed && <span title="طلب إيقاف الرسائل — لن يصله شيء">🔕</span>}
+                      {member.suppressed && <span title="طلب إيقاف الرسائل — لن يصله شيء" aria-label="طلب إيقاف الرسائل — لن يصله شيء"><BellOff aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>}
                       <button type="button" className="hover:text-accent" title="اكتب لقباً" onClick={() => rename(member.id, member.nickname)}>
                         {member.name}<span className="mr-1.5 text-[.68rem] text-soft/70">••{member.tail}</span>
                       </button>

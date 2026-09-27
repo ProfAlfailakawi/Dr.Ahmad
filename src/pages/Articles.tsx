@@ -9,6 +9,7 @@ import { ReaderFingerprint } from '../components/ReaderResonance'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { SocialIcon } from '../components/icons'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, MATCHING_RESULT_FORMS } from '../lib/arabic-count.ts'
+import { ArrowLeft } from 'lucide-react'
 
 const stableHash = (value: string) => {
   let hash = 2166136261
@@ -189,7 +190,7 @@ export default function Articles() {
                     </div>
                     <h3 className="mt-4 break-words font-display text-[1.16rem] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.26rem]">{entry.title}</h3>
                     <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] leading-[1.8] text-soft">{entry.quote}</blockquote>
-                    <span aria-hidden className="mt-auto pt-6 text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1">←</span>
+                    <span aria-hidden className="mt-auto pt-6 text-left text-[.9rem] text-accent transition-transform group-hover:-translate-x-1"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                   </Link>
                 </div>
               )

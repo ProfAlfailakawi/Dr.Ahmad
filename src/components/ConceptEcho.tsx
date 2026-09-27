@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
 import type { ConceptEcho } from '../lib/concept-weave'
 import { SocialIcon } from './icons'
+import { ArrowLeft } from 'lucide-react'
 
 const relationNote: Record<ConceptEcho['relation'], string> = {
   'يؤيدها': 'نتيجة بحثية موثقة تتقاطع مباشرة مع معنى هذه الفقرة.',
@@ -50,7 +51,7 @@ export function ConceptEchoMarker({ echo }: { echo: ConceptEcho }) {
             {echo.note && <p className="concept-echo-note">{echo.note}</p>}
             <footer className="concept-echo-foot">
               <span>{echo.sourceKind}{echo.year ? ` · ${echo.year}` : ''}</span>
-              <Link viewTransition to={echo.to} onClick={() => setOpen(false)}>افتح المصدر <span aria-hidden="true">←</span></Link>
+              <Link viewTransition to={echo.to} onClick={() => setOpen(false)}>افتح المصدر <span aria-hidden="true"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
             </footer>
           </aside>
         </div>,

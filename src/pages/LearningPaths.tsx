@@ -23,6 +23,7 @@ import {
   type LearningPath,
   type LearningStep,
 } from '../lib/learning-paths'
+import { ArrowLeft } from 'lucide-react'
 
 /* ═══════════ مسارات التعلّم ═══════════
    تسلسلٌ قصير منتقى: مقالٌ وحلقةٌ ومدخلٌ وفصل، بترتيبٍ يُقرأ من أوله.
@@ -177,7 +178,7 @@ function StepAction({ step, primary = false }: { step: LearningStep; primary?: b
   return (
     <Link to={stepHref(step)} className={base}>
       <span>{STEP_KIND_ACTION[step.kind]}</span>
-      <span aria-hidden>←</span>
+      <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
     </Link>
   )
 }
@@ -325,7 +326,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                     <li key={item.id}>
                       <Link to={`/paths/${item.id}`} viewTransition className="group flex items-baseline justify-between gap-4 border-b border-hair py-3 text-[.92rem] text-ink transition-colors hover:text-accent">
                         <span className="font-display font-semibold leading-[1.6]">{item.title}</span>
-                        <span aria-hidden className="text-soft transition-colors group-hover:text-accent">←</span>
+                        <span aria-hidden className="text-soft transition-colors group-hover:text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                       </Link>
                     </li>
                   ))}

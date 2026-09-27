@@ -5,6 +5,7 @@ import { EASE, FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { SocialIcon } from '../components/icons'
+import { ArrowLeft } from 'lucide-react'
 
 export default function NotFound() {
   const { articles, books, papers } = useCmsContent()
@@ -86,7 +87,7 @@ export default function NotFound() {
                     <span className="font-display text-[1.15rem] font-medium text-ink transition-colors group-hover:text-accent">{l.label}</span>
                     <span className="flex items-center gap-4">
                       {l.n && <span className="text-[.82rem] text-soft">{l.n}</span>}
-                      <span className="text-accent opacity-0 transition-opacity group-hover:opacity-100">←</span>
+                      <span className="text-accent opacity-0 transition-opacity group-hover:opacity-100"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                     </span>
                   </Link>
                 </li>

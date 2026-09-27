@@ -8,6 +8,7 @@ import GlyphLoader from './GlyphLoader'
 import { highlightMergeVerdict } from '../lib/quote-merge'
 import type { ArticleRecord, PaperRecord } from '../lib/cms'
 import { buildConceptArchivePreview } from '../lib/concept-weave'
+import { ArrowLeft } from 'lucide-react'
 
 export type ReaderArticle = {
   slug: string
@@ -698,7 +699,7 @@ export function ReaderControls({ article, saveControl, onSerenity, conceptArchiv
                     ))}
                   </div>
                   <Link viewTransition to={`/concept/${encodeURIComponent(xray.title)}`} onClick={() => setXray(null)} className="concept-life-peek__open">
-                    افتح سيرة المفهوم كاملة <span aria-hidden="true">←</span>
+                    افتح سيرة المفهوم كاملة <span aria-hidden="true"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                   </Link>
                 </section>
               )}

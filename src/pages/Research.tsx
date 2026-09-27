@@ -8,6 +8,7 @@ import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { analyzeResearch, researchArchiveProjection } from '../lib/research-intelligence'
 import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-count.ts'
+import { ArrowLeft } from 'lucide-react'
 
 const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => arabicCountPhrase(count, PAPER_FORMS)
@@ -91,7 +92,7 @@ export default function Research() {
                             {year && <span className="font-semibold text-accent">{year}</span>}
                           </p>
                         )}
-                        <Link to={`/research/${p.slug}#research-passport`} className="research-understand-link mt-4 inline-flex">افهم هذا البحث <span aria-hidden>←</span></Link>
+                        <Link to={`/research/${p.slug}#research-passport`} className="research-understand-link mt-4 inline-flex">افهم هذا البحث <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
                       </div>
                     </div>
                   </li>

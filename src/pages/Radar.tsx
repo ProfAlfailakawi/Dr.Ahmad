@@ -21,6 +21,7 @@ import {
 import { Pagination, usePagedList } from "../components/Pagination";
 import { liveLink } from "../lib/dead-links";
 import { arabicCountPhrase, CAPTURE_FORMS, MATERIAL_FORMS, SOURCE_PLAIN_FORMS } from '../lib/arabic-count.ts';
+import { Plus } from 'lucide-react'
 
 type RadarItem = {
   ar: string;
@@ -260,7 +261,7 @@ export default function Radar() {
                     <details className="group mt-5 rounded-2xl border border-hair bg-wash/[.35] px-5 py-4">
                       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-[.82rem] font-semibold text-accent marker:hidden">
                         <span>بقية مواد هذا الأسبوع</span>
-                        <span className="text-soft transition-transform group-open:rotate-45" aria-hidden="true">＋</span>
+                        <span className="text-soft transition-transform group-open:rotate-45" aria-hidden="true"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
                       </summary>
                       <div className="mx-auto mt-4 max-w-4xl space-y-4 border-t border-hair pt-5">
                         {w.items.slice(2).map((item, index) => (

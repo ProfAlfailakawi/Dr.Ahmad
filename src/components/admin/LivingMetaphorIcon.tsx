@@ -17,6 +17,7 @@ import {
   readMetaphorChoice, writeMetaphorChoice, resolveMetaphor, emitLivingIconChange,
   type ManualPos,
 } from '../../lib/design-overrides'
+import { CircleDot, RotateCcw, Sparkles } from 'lucide-react'
 
 const STORAGE_KEY = 'reel:living-icon:v1'
 const MOTION_KEY = 'reel:living-icon-motion:v1'
@@ -89,7 +90,7 @@ export function LivingIconToggle({ className = '' }: { className?: string }) {
           className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[.66rem] font-semibold transition-colors ${motion ? 'border-accent/40 bg-accent/[.05] text-accent' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
           title="مع حركة: الأيقونة تتحرّك. بدون: صورة ثابتة."
         >
-          {motion ? '✦ مع حركة' : '● بدون حركة'}
+          {motion ? <><Sparkles aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" />مع حركة</> : <><CircleDot aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" />بدون حركة</>}
         </button>
       )}
     </span>
@@ -446,7 +447,7 @@ export function LivingMetaphorIcon({ plan, still = false }: { plan: CompositionP
           onPointerDown={resetAuto}
           className="absolute -top-2 -left-2 flex h-5 w-5 items-center justify-center rounded-full border border-accent bg-white text-[.62rem] font-bold text-accent opacity-0 shadow transition-opacity group-hover:opacity-100"
           title="عودة للتموضع التلقائي"
-        >↺</button>
+        ><RotateCcw aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></button>
       )}
     </div>
   )

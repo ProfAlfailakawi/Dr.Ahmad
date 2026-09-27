@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { arabicCountPhrase, CHAPTER_FORMS } from '../lib/arabic-count.ts'
 import { bookKnowledgeAnchor, getBookKnowledge, type BookKnowledgeConcept } from '../lib/book-knowledge'
+import { Plus } from 'lucide-react'
 
 type TocEntry = { index: number; label: string; page: string }
 type TocGroup = { title: string; entries: TocEntry[] }
@@ -85,7 +86,7 @@ function TocDisclosure({ group, groupIndex, bookSlug }: { group: TocGroup; group
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair font-display text-[.68rem] text-accent">{String(groupIndex + 1).padStart(2, '0')}</span>
         <strong className="min-w-0 flex-1 break-words text-[.9rem] leading-relaxed text-ink">{group.title}</strong>
         <span className="shrink-0 text-[.66rem] text-soft">{arabicCountPhrase(group.entries.length, CHAPTER_FORMS)}</span>
-        <span aria-hidden className="text-accent transition-transform group-open/toc:rotate-45">＋</span>
+        <span aria-hidden className="text-accent transition-transform group-open/toc:rotate-45"><Plus aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
       </summary>
       <ol className="border-t border-hair bg-wash/[.38] px-5 py-2 md:px-7">
         {group.entries.map((entry) => {

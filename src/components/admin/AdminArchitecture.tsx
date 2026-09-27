@@ -6,13 +6,19 @@ import { createAnalyticsNamer, decodeAnalyticsPath } from '../../lib/analytics-l
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../lib/cms'
 import { EASE } from '../motion'
 import { DrAhmadRoom } from './DrAhmadRoom'
-import { AudioLines, ClipboardCheck, FilePenLine, Inbox, ShieldAlert, Volume2 } from 'lucide-react'
+import { AudioLines, ClipboardCheck, FilePenLine, Gauge, Inbox, LibraryBig, Send, ShieldAlert, Users, Volume2, type LucideIcon } from 'lucide-react'
 import { DnaIconTile, DnaLive, DnaStatusHeader, type DnaTone } from '../dna/DnaKit'
 
 export type { AdminArea, AdminTab } from './admin-navigation'
 export { ADMIN_GROUPS, areaOfTab, defaultTabForArea } from './admin-navigation'
-import { ADMIN_GROUPS, areaOfTab, defaultTabForArea, itemsOfGroup, adminItem, type AdminArea, type AdminTab } from './admin-navigation'
+import { type AdminAreaIcon, ADMIN_GROUPS, areaOfTab, defaultTabForArea, itemsOfGroup, adminItem, type AdminArea, type AdminTab } from './admin-navigation'
 import { arabicCountPhrase, DECISION_FORMS, MATERIAL_WAITING_AUDIO_FORMS, MESSAGE_PLAIN_FORMS, SCHEDULED_ARTICLE_FORMS, SOURCE_NEEDS_DECISION_FORMS, SUSPICIOUS_SOURCE_FORMS } from '../../lib/arabic-count.ts'
+
+const AREA_ICONS: Record<AdminAreaIcon, LucideIcon> = { gauge: Gauge, send: Send, library: LibraryBig, users: Users }
+function AreaIcon({ name }: { name: AdminAreaIcon }) {
+  const Icon = AREA_ICONS[name]
+  return <Icon aria-hidden size={20} strokeWidth={1.6} />
+}
 
 export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab: AdminTab) => void }) {
   const activeArea = areaOfTab(tab)
@@ -127,7 +133,7 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
                   onClick={() => setOpenArea((value) => value === group.area ? null : group.area)}
                   className={`group relative flex h-14 w-full items-center justify-center rounded-[1.05rem] border transition-all duration-200 ${expanded || groupActive ? 'border-accent bg-accent text-white shadow-[0_12px_28px_-18px_rgba(45,76,105,.85)]' : 'border-transparent bg-wash/[.55] text-accent hover:-translate-y-0.5 hover:border-hair hover:bg-wash'}`}
                 >
-                  <span aria-hidden className="text-[1.05rem] font-semibold leading-none">{group.icon}</span>
+                  <AreaIcon name={group.icon} />
                   {groupActive && !expanded && <span aria-hidden className="absolute -left-[5px] top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-accent" />}
                 </button>
               </div>

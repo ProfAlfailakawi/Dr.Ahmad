@@ -613,18 +613,7 @@ function bestBookTocMatch(article: ArticleRecord) {
 }
 
 
-const engagementIndex = (article: ArticleRecord, salt: string, min: number, max: number) => {
-  const source = `${article.slug}:${article.iso}:${article.title}:${salt}`
-  let hash = 2166136261
-  for (let index = 0; index < source.length; index += 1) {
-    hash ^= source.charCodeAt(index)
-    hash = Math.imul(hash, 16777619)
-  }
-  return min + ((hash >>> 0) % Math.max(1, max - min + 1))
-}
-
-/* شارة المالك: القيم الحقيقية تُعرض كما هي. ولأن العدّاد بدأ بعد نقل الموقع،
-   تُستكمل القيم الصغيرة بمؤشرٍ داخلي واضح بعلامة ≈؛ فلا يُقدَّم كتتبّع موثق. */
+/* شارة المالك: أرقام العدّاد الحقيقية وحدها — بلا مؤشرٍ تقديري يُخلط بها. */
 function OwnerBadge({ path, article }: { path: string; article: ArticleRecord }) {
   const { isAdmin } = useAdminAuth()
   const [c, setC] = useState<{ views: number; shares: number } | null>(null)
@@ -635,17 +624,12 @@ function OwnerBadge({ path, article }: { path: string; article: ArticleRecord })
     return () => { on = false }
   }, [isAdmin, path])
   if (!isAdmin || !c) return null
-  const estimatedViews = c.views < 100
-  const estimatedShares = c.shares < 10
-  /* المؤشر الداخلي أساسٌ يتحرك فوقه العدّاد الحقيقي مع كل زيارة —
-     كان ثابتاً (هاش صرف) فبدا متجمداً مهما زار الناس */
-  const views = estimatedViews ? engagementIndex(article, 'views', 180, 890) + c.views : c.views
-  const shares = estimatedShares ? engagementIndex(article, 'shares', 12, 86) + c.shares : c.shares
+  const { views, shares } = c
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title={estimatedViews || estimatedShares ? 'يظهر لك وحدك — علامة ≈ تعني مؤشراً داخلياً متنوعاً وليست إحصاءً موثقاً. القيم التي تتجاوز عتبة الرصد تُعرض بلا علامة.' : 'يظهر لك وحدك — أرقام داخلية موثقة من الموقع'}>
-      <span>{estimatedViews ? '≈ ' : ''}{arabicCountPhrase(views, VIEW_FORMS, (value) => value.toLocaleString('en-US'))}</span>
+    <span className="inline-flex items-center gap-2 rounded-full border border-hair bg-canvas/80 px-3 py-1 align-middle text-[.72rem] font-medium text-soft" title='يظهر لك وحدك — أرقام داخلية موثقة من الموقع'>
+      <span>{arabicCountPhrase(views, VIEW_FORMS, (value) => value.toLocaleString('en-US'))}</span>
       <span className="text-hair">·</span>
-      <span>{estimatedShares ? '≈ ' : ''}{arabicCountPhrase(shares, SHARE_FORMS, (value) => value.toLocaleString('en-US'))}</span>
+      <span>{arabicCountPhrase(shares, SHARE_FORMS, (value) => value.toLocaleString('en-US'))}</span>
     </span>
   )
 }

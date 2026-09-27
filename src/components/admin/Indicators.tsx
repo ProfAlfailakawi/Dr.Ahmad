@@ -382,7 +382,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
           {summary.trend.map((day) => (
             <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
               <span className="text-[.72rem] text-soft">{ar(day.count)}</span>
-              <span className="w-full max-w-10 rounded-t-md bg-accent/[.08]0 transition-[height]" style={{ height: `${day.count ? Math.max((day.count / trendMax) * 120, 5) : 2}px` }} />
+              <span className="w-full max-w-10 rounded-t-md bg-accent/60 transition-[height]" style={{ height: `${day.count ? Math.max((day.count / trendMax) * 120, 5) : 2}px` }} />
               <time className="text-[.58rem] text-soft sm:text-[.65rem]" dateTime={day.date}>{day.date.slice(5).replace('-', '/')}</time>
             </div>
           ))}

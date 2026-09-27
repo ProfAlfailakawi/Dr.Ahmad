@@ -359,3 +359,10 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
 @media (prefers-reduced-motion: reduce) {
   .radio-line--waiting { animation: none; opacity: .6 }
 }
+
+/* الهاتف: الوقت وعلامة «ص/م» في سطرٍ واحد، والعنوان يلتفّ بدل أن يُقصّ. */
+@media (max-width: 767px) {
+  .radio-nx { grid-template-columns: max-content 1fr; gap: 14px; }
+  .radio-nx time { white-space: nowrap; }
+  .radio-nx p { white-space: normal; overflow: visible; }
+}

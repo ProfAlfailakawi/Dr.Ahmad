@@ -69,7 +69,7 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
               <SocialIcon name={option.icon} size={14} />
               <strong className="text-[.76rem]">{option.title}</strong>
             </span>
-            <span className={`mt-1 block truncate text-[.6rem] font-light ${option.active ? 'text-white/72' : 'text-soft'}`}>{option.note}</span>
+            <span title={option.note} className={`knowledge-entry-note mt-1 block truncate text-[.6rem] font-light ${option.active ? 'text-white/72' : 'text-soft'}`}>{option.note}</span>
           </Link>
         ))}
       </div>

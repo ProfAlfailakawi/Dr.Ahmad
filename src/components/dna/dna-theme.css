@@ -94,3 +94,18 @@ html.dark [data-dna-tone] {
   .admin-decision-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-command-head { padding: 16px; }
 }
+
+/* الحلقة الحالية لا تنبض إلا حين يكون الشيء حيّاً فعلاً (توليدٌ جارٍ). */
+.dna-steps:not(.dna-steps-live) .dna-stepi[data-state='current'] .dna-node { animation: none; }
+
+/* مراحل البودكاست السبع على الجوال: نقاطٌ فقط، واسم المرحلة الحالية مكتوب فوق العنوان. */
+@media (max-width: 560px) {
+  .podcast-stage-steps .dna-lbl {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

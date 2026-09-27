@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Check, Clapperboard, Headphones } from 'lucide-react'
+import { DnaRing, DnaStepper, type DnaStep } from '../dna/DnaKit'
 import podcastAdmin from '../../data/podcast-admin.json'
 import { getDb } from '../../lib/firebase'
 import { loadArticleBodies } from '../../lib/article-bodies'
@@ -66,19 +68,28 @@ const stageFromEpisode = (episode?: Episode): Stage => {
   return 'draft'
 }
 
-function StageRail({ active }: { active: Stage }) {
+/* المراحل السبع مرئية دائماً: ما قبل الحالية مكتمل، والحالية حلقة؛
+   «يحتاج مراجعة» حلقة مُرجَعة (مع سبب الفشل إن وُجد)، والمنشورة مكتملة كلها. */
+function StageRail({ active, episode }: { active: Stage; episode?: Episode }) {
   const activeIndex = Math.max(0, stages.findIndex((stage) => stage.key === active))
+  const reason = episode?.failure?.reason ? `${episode.statusLabel || 'فشل'}: ${episode.failure.reason}` : episode?.statusLabel
+  const steps: DnaStep[] = stages.map((stage, index) => ({
+    key: stage.key,
+    label: stage.label,
+    title: index === activeIndex && reason ? `${stage.label} — ${reason}` : stage.label,
+    state: index < activeIndex || (active === 'published' && index === activeIndex)
+      ? 'done'
+      : index === activeIndex
+        ? (active === 'needs_review' ? 'returned' : 'current')
+        : 'pending',
+  }))
   return (
-    <div className="mt-4 flex max-w-full gap-2 overflow-x-auto pb-2" aria-label="مراحل إنتاج الحلقة">
-      {stages.map((stage, index) => (
-        <span
-          key={stage.key}
-          className={`shrink-0 rounded-full border px-3 py-1.5 text-[.7rem] font-semibold ${index === activeIndex ? 'border-accent bg-accent text-white' : index < activeIndex ? 'border-accent/25 bg-accent/[.06] text-accent' : 'border-hair bg-canvas text-soft'}`}
-        >
-          {stage.label}
-        </span>
-      ))}
-    </div>
+    <DnaStepper
+      steps={steps}
+      size="sm"
+      ariaLabel="مراحل إنتاج الحلقة"
+      className={`podcast-stage-steps mt-4${active === 'generating' ? ' dna-steps-live' : ''}`}
+    />
   )
 }
 
@@ -105,7 +116,6 @@ export function ProductionHealthCenter({
   const [draftSlugs, setDraftSlugs] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState('')
   const [message, setMessage] = useState('')
-  const [openStages, setOpenStages] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     let active = true
@@ -309,6 +319,16 @@ export function ProductionHealthCenter({
             return (
             <article key={article.slug} className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-canvas p-4 md:p-5">
               <div className="grid min-w-0 gap-3 sm:flex sm:items-start sm:justify-between">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                {episode?.progress && episode.progress.total > 0 && (
+                  <DnaRing
+                    value={episode.progress.done}
+                    max={episode.progress.total}
+                    size={48}
+                    className="shrink-0"
+                    ariaLabel={`تقدّم التوليد: ${episode.progress.done} من ${episode.progress.total}`}
+                  />
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-[.7rem] font-semibold text-accent">{stages.find((stage) => stage.key === status)?.label}</p>
                   <h3 className="mt-1 break-words font-display text-[1rem] font-semibold leading-[1.55] text-ink">{article.title}</h3>
@@ -320,6 +340,7 @@ export function ProductionHealthCenter({
                       مكانها: لوحة التحكم ← الصوت والبودكاست ← الحوار اليدوي ← هذا المقال.
                     </p>
                   )}
+                </div>
                 </div>
                 <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap">
                   {hasDraft && (
@@ -334,9 +355,9 @@ export function ProductionHealthCenter({
                   {/* الحلقة المعتمدة لا تُطلب مرة أخرى: يحلّ ختمُ الاعتماد محلّ الزر،
                       ويبقى «إعادتها للمراجعة» وحده مخرجاً إن أراد الدكتور سحب الاعتماد. */}
                   {status === 'published' ? (
-                    <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[.08] px-3 py-2 text-[.72rem] font-semibold leading-tight text-accent sm:px-4 sm:text-[.74rem]" data-episode-approved="1">✓ معتمدة</span>
+                    <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[.08] px-3 py-2 text-[.72rem] font-semibold leading-tight text-accent sm:px-4 sm:text-[.74rem]" data-episode-approved="1"><Check aria-hidden size={14} strokeWidth={1.6} />معتمدة</span>
                   ) : status === 'draft' || status === 'queued' ? (
-                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'جارٍ بدء التوليد' : '🎬 ابدأ التوليد الآن'}</button>
+                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'جارٍ بدء التوليد' : <><Clapperboard aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />ابدأ التوليد الآن</>}</button>
                   ) : (
                     <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">اعتماد الحلقة</button>
                   )}
@@ -345,14 +366,11 @@ export function ProductionHealthCenter({
               </div>
               {episode?.listen && (
                 <div className="mt-3 grid min-w-0 gap-2 rounded-xl border border-hair bg-wash px-3 py-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
-                  <span className="text-[.72rem] font-semibold text-accent">🎧 اسمع قبل القرار{episode.failure ? ' (نسخة المراجعة المرفوضة)' : ''}</span>
+                  <span className="inline-flex items-center gap-1.5 text-[.72rem] font-semibold text-accent"><Headphones aria-hidden size={14} strokeWidth={1.6} />اسمع قبل القرار{episode.failure ? ' (نسخة المراجعة المرفوضة)' : ''}</span>
                   <audio controls preload="none" src={episode.listen} className="h-10 w-full min-w-0 max-w-full flex-1" />
                 </div>
               )}
-              <button type="button" onClick={() => setOpenStages((current) => ({ ...current, [article.slug]: !current[article.slug] }))} aria-expanded={Boolean(openStages[article.slug])} className="mt-3 rounded-full border border-hair px-3 py-1.5 text-[.72rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">
-                {openStages[article.slug] ? 'إخفاء المراحل' : 'عرض مراحل الإنتاج'}
-              </button>
-              {openStages[article.slug] && <StageRail active={status} />}
+<StageRail active={status} episode={episode} />
             </article>
           )})}
         </div>

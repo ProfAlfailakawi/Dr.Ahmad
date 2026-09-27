@@ -3,9 +3,9 @@ import { motion } from 'framer-motion'
 export type ResearchLayer = 'layer1' | 'layer2' | 'layer3'
 
 const levels: Array<{ key: ResearchLayer; label: string; short: string; num: string }> = [
-  { key: 'layer1', label: 'الهوية والتوثيق الأكاديمي', short: 'الهوية والتوثيق', num: '٠١' },
-  { key: 'layer2', label: 'الأبعاد المنهجية والمحتوى', short: 'الأبعاد المنهجية', num: '٠٢' },
-  { key: 'layer3', label: 'الأدلة والمصادر العلمية', short: 'المصادر والقرائن', num: '٠٣' },
+  { key: 'layer1', label: 'الهوية والتوثيق الأكاديمي', short: 'الهوية والتوثيق', num: '01' },
+  { key: 'layer2', label: 'الأبعاد المنهجية والمحتوى', short: 'الأبعاد المنهجية', num: '02' },
+  { key: 'layer3', label: 'الأدلة والمصادر العلمية', short: 'المصادر والقرائن', num: '03' },
 ]
 
 export function ResearchSectionNavigator({ active, onSelect }: { active: ResearchLayer; onSelect: (layer: ResearchLayer) => void }) {

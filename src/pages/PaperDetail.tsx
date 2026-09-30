@@ -13,7 +13,6 @@ import GlyphLoader from '../components/GlyphLoader'
 import { safeLink } from '../lib/dead-links'
 import { ResearchSectionNavigator, type ResearchLayer } from '../components/ResearchSectionNavigator'
 import { ArrowRight, ArrowUpLeft, Check, ChevronDown, ChevronUp } from 'lucide-react'
-import { DnaStepper, type DnaStep } from '../components/dna/DnaKit'
 import { bookKnowledgeAnchor, relatedBookKnowledge } from '../lib/book-knowledge'
 import { SocialIcon } from '../components/icons'
 import { NextStep } from '../components/NextStep'
@@ -168,16 +167,6 @@ export default function PaperDetail() {
   const { isAdmin } = useAdminAuth()
   const [passportLayer, setPassportLayer] = useState<ResearchLayer>('layer1')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
-  /* مسار البحث مرسوماً: الخطوة مكتملة حين يمتلئ حقلها، والحالية هي البطاقة المفتوحة. */
-  const openCardKey = readerKey || Object.keys(expandedCards).find((key) => expandedCards[key]) || ''
-  const researchSteps: DnaStep[] = ([
-    ['researchQuestion', 'سؤال'], ['sample', 'عينة'], ['methodology', 'منهج'],
-    ['keyFinding', 'نتيجة'], ['contribution', 'إسهام'], ['limitations', 'حدود'],
-  ] as const).map(([key, label]) => {
-    const card = dataCards.find((item) => item.key === key)
-    return { key, label, title: card?.label, state: openCardKey === key ? 'current' : card ? 'done' : 'pending' }
-  })
-
   const isManualScrolling = useRef(false)
   const manualScrollTimeout = useRef<number | null>(null)
 
@@ -333,8 +322,6 @@ export default function PaperDetail() {
                     </div>
                     <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">{arabicCountPhrase(dataCards.length, DIMENSION_FORMS)}</span>
                   </div>
-
-                  <DnaStepper steps={researchSteps} size="sm" ariaLabel="مسار البحث: سؤال، عينة، منهج، نتيجة، إسهام، حدود" className="research-dna-steps mt-5" />
 
                   <div className="research-smart-reader mt-5" aria-label="قارئ البحث الذكي">
                     <div className="research-smart-reader-rail">

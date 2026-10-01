@@ -154,7 +154,7 @@ export default function ThoughtOverview() {
                 <p className="mt-4 text-[.88rem] font-light leading-[1.9] text-soft">
                   ظهر هذا المحور في {arabicCountPhrase(model.recurring?.years || 0, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, number.format)} داخل الأرشيف، ولذلك يُقرأ هنا بوصفه سؤالاً متجدداً لا موضوعاً عابراً.
                 </p>
-                <Link to={`/decade?idea=${encodeURIComponent(model.recurring?.category || '')}`} className="mt-6 inline-flex items-center gap-2 text-[.8rem] font-semibold text-accent">تتبّع رحلته عبر السنوات ←</Link>
+                <Link to={`/decade?idea=${encodeURIComponent(model.recurring?.category || '')}`} className="-mb-2 mt-4 inline-flex items-center gap-2 py-2 text-[.8rem] font-semibold text-accent">تتبّع رحلته عبر السنوات ←</Link>
               </section>
             </FadeUp>
           </div>

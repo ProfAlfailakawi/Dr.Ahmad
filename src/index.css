@@ -8202,3 +8202,10 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     min-block-size: 44px;
   }
 }
+
+/* أرضية المقروئية: المقاسات الكسرية الأصغر من .72rem تُرفع إلى حدٍّ أدنى مقروء
+   دون المساس بالمقاسات الأكبر أو بالعائلة والوزن. */
+.text-\[\.58rem\], .text-\[\.6rem\], .text-\[\.62rem\], .text-\[\.64rem\],
+.text-\[\.65rem\], .text-\[\.66rem\], .text-\[\.68rem\], .text-\[\.7rem\] {
+  font-size: .72rem !important;
+}

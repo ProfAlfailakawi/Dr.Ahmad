@@ -583,11 +583,11 @@ function ImpactTimeline() {
         </FadeUp>
         <ol className="relative mr-2 border-r-2 border-hair pr-8">
           {steps.map((s, i) => (
-            <FadeUp key={s.t} delay={Math.min(i * 0.1, 0.4)} className={i > 0 && i < steps.length - 1 ? 'hidden md:block' : ''}>
-              <li className="relative pb-7 last:pb-0 md:pb-10">
+            <FadeUp key={s.t} delay={Math.min(i * 0.1, 0.4)}>
+              <li className="relative pb-5 last:pb-0 md:pb-10">
                 <span className="absolute right-[-2.6rem] top-1.5 h-3 w-3 rounded-full border-2 border-accent bg-canvas" />
                 <span className="font-display text-[1.05rem] font-bold text-accent">{s.y}</span>
-                <p className="mt-1.5 max-w-xl text-[1.05rem] font-light leading-[1.85] text-ink/80">{s.t}</p>
+                <p className="mt-1 max-w-xl text-[.98rem] font-light leading-[1.8] text-ink/80 md:mt-1.5 md:text-[1.05rem] md:leading-[1.85]">{s.t}</p>
               </li>
             </FadeUp>
           ))}

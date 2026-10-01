@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "demo": "VITE_DEMO_MODE=1 vite --port 3000",
+    "demo:build": "VITE_DEMO_MODE=1 vite build --outDir dist-demo",
+    "demo:preview": "VITE_DEMO_MODE=1 vite preview --outDir dist-demo --port 3000",
     "lint": "tsc --noEmit",
     "guard:critical": "node scripts/guard-critical-bridges.mjs",
     "paths:check": "node scripts/test-learning-paths.mjs --self-test",

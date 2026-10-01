@@ -1,7 +1,28 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { createReadStream, existsSync, statSync } from 'node:fs'
+import { extname, join, normalize, resolve } from 'node:path'
 // @ts-ignore -- إضافة بلا أنواع: تحقن بصمة البناء وتطبعها في dist/build-id.json و sw.js
 import { buildStamp } from './scripts/build-stamp.mjs'
+
+/* وضع العرض فقط: مجلدات covers/files/music في جذر المستودع هي المصدر الأصلي لأصول الموقع
+   (وليست داخل public/ حتى لا تتكرر في Git)، فتُخدَم منها مباشرةً في dev وpreview. */
+function demoStaticAssetsPlugin(): Plugin {
+  const root = resolve('.')
+  const types: Record<string, string> = { '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.pdf': 'application/pdf', '.mp3': 'audio/mpeg', '.json': 'application/json' }
+  const mount = (server: { middlewares: { use: (fn: (req: any, res: any, next: () => void) => void) => void } }) => {
+    server.middlewares.use((req, res, next) => {
+      const path = decodeURIComponent((req.url || '').split('?')[0])
+      const top = path.split('/')[1]
+      if (!['covers', 'files', 'music', 'audio', 'photos'].includes(top)) return next()
+      const file = normalize(join(root, path))
+      if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) return next()
+      res.setHeader('Content-Type', types[extname(file).toLowerCase()] || 'application/octet-stream')
+      createReadStream(file).pipe(res)
+    })
+  }
+  return { name: 'demo-static-assets', configureServer: mount, configurePreviewServer: mount }
+}
 
 function encyclopediaApiPlugin(): Plugin {
   return {
@@ -49,8 +70,22 @@ function encyclopediaApiPlugin(): Plugin {
   }
 }
 
+/* وضع العرض التوضيحي: يستبدل Firebase بنسخٍ في الذاكرة ببياناتٍ خيالية (src/demo).
+   لا أثر له على الإنتاج: لا يعمل إلا مع VITE_DEMO_MODE=1. */
+const demoAlias = process.env.VITE_DEMO_MODE === '1'
+  ? {
+      'firebase/firestore': new URL('./src/demo/firestore-shim.ts', import.meta.url).pathname,
+      'firebase/auth': new URL('./src/demo/auth-shim.ts', import.meta.url).pathname,
+      'firebase/app': new URL('./src/demo/app-shim.ts', import.meta.url).pathname,
+      'firebase/app-check': new URL('./src/demo/app-check-shim.ts', import.meta.url).pathname,
+      'firebase/messaging': new URL('./src/demo/messaging-shim.ts', import.meta.url).pathname,
+      'firebase/storage': new URL('./src/demo/storage-shim.ts', import.meta.url).pathname,
+    }
+  : {}
+
 export default defineConfig({
-  plugins: [react(), encyclopediaApiPlugin(), buildStamp()],
+  resolve: { alias: demoAlias },
+  plugins: [react(), encyclopediaApiPlugin(), buildStamp(), ...(process.env.VITE_DEMO_MODE === '1' ? [demoStaticAssetsPlugin()] : [])],
   server: {
     /* ٣٠٠٠ هو المنفذ الوحيد المسموح بالاتصال به خارجياً في بيئة AI Studio. */
     port: 3000,

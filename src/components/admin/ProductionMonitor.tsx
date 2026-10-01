@@ -224,7 +224,7 @@ const previewServices: ControlService[] = [
   { id: 'publishing', title: 'النشر والاستضافة', eyebrow: 'RELEASE PIPELINE', level: 'healthy', metric: 'آخر نشر ناجح', summary: 'بوابة الاختبارات والاستضافة أنهتا آخر دورة بنجاح.', reason: 'اجتازت النسخة الحراسة قبل وصولها إلى Hosting.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
   { id: 'control-plane', title: 'الخادم وغرفة الأوامر', eyebrow: 'CONTROL PLANE', level: 'healthy', metric: 'متصل', summary: 'واجهة التشخيص والإصلاح تستجيب الآن.', reason: 'تم التحقق من الخادم وجلسة المشرف.', action: 'لا يحتاج تدخلاً.', lastEventAt: new Date().toISOString() },
 ]
-const previewSnapshot: ControlSnapshot = {
+export const previewSnapshot: ControlSnapshot = {
   checkedAt: new Date().toISOString(),
   automaticRefreshSeconds: 30,
   safeRepair: { available: true, destructive: false, preservesWhatsAppSession: true },

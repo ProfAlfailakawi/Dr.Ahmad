@@ -7,6 +7,8 @@ import { installAppUpdate } from './lib/app-update'
 import { installDomResilience } from './lib/dom-resilience'
 import { hasMissingAppChunk, watchResourceFailures } from './lib/load-failures'
 import { startWebVitalsMonitoring } from './lib/web-vitals'
+import { DEMO_MODE } from './demo/mode'
+import { installDemoApi } from './demo/api-mock'
 import './index.css'
 import './components/dna/dna.css'
 import './components/dna/dna-theme.css'
@@ -21,6 +23,9 @@ function healOnce() {
   } catch { /* حارس التكرار اختياري */ }
   void healStaleBundles()
 }
+
+/* وضع العرض التوضيحي: ردود /api/* تجريبية بلا خادم (يُفعَّل بـ VITE_DEMO_MODE=1 فقط). */
+if (DEMO_MODE) installDemoApi()
 
 /* التقاط أعطال تحميل الملفات مبكراً: يبدأ قبل العرض ليشمل حزم البداية. */
 watchResourceFailures()

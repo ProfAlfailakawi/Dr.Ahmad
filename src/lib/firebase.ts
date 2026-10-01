@@ -59,6 +59,8 @@ let appCheckReady = false
 let appPromise: ReturnType<typeof createFirebaseApp> | null = null
 
 async function createFirebaseApp() {
+  // وضع العرض: تطبيق وهمي بلا شبكة؛ مفاتيح الإنتاج لا تُقرأ ولا يُتصل بها.
+  if (import.meta.env.VITE_DEMO_MODE === '1') return { name: 'demo', options: {} } as unknown as import('firebase/app').FirebaseApp
   const cfg = await getFirebaseConfig()
   if (!cfg) return null
   const { initializeApp, getApps, getApp } = await import('firebase/app')

@@ -4,6 +4,7 @@
  */
 import { articles } from '../data'
 import { whatsappMock } from './whatsapp-mock'
+import { contentSuggestion, monteurStoryboard, reelInvention, studioImage } from './ai-mock'
 
 const DAY = 86_400_000
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8' } })
@@ -42,7 +43,7 @@ function usageEvents() {
   return items
 }
 
-async function handler(url: URL, method: string): Promise<Response | null> {
+async function handler(url: URL, method: string, bodyText = ''): Promise<Response | null> {
   const p = url.pathname
   if (p.startsWith('/api/encyclopedia/')) return null
   if (p === '/api/admin/analytics/events') {
@@ -71,6 +72,15 @@ async function handler(url: URL, method: string): Promise<Response | null> {
       { id: 'ce4', title: 'مؤتمر إقليمي يناقش مستقبل المعلم الرقمي في الخليج', summary: 'توصيات بتدريب مستمر وربط الترقية بالكفاءة الرقمية.', source: 'الجريدة', url: 'https://example.org/news/conference', publishedAt: h(40), ageHours: 40, relevance: 0.7 },
     ] })
   }
+  if (method === 'POST' && ['/api/ai/studio-image', '/api/studio-image', '/api/generate-studio-image', '/api/ai/reel-invention', '/api/ai/monteur-storyboard', '/api/ai/content-suggestion'].includes(p)) {
+    let body: Record<string, unknown> = {}
+    try { body = JSON.parse(bodyText || '{}') } catch { /* جسم غير صالح: نكمل بقيم افتراضية */ }
+    await new Promise((r) => setTimeout(r, 700))
+    if (p.endsWith('studio-image') || p === '/api/generate-studio-image') return json(studioImage(body))
+    if (p === '/api/ai/reel-invention') return json(reelInvention(body))
+    if (p === '/api/ai/monteur-storyboard') return json(monteurStoryboard(body))
+    return json(contentSuggestion(body))
+  }
   if (p.startsWith('/api/admin/') || p.startsWith('/api/ai/')) return json({ ok: true, demo: true, items: [], message: 'وضع العرض التجريبي: العملية لا تُنفَّذ فعلياً.' })
   if (p.startsWith('/api/')) return json({ ok: true, demo: true })
   return null
@@ -83,7 +93,8 @@ export function installDemoApi() {
       const raw = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
       const url = new URL(raw, window.location.origin)
       if (url.origin === window.location.origin && url.pathname.startsWith('/api/')) {
-        const res = await handler(url, (init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase())
+        const bodyText = typeof init?.body === 'string' ? init.body : ''
+        const res = await handler(url, (init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase(), bodyText)
         if (res) return res
       }
     } catch { /* يمرّ إلى fetch الأصلي */ }

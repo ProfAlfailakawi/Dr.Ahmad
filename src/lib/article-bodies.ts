@@ -60,6 +60,13 @@ export async function loadArticleBodies(): Promise<BodiesMap> {
   return bodiesPromise
 }
 
+/* وضع العرض فقط: عيّنة صغيرة (أول 40 مقالاً، وهي التي عليها تظليلات القرّاء في seed) تظهر فوراً
+   في الاستوديوهات الثقيلة بدل تحميل وتحليل الأرشيف كله؛ الاستعمال محصور في مسار DEMO_MODE. */
+export async function loadDemoBodySample(): Promise<BodiesMap> {
+  const [{ articles }, all] = await Promise.all([import('../data'), loadArticleBodies()])
+  return Object.fromEntries(articles.slice(0, 40).flatMap((article) => (all[article.slug] ? [[article.slug, all[article.slug]]] : [])))
+}
+
 export async function getArticleBody(slug: string): Promise<string | undefined> {
   const sharded = await bodyFromShard('normal', slug)
   if (sharded) return sharded

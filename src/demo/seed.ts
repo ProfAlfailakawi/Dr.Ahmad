@@ -255,6 +255,11 @@ export function DEMO_COLLECTIONS(now: number): Record<string, Record<string, Raw
     cv: {},
     audio_inventory: audioInventory(now),
   }
+  /* ── آخر ما نُشر في المجموعات الحية: يغذّي بطاقة «الصحة والتزامن»؛ الحقول minimal فلا تغيّر المحتوى الثابت ── */
+  const live = (rows: { slug: string; title: string }[], offset: number) => Object.fromEntries(rows.slice(0, 2).map((row, i) => [row.slug, { slug: row.slug, title: row.title, status: 'published', published: true, createdAt: ts(now - (offset + i * 3 + 5) * DAY), updatedAt: ts(now - (offset + i * 3) * DAY) }]))
+  out.site_articles = live(articles, 1)
+  out.site_books = live(books as any, 2)
+  out.site_papers = live(papers as any, 3)
   out.bot_messages = {}
   return out
 }

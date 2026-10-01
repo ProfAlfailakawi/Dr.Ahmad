@@ -543,10 +543,10 @@ function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=
  const a=slides[i].querySelector(".notes");notes.innerHTML=`<h4 style="margin-top:0">${i+1} / ${slides.length} · ${slides[i].dataset.title}</h4>`+(a?a.innerHTML:"");
  bar.style.width=(Math.min(i+1,mainCount)/mainCount*100)+"%";history.replaceState(null,"","#"+(i+1))}
 document.querySelectorAll(".notes").forEach(n=>n.style.display="none");
-const next=()=>show(i+1),prev=()=>show(i-1);
+const next=()=>{if(i===mainCount-1)return;show(i+1)},prev=()=>{if(i===mainCount)return;show(i-1)};
 const toggleNotes=()=>notes.classList.toggle("show");
 const full=()=>{if(!document.fullscreenElement)(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen||function(){}).call(document.documentElement);else document.exitFullscreen&&document.exitFullscreen()};
-addEventListener("keydown",e=>{const k=e.key;
+addEventListener("keydown",e=>{const k=e.key;if((k===" "||k==="Enter")&&e.target.closest&&e.target.closest("button"))return;
  if(["ArrowLeft","PageDown"," ","Enter"].includes(k)){e.preventDefault();next()}
  else if(["ArrowRight","PageUp","Backspace"].includes(k)){e.preventDefault();prev()}
  else if(k==="Home")show(0);else if(k==="End")show(mainCount-1);

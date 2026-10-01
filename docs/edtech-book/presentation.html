@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>قبل أن نكتب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@500;600;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#FCFCFA; --ink:#15161A; --soft:#5E6570; --accent:#3E5C78; --deep:#33506B;
+  --wash:#F4F5F3; --ember:#8F5A28; --hair:rgba(21,22,26,.12); --faint:rgba(21,22,26,.05);
+  --display:"El Messiri","Noto Naskh Arabic","Geeza Pro",serif;
+  --sans:"Tajawal","Noto Sans Arabic","Geeza Pro",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#E9EAE6;color:var(--ink);font-family:var(--sans);overflow:hidden}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1600px;height:900px;position:relative;transform-origin:center center;flex:none}
+.slide{position:absolute;inset:0;background:var(--canvas);padding:84px 110px;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;transition:opacity .7s cubic-bezier(.22,.61,.36,1),visibility .7s;box-shadow:0 1px 0 var(--hair)}
+.slide.on{opacity:1;visibility:visible}
+.kicker{font-size:22px;letter-spacing:.02em;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:14px}
+.kicker::before{content:"";width:46px;height:1px;background:var(--accent)}
+h1,h2{font-family:var(--display);font-weight:600;line-height:1.25}
+h1{font-size:104px}
+h2{font-size:64px;margin-top:18px}
+.lead{font-size:30px;color:var(--soft);font-weight:300;margin-top:18px;line-height:1.6}
+.folio{position:absolute;bottom:40px;left:110px;right:110px;display:flex;justify-content:space-between;font-size:17px;color:var(--soft);border-top:1px solid var(--hair);padding-top:14px}
+.body{flex:1;display:flex;align-items:center;justify-content:center;width:100%;margin-top:20px}
+svg text{font-family:var(--sans)}
+.hd{font-family:var(--display)!important}
+.ico{stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.quote{font-family:var(--display);font-size:46px;line-height:1.55}
+.src{font-size:19px;color:var(--soft);margin-top:12px}
+.backup-tag{position:absolute;top:36px;left:110px;font-size:16px;color:var(--ember);border:1px solid var(--ember);padding:4px 12px;border-radius:20px}
+/* notes */
+#notes{position:fixed;inset:auto 0 0 0;max-height:46vh;overflow:auto;background:#fff;border-top:1px solid var(--hair);
+  padding:22px 28px 30px;font-size:16px;line-height:1.85;display:none;z-index:5;box-shadow:0 -10px 30px rgba(0,0,0,.06)}
+#notes.show{display:block}
+#notes h4{font-family:var(--display);color:var(--accent);font-size:18px;margin:10px 0 2px}
+#notes p{color:#2a2d33}
+/* chrome */
+#bar{position:fixed;top:0;right:0;height:3px;background:var(--accent);transition:width .5s;z-index:6}
+#hud{position:fixed;bottom:14px;left:16px;display:flex;gap:8px;z-index:6;opacity:.25;transition:opacity .3s}
+#hud:hover,#hud:focus-within{opacity:1}
+#hud button{font-family:var(--sans);font-size:14px;background:var(--canvas);border:1px solid var(--hair);color:var(--ink);
+  padding:7px 12px;border-radius:999px;cursor:pointer}
+#hud button:focus-visible{outline:2px solid var(--accent)}
+@media print{
+  @page{size:1600px 900px;margin:0}
+  html,body{overflow:visible;background:#fff;height:auto}
+  #viewport{position:static;display:block}
+  #stage{transform:none!important;width:auto;height:auto}
+  .slide{position:relative;opacity:1;visibility:visible;width:1600px;height:900px;page-break-after:always;break-after:page;box-shadow:none}
+  #notes,#hud,#bar{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="viewport"><div id="stage">
+
+<!-- ============ 1. COVER ============ -->
+<section class="slide" data-title="الغلاف">
+  <div class="kicker">مشروع كتاب «أسس تكنولوجيا التعليم» · أكتوبر 2026</div>
+  <div style="flex:1;display:flex;align-items:center;gap:80px">
+    <div style="flex:1.2">
+      <h1>قبل أن نكتب</h1>
+      <p class="lead" style="font-size:38px;margin-top:28px">سؤالٌ واحد يسبق التأليف</p>
+    </div>
+    <svg viewBox="0 0 520 520" width="520" height="520" aria-hidden="true">
+      <!-- knowledge constellation: many nodes, a few selected, converging to a book -->
+      <g stroke="var(--hair)" stroke-width="1">
+        <circle cx="260" cy="260" r="240" fill="none"/>
+        <circle cx="260" cy="260" r="170" fill="none"/>
+        <circle cx="260" cy="260" r="100" fill="none"/>
+      </g>
+      <g id="stars"></g>
+      <g stroke="var(--accent)" stroke-width="1.4" fill="none" opacity=".9">
+        <path d="M120 140 L260 260 M410 120 L260 260 M440 330 L260 260 M150 400 L260 260 M300 70 L260 260"/>
+      </g>
+      <rect x="226" y="232" width="68" height="56" rx="3" fill="var(--canvas)" stroke="var(--ink)" stroke-width="1.6"/>
+      <path d="M260 236 V284 M232 244 h20 M232 254 h20 M268 244 h20 M268 254 h20" stroke="var(--ink)" stroke-width="1.3"/>
+    </svg>
+  </div>
+  <div class="folio"><span>د. أحمد حسين الفيلكاوي</span><span>أُبقي الإنسان في قلب الآلة</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>قبل أن نكتب · سؤال واحد يسبق التأليف.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«أشكر الزملاء على إطار متقن. لن أناقش اليوم كيف نكتب الفصول، بل سؤالًا واحدًا يسبق ذلك: هل الخريطة التي بُني عليها الكتاب تمثّل المجال كما وصل إليه في 2026؟»</p>
+    <h4>الانتقال</h4><p>«وأبدأ بما أُنجز جيدًا، لأن كثيرًا منه سيبقى.»</p>
+  </aside>
+</section>
+
+<!-- ============ 2. STRENGTHS ============ -->
+<section class="slide" data-title="ما أُنجز جيدًا">
+  <div class="kicker">نبدأ بالإنصاف</div>
+  <h2>هندسة الكتاب: متينة</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 520" width="1380" height="520" role="img" aria-label="سبع نقاط قوة في الإطار">
+      <g id="strengths"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>الإطار المشترك · ص 2–6، 15–21</span><span>02</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>هندسة الكتاب: متينة · سبع أيقونات.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«الإطار يقدّم مستوى نادرًا في مشاريع التأليف الجماعي: اثنا عشر دورًا، ومصفوفة قرار لا تترك قرارًا بلا صاحب، وقواعد استقلال تمنع المؤلف من اعتماد فصله، وبوابات انتقال واضحة، ودليل أسلوب، وسياسة نزاهة وذكاء اصطناعي، وفصل نموذجي قبل التأليف. هذا كله يبقى.»</p>
+    <h4>الدليل</h4><p>ص5–6 (الأدوار، القواعد، المصفوفة)، ص6 (بوابات الانتقال والفصل النموذجي)، ص15–21 (دليل الأسلوب والنزاهة).</p>
+    <h4>اعتراض محتمل</h4><p>«إذن لماذا نعيد النظر؟» — الرد: «لأن قوة الإدارة لا تثبت صحة الخريطة المعرفية؛ هما سؤالان مختلفان.»</p>
+  </aside>
+</section>
+
+<!-- ============ 3. THE QUESTION ============ -->
+<section class="slide" data-title="السؤال">
+  <div class="kicker">السؤال</div>
+  <h2>لماذا هذه الفصول السبعة؟</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 460" width="1380" height="460" role="img" aria-label="الفصول السبعة الحالية">
+      <g id="seven"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>جدول المحتويات المشروح · ص 11</span><span>03</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>عناوين الفصول السبعة، وعلامة استفهام.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«لا أسأل هل الفصول جيدة الكتابة؛ لم تُكتب بعد. أسأل: من أين جاءت هذه السبعة بالذات؟ هل هي نتيجة مسح للمجال في 2026، أم شيء آخر؟ الوثيقة نفسها تجيب.»</p>
+    <h4>الانتقال</h4><p>«لنقرأ ما تقوله الوثيقة عن مصدرها.»</p>
+  </aside>
+</section>
+
+<!-- ============ 4. DEFINITION -> TOC ============ -->
+<section class="slide" data-title="من تعريف إلى فهرس">
+  <div class="kicker">ما تقوله الوثيقة نفسها</div>
+  <h2>الفهرس = تعريف 2008 مفصّلًا</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 500" width="1380" height="500" role="img" aria-label="عناصر تعريف 2008 تقابل فصول الكتاب">
+      <g id="map08"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>سجل المصطلحات ص 16 · ضبط المرجعية ص 11 · AECT 2008</span><span>04</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>كلمات تعريف 2008 يمينًا، والفصول يسارًا، وخطوط تربط بينها.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«تعريف 2008: <em>the study and ethical practice of facilitating learning and improving performance by creating, using, and managing appropriate technological processes and resources</em>. سجل المصطلحات في الإطار (ص16) يُدرج هذه الكلمات حرفيًا ويصفها بأنها الوظائف والغايات. والفصول 2–6 تقابلها واحدًا واحدًا. هذا ليس اتهامًا؛ الوثيقة تصرّح به في ص3 وص11: كتاب 2008 هو «الأصل المفاهيمي».»</p>
+    <h4>اعتراض محتمل</h4><p>«الاشتقاق من تعريف مؤسسي خيار سليم.» — الرد: «أتفق أنه قد يكون سليمًا. السؤال أنه لم يُختبر أمام ما طرأ بعده، وأن الإطار يمنع تحديثه.»</p>
+    <h4>الانتقال</h4><p>«فماذا طرأ بعده؟»</p>
+  </aside>
+</section>
+
+<!-- ============ 5. 2008 -> 2023 ============ -->
+<section class="slide" data-title="2008 ← 2023">
+  <div class="kicker">AECT نفسها تحدّثت</div>
+  <h2>التعريف تغيّر. الفهرس لم يتغيّر.</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 520" width="1380" height="520" role="img" aria-label="مقارنة تعريف 2008 بتعريف 2023">
+      <g id="evo"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>aect.org/aect/about/aect-definition · 2023 Definition Task Force</span><span>05</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>عمودان: 2008 و2023، وما بقي وما دخل وما خرج.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«تعريف AECT الحالي: <em>the ethical study and application of theory, research, and practices to advance knowledge, improve learning and performance, and empower learners through strategic design, management, implementation, and evaluation of learning experiences and environments using appropriate processes and resources</em>. ثلاث ملاحظات: الوظائف صارت التصميم والإدارة والتنفيذ والتقويم. كلمتا الإنشاء والاستخدام — عنوانا فصلين عندنا — لم تعودا فيه. ودخلت غايتان: إنتاج المعرفة وتمكين المتعلم. والإطار لا يذكر تعريف 2023 إطلاقًا.»</p>
+    <h4>اعتراض محتمل</h4><p>«2008 ما زال صحيحًا.» — الرد: «أتفق. السؤال ليس هل هو صحيح، بل هل يكفي سقفًا حاكمًا لكتاب 2026 دون مقارنة منهجية. ولا أقترح استبدال سقف بسقف؛ 2023 أيضًا تعريف جمعية واحدة.»</p>
+    <h4>اعتراض محتمل</h4><p>«معايير 2012 مشتقة من 2008.» — الرد: «صحيح، وAECT تصفها بأنها guidelines لبرامج إعداد المهنيين. المعايير تقول ماذا يفعل المتخصص، ولا تقدّم تصنيفًا كاملًا لمعرفة المجال.»</p>
+  </aside>
+</section>
+
+<!-- ============ 6. EVALUATION CONTRADICTION ============ -->
+<section class="slide" data-title="التقويم">
+  <div class="kicker">ملاحظة داخلية</div>
+  <h2>أين ذهب التقويم؟</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 500" width="1380" height="500" role="img" aria-label="التقويم يرد في المرجعية ويغيب عن البنية">
+      <g id="evalg"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>الإطار المشترك · ص 3، ص 11، ص 13</span><span>06</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>ص3: التقويم موجود · ص11: غير موجود · ص13: تقويم المصادر فقط.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«في ص3 يذكر الإطار أن معيار معرفة المحتوى في AECT 2012 يشمل: الإنشاء، والاستخدام، <strong>والتقويم</strong>، والإدارة، والأخلاقيات. في ص11 تصبح الصلة: Creating, Using, Managing, Ethics — بلا تقويم. وفي ص13 يُحصر التقويم في تقويم المصادر، مع النص على عدم تقديم مراجعة شاملة للتقويم. والتعريف الحالي يضع evaluation وظيفة صريحة. أطرح هذا سؤالًا للتصحيح، لا مأخذًا.»</p>
+    <h4>اعتراض محتمل</h4><p>«التقويم مقرر لاحق.» — الرد: «ربما. لكن الطالب يحتاج أن يعرف أن التقويم وظيفة من وظائف المجال، لا أداة لاختيار مصدر. وهذا قرار يُتخذ بعد الخريطة.»</p>
+  </aside>
+</section>
+
+<!-- ============ 7. ALIGNMENT vs KNOWLEDGE ============ -->
+<section class="slide" data-title="خريطتان">
+  <div class="kicker">التمييز الحاسم</div>
+  <h2>خريطتان لا خريطة واحدة</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 500" width="1380" height="500" role="img" aria-label="خريطة المواءمة مقابل خريطة المعرفة">
+      <g id="twomaps"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>خريطة المواءمة · الملحق الأول ص 7–10</span><span>07</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>خريطة المواءمة: أين ندرّس الهدف؟ · خريطة المعرفة: ماذا يعرف المجال؟</p>
+    <h4>ما يقوله د. أحمد</h4><p>«خريطة المواءمة في الإطار دقيقة: 7 كفايات، 27 هدفًا، لكل هدف موضع ودليل تحقق. لكنها تجيب عن سؤال: أين نعلّم الهدف؟ ولا تجيب عن: ما بنية المعرفة في المجال أصلًا؟ الأولى تأتي بعد الثانية، ولا تحل محلها.»</p>
+    <h4>اعتراض محتمل</h4><p>«الكفايات سبع ومعتمدة.» — الرد: «الكفايات تضبط ما يتعلمه الطالب، ولا تثبت وحدها أن هذه أفضل خريطة للعلم.»</p>
+  </aside>
+</section>
+
+<!-- ============ 8. FUNNEL ============ -->
+<section class="slide" data-title="المقرر يختار">
+  <div class="kicker">المبدأ</div>
+  <h2>المقرر يختار من العلم، ولا يعرّفه</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 500" width="1380" height="500" role="img" aria-label="من عالم المعرفة إلى الكتاب عبر الاختيار">
+      <g id="funnel"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>نتوسّع في البحث لنختصر في الكتاب بثقة</span><span>08</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>عالم المعرفة ← محرك الاختيار ← الكتاب.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«لا أطلب كتابًا أكبر. الكتاب سيبقى تمهيديًا وفي حدود 12 أسبوعًا. أطلب أن نعرف الكل قبل أن نقرر ما نستبعد. نتوسّع في البحث لكي نستطيع أن نختصر في الكتاب بثقة. كل موضوع يدخل أو يخرج يمرّ بمعايير معلنة: أهميته التأسيسية، وتقارب المصادر عليه، وملاءمته للمبتدئ، وصلته بالكفايات، وثباته، ووجوده في مقرر لاحق.»</p>
+    <h4>اعتراض محتمل</h4><p>«لا نستطيع وضع كل شيء.» — الرد: «صحيح، ولهذا نبني الخريطة الشاملة: لنعرف ماذا نستبعد ولماذا.»</p>
+  </aside>
+</section>
+
+<!-- ============ 9. GAP MAP ============ -->
+<section class="slide" data-title="الوزن البنيوي">
+  <div class="kicker">فرضيات تُختبر، لا أحكام</div>
+  <h2>أين الوزن البنيوي لبقية المجال؟</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 520" width="1380" height="520" role="img" aria-label="خريطة أولية للوزن البنيوي">
+      <g id="gaps"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>تصنيف أولي · يُثبت أو يُنفى في مرحلة خريطة المعرفة</span><span>09</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>تسعة موضوعات بثلاث درجات: ممثَّل، ممثَّل بوزن أقل، فجوة محتملة.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«لا أقول إن هذه الموضوعات غائبة. أقول إن وزنها البنيوي يحتاج فحصًا. التصميم التعليمي موجود، لكنه مستوى ثالث داخل الإنشاء، والفصل يستبعد نماذج التصميم صراحة (ص13). علوم التعلم تظهر ضمنيًا في خصائص المتعلمين. الذكاء الاصطناعي في بند التقنيات الناشئة، بينما يوزّعه إطار اليونسكو 2024 على الأخلاق والبيداغوجيا والتطوير المهني. والإتاحة معيار قبول، بينما يجعلها UDL 3.0 مبدأ تصميم.»</p>
+    <h4>اعتراض محتمل</h4><p>«التصميم موجود.» — الرد: «أتفق. السؤال ليس وجوده بل وزنه وموقعه.»</p>
+    <h4>اعتراض محتمل</h4><p>«الذكاء الاصطناعي في الفصل الأخير.» — الرد: «صحيح. السؤال: هل هو اليوم تقنية ناشئة، أم تحوّل يمس التصميم والتقويم والأخلاق؟ هذا ما يجيب عنه التحليل، لا رأيي.»</p>
+  </aside>
+</section>
+
+<!-- ============ 10. PIPELINE ============ -->
+<section class="slide" data-title="المسار">
+  <div class="kicker">المقترح</div>
+  <h2>مرحلة واحدة ناقصة</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 500" width="1380" height="500" role="img" aria-label="المسار الحالي والمرحلة المقترحة">
+      <g id="pipe"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>سير العمل · ص 6</span><span>10</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>المراحل الحالية 0–8، ومرحلة مقترحة بين التأسيس وهندسة الكتاب.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«لا أقترح هدم المسار. أقترح إدراج مرحلة واحدة قبل اعتماد جدول المحتويات: بناء خريطة المعرفة. ست خطوات: مسح المرجعيات، ومصفوفة تقارب، ومقارنة 2008 بـ2023، وتحليل فجوات، ونموذج اختيار معلن، وتحكيم خارجي للخريطة. بعدها نعود إلى المسار كما هو.»</p>
+    <h4>الدليل</h4><p>المرحلة 1 تثبّت المرجعيات وخريطة الكفايات، والمرحلة 2 تثبّت جدول المحتويات مباشرة؛ لا توجد بينهما خطوة لبناء خريطة المجال.</p>
+  </aside>
+</section>
+
+<!-- ============ 11. LAYERS ============ -->
+<section class="slide" data-title="الطبقات">
+  <div class="kicker">كيف يبقى الكتاب صالحًا</div>
+  <h2>ثابت · متطوّر · متغيّر</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 520" width="1380" height="520" role="img" aria-label="ثلاث طبقات للمعرفة">
+      <g id="layers"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>تطوير لمبدأ «المفهوم المستقر والمثال المتغير» في الإطار · ص 3</span><span>11</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>ثلاث دوائر: النواة الثابتة، الطبقة المتطوّرة، الطبقة المتغيّرة.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«الإطار يقول إن المفاهيم مستقرة والأمثلة متغيرة، وهذا مبدأ صحيح. لكنه يفترض الاستقرار ولا يصنّفه. أقترح تصنيف كل مفهوم صراحة: نواة ثابتة تعيش طويلًا، وطبقة متطوّرة تُراجع كل طبعة، وطبقة متغيّرة من أمثلة وأدوات تُحدَّث دون المساس بالبنية. هكذا يصمد الكتاب، وتبقى أمثلته حديثة.»</p>
+  </aside>
+</section>
+
+<!-- ============ 12. KEEP vs REBUILD ============ -->
+<section class="slide" data-title="ما نحافظ عليه">
+  <div class="kicker">ما لا نطلبه</div>
+  <h2>نحافظ على الأغلب</h2>
+  <div class="body">
+    <svg viewBox="0 0 1380 480" width="1380" height="480" role="img" aria-label="نسبة ما يبقى وما يعاد بناؤه">
+      <g id="keep"></g>
+    </svg>
+  </div>
+  <div class="folio"><span>تقدير أولي من التدقيق العلمي للإطار</span><span>12</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>شريط: يبقى (تقديريًا 60–70%) · يُعدَّل · يُعاد بناؤه.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«لا أطلب إلغاء عمل اللجنة، ولا إعادة الإطار من الصفر. لم أجد في الإطار بندًا واحدًا يستحق الحذف الكامل. ما يُعاد بناؤه محدّد: البنية المعرفية للفصول، وموقع المرجعيات، ونموذج اختيار المحتوى. وما يبقى هو الأغلب: الأدوار، والاستقلال، والبوابات، والأسلوب، والنزاهة، والفصل النموذجي، وخريطة المواءمة بوصفها أداة لاحقة.»</p>
+    <h4>تنبيه</h4><p>النسبة تقدير أولي، لا قياس. قلها كذلك.</p>
+  </aside>
+</section>
+
+<!-- ============ 13. DECISION ============ -->
+<section class="slide" data-title="القرار">
+  <div class="kicker">القرار المقترح</div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:1180px">
+    <p class="quote">تعليق اعتماد جدول المحتويات<br>والانتقال إلى التأليف المتوازي <span style="color:var(--accent)">مؤقتًا</span>،</p>
+    <p class="quote" style="color:var(--soft);font-size:40px;margin-top:18px">إلى حين استكمال خريطة المعرفة والتحقق العلمي منها.</p>
+    <svg viewBox="0 0 1180 90" width="1180" height="90" style="margin-top:46px" aria-hidden="true"><g id="decisionline"></g></svg>
+  </div>
+  <div class="folio"><span>تعليق مؤقت · لا إلغاء</span><span>13</span></div>
+  <aside class="notes">
+    <h4>على الشاشة</h4><p>نص القرار المقترح.</p>
+    <h4>ما يقوله د. أحمد</h4><p>«أقترح أن نعلّق مؤقتًا ثلاثة أشياء فقط: اعتماد جدول المحتويات، وإسناد الفصول، والتأليف المتوازي. ونستمر في كل ما عداها. ونخصص ورشة تأسيس علمي تبني الخريطة وتُحكَّم خارجيًا، ثم نعود إلى المسار. التكلفة أسابيع الآن، والبديل أن يعمل المؤلفون داخل حدود يصعب تغييرها بعد الكتابة.»</p>
+    <h4>اعتراض محتمل</h4><p>«هذا يؤخر المشروع.» — الرد: «التأخير الأكبر هو إعادة بناء فصول مكتوبة. الإطار نفسه يضع الفصل النموذجي قبل التأليف للسبب ذاته: نختبر قبل أن نعمّم.»</p>
+  </aside>
+</section>
+
+<!-- ============ 14. CLOSING ============ -->
+<section class="slide" data-title="الختام">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">
+    <p class="quote" style="color:var(--soft);font-size:48px">لا نريد كتابًا جيد الكتابة فقط.</p>
+    <h1 style="margin-top:26px">نريد الكتاب الصحيح.</h1>
+  </div>
+  <div class="folio"><span>د. أحمد حسين الفيلكاوي</span><span>dr-alfailakawi.com</span></div>
+  <aside class="notes">
+    <h4>ما يقوله د. أحمد (شفهيًا بعد الشريحة)</h4><p>«الكتاب الذي نستطيع أن ندافع علميًا عن سبب وجود كل باب، وكل فصل، وكل موضوع فيه، وعن سبب غياب غيره.» ثم توقف.</p>
+    <h4>إن سُئلت عن خبرتك</h4><p>«من واقع مشاريع تأليف ممتدة، تعلّمت أن أصعب قرار في الكتاب لا يبدأ من الصفحة الأولى، بل من خريطة المعرفة قبل الكتابة.» ثم توقف. لا أرقام ولا مقارنات.</p>
+  </aside>
+</section>
+
+<!-- ============ BACKUP ============ -->
+<section class="slide" data-title="احتياطي: التعريفان" data-backup>
+  <span class="backup-tag">احتياطي</span>
+  <div class="kicker">النصّان الرسميان</div>
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center;direction:ltr;text-align:left">
+    <div><div class="hd" style="font-size:30px;color:var(--soft)">AECT · 2008</div>
+      <p style="font-size:30px;line-height:1.6;margin-top:16px">Educational technology is the study and ethical practice of facilitating learning and improving performance by <b>creating, using, and managing</b> appropriate technological processes and resources.</p>
+      <p class="src">Januszewski &amp; Molenda (Eds.), 2008</p></div>
+    <div style="border-left:1px solid var(--hair);padding-left:60px"><div class="hd" style="font-size:30px;color:var(--accent)">AECT · 2023</div>
+      <p style="font-size:30px;line-height:1.6;margin-top:16px">Educational technology is the ethical study and application of theory, research, and practices to advance knowledge, improve learning and performance, and empower learners through <b>strategic design, management, implementation, and evaluation</b> of learning experiences and environments using appropriate processes and resources.</p>
+      <p class="src">aect.org — 2023 Definition Task Force</p></div>
+  </div>
+  <div class="folio"><span>احتياطي · B1</span><span>B1</span></div>
+  <aside class="notes"><h4>متى تُفتح</h4><p>إذا شكّك أحد في نص أي من التعريفين. تحقّق من الصفحة الرسمية في 1 أكتوبر 2026.</p></aside>
+</section>
+
+<section class="slide" data-title="احتياطي: نصوص الإطار" data-backup>
+  <span class="backup-tag">احتياطي</span>
+  <div class="kicker">من الإطار حرفيًا</div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:34px;font-size:27px;line-height:1.7">
+    <p><b style="color:var(--accent)">ص 3 ·</b> «يمثل تعريف AECT المنشور في كتاب 2008 البنية المفاهيمية الأساسية للمقرر… وأن معيار معرفة المحتوى CK يشمل الإنشاء، والاستخدام، والتقويم، والإدارة، والأخلاقيات.»</p>
+    <p><b style="color:var(--accent)">ص 11 ·</b> «تحدد AECT Standards 2012 صلة هذا الأساس بمعرفة المحتوى، ولا سيما Creating, Using, Managing, Ethics. تستخدم الأدبيات لتحديث الشواهد والتطبيقات والتقنيات والاتجاهات.»</p>
+    <p><b style="color:var(--accent)">ص 13 ·</b> «لا يقدم الفصل مراجعة شاملة لأدوات التقويم أو القياس.» · «لا يحل محل مقررات التصميم التعليمي… ولا يقدم نماذج التصميم بوصفها موضوعًا مستقلًا.»</p>
+    <p><b style="color:var(--accent)">ص 16 ·</b> «يعتمد Januszewski &amp; Molenda (2008) ومعايير AECT (2012) في ضبط المفاهيم المؤسسة… وتستخدم الأدبيات الحديثة لتحديث التطبيقات والشواهد.»</p>
+  </div>
+  <div class="folio"><span>احتياطي · B2</span><span>B2</span></div>
+  <aside class="notes"><h4>متى تُفتح</h4><p>إذا قيل «الإطار لا يقول ذلك». كل اقتباس مع رقم صفحته.</p></aside>
+</section>
+
+<section class="slide" data-title="احتياطي: البروتوكول" data-backup>
+  <span class="backup-tag">احتياطي</span>
+  <div class="kicker">كيف نبني خريطة المعرفة</div>
+  <h2 style="font-size:52px">بروتوكول قابل للتحكيم</h2>
+  <div class="body"><svg viewBox="0 0 1380 420" width="1380" height="420" role="img" aria-label="خطوات البروتوكول"><g id="proto"></g></svg></div>
+  <div class="folio"><span>احتياطي · B3</span><span>B3</span></div>
+  <aside class="notes"><h4>التفاصيل</h4><p>النافذة 2018–2026 مع الكلاسيكيات خطًا تاريخيًا. ست طبقات مصادر: تعريفات ومعايير رسمية، كتب أسس وموسوعات، تحليلات ببليومترية ومراجعات، بحوث محكّمة، أطر مؤسسية (UNESCO, CAST, EDUCAUSE)، أمثلة. عينة من 8–12 برنامج بكالوريوس بينها الكويت والخليج. لجنة تحكيم من 6–9 محكّمين خارج فريق التأليف، بعتبة I-CVI ≥ 0.78 (وإجماع إذا كانت اللجنة 3–5). سجل قرارات لكل إدراج واستبعاد.</p></aside>
+</section>
+
+</div></div>
+
+<div id="notes" aria-live="polite"></div>
+<div id="hud" role="toolbar" aria-label="التحكم">
+  <button id="bPrev" aria-label="السابق">→</button>
+  <button id="bNext" aria-label="التالي">←</button>
+  <button id="bNotes">ملاحظات (N)</button>
+  <button id="bFull">ملء الشاشة (F)</button>
+  <button id="bBack">الاحتياطي (B)</button>
+</div>
+
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+const C={ink:"var(--ink)",soft:"var(--soft)",acc:"var(--accent)",hair:"var(--hair)",wash:"var(--wash)",ember:"var(--ember)",canvas:"var(--canvas)"};
+// unified line icons (24x24 grid)
+const ICONS={
+ roles:"M8 8a3 3 0 1 0 0-.01M16 8a3 3 0 1 0 0-.01M3 20c0-3 2.5-5 5-5s5 2 5 5M11 20c0-3 2.5-5 5-5s5 2 5 5",
+ shield:"M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z M9 12l2 2 4-4",
+ gate:"M4 20V6l8-3 8 3v14 M9 20v-6h6v6 M4 11h16",
+ pen:"M4 20l4-1 11-11-3-3L5 16z M14 7l3 3",
+ integrity:"M12 3v4 M5 7h14 M7 7l-3 7a4 4 0 0 0 6 0z M17 7l-3 7a4 4 0 0 0 6 0z M12 7v13 M8 20h8",
+ flask:"M9 3h6 M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3 M7 15h10",
+ terms:"M4 5h10 M4 10h16 M4 15h10 M4 20h16 M18 3v6",
+ map:"M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z M9 3v15 M15 6v15",
+ target:"M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0 M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0 M12 12h.01",
+ filter:"M3 4h18l-7 8v6l-4 2v-8z",
+ book:"M4 5a2 2 0 0 1 2-2h5v17H6a2 2 0 0 0-2 2z M20 5a2 2 0 0 0-2-2h-5v17h5a2 2 0 0 1 2 2z",
+ brain:"M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3h0V4z M15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3V4z",
+ compass:"M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0 M15.5 8.5l-2 5-5 2 2-5z",
+ layers:"M12 3l9 5-9 5-9-5z M3 13l9 5 9-5 M3 17.5l9 5 9-5",
+ chart:"M4 20V10 M10 20V4 M16 20v-7 M3 20h18",
+ ai:"M7 7h10v10H7z M10 3v4 M14 3v4 M10 17v4 M14 17v4 M3 10h4 M3 14h4 M17 10h4 M17 14h4",
+ access:"M12 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0 M5 9l7 1 7-1 M12 10v4l-3 7 M12 14l3 7",
+ cog:"M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0 M12 2v3 M12 19v3 M2 12h3 M19 12h3 M5 5l2 2 M17 17l2 2 M5 19l2-2 M17 7l2-2",
+ search:"M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0 M16 16l5 5",
+ human:"M12 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0 M5 21c0-4 3-7 7-7s7 3 7 7",
+ scale:"M12 3v18 M5 21h14 M4 8h16 M4 8l-2 6a3 3 0 0 0 5 0z M20 8l-2 6a3 3 0 0 0 5 0z",
+ resource:"M4 4h16v12H4z M8 20h8 M12 16v4",
+ people:"M12 8m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0 M6 20c0-3 3-5 6-5s6 2 6 5",
+ future:"M3 12h14 M13 6l6 6-6 6",
+ check:"M5 12l4 4 10-10"
+};
+function icon(g,name,x,y,size,color){const s=size/24;const gg=el("g",{transform:`translate(${x-size/2},${y-size/2}) scale(${s})`,class:"ico",style:`color:${color||C.ink};stroke-width:${1.6/s*size/24}`},g);el("path",{d:ICONS[name]},gg);return gg}
+function T(g,x,y,txt,o={}){return el("text",Object.assign({x,y,"text-anchor":"middle","font-size":24,fill:C.ink},o),g,txt)}
+
+/* cover stars */
+(function(){const g=document.getElementById("stars");let seed=7;const r=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+ for(let i=0;i<70;i++){const a=r()*Math.PI*2,d=40+r()*200;el("circle",{cx:260+Math.cos(a)*d,cy:260+Math.sin(a)*d,r:1.5+r()*2.2,fill:C.soft,opacity:.35+r()*.4},g)}
+ [[120,140],[410,120],[440,330],[150,400],[300,70]].forEach(p=>el("circle",{cx:p[0],cy:p[1],r:6,fill:C.acc},g));})();
+
+/* 2 strengths: arc of seven */
+(function(){const g=document.getElementById("strengths");const items=[["roles","12 دورًا"],["target","مصفوفة قرار"],["shield","قواعد استقلال"],["gate","بوابات انتقال"],["flask","فصل نموذجي"],["pen","دليل أسلوب"],["integrity","النزاهة"]];
+ el("path",{d:"M90 360 Q690 -100 1290 360",fill:"none",stroke:C.hair,"stroke-width":1.2},g);
+ items.forEach((it,i)=>{const t=i/(items.length-1);const x=1290-t*1200;const y=(1-t)*(1-t)*420 + 2*(1-t)*t*(-40) + t*t*420 - 60;
+  el("circle",{cx:x,cy:y,r:62,fill:C.canvas,stroke:C.ink,"stroke-width":1.3},g);icon(g,it[0],x,y,52,C.acc);T(g,x,y+106,it[1],{"font-size":25,"font-weight":500});});
+ T(g,690,505,"يبقى كما هو",{"font-size":22,fill:C.soft});})();
+
+/* 3 seven chapters */
+(function(){const g=document.getElementById("seven");const ch=["مدخل إلى المجال","المصادر","الإنشاء","الاستخدام","الإدارة","الأخلاقيات","الحاضر والمستقبل"];
+ const w=160,gap=22,total=ch.length*w+(ch.length-1)*gap,x0=(1380+total)/2;
+ ch.forEach((c,i)=>{const x=x0-i*(w+gap)-w;el("rect",{x,y:60,width:w,height:250,fill:C.canvas,stroke:C.ink,"stroke-width":1.2},g);
+  T(g,x+w/2,130,String(i+1),{"font-size":56,class:"hd",fill:C.acc});
+  const words=c.split(" ");words.forEach((wd,j)=>T(g,x+w/2,215+j*32,wd,{"font-size":25}));
+  el("line",{x1:x+w/2,y1:310,x2:690,y2:390,stroke:C.hair},g)});
+ el("circle",{cx:690,cy:410,r:30,fill:C.acc},g);T(g,690,423,"؟",{"font-size":40,fill:"#fff",class:"hd"});})();
+
+/* 4 definition -> chapters */
+(function(){const g=document.getElementById("map08");const L=[["technological resources","المصادر","2"],["creating","الإنشاء","3"],["using","الاستخدام","4"],["managing","الإدارة","5"],["ethical practice","الأخلاقيات","6"]];
+ T(g,1130,30,"تعريف AECT · 2008",{"font-size":22,fill:C.soft});T(g,260,30,"فصول الكتاب",{"font-size":22,fill:C.soft});
+ L.forEach((l,i)=>{const y=90+i*88;
+  el("text",{x:1300,y:y+8,"text-anchor":"end","font-size":30,fill:C.ink,direction:"ltr",style:"font-style:italic"},g,l[0]);
+  el("path",{d:`M880 ${y} C 700 ${y}, 650 ${y}, 470 ${y}`,fill:"none",stroke:C.acc,"stroke-width":1.6},g);
+  el("circle",{cx:880,cy:y,r:5,fill:C.acc},g);el("circle",{cx:470,cy:y,r:5,fill:C.acc},g);
+  el("rect",{x:110,y:y-32,width:330,height:64,fill:C.wash,stroke:"none"},g);
+  T(g,400,y+10,l[2],{"font-size":30,class:"hd",fill:C.acc});T(g,240,y+10,l[1],{"font-size":30,"font-weight":500});});
+ T(g,690,488,"تطابق واحد لواحد · الوثيقة تسمّيه «الأصل المفاهيمي»",{"font-size":24,fill:C.soft});})();
+
+/* 5 evolution */
+(function(){const g=document.getElementById("evo");
+ T(g,1120,40,"2008",{"font-size":54,class:"hd",fill:C.soft});T(g,260,40,"2023",{"font-size":54,class:"hd",fill:C.acc});
+ el("line",{x1:690,y1:10,x2:690,y2:500,stroke:C.hair},g);
+ const rows=[["creating","—","out"],["using","—","out"],["managing","management","same"],["—","strategic design","in"],["—","implementation","in"],["—","evaluation","in"],["facilitate learning","improve learning & performance","same"],["—","empower learners","in"],["—","advance knowledge","in"]];
+ rows.forEach((r,i)=>{const y=110+i*44;const st=r[2];
+  el("text",{x:1120,y,"text-anchor":"middle","font-size":25,fill:st==="out"?C.soft:C.ink,direction:"ltr","text-decoration":st==="out"?"line-through":"none"},g,r[0]);
+  el("text",{x:260,y,"text-anchor":"middle","font-size":25,fill:st==="in"?C.acc:C.ink,"font-weight":st==="in"?700:400,direction:"ltr"},g,r[1]);
+  if(st==="same")el("line",{x1:900,y1:y-8,x2:480,y2:y-8,stroke:C.hair,"stroke-dasharray":"4 6"},g);});
+ const lg=[[C.acc,"دخل"],[C.ink,"بقي"],[C.soft,"خرج"]];lg.forEach((l,i)=>{el("circle",{cx:820-i*120,cy:505,r:7,fill:l[0]},g);T(g,780-i*120,513,l[1],{"font-size":21,fill:C.soft})});})();
+
+/* 6 evaluation */
+(function(){const g=document.getElementById("evalg");const cols=[["ص 3","المرجعية",true,"«…والتقويم…»"],["ص 11","الصلة بالمعايير",false,"Creating · Using · Managing · Ethics"],["ص 13","الفصل الرابع",null,"تقويم المصادر فقط"]];
+ cols.forEach((c,i)=>{const x=1130-i*440;
+  T(g,x,60,c[0],{"font-size":44,class:"hd",fill:C.acc});T(g,x,105,c[1],{"font-size":24,fill:C.soft});
+  el("circle",{cx:x,cy:240,r:86,fill:c[2]===true?C.acc:C.canvas,stroke:c[2]===false?C.soft:C.acc,"stroke-width":2,"stroke-dasharray":c[2]===false?"6 8":"none"},g);
+  if(c[2]===null){el("path",{d:`M${x} 154 A86 86 0 0 1 ${x+86} 240 L${x} 240 Z`,fill:C.acc},g)}
+  icon(g,"scale",x,240,70,c[2]===true?"#fff":c[2]===false?C.soft:C.ink);
+  T(g,x,385,c[3],{"font-size":c[2]===false?21:26,direction:c[2]===false?"ltr":"rtl"});
+  if(i<2)el("path",{d:`M${x-150} 240 h-140`,stroke:C.hair,"stroke-width":1.5,"marker-end":"url(#ar)"},g);});
+ const d=el("defs",{},g);const m=el("marker",{id:"ar",viewBox:"0 0 10 10",refX:8,refY:5,markerWidth:8,markerHeight:8,orient:"auto"},d);el("path",{d:"M0 0L10 5L0 10z",fill:C.soft},m);
+ T(g,690,470,"وفي تعريف 2023: evaluation وظيفة صريحة",{"font-size":25,fill:C.soft});})();
+
+/* 7 two maps */
+(function(){const g=document.getElementById("twomaps");
+ // right: alignment (grid of 7x lines)
+ const rx=1040;T(g,rx,40,"خريطة المواءمة",{"font-size":36,class:"hd"});T(g,rx,80,"أين ندرّس الهدف؟",{"font-size":25,fill:C.soft});
+ for(let i=0;i<7;i++){const y=130+i*44;el("circle",{cx:rx+150,cy:y,r:7,fill:C.ink},g);el("line",{x1:rx+140,y1:y,x2:rx-140,y2:y,stroke:C.ink,"stroke-width":1.2},g);el("rect",{x:rx-160,y:y-9,width:18,height:18,fill:C.canvas,stroke:C.ink},g)}
+ T(g,rx+150,460,"كفاية",{"font-size":20,fill:C.soft});T(g,rx-150,460,"فصل",{"font-size":20,fill:C.soft});
+ // left: knowledge network
+ const lx=340;T(g,lx,40,"خريطة المعرفة",{"font-size":36,class:"hd",fill:C.acc});T(g,lx,80,"ماذا يعرف المجال؟",{"font-size":25,fill:C.soft});
+ let seed=3;const r=()=>{seed=(seed*9301+49297)%233280;return seed/233280};const pts=[];for(let i=0;i<26;i++)pts.push([lx+(r()-.5)*420,280+(r()-.5)*300]);
+ pts.forEach((p,i)=>{pts.forEach((q,j)=>{if(j>i&&Math.hypot(p[0]-q[0],p[1]-q[1])<120)el("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:C.acc,"stroke-width":.8,opacity:.45},g)})});
+ pts.forEach((p,i)=>el("circle",{cx:p[0],cy:p[1],r:i%5===0?9:5,fill:i%5===0?C.acc:C.canvas,stroke:C.acc,"stroke-width":1.4},g));
+ el("line",{x1:690,y1:120,x2:690,y2:440,stroke:C.hair},g);T(g,690,480,"الأولى تأتي بعد الثانية",{"font-size":24,"font-weight":500});})();
+
+/* 8 funnel */
+(function(){const g=document.getElementById("funnel");
+ el("path",{d:"M1300 70 L1300 430 L820 330 L820 170 Z",fill:C.wash,stroke:C.hair},g);
+ let seed=11;const r=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+ for(let i=0;i<120;i++){const x=900+r()*380;const half=100+(x-820)/480*80;el("circle",{cx:x,cy:250+(r()-.5)*2*half*.95,r:3,fill:C.soft,opacity:.55},g)}
+ T(g,1060,40,"عالم المعرفة",{"font-size":32,class:"hd"});T(g,1060,470,"مئات الموضوعات",{"font-size":22,fill:C.soft});
+ el("circle",{cx:690,cy:250,r:84,fill:C.canvas,stroke:C.acc,"stroke-width":2},g);icon(g,"filter",690,250,64,C.acc);
+ T(g,690,40,"محرّك الاختيار",{"font-size":32,class:"hd",fill:C.acc});T(g,690,470,"معايير معلنة وأوزان مبرَّرة",{"font-size":22,fill:C.soft});
+ for(let i=0;i<9;i++)el("circle",{cx:540-i*22,cy:250+((i%3)-1)*22,r:4,fill:C.acc},g);
+ el("rect",{x:110,y:150,width:200,height:200,fill:C.canvas,stroke:C.ink,"stroke-width":1.4},g);icon(g,"book",210,250,96,C.ink);
+ T(g,210,40,"الكتاب",{"font-size":32,class:"hd"});T(g,210,470,"تمهيدي · 12 أسبوعًا",{"font-size":22,fill:C.soft});})();
+
+/* 9 gaps */
+(function(){const g=document.getElementById("gaps");
+ const items=[["ethics","scale","الأخلاقيات",3],["future","future","الاستشراف",3],["res","resource","المصادر والبيئات",3],["mgmt","cog","الإدارة والتنفيذ",2],["ai","ai","الذكاء الاصطناعي والبيانات",2],["acc","access","الإتاحة وUDL",2],["design","pen","التصميم التعليمي",1],["eval","chart","التقويم",1],["learn","brain","علوم التعلم",1]];
+ items.forEach((it,i)=>{const col=i%3,row=Math.floor(i/3);const x=1120-col*430,y=70+row*150;const lv=it[3];
+  const fill=lv===3?C.ink:lv===2?C.canvas:C.canvas;
+  el("circle",{cx:x+120,cy:y+40,r:44,fill:lv===3?C.ink:C.canvas,stroke:lv===1?C.acc:C.ink,"stroke-width":lv===1?2.4:1.3,"stroke-dasharray":lv===1?"5 6":"none"},g);
+  if(lv===2)el("path",{d:`M${x+120} ${y-4} A44 44 0 0 1 ${x+120} ${y+84} Z`,fill:C.ink},g);
+  icon(g,it[1],x+120,y+40,40,lv===3?"#fff":lv===2?C.acc:C.acc);
+  el("text",{x:x+50,y:y+50,"text-anchor":"start","font-size":28,fill:C.ink,"font-weight":lv===1?700:400},g,it[2]);});
+ const lg=[[3,"ممثَّل"],[2,"وزن أقل"],[1,"فجوة محتملة"]];lg.forEach((l,i)=>{const x=1000-i*230;
+  el("circle",{cx:x,cy:500,r:12,fill:l[0]===3?C.ink:C.canvas,stroke:l[0]===1?C.acc:C.ink,"stroke-dasharray":l[0]===1?"3 4":"none","stroke-width":1.5},g);
+  if(l[0]===2)el("path",{d:`M${x} 488 A12 12 0 0 1 ${x} 512 Z`,fill:C.ink},g);
+  el("text",{x:x-24,y:508,"text-anchor":"start","font-size":22,fill:C.soft},g,l[1]);});})();
+
+/* 10 pipeline */
+(function(){const g=document.getElementById("pipe");const st=["التكليف","التأسيس","★","هندسة الكتاب","الفصل النموذجي","التأليف المتوازي","المراجعة","التوحيد","الإنتاج"];
+ const n=st.length,x0=1300,step=1200/(n-1);
+ el("line",{x1:x0,y1:200,x2:x0-1200,y2:200,stroke:C.ink,"stroke-width":1.4},g);
+ st.forEach((s,i)=>{const x=x0-i*step;
+  if(s==="★"){el("circle",{cx:x,cy:200,r:56,fill:C.acc},g);icon(g,"map",x,200,48,"#fff");
+   T(g,x,310,"خريطة المعرفة",{"font-size":30,class:"hd",fill:C.acc});
+   ["مسح","تقارب","مقارنة","فجوات","اختيار","تحكيم"].forEach((w,j)=>T(g,x,355+j*0+ (j<3?0:36),"",{}));
+   T(g,x,350,"مسح · تقارب · مقارنة",{"font-size":21,fill:C.soft});T(g,x,382,"فجوات · اختيار · تحكيم",{"font-size":21,fill:C.soft});
+   el("path",{d:`M${x} 120 v-40`,stroke:C.acc,"stroke-width":1.5},g);T(g,x,64,"مقترح",{"font-size":22,fill:C.acc,"font-weight":700});
+  } else {const idx=i<2?i:i-1;el("circle",{cx:x,cy:200,r:12,fill:C.canvas,stroke:C.ink,"stroke-width":1.4},g);
+   T(g,x,150,String(idx),{"font-size":22,fill:C.soft});const ws=s.split(" ");ws.forEach((w,j)=>T(g,x,252+j*30,w,{"font-size":23}));}
+ });
+ T(g,690,470,"تعليق مؤقت لما بعد النجمة فقط · ما قبلها يستمر",{"font-size":24,fill:C.soft});})();
+
+/* 11 layers */
+(function(){const g=document.getElementById("layers");const cx=430,cy=260;
+ [[240,C.wash,"متغيّر"],[160,"#E8ECEF","متطوّر"],[82,C.acc,"ثابت"]].forEach((l,i)=>{el("circle",{cx,cy,r:l[0],fill:l[1],stroke:i===0?C.hair:"none"},g)});
+ T(g,cx,cy+10,"النواة",{"font-size":30,class:"hd",fill:"#fff"});
+ const rows=[["ثابت","مبادئ التعلم · التصميم · التقويم · الأخلاق · التفكير المنظومي","يعيش طويلًا",C.acc,cy],["متطوّر","النماذج · الأطر · الأدوار المهنية · التحليلات","يُراجع كل طبعة",C.ink,cy-122],["متغيّر","المنصات · الأدوات · نماذج ذكاء اصطناعي بعينها","يُحدَّث دون مساس بالبنية",C.soft,cy-205]];
+ rows.forEach((r,i)=>{const y=110+i*150;const px=cx+(i===0?82:i===1?160:240)*0.0;
+  el("line",{x1:[cx+60,cx+130,cx+200][i],y1:[cy,cy-90,cy-150][i],x2:780,y2:y,stroke:C.hair},g);
+  el("circle",{cx:780,cy:y,r:5,fill:r[3]},g);
+  el("text",{x:1300,y:y-14,"text-anchor":"start","font-size":34,fill:r[3],class:"hd"},g,r[0]);
+  el("text",{x:1300,y:y+24,"text-anchor":"start","font-size":23,fill:C.ink},g,r[1]);
+  el("text",{x:1300,y:y+56,"text-anchor":"start","font-size":20,fill:C.soft},g,r[2]);});})();
+
+/* 12 keep bar */
+(function(){const g=document.getElementById("keep");const segs=[[65,C.ink,"يبقى","الأدوار · الاستقلال · البوابات|الأسلوب · النزاهة · الفصل النموذجي"],[20,"#9AA6B2","يُعدَّل","معايير القبول|المرجعيات|الحسم العلمي"],[15,C.acc,"يُعاد بناؤه","بنية الفصول|نموذج الاختيار"]];
+ let x=1300;segs.forEach(s=>{const w=s[0]/100*1200;el("rect",{x:x-w,y:150,width:w-6,height:90,fill:s[1]},g);
+  T(g,x-w/2,120,s[2],{"font-size":30,class:"hd",fill:s[1]===C.ink?C.ink:s[1]});
+  const words=s[3].split("|");words.forEach((wd,j)=>T(g,x-w/2,290+j*34,wd,{"font-size":s[0]>30?24:21,fill:C.soft}));x-=w;});
+ T(g,690,470,"لا يوجد بند يستحق الحذف الكامل",{"font-size":28,"font-weight":500});})();
+
+/* 13 decision line */
+(function(){const g=document.getElementById("decisionline");const items=[["check","يستمر: كل ما سبق",C.ink],["gate","يُعلَّق: الفهرس · الإسناد · التأليف",C.acc],["map","ورشة: خريطة المعرفة",C.acc]];
+ items.forEach((it,i)=>{const x=1150-i*400;icon(g,it[0],x-14,45,38,it[2]);el("text",{x:x-50,y:54,"text-anchor":"start","font-size":25,fill:it[2]},g,it[1])});})();
+
+/* B3 protocol */
+(function(){const g=document.getElementById("proto");const st=[["search","مسح","6 طبقات مصادر"],["layers","ترميز","قاموس موحد"],["chart","تقارب","مصفوفة أدلة"],["compass","فجوات","A–H"],["filter","اختيار","معايير معلنة"],["people","تحكيم","6–9 محكّمين"]];
+ st.forEach((s,i)=>{const x=1250-i*224;el("circle",{cx:x,cy:150,r:58,fill:C.canvas,stroke:C.ink,"stroke-width":1.3},g);icon(g,s[0],x,150,48,C.acc);
+  T(g,x,260,s[1],{"font-size":30,class:"hd"});T(g,x,300,s[2],{"font-size":21,fill:C.soft});if(i<5)el("line",{x1:x-66,y1:150,x2:x-158,y2:150,stroke:C.hair,"stroke-width":1.4},g)});
+ T(g,690,390,"نافذة 2018–2026 · سجل قرار لكل إدراج واستبعاد",{"font-size":23,fill:C.soft});})();
+
+/* ===== engine ===== */
+const stage=document.getElementById("stage"),slides=[...document.querySelectorAll(".slide")],notes=document.getElementById("notes"),bar=document.getElementById("bar");
+const mainCount=slides.filter(s=>!s.hasAttribute("data-backup")).length;
+let i=0;const h=parseInt(location.hash.slice(1));if(h>0&&h<=slides.length)i=h-1;
+function fit(){const s=Math.min(innerWidth/1600,innerHeight/900);stage.style.transform=`scale(${s})`}
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,k)=>s.classList.toggle("on",k===i));
+ const a=slides[i].querySelector(".notes");notes.innerHTML=`<h4 style="margin-top:0">${i+1} / ${slides.length} · ${slides[i].dataset.title}</h4>`+(a?a.innerHTML:"");
+ bar.style.width=(Math.min(i+1,mainCount)/mainCount*100)+"%";history.replaceState(null,"","#"+(i+1))}
+document.querySelectorAll(".notes").forEach(n=>n.style.display="none");
+const next=()=>{if(i===mainCount-1)return;show(i+1)},prev=()=>{if(i===mainCount)return;show(i-1)};
+const toggleNotes=()=>notes.classList.toggle("show");
+const full=()=>{if(!document.fullscreenElement)(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen||function(){}).call(document.documentElement);else document.exitFullscreen&&document.exitFullscreen()};
+addEventListener("keydown",e=>{const k=e.key;if((k===" "||k==="Enter")&&e.target.closest&&e.target.closest("button"))return;
+ if(["ArrowLeft","PageDown"," ","Enter"].includes(k)){e.preventDefault();next()}
+ else if(["ArrowRight","PageUp","Backspace"].includes(k)){e.preventDefault();prev()}
+ else if(k==="Home")show(0);else if(k==="End")show(mainCount-1);
+ else if(k==="n"||k==="N"||k==="ى")toggleNotes();else if(k==="f"||k==="F"||k==="ب")full();
+ else if(k==="b"||k==="B"||k==="لا")show(i<mainCount?mainCount:0);});
+let tx=null,ty=null;addEventListener("touchstart",e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+addEventListener("touchend",e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){dx>0?next():prev()}tx=null});
+document.getElementById("viewport").addEventListener("click",e=>{if(e.target.closest("#hud"))return;const r=innerWidth;(e.clientX<r/2)?next():prev()});
+document.getElementById("bNext").onclick=e=>{e.stopPropagation();next()};document.getElementById("bPrev").onclick=e=>{e.stopPropagation();prev()};
+document.getElementById("bNotes").onclick=e=>{e.stopPropagation();toggleNotes()};document.getElementById("bFull").onclick=e=>{e.stopPropagation();full()};
+document.getElementById("bBack").onclick=e=>{e.stopPropagation();show(i<mainCount?mainCount:0)};
+addEventListener("resize",fit);fit();show(i);
+})();
+</script>
+</body>
+</html>

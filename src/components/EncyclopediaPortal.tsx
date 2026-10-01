@@ -922,7 +922,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
     <>
       <section className="px-6 pb-14 pt-28 md:px-11 md:pb-20 md:pt-40">
         <div className="mx-auto max-w-shell">
-          <FadeUp><Link to="/publications" className="text-[.8rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link></FadeUp>
+          <FadeUp><Link to="/publications" className="-my-2 inline-block py-2 text-[.8rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link></FadeUp>
 
           <div className="mt-8 grid items-start gap-9 lg:grid-cols-[minmax(15rem,.58fr)_minmax(0,1.42fr)] lg:gap-16">
             <FadeUp delay={0.04}>

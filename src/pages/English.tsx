@@ -98,7 +98,7 @@ export function EnglishHome() {
               </Link>
               <span className="flex items-center gap-4 ps-2 text-soft">
                 {socials.map((s) => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="transition-colors hover:text-accent">
+                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="-m-2 inline-flex p-2 transition-colors hover:text-accent">
                     <SocialIcon name={s.label} size={18} />
                   </a>
                 ))}

@@ -240,7 +240,7 @@ export default function BookDetail() {
       <section className="px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-28 md:px-11 md:pb-24 md:pt-44">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <Link to="/publications" viewTransition className="text-[.85rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link>
+            <Link to="/publications" viewTransition className="-my-2 inline-block py-2 text-[.85rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link>
           </FadeUp>
 
           <div className="book-detail-layout mt-8 grid items-start gap-8 md:mt-10 md:grid-cols-[1fr_1.1fr] md:gap-16">

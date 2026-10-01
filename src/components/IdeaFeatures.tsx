@@ -3,6 +3,7 @@ import { arabicCountPhrase, CONNECTION_FORMS } from '../lib/arabic-count.ts'
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
    1) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
    2) 🖼 بطاقة اقتباس: صورة أنيقة بجملةٍ منتقاة + توقيع الدكتور، للمشاركة الراقية. */
+import { Sparkles } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
@@ -943,7 +944,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
                     <button key={t.key} type="button" onPointerDown={(event) => firstPress(event, () => chooseTemplate(t.key))} onClick={(event) => { if (event.detail === 0) chooseTemplate(t.key) }}
                       title={isSmart ? `اخترناه لك — النصّ ${TONE_LABEL[smartTone]}` : t.hint}
                       className={`rounded-full px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${template === t.key ? 'bg-canvas text-ink' : 'border border-canvas/30 bg-transparent text-canvas/[.85] hover:border-canvas/70'}`}>
-                      {isSmart && '✨ '}{t.label}
+                      {isSmart && <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" className="-mt-0.5 ml-1 inline-block" />}{t.label}
                     </button>
                   )
                 })}

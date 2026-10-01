@@ -14,7 +14,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { loadArticleBodies } from '../../lib/article-bodies'
+import { loadArticleBodies, loadDemoBodySample } from '../../lib/article-bodies'
+import { DEMO_MODE } from '../../demo/mode'
 import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { useCmsContent } from '../../lib/content'
 import { currentSeason } from '../../lib/seasons'
@@ -308,7 +309,23 @@ export function TweetStudio() {
 
   useEffect(() => {
     let active = true
-    loadArticleBodies().then((map) => { if (active) setBodies(map) }).catch(() => undefined)
+    if (DEMO_MODE) {
+      /* العرض: عيّنة المتون ورنين القرّاء يصلان معاً في تحديث واحد، فلا يُعاد تركيب الصياغات الثقيلة مرتين. */
+      void (async () => {
+        try {
+          const [sample, db, { articles: all }] = await Promise.all([loadDemoBodySample(), getDb(), import('../../data')])
+          if (!active) return
+          let rows: ResonanceRow[] = []
+          if (db) {
+            const { collection, getDocs } = await import('firebase/firestore')
+            rows = (await getDocs(collection(db, 'article_highlights'))).docs.map((item) => item.data() as ResonanceRow)
+          }
+          if (!active) return
+          setResonant(resolveResonantQuotes(rows, all.map((article) => ({ slug: article.slug, title: article.title, body: sample[article.slug] || '' })), { limit: 60 }))
+          setBodies(sample)
+        } catch { /* العيّنة اختيارية */ }
+      })()
+    } else loadArticleBodies().then((map) => { if (active) setBodies(map) }).catch(() => undefined)
     fetchPublishedExtras<RadarItem>('site_radar').then((items) => { if (active) setRadar(items.slice(0, 40)) }).catch(() => undefined)
     return () => { active = false }
   }, [])
@@ -336,6 +353,7 @@ export function TweetStudio() {
   /* رنينُ القرّاء: ما ظلّلوه في المتون. يُجلب مرةً واحدة ثم يُحلّ إلى جُملٍ
      مقروءة بعد وصول المتون — ولذلك يعتمد على `bodies` لا على التركيب وحده. */
   useEffect(() => {
+    if (DEMO_MODE) return
     if (!cms.articles.length || !Object.keys(bodies).length) return
     let active = true
     void (async () => {

@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import { createReadStream, existsSync, statSync } from 'node:fs'
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, normalize, resolve } from 'node:path'
 // @ts-ignore -- إضافة بلا أنواع: تحقن بصمة البناء وتطبعها في dist/build-id.json و sw.js
 import { buildStamp } from './scripts/build-stamp.mjs'
@@ -11,7 +11,7 @@ import { buildStamp } from './scripts/build-stamp.mjs'
    لا كلام مولَّد ولا شبكة: يمنع أخطاء التحميل ويُظهر مدةً وشريط تقدّم متماسكين في العرض. */
 function demoSilentWav(seconds = 60): Buffer {
   const rate = 8000
-  const data = Buffer.alloc(rate * seconds, 128)
+  const data = Buffer.alloc(Math.round(rate * seconds), 128)
   const h = Buffer.alloc(44)
   h.write('RIFF', 0); h.writeUInt32LE(36 + data.length, 4); h.write('WAVEfmt ', 8)
   h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22)
@@ -20,9 +20,21 @@ function demoSilentWav(seconds = 60): Buffer {
   return Buffer.concat([h, data])
 }
 
+/* مدة الصامت تُشتقّ من بيانات الملف الحقيقية (حجم mp3 في audio-meta.json ÷ 128kbps) فتتطابق المدة مع
+   الموجة الحقيقية المحفوظة في audio-peaks.json؛ ما لا بيانات له يأخذ 60 ثانية. */
+const demoSilentCache = new Map<number, Buffer>()
+function demoSilentFor(path: string, meta: Record<string, { bytes?: number }>): Buffer {
+  const bytes = meta[path.split('/').pop() || '']?.bytes
+  const seconds = bytes ? Math.max(5, Math.min(1800, Math.round(bytes / 16000))) : 60
+  let wav = demoSilentCache.get(seconds)
+  if (!wav) { wav = demoSilentWav(seconds); demoSilentCache.set(seconds, wav) }
+  return wav
+}
+
 function demoStaticAssetsPlugin(): Plugin {
-  const silentWav = demoSilentWav()
   const root = resolve('.')
+  let audioMeta: Record<string, { bytes?: number }> = {}
+  try { audioMeta = JSON.parse(readFileSync(join(root, 'src/data/audio-meta.json'), 'utf8')) } catch { /* بلا بيانات: مدة افتراضية */ }
   const types: Record<string, string> = { '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.pdf': 'application/pdf', '.mp3': 'audio/mpeg', '.json': 'application/json' }
   const mount = (server: { middlewares: { use: (fn: (req: any, res: any, next: () => void) => void) => void } }) => {
     server.middlewares.use((req, res, next) => {
@@ -32,6 +44,7 @@ function demoStaticAssetsPlugin(): Plugin {
       const file = normalize(join(root, path))
       if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) {
         if (!/\.(mp3|wav|m4a)$/i.test(path) || !['audio', 'music'].includes(top)) return next()
+        const silentWav = demoSilentFor(path, audioMeta)
         const range = /bytes=(\d*)-(\d*)/.exec(String(req.headers?.range || ''))
         res.setHeader('Content-Type', 'audio/wav'); res.setHeader('Accept-Ranges', 'bytes')
         if (range) {

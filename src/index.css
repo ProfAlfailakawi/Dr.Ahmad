@@ -900,6 +900,7 @@ body.audio-dock-open .reader-resume-prompt {
   border-radius: 999px; font-weight: 600; transition: top .3s;
 }
 .skip-link:focus { top: 1rem; }
+@media print { .skip-link { display: none; } }
 
 :focus-visible {
   outline: 2px solid rgb(var(--c-accent));

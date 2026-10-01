@@ -305,6 +305,8 @@ export function TweetStudio() {
   const [ledgerOpen, setLedgerOpen] = useState(false)
   const [resonant, setResonant] = useState<ResonantQuote[]>([])
   const [resonanceMode, setResonanceMode] = useState(false)
+  /* قبل وصول التظليلات يظهر «يُحمَّل…» بنبض هادئ بدل «لا يوجد بعد» الذي يوحي بالفراغ. */
+  const [resonanceLoaded, setResonanceLoaded] = useState(false)
   const [correctionHoldSlugs, setCorrectionHoldSlugs] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
@@ -323,7 +325,8 @@ export function TweetStudio() {
           if (!active) return
           setResonant(resolveResonantQuotes(rows, all.map((article) => ({ slug: article.slug, title: article.title, body: sample[article.slug] || '' })), { limit: 60 }))
           setBodies(sample)
-        } catch { /* العيّنة اختيارية */ }
+          setResonanceLoaded(true)
+        } catch { if (active) setResonanceLoaded(true) /* العيّنة اختيارية */ }
       })()
     } else loadArticleBodies().then((map) => { if (active) setBodies(map) }).catch(() => undefined)
     fetchPublishedExtras<RadarItem>('site_radar').then((items) => { if (active) setRadar(items.slice(0, 40)) }).catch(() => undefined)
@@ -366,7 +369,8 @@ export function TweetStudio() {
         const rows = snapshot.docs.map((item) => item.data() as ResonanceRow)
         const articles = cms.articles.map((article) => ({ slug: article.slug, title: article.title, body: article.body || bodies[article.slug] || '' }))
         setResonant(resolveResonantQuotes(rows, articles, { limit: 60 }))
-      } catch { /* غياب الرنين لا يوقف الاستوديو — يبقى الأرشيف كله متاحاً */ }
+        setResonanceLoaded(true)
+      } catch { if (active) setResonanceLoaded(true) /* غياب الرنين لا يوقف الاستوديو — يبقى الأرشيف كله متاحاً */ }
     })()
     return () => { active = false }
   }, [bodies, cms.articles])
@@ -562,11 +566,11 @@ export function TweetStudio() {
           >خطة الأسبوع — سبعة أيام</button>
           <button
             type="button"
-            className={resonanceMode ? primary : ghost}
+            className={`${resonanceMode ? primary : ghost}${resonanceLoaded ? '' : ' animate-pulse'}`}
             onClick={() => { setResonanceMode((current) => !current); setBatchMode(false); setWeeklyMode(false); setThread(null) }}
             disabled={!safeResonant.length}
             title={safeResonant.length ? '' : 'لم يظلّل القرّاء شيئاً صالحا لإعادة الاستخدام الآن'}
-          >رنين القرّاء{safeResonant.length ? ` — ${arabicCountPhrase(safeResonant.length, SENTENCE_FORMS)}` : ' (لا يوجد بعد)'}</button>
+          >رنين القرّاء{safeResonant.length ? ` — ${arabicCountPhrase(safeResonant.length, SENTENCE_FORMS)}` : (resonanceLoaded ? ' (لا يوجد بعد)' : ' — يُحمَّل…')}</button>
           {activeSource && !batchMode && !weeklyMode && !resonanceMode && (
             <button type="button" className={ghost} onClick={() => setThread(buildThread(activeSource, { variation }))}>ابنِ خيطاً</button>
           )}

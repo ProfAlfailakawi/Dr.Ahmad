@@ -8,6 +8,7 @@
  * 3) ثلاث بطاقات: مقال جديد · سؤال الأسبوع · لقاء قادم.
  *    كل ما يُنشر هنا يظهر في الموقع فوراً — بلا رفع ملفات.
  */
+import { DEMO_MODE } from '../demo/mode'
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { UsageAnalytics } from '../components/admin/UsageAnalytics'
 import GlyphLoader from '../components/GlyphLoader'
@@ -238,7 +239,8 @@ function PushGateBanner() {
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
 
-  if (permission === 'unsupported') return null
+  /* العرض التوضيحي: لا جهاز حقيقي يُربط، فلا نعرض دعوة تفعيل إشعارات بلا معنى. */
+  if (DEMO_MODE || permission === 'unsupported') return null
   if (registered && permission === 'granted' && !notice) {
     return (
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-canvas px-4 py-2.5" data-push-gate="ready">

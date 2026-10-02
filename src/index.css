@@ -8276,3 +8276,32 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 @media (min-width: 900px) {
   .count-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
 }
+
+/* ---------- سماء المقالات على الهاتف: خطوط الممرّات والسنوات ≥ 11px فعلية ----------
+   الخريطة مرسومة في viewBox عرضه 680 وتُصغَّر إلى عرض الشاشة، فنكبّر وحدات الخط
+   بنسبة 680 / عرض الحاوية حتى يبقى الحجم الظاهر ثابتاً (≥ 11px) دون لمس الإحداثيات. */
+.atlas-map-mobile .atlas-lane-label { font-size: 12.5px; }
+.atlas-map-mobile .atlas-year-label { font-size: 17px; }
+@media (max-width: 640px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 14.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 15px; }
+}
+@media (max-width: 520px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 17.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 17.5px; }
+}
+@media (max-width: 430px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 21.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 21.5px; }
+}
+@media (max-width: 380px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 23.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 23.5px; }
+}
+@media (max-width: 340px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 27px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 27px; }
+}
+@media (max-width: 640px) {
+  .atlas-map-mobile .atlas-year-label--up { transform: translateY(-34px); }
+}

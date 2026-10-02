@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { MessageCircle, Mic, Presentation, Sparkles, type LucideIcon } from 'lucide-react'
 import { EASE } from './ui'
 import { MORPH_ID, MorphRing, useMorphTransition } from './morph'
 import { firebaseEnabled, getDb } from '../lib/firebase'
@@ -10,6 +11,8 @@ const TOPICS = [
   { key: 'لقاء إعلامي', ar: 'لقاء إعلامي', en: 'Media interview', dAr: 'تلفزيون، إذاعة، بودكاست، صحافة', dEn: 'Television, radio, podcast, or press', hintAr: 'اسم البرنامج أو الوسيلة، محور الحلقة، وموعد التسجيل أو البث.', hintEn: 'Include the programme or outlet, topic, and proposed recording or broadcast date.' },
   { key: 'أخرى', ar: 'أخرى', en: 'Other', dAr: 'تعاون بحثي، فكرة، أو أي شيء آخر', dEn: 'Research collaboration, an idea, or another request', hintAr: 'اكتب ما يدور في بالك بحرية…', hintEn: 'Tell me what you have in mind.' },
 ] as const
+
+const TOPIC_ICON: Record<string, LucideIcon> = { 'استشارة': MessageCircle, 'محاضرة أو ورشة': Presentation, 'لقاء إعلامي': Mic, 'أخرى': Sparkles }
 
 type TopicKey = (typeof TOPICS)[number]['key']
 type Locale = 'ar' | 'en'
@@ -127,9 +130,12 @@ export function ContactForm({ locale = 'ar' }: { locale?: Locale }) {
       {!active ? (
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           {TOPICS.map((item) => (
-            <button key={item.key} type="button" onClick={() => setTopic(item.key)} className={`group rounded-xl border border-hair bg-canvas p-5 transition-colors hover:border-accent ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
-              <span className="block font-display text-[1.05rem] font-semibold text-ink transition-colors group-hover:text-accent">{locale === 'ar' ? item.ar : item.en}</span>
-              <span className="mt-1 block text-[.84rem] font-light text-soft">{locale === 'ar' ? item.dAr : item.dEn}</span>
+            <button key={item.key} type="button" onClick={() => setTopic(item.key)} className={`group flex min-h-[44px] items-start gap-4 rounded-xl border border-hair bg-canvas p-5 transition-colors hover:border-accent ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
+              {(() => { const Icon = TOPIC_ICON[item.key]; return Icon ? <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-hair bg-wash text-accent transition-colors group-hover:border-accent"><Icon size={20} strokeWidth={1.6} /></span> : null })()}
+              <span className="min-w-0">
+                <span className="block font-display text-[1.05rem] font-semibold text-ink transition-colors group-hover:text-accent">{locale === 'ar' ? item.ar : item.en}</span>
+                <span className="mt-1 block text-[.84rem] font-light text-soft">{locale === 'ar' ? item.dAr : item.dEn}</span>
+              </span>
             </button>
           ))}
         </div>

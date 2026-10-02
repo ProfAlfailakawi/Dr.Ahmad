@@ -901,8 +901,8 @@ button.dna-hubn:focus-visible .dna-hubt { transform: translateY(-2px); }
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   white-space: normal;
   overflow-wrap: anywhere;
   text-wrap: balance;

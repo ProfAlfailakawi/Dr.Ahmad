@@ -127,7 +127,7 @@ export default function Articles() {
       <PageHead
         label="المقالات الفكرية"
         title="أفكارٌ تلاحق زمنها."
-        sub="مقالاتٌ أكتبها منذ انطلاق رحلتي العلمية عام 2015؛ أقرأ فيها تحولات التعليم والتكنولوجيا والمجتمع، وأتتبع ما تتركه في الإنسان والممارسة والحياة العامة."
+        sub="مقالاتٌ أكتبها منذ عام 2015، أقرأ فيها تحولات التعليم والتكنولوجيا والمجتمع وما تتركه في الإنسان والممارسة."
       />
 
       <section className="articles-filter-bar border-b border-hair bg-canvas px-4 py-3 sm:px-6 md:sticky md:top-16 md:z-[120] md:bg-canvas/[.96] md:px-11 md:backdrop-blur-md">
@@ -185,8 +185,8 @@ export default function Articles() {
                 <div key={entry.slug} className="h-auto w-[86vw] max-w-[24rem] shrink-0 snap-start self-stretch md:h-full md:w-auto md:max-w-none md:shrink md:snap-none">
                   <Link to={`/articles/${entry.slug}`} viewTransition className="spatial-card group flex h-full min-w-0 flex-col rounded-2xl border border-hair bg-canvas p-6 transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="editorial-micro-label text-[.68rem] font-semibold text-accent">{entry.tag} · {labels[index] || 'مختارة'}</span>
-                      <span className="text-[.7rem] font-semibold text-soft">0{index + 1}</span>
+                      <span className="editorial-micro-label text-[.72rem] font-semibold text-accent">{entry.tag} · {labels[index] || 'مختارة'}</span>
+                      <span className="text-[.72rem] font-semibold text-soft">0{index + 1}</span>
                     </div>
                     <h3 className="mt-4 break-words font-display text-[1.16rem] font-bold leading-[1.55] text-ink transition-colors group-hover:text-accent sm:text-[1.26rem]">{entry.title}</h3>
                     <blockquote className="mt-3 line-clamp-4 break-words font-display text-[.88rem] leading-[1.8] text-soft">{entry.quote}</blockquote>

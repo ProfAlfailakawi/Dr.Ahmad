@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Arrow } from './icons'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link } from 'react-router'
@@ -94,7 +95,7 @@ function IdeaTrace({ article, model, embedded = false }: { article: ArticleRecor
           <p className="text-[.66rem] font-semibold text-accent">أثر الفكرة</p>
           <h2 id="idea-trace-title" className="mt-1 font-display text-[1.05rem] font-semibold text-ink">مسارٌ موجز يفتح أصوله.</h2>
         </div>
-        <Link to="/thought" className="text-[.7rem] font-semibold text-accent transition-opacity hover:opacity-70">المشهد الفكري الكامل ←</Link>
+        <Link to="/thought" className="text-[.7rem] font-semibold text-accent transition-opacity hover:opacity-70">المشهد الفكري الكامل<Arrow /></Link>
       </div>
       <ol className="idea-trace-rail edge-fade relative mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden before:absolute before:right-4 before:top-[.55rem] before:h-px before:w-[calc(100%-2rem)] before:bg-hair">
         {points.map((point, index) => {

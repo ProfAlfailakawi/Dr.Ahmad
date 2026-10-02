@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
+import { Ban, BookLock, CircleHelp, Database, Mail, ShieldCheck, Sparkles, Unlink, UserCheck, type LucideIcon } from 'lucide-react'
 
 type LegalSection = {
   title: string
@@ -17,6 +18,8 @@ type LegalDocumentProps = {
   updated: string
   arabic: LegalSection[]
   english: LegalSection[]
+  /* مفاتيح للتنقل السريع: أرقام أقسام النص العربي وأيقونتها؛ العنوان يؤخذ من القسم نفسه دون صياغة جديدة */
+  glance?: { index: number; icon: LucideIcon }[]
 }
 
 const EMAIL = 'ah.alfailakawi@paaet.edu.kw'
@@ -27,9 +30,9 @@ const legalLinks = [
   { to: '/data-deletion', label: 'حذف البيانات', en: 'Data Deletion' },
 ]
 
-function Section({ section, lang }: { section: LegalSection; lang: 'ar' | 'en' }) {
+function Section({ section, lang, id }: { section: LegalSection; lang: 'ar' | 'en'; id?: string }) {
   return (
-    <section className="border-b border-hair py-9 last:border-b-0">
+    <section id={id} className="scroll-mt-24 border-b border-hair py-9 last:border-b-0">
       <h2 className="font-display text-[1.35rem] font-semibold leading-[1.5] text-ink md:text-[1.55rem]">
         {section.title}
       </h2>
@@ -52,7 +55,7 @@ function Section({ section, lang }: { section: LegalSection; lang: 'ar' | 'en' }
   )
 }
 
-function LegalDocument({ path, label, title, subtitle, englishTitle, updated, arabic, english }: LegalDocumentProps) {
+function LegalDocument({ path, label, title, subtitle, englishTitle, updated, arabic, english, glance }: LegalDocumentProps) {
   useSeo({ title, path, description: subtitle })
 
   return (
@@ -73,9 +76,22 @@ function LegalDocument({ path, label, title, subtitle, englishTitle, updated, ar
             </div>
           </FadeUp>
 
+          {glance && glance.length > 0 && (
+            <FadeUp delay={0.03}>
+              <nav aria-label="مفاتيح سريعة لمحتوى الصفحة" className="mt-6 flex flex-wrap gap-2.5">
+                {glance.map(({ index, icon: Icon }) => arabic[index] && (
+                  <a key={index} href={`#legal-ar-${index}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hair px-4 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent">
+                    <Icon aria-hidden="true" size={15} strokeWidth={1.6} className="shrink-0 text-accent" />
+                    {arabic[index].title.replace(/^\d+\.\s*/, '')}
+                  </a>
+                ))}
+              </nav>
+            </FadeUp>
+          )}
+
           <FadeUp delay={0.06}>
             <article dir="rtl" lang="ar" className="mt-9 rounded-3xl border border-hair bg-canvas px-6 py-4 shadow-[0_20px_70px_rgba(0,0,0,.035)] md:px-10 md:py-6">
-              {arabic.map((section) => <Section key={section.title} section={section} lang="ar" />)}
+              {arabic.map((section, index) => <Section key={section.title} id={`legal-ar-${index}`} section={section} lang="ar" />)}
             </article>
           </FadeUp>
 
@@ -383,6 +399,7 @@ export function PrivacyPolicy() {
       englishTitle="Privacy Policy"
       updated="13 يوليو 2026"
       arabic={privacyArabic}
+      glance={[{ index: 1, icon: Database }, { index: 4, icon: Sparkles }, { index: 6, icon: ShieldCheck }, { index: 7, icon: UserCheck }]}
       english={privacyEnglish}
     />
   )
@@ -398,6 +415,7 @@ export function TermsOfUse() {
       englishTitle="Terms of Use"
       updated="13 يوليو 2026"
       arabic={termsArabic}
+      glance={[{ index: 3, icon: UserCheck }, { index: 4, icon: Sparkles }, { index: 5, icon: BookLock }, { index: 6, icon: Ban }]}
       english={termsEnglish}
     />
   )
@@ -413,6 +431,7 @@ export function DataDeletion() {
       englishTitle="Data Deletion Instructions"
       updated="13 يوليو 2026"
       arabic={deletionArabic}
+      glance={[{ index: 1, icon: Unlink }, { index: 2, icon: Mail }, { index: 3, icon: ShieldCheck }, { index: 4, icon: CircleHelp }]}
       english={deletionEnglish}
     />
   )

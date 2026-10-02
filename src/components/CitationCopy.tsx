@@ -4,7 +4,7 @@ import { useMorphTransition } from './morph'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { site } from '../data'
 import { buildBibTeX, downloadCitationFile, safeCitationFilename } from '../lib/bibtex'
-import { Plus } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 
 type CitationStyle = 'apa' | 'mla' | 'bibtex'
 
@@ -144,7 +144,7 @@ export function CitationCopy({ title, path, iso, date, source, url }: CitationCo
                   transition={morph.face}
                   className="inline-block whitespace-nowrap"
                 >
-                  {status === style ? 'تم النسخ ✓' : `نسخ ${style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}`}
+                  {status === style ? <>تم النسخ<Check aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] ms-1" /></> : `نسخ ${style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}`}
                 </motion.span>
               </AnimatePresence>
             </motion.button>

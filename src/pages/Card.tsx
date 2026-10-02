@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Page, SocialIcon } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { profile, socials, academicProfiles, links, site } from '../data'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Check, Globe, UserPlus } from 'lucide-react'
 
 /*
  * البطاقة الرقمية `/card`: صفحةٌ مستقلّةٌ للمؤتمرات واللقاءات — اسمك وصفتك،
@@ -46,7 +46,7 @@ export default function Card() {
   }
 
   const globe = (
-    <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" strokeLinecap="round" /></svg>
+    <Globe aria-hidden size={16} strokeWidth={1.6} />
   )
   const profileLinks = [
     { label: 'الموقع الرسمي', url: site.url, icon: null as string | null },
@@ -72,7 +72,7 @@ export default function Card() {
               <><span aria-hidden><Check aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span> حُفظت جهة الاتصال</>
             ) : (
               <>
-                <svg aria-hidden width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg>
+                <UserPlus aria-hidden size={17} strokeWidth={1.6} />
                 احفظ جهة الاتصال
               </>
             )}

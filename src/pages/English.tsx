@@ -4,6 +4,7 @@
    المحتوى من data-en.ts (صياغة تحريرية، لا ترجمة حرفية).
    ============================================================ */
 import { Suspense, lazy, useEffect } from 'react'
+import { Arrow } from '../components/icons'
 import { Link } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
@@ -146,7 +147,7 @@ export function EnglishHome() {
                 <h2 className="mt-3 font-display text-[clamp(1.6rem,3.5vw,2.3rem)] font-bold text-ink">Peer-reviewed contributions</h2>
               </div>
               <Link to="/en/research" className="text-[.9rem] font-medium text-accent transition-opacity hover:opacity-70">
-                All {papers.length} papers →
+                All {papers.length} papers<Arrow ltr />
               </Link>
             </div>
             <ul className="mobile-card-rail mt-10 grid gap-8 md:grid-cols-3">
@@ -175,7 +176,7 @@ export function EnglishHome() {
                   Written in Arabic — spanning a decade of thinking about how technology should serve learning, not replace it.
                 </p>
                 <Link to="/publications" className="mt-6 inline-block text-[.9rem] font-medium text-accent transition-opacity hover:opacity-70">
-                  Browse the books (in Arabic) →
+                  Browse the books (in Arabic)<Arrow ltr />
                 </Link>
               </div>
               <div className="rounded-2xl border border-hair bg-wash p-8">
@@ -329,7 +330,7 @@ export function EnglishResearch() {
                     <div className="mt-3 flex flex-wrap items-center gap-4 text-[.82rem]">
                       {p.meta && <span className="text-soft/80">{p.meta}</span>}
                       <Link to={`/research/${p.slug}`} className="font-medium text-accent transition-opacity hover:opacity-70">
-                        Details (Arabic) →
+                        Details (Arabic)<Arrow ltr />
                       </Link>
                     </div>
                   </div>

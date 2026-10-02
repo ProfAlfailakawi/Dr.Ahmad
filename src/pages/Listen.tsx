@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router'
+import { Pause } from 'lucide-react'
 import { EASE, FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { categoryLabel } from '../lib/content-taxonomy'
@@ -11,7 +12,7 @@ import { AudioPlayer, openAudioPlayer } from '../components/AudioPlayer'
 import { PodcastPlatforms } from '../components/PodcastPlatforms'
 import { type ListenEpisode } from '../lib/listen-catalog'
 import { listenEpisodes } from '../lib/listen-episodes'
-import { SocialIcon } from '../components/icons'
+import { SocialIcon, Arrow } from '../components/icons'
 import kuwaitiSchedule from '../data/radio-schedule-kw.json'
 import { dialogueVariantKey, dialogueVariantPreference, rememberDialogueVariant, type DialogueAudioVariant } from '../lib/dialogue-variant'
 
@@ -88,14 +89,14 @@ function QuestionRow({ episode, playing, expanded, kuwaitiReady, onOpen }: {
       >
         <span className={`mt-1.5 shrink-0 text-[.72rem] transition-colors ${playing ? 'text-accent' : 'text-accent/[.65] group-hover:text-accent'}`}>
           {playing ? (
-            <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.2" height="11" rx="1" /><rect x="9.8" y="2.5" width="3.2" height="11" rx="1" /></svg>
+            <Pause aria-hidden size={13} strokeWidth={1.6} />
           ) : <SocialIcon name="Play" size={13} />}
         </span>
         <span className="min-w-0 flex-1">
           <span className={`measure block font-display text-[1.04rem] leading-[1.75] transition-colors ${playing ? 'text-accent' : 'text-ink'}`}>
             {episode.question || episode.title}
           </span>
-          <span className="mt-1 block truncate text-[.71rem] text-soft" title={episode.question ? episode.title : undefined}>
+          <span className="mt-1 block truncate text-[.72rem] text-soft" title={episode.question ? episode.title : undefined}>
             {episode.question ? <>{episode.title}<span className="mx-1.5 opacity-45">·</span></> : null}
             {clock(episode.durationSec)}
             {episode.durationSec ? <span className="mx-1.5 opacity-45">·</span> : null}
@@ -256,7 +257,7 @@ export default function Listen() {
         <section className="mx-auto max-w-shell px-6 py-16 md:px-11">
           <p className="text-[.9rem] leading-loose text-soft">
             الحلقات في طريقها. تجدها الآن داخل كل مقالٍ عند زر «استمع».{' '}
-            <Link to="/articles" className="text-accent hover:underline">إلى المقالات ←</Link>
+            <Link to="/articles" className="text-accent hover:underline">إلى المقالات<Arrow /></Link>
           </p>
         </section>
       </Page>
@@ -278,7 +279,7 @@ export default function Listen() {
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Play" size={16} /></span>
               <span className="min-w-0">
                 <span className="block text-[.84rem] font-semibold text-ink">افتح المجلس</span>
-                <span className="mt-0.5 block truncate text-[.71rem] text-soft" title={resume.title}>
+                <span className="mt-0.5 block truncate text-[.72rem] text-soft" title={resume.title}>
                   {resumeIsContinuation ? `يكمل: ${resume.title}` : resume.title}
                 </span>
               </span>
@@ -330,7 +331,7 @@ export default function Listen() {
         {eras.map((era) => (
           <div key={era.label || 'all'}>
             {era.label && (
-              <div className="my-7 flex items-center gap-3 text-[.68rem] text-soft">
+              <div className="my-7 flex items-center gap-3 text-[.72rem] text-soft">
                 <i className="h-px flex-1 bg-hair" />
                 {era.label}
                 <i className="h-px flex-1 bg-hair" />

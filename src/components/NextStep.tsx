@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Arrow } from './icons'
 import { Link } from 'react-router'
 import type { ArticleRecord, MediaRecord, PaperRecord } from '../lib/cms'
 import { loadBookPassages } from '../lib/book-quotes'
@@ -72,7 +73,7 @@ export function NextStep({
             وتكراره زحمة. الدعوة وحدها تكفي وتقول أكثر. */}
         <span className="text-[.68rem] font-light leading-relaxed text-soft/80 md:text-[.72rem]">{step.invite}</span>
         <strong className="text-[.78rem] font-normal leading-relaxed text-accent/90 transition-colors group-hover:text-accent md:text-[.84rem]">
-          {step.title} ←
+          {step.title}<Arrow />
         </strong>
       </Link>
     </div>

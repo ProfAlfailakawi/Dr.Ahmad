@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Arrow } from '../components/icons'
 import { Link, useParams } from 'react-router'
 import { useSeo, JsonLd } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
@@ -23,7 +24,7 @@ import {
   type LearningPath,
   type LearningStep,
 } from '../lib/learning-paths'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Music, Play } from 'lucide-react'
 
 /* ═══════════ مسارات التعلّم ═══════════
    تسلسلٌ قصير منتقى: مقالٌ وحلقةٌ ومدخلٌ وفصل، بترتيبٍ يُقرأ من أوله.
@@ -130,7 +131,7 @@ function PathsIndex() {
                           {finished ? 'أتممت المسار' : started ? `أكملت ${done.size} من ${path.steps.length}` : path.steps.map((step) => STEP_KIND_LABEL[step.kind].split(' ')[0]).filter((label, i, all) => all.indexOf(label) === i).join(' · ')}
                         </span>
                         <span className="shrink-0 font-semibold text-accent">
-                          {finished ? 'راجع المسار ←' : started ? 'تابع ←' : 'ابدأ المسار ←'}
+                          {finished ? 'راجع المسار' : started ? 'تابع' : 'ابدأ المسار'}<Arrow />
                         </span>
                       </span>
                     </Link>
@@ -170,7 +171,7 @@ function StepAction({ step, primary = false }: { step: LearningStep; primary?: b
           void player.playTrack({ id: src, src, title: step.title, label: 'مجلس الفكرة · مسار تعلّم', path: `/articles/${step.ref}`, startFresh: true })
         }}
       >
-        <span aria-hidden>{playing ? '♪' : '▶'}</span>
+        <span aria-hidden>{playing ? <Music aria-hidden="true" size="1em" strokeWidth={1.6} /> : <Play aria-hidden="true" size="1em" strokeWidth={1.6} />}</span>
         <span>{playing ? 'تُسمع الآن' : STEP_KIND_ACTION.podcast}</span>
       </button>
     )
@@ -218,7 +219,7 @@ function PathDetail({ path }: { path: LearningPath }) {
       <section className="px-6 py-12 md:px-11 md:py-16">
         <div className="mx-auto max-w-3xl">
           <FadeUp>
-            <Link to="/paths" viewTransition className="text-[.82rem] text-soft transition-colors hover:text-accent">← كل المسارات</Link>
+            <Link to="/paths" viewTransition className="text-[.82rem] text-soft transition-colors hover:text-accent"><Arrow kind="back" />كل المسارات</Link>
             <p className="mt-6 text-[.9rem] font-light leading-[1.9] text-soft">{live.audience}</p>
             <p className="mt-2 text-[.76rem] font-medium text-soft">
               {arabicCountPhrase(live.steps.length, STEP_FORMS)} · نحو {arabicCountPhrase(pathMinutes(live), MINUTE_AFTER_PREPOSITION_FORMS)}
@@ -247,7 +248,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
                   <p className="text-[.88rem] font-light leading-[1.85] text-soft">مرّت الفكرة بكل محطاتها. يمكنك أن تعيد المسار متى شئت، أو تنتقل إلى مسارٍ آخر.</p>
                   <div className="flex flex-wrap gap-2">
-                    {following && <Link to={`/paths/${following.id}`} className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep">{following.title} ←</Link>}
+                    {following && <Link to={`/paths/${following.id}`} className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep">{following.title}<Arrow /></Link>}
                     <button type="button" onClick={() => resetPath(live.id)} className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">ابدأ من جديد</button>
                   </div>
                 </div>
@@ -282,7 +283,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                     <span className="font-display tabular-nums text-accent">{two(index + 1)}</span>
                     <span>· {STEP_KIND_LABEL[step.kind]}</span>
                     <span>· {arabicCountPhrase(step.minutes, MINUTE_FORMS)}</span>
-                    {isCurrent && <span className="ms-1 rounded-full border border-accent/[.35] px-2 py-0.5 text-[.66rem] text-accent">أنت هنا</span>}
+                    {isCurrent && <span className="ms-1 rounded-full border border-accent/[.35] px-2 py-0.5 text-[.72rem] text-accent">أنت هنا</span>}
                   </span>
 
                   <h3 className={`mt-2 font-display text-[1.22rem] font-semibold leading-[1.65] transition-colors ${isDone ? 'text-soft' : 'text-ink'}`}>
@@ -298,7 +299,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <StepAction step={step} />
                     {step.kind === 'podcast' && (
-                      <Link to={stepHref(step)} className="inline-flex min-h-10 items-center px-2 text-[.74rem] font-medium text-soft transition-colors hover:text-accent">المقال الأصلي ←</Link>
+                      <Link to={stepHref(step)} className="inline-flex min-h-10 items-center px-2 text-[.74rem] font-medium text-soft transition-colors hover:text-accent">المقال الأصلي<Arrow /></Link>
                     )}
                     <button
                       type="button"
@@ -346,7 +347,7 @@ function MissingPath() {
     <Page className="content-learning-paths">
       <div className="px-6 pb-24 pt-44 text-center md:px-11">
         <p className="font-display text-[1.4rem] font-semibold leading-[1.6] text-ink">لم نجد هذا المسار.</p>
-        <Link to="/paths" className="mt-4 inline-block text-[.86rem] font-semibold text-accent hover:underline">كل مسارات التعلّم ←</Link>
+        <Link to="/paths" className="mt-4 inline-block text-[.86rem] font-semibold text-accent hover:underline">كل مسارات التعلّم<Arrow /></Link>
       </div>
     </Page>
   )

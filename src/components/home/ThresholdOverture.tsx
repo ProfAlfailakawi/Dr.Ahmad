@@ -18,6 +18,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router'
 import { EASE } from '../motion'
 import KuficMark from '../KuficMark'
+import { Arrow } from '../icons'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, BOOK_PLAIN_FORMS, PAPER_FORMS } from '../../lib/arabic-count.ts'
 import skyData from '../../data/threshold-sky.json'
 
@@ -685,7 +686,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
                             >
                               <span className="tho-door-name">{item.door}{item.count ? <small> · {item.count}</small> : null}</span>
                               <span className="tho-door-line">{item.kicker}</span>
-                              <span className="tho-door-arrow" aria-hidden="true">↖</span>
+                              <span className="tho-door-arrow" aria-hidden="true"><Arrow kind="upstart" bare /></span>
                             </button>
                           ))}
                         </div>
@@ -727,7 +728,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
                   {current.path && (
                     <button type="button" className="tho-open" onClick={() => close(current.path)}>
                       افتح هذا الباب الآن
-                      <span aria-hidden="true">↖</span>
+                      <span aria-hidden="true"><Arrow kind="upstart" bare /></span>
                     </button>
                   )}
                 </motion.div>
@@ -737,9 +738,9 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
 
           {!atThreshold && !reduced && !prologueOn && (
             <footer className="tho-hint">
-              <button type="button" className="tho-nav" onClick={() => step(-1)} disabled={act === 0} aria-label="المشهد السابق">→</button>
+              <button type="button" className="tho-nav" onClick={() => step(-1)} disabled={act === 0} aria-label="المشهد السابق"><Arrow kind="back" bare /></button>
               <span>{coarsePointer ? 'المسه للإيقاف · اسحب للتنقّل' : 'المسافة للإيقاف · الأسهم للتنقّل'}</span>
-              <button type="button" className="tho-nav" onClick={() => step(1)} aria-label="المشهد التالي">←</button>
+              <button type="button" className="tho-nav" onClick={() => step(1)} aria-label="المشهد التالي"><Arrow bare /></button>
             </footer>
           )}
         </motion.div>

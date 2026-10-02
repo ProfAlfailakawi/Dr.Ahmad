@@ -6,6 +6,7 @@
  * أو لقاءاته إلى هذه الصفحة.
  */
 import { useSeo } from "../components/seo";
+import { Arrow } from '../components/icons'
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router";
@@ -192,7 +193,7 @@ function SourceLine({ c }: { c: Curio }) {
         <span>المصدر: {radarSourceArabic(c.source)}</span>
         {resolvedCurioUrl(c.url) && (
           <span className="shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">
-            اذهب للمصدر ←
+            اذهب للمصدر<Arrow />
           </span>
         )}
       </p>
@@ -211,7 +212,7 @@ function RadarPanel({ items }: { items: Curio[] }) {
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <p className="text-[.78rem] font-semibold text-accent">الأحدث من رادار الشبكة</p>
-        <Link to="/radar" data-hover className="text-[.8rem] text-accent transition-colors hover:text-accent-deep">الأرشيف الكامل ←</Link>
+        <Link to="/radar" data-hover className="text-[.8rem] text-accent transition-colors hover:text-accent-deep">الأرشيف الكامل<Arrow /></Link>
       </div>
       <div className="mt-5 space-y-4">
         {items.slice(0, 2).map((item, index) => (
@@ -219,7 +220,7 @@ function RadarPanel({ items }: { items: Curio[] }) {
             <CardWrap c={item} className="flex min-h-[11rem] flex-col rounded-2xl border border-hair bg-canvas p-6 transition-colors hover:border-accent md:p-7">
               <span className="text-[.72rem] text-soft">{item.added ? fmtAdded(item.added) : "حديث"} · {radarSourceArabic(item.source)}</span>
               <div className="mt-2.5 flex-1"><CurioBody c={item} /></div>
-              <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">اقرأ المادة في مصدرها ←</span>
+              <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">اقرأ المادة في مصدرها<Arrow /></span>
             </CardWrap>
           </FadeUp>
         ))}
@@ -347,7 +348,7 @@ export default function Curated() {
                   <span className="text-[.74rem] font-semibold text-accent">سؤال متجدد</span>
                   <h3 className="mt-3 font-display text-[1.3rem] font-semibold leading-[1.7] text-ink">سؤال يُقلق التعليم</h3>
                   <p className="measure mt-2 text-[.9rem] font-light leading-relaxed text-soft">سؤال قصير في صياغته، واسع في أثره؛ يفتح زاوية جديدة كل مرة.</p>
-                  <span className="mt-auto pt-5 text-[.82rem] text-soft transition-colors group-hover:text-accent">إلى الزاوية ←</span>
+                  <span className="mt-auto pt-5 text-[.82rem] text-soft transition-colors group-hover:text-accent">إلى الزاوية<Arrow /></span>
                 </Link>
               </FadeUp>
             )}

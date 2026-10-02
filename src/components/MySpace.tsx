@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { Arrow } from './icons'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router";
@@ -507,12 +508,12 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                                 <button type="button" onClick={() => setTab("saved")} className="group block w-full p-5 text-right md:p-6">
                                   <span className="text-[.68rem] font-semibold text-accent">محفوظاتك جاهزة</span>
                                   <strong className="mt-2 block font-display text-[1.08rem] leading-[1.65] text-ink group-hover:text-accent">عد إلى المقالات واللقاءات التي اخترتها.</strong>
-                                  <span className="mt-3 inline-flex text-[.72rem] font-semibold text-accent">افتح محفوظاتي ←</span>
+                                  <span className="mt-3 inline-flex text-[.72rem] font-semibold text-accent">افتح محفوظاتي<Arrow /></span>
                                 </button>
                               )}
                             </div>
                             {snapshot.last && snapshot.audio && (
-                              latestIsAudio ? <Link to={`/articles/${snapshot.last.slug}`} onClick={() => setOpen(false)} className="mt-3 inline-flex text-[.74rem] font-semibold text-accent">أكمل القراءة أيضاً ←</Link> : <button type="button" onClick={() => void resumeAudio()} className="mt-3 inline-flex text-[.74rem] font-semibold text-accent">أكمل الاستماع أيضاً ←</button>
+                              latestIsAudio ? <Link to={`/articles/${snapshot.last.slug}`} onClick={() => setOpen(false)} className="mt-3 inline-flex text-[.74rem] font-semibold text-accent">أكمل القراءة أيضاً<Arrow /></Link> : <button type="button" onClick={() => void resumeAudio()} className="mt-3 inline-flex text-[.74rem] font-semibold text-accent">أكمل الاستماع أيضاً<Arrow /></button>
                             )}
                           </section>
 
@@ -543,7 +544,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                       )}
 
                       {tab === "quotes" && (
-                        snapshot.quotes.length ? <ol className="space-y-5">{snapshot.quotes.map((item, index) => <li key={`${item.slug}-${item.id || index}`} className="border-r border-accent/20 pr-3"><blockquote className="text-[.78rem] font-light leading-[1.95] text-ink sm:text-[.82rem]">«{item.quote}»</blockquote>{item.note && <p className="mt-1.5 text-[.66rem] font-light leading-[1.75] text-soft">{item.note}</p>}<Link to={`/articles/${item.slug}`} onClick={() => setOpen(false)} className="mt-1.5 inline-flex text-[.64rem] font-medium text-accent">{item.title || "عد إلى المصدر"} ←</Link></li>)}</ol> : <div className="py-8 text-center md:py-12"><p className="font-display text-[1.05rem] font-semibold text-ink">دفتر الاقتباسات ينتظر أول جملة.</p><p className="mx-auto mt-2 max-w-md text-[.82rem] leading-[1.8] text-soft">حدّد جملة داخل أي مقال، ثم اختر حفظها؛ ستظهر هنا تلقائياً.</p></div>
+                        snapshot.quotes.length ? <ol className="space-y-5">{snapshot.quotes.map((item, index) => <li key={`${item.slug}-${item.id || index}`} className="border-r border-accent/20 pr-3"><blockquote className="text-[.78rem] font-light leading-[1.95] text-ink sm:text-[.82rem]">«{item.quote}»</blockquote>{item.note && <p className="mt-1.5 text-[.66rem] font-light leading-[1.75] text-soft">{item.note}</p>}<Link to={`/articles/${item.slug}`} onClick={() => setOpen(false)} className="mt-1.5 inline-flex text-[.64rem] font-medium text-accent">{item.title || "عد إلى المصدر"}<Arrow /></Link></li>)}</ol> : <div className="py-8 text-center md:py-12"><p className="font-display text-[1.05rem] font-semibold text-ink">دفتر الاقتباسات ينتظر أول جملة.</p><p className="mx-auto mt-2 max-w-md text-[.82rem] leading-[1.8] text-soft">حدّد جملة داخل أي مقال، ثم اختر حفظها؛ ستظهر هنا تلقائياً.</p></div>
                       )}
                     </div>
                   )}

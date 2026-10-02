@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Arrow } from './icons'
 import { Link, useLocation, useSearchParams } from 'react-router'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
@@ -298,7 +299,7 @@ export function BookWorld({
             <h2 id="book-world-title" className="mt-2 font-display text-[clamp(1.55rem,3vw,2.2rem)] font-semibold leading-[1.35] text-ink">امتدادات الكتاب داخل الأرشيف</h2>
             <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة مبنيّة من الكتاب، تصل مفاهيمه بما نُشر في الأرشيف من مقالات وأبحاث ولقاءات.</p>
           </div>
-          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="max-w-full rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل ←</Link>
+          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="max-w-full rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل<Arrow /></Link>
         </div>
 
         <div className="mt-6 grid min-w-0 max-w-full gap-3">

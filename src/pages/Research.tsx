@@ -8,7 +8,7 @@ import { useCmsContent } from '../lib/content'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { analyzeResearch, researchArchiveProjection } from '../lib/research-intelligence'
 import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-count.ts'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BookOpen, CalendarDays } from 'lucide-react'
 
 const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => arabicCountPhrase(count, PAPER_FORMS)
@@ -43,7 +43,7 @@ export default function Research() {
         name: 'المساهمات العلمية', url: `${SITE_URL}/research`, inLanguage: 'ar',
         mainEntity: { '@type': 'ItemList', numberOfItems: papers.length, itemListElement: papers.slice(0, 100).map((paper, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/research/${paper.slug}`, name: paper.title })) },
       }} />
-      <PageHead label="المساهمات العلمية" title="مسارٌ من السؤال إلى الدليل." sub="الأرشيف العلمي المحكّم يكشف سؤال كل دراسة ومنهجها ونتيجتها وحدودها، مع وصول مباشر إلى بياناتها بمصادر أصلية." />
+      <PageHead label="المساهمات العلمية" title="مسارٌ من السؤال إلى الدليل." sub="الأرشيف العلمي المحكّم: سؤال كل دراسة ومنهجها ونتيجتها وحدودها، مع وصول مباشر بمصادر أصلية." />
 
       <section className="editorial-breath-section px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
@@ -88,8 +88,8 @@ export default function Research() {
                         {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="measure mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
                         {(journal || year) && (
                           <p className="mt-3 flex flex-wrap gap-x-1.5 gap-y-1 text-[.74rem] text-soft">
-                            {journal && <span dir="auto">{journal}</span>}
-                            {year && <span className="font-semibold text-accent">{year}</span>}
+                            {journal && <span dir="auto" className="inline-flex items-center gap-1.5"><BookOpen aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{journal}</span>}
+                            {year && <span className="inline-flex items-center gap-1.5 font-semibold text-accent"><CalendarDays aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{year}</span>}
                           </p>
                         )}
                         <Link to={`/research/${p.slug}#research-passport`} className="research-understand-link mt-4 inline-flex">افهم هذا البحث <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>

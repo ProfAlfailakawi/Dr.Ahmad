@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { Arrow } from '../components/icons'
 import { FadeUp, Label, Magnetic, Page, SocialIcon } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { Newsletter } from '../components/extras'
@@ -78,10 +79,10 @@ export default function Upcoming() {
 
                     <div className="min-w-0">
                       <span className="flex flex-wrap items-center gap-2">
-                        {e.kind && <span className="text-[.68rem] font-semibold text-accent">{e.kind}</span>}
+                        {e.kind && <span className="text-[.72rem] font-semibold text-accent">{e.kind}</span>}
                         {(() => {
                           const status = eventStatus(e)
-                          return status ? <span className={`rounded-full px-2.5 py-0.5 text-[.64rem] font-semibold ${statusTone[status.key]}`}>{status.label}</span> : null
+                          return status ? <span className={`rounded-full px-2.5 py-0.5 text-[.72rem] font-semibold ${statusTone[status.key]}`}>{status.label}</span> : null
                         })()}
                       </span>
                       <h2 className="mt-0.5 font-display text-[1.08rem] font-medium leading-[1.5] text-ink">{e.title}</h2>
@@ -164,8 +165,8 @@ export default function Upcoming() {
                         <span className="min-w-0 flex-1 text-[.86rem] text-ink">{e.title}<span className="text-soft"> · {e.org}</span></span>
                         {outcome && (
                           outcome.href
-                            ? <a href={outcome.href} target="_blank" rel="noreferrer" className="shrink-0 text-[.74rem] font-semibold text-accent transition-colors hover:text-accent-deep">{outcome.label} ←</a>
-                            : <Link to={outcome.to} className="shrink-0 text-[.74rem] font-semibold text-accent transition-colors hover:text-accent-deep">{outcome.label} ←</Link>
+                            ? <a href={outcome.href} target="_blank" rel="noreferrer" className="shrink-0 text-[.74rem] font-semibold text-accent transition-colors hover:text-accent-deep">{outcome.label}<Arrow /></a>
+                            : <Link to={outcome.to} className="shrink-0 text-[.74rem] font-semibold text-accent transition-colors hover:text-accent-deep">{outcome.label}<Arrow /></Link>
                         )}
                       </li>
                     )

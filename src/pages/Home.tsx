@@ -20,7 +20,7 @@ import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy
 import { PROJECT_START_YEAR } from '../lib/project-meta'
 import { listenIsOpen, rotatingQuestion, type ListenEpisode } from '../lib/listen-catalog'
 import { SPACE_EVENT, isArticleSaved, toggleSavedArticle } from '../lib/reading-space'
-import { SocialIcon as ActionIcon } from '../components/icons'
+import { SocialIcon as ActionIcon, Arrow } from '../components/icons'
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 import { coverSrcSet } from '../lib/cover-image'
@@ -131,7 +131,7 @@ function MajlisSpark() {
       </p>
       <p className="mt-auto flex items-center gap-2 border-t border-hair pt-4 text-[.74rem] text-soft">
         <span className="min-w-0 truncate">{episode.title}</span>
-        <span className="ms-auto shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">استمع ←</span>
+        <span className="ms-auto shrink-0 text-accent transition-transform duration-300 group-hover:-translate-x-1">استمع<Arrow /></span>
       </p>
     </Link>
   )
@@ -165,7 +165,7 @@ function DailySpark({ compact = false }: { compact?: boolean }) {
       <p className={`relative flex flex-wrap items-center gap-2 border-t border-hair text-soft ${compact ? 'mt-5 pt-4 text-[.74rem]' : 'mt-6 pt-4 text-[.82rem]'}`}>
         <span>{c.source}</span>
         {!compact && <><span className="text-hair">·</span><span>تتبدّل كل منتصف ليل</span></>}
-        <span className="ms-auto text-accent transition-transform duration-300 group-hover:-translate-x-1">المزيد ←</span>
+        <span className="ms-auto text-accent transition-transform duration-300 group-hover:-translate-x-1">المزيد<Arrow /></span>
       </p>
     </Link>
   )
@@ -538,7 +538,7 @@ function ThoughtCompass() {
           <div className="rail -mx-6 mt-7 flex gap-3 overflow-x-auto px-6 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0">
             {quickLinks.map((item) => (
               <Link key={`${item.tag}-${item.to}`} to={item.to} className="group flex min-h-[108px] w-[62vw] max-w-[252px] shrink-0 flex-col justify-between rounded-2xl border border-hair bg-wash px-4 py-3.5 text-right transition-colors hover:border-accent md:w-auto md:max-w-none">
-                <span className="editorial-micro-label w-fit text-[.66rem] text-soft">{item.tag}</span>
+                <span className="editorial-micro-label w-fit text-[.72rem] text-soft">{item.tag}</span>
                 <span className="line-clamp-2 text-[.86rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{item.label}</span>
                 <ArrowLeft aria-hidden size={17} strokeWidth={1.6} className="self-end text-accent transition-transform group-hover:-translate-x-1" />
               </Link>
@@ -565,6 +565,10 @@ function ImpactTimeline() {
   const peakYear = Object.entries(byYear).sort((a, b) => b[1] - a[1])[0]
   const latest = articles[0]
 
+  const yearSpan = Array.from({ length: latestYear - firstYear + 1 }, (_, i) => firstYear + i)
+  const maxPerYear = Math.max(1, ...yearSpan.map((y) => byYear[y] || 0))
+  const barStep = 20
+
   const steps = [
     { y: String(firstYear), t: 'البداية — انطلاق الرحلة العلمية التي تشكّل منها المشروع الفكري.' },
     { y: `${peakYear[0]}`, t: `ذروة الإنتاج — ${arabicCountPhrase(Number(peakYear[1]), ARTICLE_FORMS)} في عامٍ واحد.` },
@@ -581,6 +585,25 @@ function ImpactTimeline() {
             <Reveal>رحلة فكر.</Reveal>
           </h2>
         </FadeUp>
+        {yearSpan.length > 1 && (
+          <figure className="mb-10 max-w-xl md:mb-12">
+            <svg viewBox={`0 0 ${yearSpan.length * barStep} 64`} className="block h-16 w-full" role="img" aria-label={`رسم أعمدة لعدد المقالات في كل سنة، من ${firstYear} إلى ${latestYear}؛ الذروة في ${peakYear[0]}`} preserveAspectRatio="none">
+              <line x1="0" x2={yearSpan.length * barStep} y1="63.5" y2="63.5" stroke="rgb(var(--c-soft))" strokeOpacity=".35" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              {yearSpan.map((y, i) => {
+                const n = byYear[y] || 0
+                const h = n ? Math.max(3, (n / maxPerYear) * 58) : 0
+                return n ? (
+                  <rect key={y} x={(yearSpan.length - 1 - i) * barStep + 4} y={62 - h} width={barStep - 8} height={h} rx="2" fill="rgb(var(--c-accent))" fillOpacity={String(y) === peakYear[0] ? 1 : 0.5}>
+                    <title>{`${y}: ${arabicCountPhrase(n, ARTICLE_FORMS)}`}</title>
+                  </rect>
+                ) : null
+              })}
+            </svg>
+            <figcaption className="mt-2 flex justify-between text-[.76rem] text-soft" aria-hidden="true">
+              <span>{firstYear}</span><span>{latestYear}</span>
+            </figcaption>
+          </figure>
+        )}
         <ol className="relative mr-2 border-r-2 border-hair pr-8">
           {steps.map((s, i) => (
             <FadeUp key={s.t} delay={Math.min(i * 0.1, 0.4)}>
@@ -698,7 +721,7 @@ function LaunchSpotlight({ articles, books, papers, media }: { articles: Article
           <h2 className="mt-6 max-w-3xl font-display text-[clamp(2.35rem,6vw,4.7rem)] font-bold leading-[1.24] text-white">{title}</h2>
           {description && <p className="mt-6 max-w-2xl text-[1.05rem] font-light leading-[2] text-white/70">{description}</p>}
           <Link to={to} className="mt-9 inline-flex rounded-full bg-white px-8 py-3.5 font-semibold text-ink transition-colors duration-300 hover:bg-white/90">
-            اقرأ الآن ←
+            اقرأ الآن<Arrow />
           </Link>
         </FadeUp>
         <FadeUp delay={0.12}>
@@ -866,7 +889,7 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
           </FadeUp>
           <FadeUp delay={0.1}>
             <p className="text-[1.12rem] font-light leading-[1.9] text-ink/80">{profile.about}</p>
-            <Link to="/cv" className="mt-7 inline-block border-b-[1.5px] border-accent pb-1 font-semibold text-accent">السيرة الكاملة ←</Link>
+            <Link to="/cv" className="mt-7 inline-block border-b-[1.5px] border-accent pb-1 font-semibold text-accent">السيرة الكاملة<Arrow /></Link>
           </FadeUp>
         </div>
       </section>
@@ -932,7 +955,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
                 <span className="mt-2 block font-display text-[clamp(1.35rem,2.8vw,1.95rem)] font-semibold leading-[1.45] text-ink transition-colors group-hover:text-accent">اسأل الأرشيف سؤالاً حقيقياً.</span>
                 <span className="mt-3 block max-w-xl text-[.95rem] font-light leading-[1.9] text-ink/75">مقالاتٌ وأبحاثٌ وكتبٌ ولقاءات — يجيبك منها لا من خارجها.</span>
               </span>
-              <span className="shrink-0 border-b-[1.5px] border-accent pb-1 text-[.9rem] font-semibold text-accent">اسأل الآن ←</span>
+              <span className="shrink-0 border-b-[1.5px] border-accent pb-1 text-[.9rem] font-semibold text-accent">اسأل الآن<Arrow /></span>
             </Link>
           </FadeUp>
         </div>
@@ -1141,7 +1164,7 @@ export default function Home() {
                   <span className="shrink-0 text-[.72rem] font-semibold text-accent">اللقاء القادم</span>
                   <Link to="/upcoming" className="group min-w-0 flex-1">
                     <span className="block truncate font-display text-[.95rem] font-semibold text-ink transition-colors group-hover:text-accent">{upcomingItems[0].title}</span>
-                    <span className="mt-0.5 block truncate text-[.7rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
+                    <span className="mt-0.5 block truncate text-[.72rem] text-soft">{upcomingItems[0].date} · {upcomingItems[0].place}</span>
                   </Link>
                   <Link to="/upcoming" aria-label="كل اللقاءات" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent"><ArrowUpRight aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></Link>
                 </div>

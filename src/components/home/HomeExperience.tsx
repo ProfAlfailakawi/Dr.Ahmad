@@ -8,7 +8,7 @@ import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../../
 import type { Event as SiteEvent } from '../../data'
 import type { Curio } from '../../data-curated'
 import { categoryLabel } from '../../lib/content-taxonomy'
-import { SocialIcon } from '../icons'
+import { SocialIcon, Arrow } from '../icons'
 import { arabicCountPhrase, NEW_ARTICLE_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../../lib/arabic-count.ts'
 import { coverSrcSet } from '../../lib/cover-image'
 import { ArrowLeft } from 'lucide-react'
@@ -116,7 +116,7 @@ export function NowStation({ articles }: { articles: ArticleRecord[] }) {
                 {latest.excerpt && <p className="mt-5 max-w-2xl text-[1rem] font-light leading-[1.95] text-soft">{latest.excerpt}</p>}
               </div>
               <div className="relative mt-10 flex items-center justify-between gap-4 border-t border-hair pt-5 text-[.86rem]">
-                <span className="text-soft">{latest.date}</span><span className="font-semibold text-accent">اقرأ واستمع ←</span>
+                <span className="text-soft">{latest.date}</span><span className="font-semibold text-accent">اقرأ واستمع<Arrow /></span>
               </div>
             </Link>
           </FadeUp>
@@ -132,7 +132,7 @@ export function NowStation({ articles }: { articles: ArticleRecord[] }) {
               <Link to={`/articles/${historic.article.slug}`} className="group block rounded-2xl border border-hair bg-canvas p-6 transition-colors hover:border-accent">
                 <p className="text-[.75rem] font-semibold text-accent">في مثل هذا الأسبوع {yearsAgo(new Date().getFullYear() - historic.date.getFullYear())}</p>
                 <p className="mt-3 font-display text-[1.08rem] font-semibold leading-[1.7] text-ink transition-colors group-hover:text-accent">«{historic.article.title}»</p>
-                <p className="mt-4 text-[.78rem] text-soft">من ذاكرة الأرشيف ←</p>
+                <p className="mt-4 text-[.78rem] text-soft">من ذاكرة الأرشيف<Arrow /></p>
               </Link>
             </FadeUp>}
           </div>
@@ -173,7 +173,7 @@ export function ThoughtCompassStation({ articles, books, papers }: { articles: A
               <p className="text-[.75rem] font-semibold text-accent">تعمّق في {active}</p>
               {relatedPaper && <Link to={`/research/${relatedPaper.slug}`} className="mt-4 block border-b border-hair pb-4"><span className="text-[.72rem] text-soft">بحث محكّم</span><span className="mt-1 block font-display text-[.98rem] font-medium leading-[1.6] text-ink hover:text-accent">{relatedPaper.title}</span></Link>}
               {relatedBook && <Link to={`/publications/${relatedBook.slug}`} className="mt-4 block"><span className="text-[.72rem] text-soft">كتاب</span><span className="mt-1 block font-display text-[.98rem] font-medium leading-[1.6] text-ink hover:text-accent">{relatedBook.title}</span></Link>}
-              <Link to="/thought-paths" className="mt-6 inline-block font-semibold text-accent">المسار الكامل ←</Link>
+              <Link to="/thought-paths" className="mt-6 inline-block font-semibold text-accent">المسار الكامل<Arrow /></Link>
             </div>
           </FadeUp>
         </div>
@@ -193,7 +193,7 @@ function WeeklyPollCompact() {
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.75rem] font-semibold text-accent">سؤال متجدد</span><span className="mt-1 block font-display text-[1rem] font-semibold leading-[1.65] text-ink">{question.ar}</span></span><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-transform group-open:rotate-45">+</span></summary>
       <div className="mt-5 border-t border-hair pt-5">
         {!voted ? <div className="flex flex-wrap gap-2">{['أوافق', 'لا أوافق', 'المسألة أعقد'].map((option) => <button key={option} onClick={() => vote(option)} className="rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft hover:border-accent hover:text-accent">{option}</button>)}</div> : <div><p className="text-[.82rem] text-soft">اخترت: <span className="font-semibold text-accent">{voted}</span></p><p className="mt-3 text-[.9rem] leading-[1.9] text-ink">{question.take}</p></div>}
-        <Link to="/questions" className="mt-4 inline-block text-[.82rem] font-semibold text-accent">كل الأسئلة ←</Link>
+        <Link to="/questions" className="mt-4 inline-block text-[.82rem] font-semibold text-accent">كل الأسئلة<Arrow /></Link>
       </div>
     </details>
   )
@@ -235,11 +235,11 @@ export function ClosingStation({ upcoming, aboutHeading, about }: { upcoming: Si
     <section className="border-t border-hair px-6 py-[58px] md:px-11 md:py-[88px]">
       <div className="mx-auto max-w-shell">
         <div className="grid gap-10 border-b border-hair pb-12 md:grid-cols-2 md:gap-16 md:pb-16">
-          <FadeUp><Label>الرؤية</Label><h2 className="font-display text-[clamp(1.8rem,4.2vw,2.8rem)] font-semibold leading-[1.35] text-ink">{aboutHeading.replace('\n', ' ')}</h2><p className="mt-5 text-[1rem] font-light leading-[1.95] text-soft">{about}</p><Link to="/cv" className="mt-6 inline-block font-semibold text-accent">السيرة الكاملة ←</Link></FadeUp>
+          <FadeUp><Label>الرؤية</Label><h2 className="font-display text-[clamp(1.8rem,4.2vw,2.8rem)] font-semibold leading-[1.35] text-ink">{aboutHeading.replace('\n', ' ')}</h2><p className="mt-5 text-[1rem] font-light leading-[1.95] text-soft">{about}</p><Link to="/cv" className="mt-6 inline-block font-semibold text-accent">السيرة الكاملة<Arrow /></Link></FadeUp>
           <FadeUp delay={.08}><Newsletter /></FadeUp>
         </div>
         <div className="mt-10 grid gap-8">
-          <FadeUp><div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-[.76rem] font-semibold text-accent">اللقاءات القادمة</p><h2 className="mt-1 font-display text-[1.55rem] font-semibold text-ink">أين ألتقيك؟</h2></div><Link to="/upcoming" className="text-[.82rem] font-semibold text-accent">الجدول ←</Link></div>{upcoming.length ? <ul className="space-y-2.5">{upcoming.slice(0, 2).map((event) => <li key={`${event.iso}-${event.title}`} className="flex flex-wrap items-center gap-3 rounded-xl border border-hair px-4 py-3"><time className="text-[.76rem] font-semibold text-accent">{event.date}</time><span className="min-w-0 flex-1"><span className="block font-display text-[.95rem] font-medium text-ink">{event.title}</span><span className="block text-[.72rem] text-soft">{event.org} · {event.place}</span></span>{event.url && <a href={event.url} target="_blank" rel="noreferrer" className="text-[.76rem] font-semibold text-accent">التسجيل ←</a>}</li>)}</ul> : <div className="rounded-xl border border-hair bg-wash px-4 py-4 text-[.86rem] text-soft">لا لقاءات معلنة حالياً. <Link to="/contact#booking-form" className="font-semibold text-accent">احجز موعداً ←</Link></div>}</FadeUp>
+          <FadeUp><div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-[.76rem] font-semibold text-accent">اللقاءات القادمة</p><h2 className="mt-1 font-display text-[1.55rem] font-semibold text-ink">أين ألتقيك؟</h2></div><Link to="/upcoming" className="text-[.82rem] font-semibold text-accent">الجدول<Arrow /></Link></div>{upcoming.length ? <ul className="space-y-2.5">{upcoming.slice(0, 2).map((event) => <li key={`${event.iso}-${event.title}`} className="flex flex-wrap items-center gap-3 rounded-xl border border-hair px-4 py-3"><time className="text-[.76rem] font-semibold text-accent">{event.date}</time><span className="min-w-0 flex-1"><span className="block font-display text-[.95rem] font-medium text-ink">{event.title}</span><span className="block text-[.72rem] text-soft">{event.org} · {event.place}</span></span>{event.url && <a href={event.url} target="_blank" rel="noreferrer" className="text-[.76rem] font-semibold text-accent">التسجيل<Arrow /></a>}</li>)}</ul> : <div className="rounded-xl border border-hair bg-wash px-4 py-4 text-[.86rem] text-soft">لا لقاءات معلنة حالياً. <Link to="/contact#booking-form" className="font-semibold text-accent">احجز موعداً<Arrow /></Link></div>}</FadeUp>
 
         </div>
       </div>

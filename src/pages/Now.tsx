@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Arrow } from '../components/icons'
 import { Link } from 'react-router'
 import { FadeUp, Page } from '../components/ui'
 import { fetchPublishedExtras } from '../lib/firebase'
@@ -62,7 +63,7 @@ export default function Now() {
                   {item.note && <p className="mt-3 text-[.94rem] leading-loose text-soft">{item.note}</p>}
                   {item.link && (
                     <Link to={item.link} className="mt-4 inline-block text-[.84rem] font-semibold text-accent">
-                      اقرأ ما يتصل بها ←
+                      اقرأ ما يتصل بها<Arrow />
                     </Link>
                   )}
                 </article>

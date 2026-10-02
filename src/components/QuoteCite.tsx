@@ -1,4 +1,5 @@
 import { SocialIcon } from './icons'
+import { Check, Download } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { BookRecord } from '../lib/cms'
 import { copyText } from '../lib/clipboard'
@@ -103,7 +104,7 @@ export function QuoteCite({ book, page, compact = true }: { book: BookRecord; pa
           onClick={() => copy(style)}
           className="rounded-full border border-hair px-3 py-1 text-[.64rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
         >
-          {status === style ? 'نُسخ ✓' : style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}
+          {status === style ? <>نُسخ<Check aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] ms-1" /></> : style === 'bibtex' ? 'BibTeX' : style.toUpperCase()}
         </button>
       ))}
       <button
@@ -120,7 +121,7 @@ export function QuoteCite({ book, page, compact = true }: { book: BookRecord; pa
         }}
         className="rounded-full border border-hair px-3 py-1 text-[.64rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
       >
-        {status === 'saved' ? 'نُزّل ✓' : '.bib ↓'}
+        {status === 'saved' ? <>نُزّل<Check aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] ms-1" /></> : <>.bib<Download aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] ms-1" /></>}
       </button>
       <span aria-live="polite" className="text-[.62rem] text-soft">
         {status === 'error' ? 'تعذّر النسخ؛ أعد المحاولة.' : status === 'saved' ? 'الملف في تنزيلاتك.' : status ? 'جاهز للّصق في بحثك.' : 'صيغة الاستشهاد'}

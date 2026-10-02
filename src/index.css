@@ -3434,6 +3434,17 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
     padding: 1.15rem 1.25rem;
   }
 }
+/* صفحة قائمة البحوث فقط (سطح المكتب): شريط جانبي ثابت بجانب القائمة — صفحات القراءة لا تتأثر */
+.research-main { min-width: 0; }
+@media (min-width: 1100px) {
+  .research-split { display: grid; grid-template-columns: 19rem minmax(0, 1fr); gap: 2rem; align-items: start; }
+  .research-rail { position: sticky; top: 6.5rem; }
+  .content-research .research-rail .research-index-panel { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+  .content-research .research-rail .research-index-filters { display: grid; }
+  .content-research .research-rail .research-index-filters select { max-width: 100%; width: 100%; }
+  .content-research .research-rail .research-index-result { margin-inline-start: 0; justify-self: start; }
+  .content-research .research-split .research-title-link { font-size: 1.28rem; }
+}
 @media (max-width: 640px) {
   .content-research .research-evidence-stamp { font-size: .61rem; }
   .content-research .research-smart-reader { padding: 1rem; }
@@ -3453,13 +3464,19 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 }
 .impact-map-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   background: rgb(var(--c-ink) / .09);
   border: 1px solid rgb(var(--c-ink) / .10);
   border-radius: 1.4rem;
   overflow: hidden;
   box-shadow: 0 22px 55px -50px rgb(var(--c-ink) / .55);
+}
+/* لا بطاقة فارغة: عدد الأعمدة بعدد البطاقات، وعلى الشاشات الضيقة تمتدّ الأخيرة الفردية على الصف كله */
+.impact-map-grid > .impact-map-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+@media (min-width: 900px) {
+  .impact-map-grid { grid-template-columns: repeat(var(--impact-n, 7), minmax(0, 1fr)); }
+  .impact-map-grid > .impact-map-stat:last-child:nth-child(odd) { grid-column: auto; }
 }
 .impact-map-stat {
   display: flex;
@@ -8209,4 +8226,35 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 .text-\[\.58rem\], .text-\[\.6rem\], .text-\[\.62rem\], .text-\[\.64rem\],
 .text-\[\.65rem\], .text-\[\.66rem\], .text-\[\.68rem\], .text-\[\.7rem\] {
   font-size: .72rem !important;
+}
+
+/* ============================================================
+   بلاطات العدّ فوق قوائم البحوث والكتب — عرض فقط
+   ============================================================ */
+.count-tiles { display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr); }
+.count-tile {
+  min-width: 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--c-hair);
+  border-radius: .9rem;
+  background: rgb(var(--c-wash));
+}
+.count-tile--row { display: flex; align-items: center; gap: 1rem; }
+.count-ring { width: 5.25rem; height: 5.25rem; flex: none; }
+.count-ring-text { font: 700 1.6rem 'El Messiri', serif; fill: rgb(var(--c-ink)); font-variant-numeric: tabular-nums; }
+.count-tile-title { font-size: .92rem; font-weight: 700; line-height: 1.6; color: rgb(var(--c-ink)); }
+.count-tile-note { margin-top: .15rem; font-size: .76rem; line-height: 1.6; color: rgb(var(--c-soft)); }
+.count-bars { display: flex; align-items: flex-end; gap: .4rem; height: 6.5rem; margin-top: .5rem; }
+.count-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+.count-bar i { display: block; width: 100%; max-width: 1.6rem; border-radius: 5px 5px 2px 2px; background: rgb(var(--c-accent)); }
+.count-bar-value { font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 1em; }
+.count-bar-key { font-size: .62rem; color: rgb(var(--c-soft)); font-variant-numeric: tabular-nums; }
+.count-ranked { display: grid; gap: .45rem; margin-top: .65rem; }
+.count-ranked-row { display: grid; grid-template-columns: minmax(0, 8.6em) minmax(0, 1fr) 2.2em; gap: .5rem; align-items: center; font-size: .72rem; }
+.count-ranked-key { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(var(--c-soft)); }
+.count-ranked-track { height: 6px; border-radius: 3px; background: rgb(var(--c-ink) / .1); overflow: hidden; }
+.count-ranked-track i { display: block; height: 100%; border-radius: 3px; background: rgb(var(--c-accent)); }
+.count-ranked-value { font-weight: 700; font-variant-numeric: tabular-nums; text-align: end; }
+@media (min-width: 900px) {
+  .count-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
 }

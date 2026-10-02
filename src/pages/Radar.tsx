@@ -22,7 +22,7 @@ import {
 import { Pagination, usePagedList } from "../components/Pagination";
 import { liveLink } from "../lib/dead-links";
 import { arabicCountPhrase, CAPTURE_FORMS, MATERIAL_FORMS, SOURCE_PLAIN_FORMS } from '../lib/arabic-count.ts';
-import { Plus } from 'lucide-react'
+import { Plus, Radio } from 'lucide-react'
 
 type RadarItem = {
   ar: string;
@@ -190,7 +190,8 @@ export default function Radar() {
         <div className="mx-auto max-w-shell">
           {items.length === 0 ? (
             <FadeUp>
-              <div className="rounded-2xl border border-hair bg-wash py-20 text-center">
+              <div className="rounded-2xl border border-dashed border-hair px-6 py-16 text-center">
+                <span className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-hair text-accent" aria-hidden="true"><Radio size={20} strokeWidth={1.5} /></span>
                 <p className="text-[1.05rem] font-light text-soft">
                   {radarState.loading || radarState.refreshing
                     ? "نستعيد أرشيف الرادار المحفوظ ونتحقق من أحدث نسخة…"

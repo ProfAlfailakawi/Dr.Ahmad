@@ -80,8 +80,9 @@ const today = () => {
 
 /* اللوحة نهاريّة دائماً: نُثبّت الوضع النهاري ما دامت مفتوحة — شاشة الدخول
    واللوحة معاً — ونُعيد وضع الموقع الأصلي عند مغادرتها. */
-function useAdminDaylight() {
+function useAdminDaylight(active = true) {
   useEffect(() => {
+    if (!active) return
     const root = document.documentElement
     const wasDark = root.classList.contains('dark')
     root.classList.remove('dark')
@@ -90,12 +91,11 @@ function useAdminDaylight() {
       root.classList.remove('admin-light')
       if (wasDark) root.classList.add('dark')
     }
-  }, [])
+  }, [active])
 }
 
 export default function Admin() {
   useSeo({ title: 'لوحة التحكم', path: '/admin', robots: 'noindex, nofollow' })
-  useAdminDaylight()
   const { user, isAdmin: allowed, loading: checking } = useAdminAuth()
   const operationsPreview = import.meta.env.DEV
     && typeof window !== 'undefined'
@@ -103,6 +103,9 @@ export default function Admin() {
   const creativePreview = import.meta.env.DEV && typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('__creative_preview')
     : ''
+  /* شاشة الدخول وحدها تتبع سمة الموقع؛ اللوحة الداخلية تبقى نهاريّة كما هي. */
+  const loginScreen = !operationsPreview && !creativePreview && firebaseEnabled && !checking && (!user || !allowed)
+  useAdminDaylight(!loginScreen)
 
   if (operationsPreview) return <Page><div className="mx-auto w-full max-w-[1220px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><ProductionMonitor articles={[]} onOpen={() => undefined} /></div></Page>
   if (creativePreview === 'publishing') return <Page><div className="mx-auto w-full max-w-[1500px] px-4 pb-24 pt-28 sm:px-6 md:px-10 md:pt-32"><PublishingStudio articles={[]} /></div></Page>
@@ -169,6 +172,9 @@ function Login({ blockedEmail = '' }: { blockedEmail?: string }) {
   return (
     <Page>
       <div className="mx-auto max-w-md px-6 pb-24 pt-40 md:pt-44">
+        <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full border border-hair text-accent" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="h-[1.25rem] w-[1.25rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.4" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></svg>
+        </div>
         <h1 className="mb-8 font-display text-3xl font-bold text-ink">لوحة التحكم</h1>
         {pwaEntry && <p className="mb-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-soft"><strong className="text-accent">بوابة المالك.</strong> وصلت من نسخة PWA. في المرات القادمة اضغط مطولاً على شعار الموقع حتى يكتمل الخط الرفيع، أو استخدم اختصار «غرفة القيادة» من قائمة أيقونة التطبيق.</p>}
         {blockedEmail && (
@@ -179,7 +185,7 @@ function Login({ blockedEmail = '' }: { blockedEmail?: string }) {
         <div className="grid gap-4">
           <input className={input} dir="ltr" type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className={input} dir="ltr" type="password" placeholder="كلمة المرور" value={pass} onChange={(e) => setPass(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && go()} />
-          <button className={btn} onClick={go} disabled={busy || !email || !pass}>{busy ? '…' : 'دخول'}</button>
+          <button className={`${btn} dark:text-canvas`} onClick={go} disabled={busy || !email || !pass}>{busy ? '…' : 'دخول'}</button>
           {err && <p className="text-[.85rem] text-soft">{err}</p>}
         </div>
       </div>

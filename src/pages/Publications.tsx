@@ -12,6 +12,8 @@ import { ClarifiedIconAction } from '../components/ClarifiedIconAction'
 import { arabicCountPhrase, BOOK_PLAIN_FORMS } from '../lib/arabic-count.ts'
 import { BookTerrain } from '../components/BookTerrain'
 import { coverSrcSet } from '../lib/cover-image'
+import { CountTiles, RankedTile, RingTile, YearBarsTile } from '../components/CountTiles'
+import { bookTiles } from '../lib/count-tiles'
 
 const bookCount = (count: number) => arabicCountPhrase(count, BOOK_PLAIN_FORMS)
 
@@ -29,6 +31,7 @@ export default function Publications() {
   )
   const paged = usePagedList(orderedBooks, 12, String(orderedBooks.length))
   const count = bookCount(books.length)
+  const tiles = useMemo(() => bookTiles(books), [books])
   useSeo({ title: 'الكتب المنشورة', path: '/publications', description: `${count} ضمن مشروع علمي وفكري بدأ عام 2015، ويتتبع التعليم والتكنولوجيا والتحول المجتمعي وأثرها في الإنسان.` })
   const reduce = useReducedMotion()
   return (
@@ -48,6 +51,13 @@ export default function Publications() {
       }} />
       <PageHead label="المؤلفات العلمية والفكرية" title="كتبٌ تبني مشروعاً واحداً." sub={`${count} ترسم مساراً بدأ عام 2015؛ من التعليم والتكنولوجيا إلى أسئلة التحول المجتمعي ومكان الإنسان في العصر الرقمي.`} />
       <section className="overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 md:px-11 md:py-24">
+        {tiles.total > 0 && (tiles.years || tiles.pages) && (
+          <CountTiles label="الكتب بالأرقام" className="mx-auto mb-12 w-full max-w-shell">
+            <RingTile value={tiles.total} of={tiles.total} label="كتب منشورة" />
+            {tiles.years && <YearBarsTile title="الكتب بحسب سنة النشر" bars={tiles.years} />}
+            {tiles.pages && <RankedTile title="عدد الصفحات" note={tiles.pages.sum ? `المجموع ${tiles.pages.sum} صفحة` : undefined} rows={tiles.pages.top} />}
+          </CountTiles>
+        )}
         <div id="books-grid" className="spatial-collection mobile-card-rail scroll-mt-28 mx-auto grid w-full max-w-shell min-w-0 grid-cols-2 gap-x-4 gap-y-8 sm:gap-8 lg:gap-10">
           {paged.pageItems.map((b, i) => {
             const right = b

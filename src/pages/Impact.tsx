@@ -175,17 +175,17 @@ export default function Impact() {
           </div>
         </div>
         {yearSummary.length > 1 && (
-          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-2">
             <span className="text-[.72rem] font-semibold text-soft">حصاد السنوات:</span>
             {yearSummary.map(([year, count]) => (
               <button
                 key={year}
                 type="button"
                 onClick={() => setYearFilter(yearFilter === year ? null : year)}
-                className={`border-b pb-0.5 text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-transparent text-soft hover:text-accent'}`}
+                className={`flex min-h-11 min-w-[6.5rem] flex-col justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-start text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
               >
-                {year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}
-                <span aria-hidden="true" className="ms-2 inline-block h-1.5 rounded-full bg-accent/50 align-middle" style={{ width: `${Math.max(4, Math.round((count / yearPeak) * 44))}px` }} />
+                <span>{year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}</span>
+                <span aria-hidden="true" className="block h-1.5 w-full overflow-hidden rounded-full bg-hair"><span className="block h-full rounded-full bg-accent/60" style={{ width: `${Math.max(6, Math.round((count / yearPeak) * 100))}%` }} /></span>
               </button>
             ))}
             <button

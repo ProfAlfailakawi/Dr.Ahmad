@@ -199,6 +199,14 @@ html.dark body::before {
   }
 }
 
+/* فوق الصفحات ذات الأشرطة الملتصقة (سجل الأثر): رأسٌ مصمت بتمويه قوي كي لا
+   تلوح أرقامٌ شبحيّة من تحته أثناء التمرير. */
+body:has(.content-impact) .site-nav.is-solid {
+  background: rgb(var(--c-canvas) / .985);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
 
 /* القائمة الرئيسية: لا إطار داكن ولا حلقة متصفح حول العنصر المفتوح. */
 .site-menu-control {

@@ -185,7 +185,7 @@ export default function Impact() {
                 className={`border-b pb-0.5 text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-transparent text-soft hover:text-accent'}`}
               >
                 {year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}
-                <span aria-hidden="true" className="ms-2 inline-block h-1.5 rounded-full bg-accent/50 align-middle" style={{ width: `${Math.max(4, Math.round((count / yearPeak) * 28))}px` }} />
+                <span aria-hidden="true" className="ms-2 inline-block h-1.5 rounded-full bg-accent/50 align-middle" style={{ width: `${Math.max(4, Math.round((count / yearPeak) * 44))}px` }} />
               </button>
             ))}
             <button

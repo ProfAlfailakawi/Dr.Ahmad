@@ -28,6 +28,21 @@ export default function Research() {
   const types = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ projection }) => arabicOnly(projection.studyType)).filter(Boolean))).sort((left, right) => left.localeCompare(right, 'ar'))], [indexed])
   const years = useMemo(() => ['الكل', ...Array.from(new Set(indexed.map(({ projection }) => projection.year).filter(Boolean))).sort((left, right) => right.localeCompare(left))], [indexed])
   const term = normalizeSearch(query)
+  const yearCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    indexed.forEach(({ projection }) => { if (projection.year) counts.set(projection.year, (counts.get(projection.year) || 0) + 1) })
+    return counts
+  }, [indexed])
+  const yearList = years.slice(1)
+  const yearChip = (year: string) => {
+    const selected = yearFilter === year
+    const count = year === 'الكل' ? indexed.length : yearCounts.get(year) || 0
+    return (
+      <button key={year} type="button" className="research-year-chip" aria-pressed={selected} onClick={() => setYearFilter(year)}>
+        <span>{year}</span><span aria-hidden="true"> — </span><span className="research-year-count">{count}</span>
+      </button>
+    )
+  }
   const filtered = useMemo(() => indexed.filter(({ projection }) => {
     if (typeFilter !== 'الكل' && projection.studyType !== typeFilter) return false
     if (yearFilter !== 'الكل' && projection.year !== yearFilter) return false
@@ -81,6 +96,21 @@ export default function Research() {
                 </label>
                 <span className="research-index-result">{arabicCountPhrase(filtered.length, RESULT_FORMS)}</span>
               </div>
+              {yearList.length > 0 && (
+                <div className="research-year-browse">
+                  <h3>تصفح بالسنة</h3>
+                  <div className="research-year-chips">
+                    {yearChip('الكل')}
+                    {yearList.slice(0, 8).map(yearChip)}
+                  </div>
+                  {yearList.length > 8 && (
+                    <details className="research-year-more" open={yearList.indexOf(yearFilter) >= 8 || undefined}>
+                      <summary>المزيد</summary>
+                      <div className="research-year-chips">{yearList.slice(8).map(yearChip)}</div>
+                    </details>
+                  )}
+                </div>
+              )}
             </section>
           </FadeUp>
           </aside>

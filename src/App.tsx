@@ -524,7 +524,13 @@ function MobileCardRailGuard() {
       const rect = discoveryRail.getBoundingClientRect()
       const direction = discoveryOverlay.dataset.direction === 'left' ? 'left' : 'right'
       const x = direction === 'left' ? rect.left + 12 : rect.right - 12
-      const y = Math.min(window.innerHeight - 22, Math.max(22, rect.bottom - 24))
+      /* الحدّ السفلي الفعلي للبطاقة الظاهرة (للسكّة حشوة تحتها)، فتبقى التسمية داخل البطاقة لا على حدّها */
+      const card = Array.from(discoveryRail.children).find((child) => {
+        const box = child.getBoundingClientRect()
+        return box.height > 0 && box.right > rect.left + 8 && box.left < rect.right - 8
+      })
+      const bottom = Math.min(rect.bottom, card ? card.getBoundingClientRect().bottom : rect.bottom)
+      const y = Math.min(window.innerHeight - 22, Math.max(22, bottom - 24))
       discoveryOverlay.style.left = `${Math.round(x)}px`
       discoveryOverlay.style.top = `${Math.round(y)}px`
     }

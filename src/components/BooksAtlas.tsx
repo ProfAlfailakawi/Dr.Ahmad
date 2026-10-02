@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Arrow } from './icons'
 import { Link } from 'react-router'
 import { allBookKnowledge } from '../lib/book-knowledge'
 
@@ -134,7 +135,7 @@ export function BooksAtlas() {
                     to={`/concept/${encodeURIComponent(activeBridge.term)}`}
                     className="inline-flex rounded-full border border-accent/[.35] px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
                   >
-                    سيرة هذا المفهوم عبر السنوات ←
+                    سيرة هذا المفهوم عبر السنوات<Arrow />
                   </Link>
                   <Link
                     to={`/search?q=${encodeURIComponent(activeBridge.term)}&tab=passage`}

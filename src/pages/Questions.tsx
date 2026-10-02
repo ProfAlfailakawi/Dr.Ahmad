@@ -142,7 +142,7 @@ export default function Questions() {
             <div className="mb-6 flex flex-wrap items-center gap-3 text-[.82rem] font-semibold text-accent">
               <span>السؤال الأحدث</span>
               {currentDate && <span className="font-normal text-soft">· {currentDate}</span>}
-              <span className="rounded-full border border-accent/30 px-3 py-1 text-[.68rem] font-semibold">{currentTopic}</span>
+              <span className="rounded-full border border-accent/30 px-3 py-1 text-[.72rem] font-semibold">{currentTopic}</span>
             </div>
           </FadeUp>
           <Reveal>
@@ -205,7 +205,7 @@ export default function Questions() {
                 <article className="rounded-2xl border border-hair p-6">
                   <p className="mb-1 flex flex-wrap items-center gap-2 text-[.75rem] text-soft">
                     {question.label}
-                    <span className="rounded-full border border-hair px-2.5 py-0.5 text-[.7rem] font-semibold text-accent">{question.topic}</span>
+                    <span className="rounded-full border border-hair px-2.5 py-0.5 text-[.72rem] font-semibold text-accent">{question.topic}</span>
                   </p>
                   <p className="font-display text-xl font-semibold leading-relaxed text-ink">{question.ar}</p>
                   <p className="mt-4 text-[.95rem] leading-[1.9] text-soft">{question.take}</p>

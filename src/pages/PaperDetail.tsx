@@ -257,7 +257,7 @@ export default function PaperDetail() {
                   </div>
                   <div className="flex items-center gap-3">
                     {year && <span className="font-display text-[.9rem] font-bold text-accent">{year}</span>}
-                    {doi && <span className="rounded-md border border-hair bg-canvas px-2.5 py-1 text-[.68rem] font-mono text-soft">DOI: {doi}</span>}
+                    {doi && <span className="rounded-md border border-hair bg-canvas px-2.5 py-1 text-[.72rem] font-mono text-soft">DOI: {doi}</span>}
                   </div>
                 </div>
 
@@ -292,7 +292,7 @@ export default function PaperDetail() {
                 <EvidenceLevelNode />
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
-                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 1</span>
+                    <span className="text-[.72rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 1</span>
                     <h2 className="mt-1 font-display text-xl font-bold text-ink">المستوى الأول: الهوية والتوثيق الأكاديمي</h2>
                   </div>
                   <EvidenceStamp fallback="ختم الاعتماد الأكاديمي" />
@@ -300,12 +300,12 @@ export default function PaperDetail() {
                 {/* صدق البيانات (أمر الدكتور): الحقل الفارغ يختفي بهدوء — لا يُدّعى
                     DOI «مسجّل» ولا «مجلة محكّمة» بلا اسمها. البيانات من البحث نفسه فقط. */}
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {topic && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">الموضوع الأساسي</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{topic}</strong></div>}
-                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">{p.coAuthors?.trim() ? 'الباحثون' : 'الباحث'}</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{researchers}</strong></div>
-                  {journal && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">جهة النشر / وعاء النشر</span><strong dir="auto" className="mt-1 block min-w-0 whitespace-normal text-[.88rem] font-bold leading-[1.85] text-ink [overflow-wrap:anywhere]">{journal}</strong></div>}
-                  {year && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year}</strong></div>}
-                  {doi && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">المعرّف المعياري DOI</span><strong dir="ltr" className="mt-1 block min-w-0 font-mono text-[.8rem] text-accent [overflow-wrap:anywhere]">{doi}</strong></div>}
-                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.68rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-600'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : <><Check aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />موثق ومطابق للمصدر</>}</strong></div>}
+                  {topic && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">الموضوع الأساسي</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{topic}</strong></div>}
+                  <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">{p.coAuthors?.trim() ? 'الباحثون' : 'الباحث'}</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{researchers}</strong></div>
+                  {journal && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">جهة النشر / وعاء النشر</span><strong dir="auto" className="mt-1 block min-w-0 whitespace-normal text-[.88rem] font-bold leading-[1.85] text-ink [overflow-wrap:anywhere]">{journal}</strong></div>}
+                  {year && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year}</strong></div>}
+                  {doi && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">المعرّف المعياري DOI</span><strong dir="ltr" className="mt-1 block min-w-0 font-mono text-[.8rem] text-accent [overflow-wrap:anywhere]">{doi}</strong></div>}
+                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-600'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : <><Check aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />موثق ومطابق للمصدر</>}</strong></div>}
                 </div>
               </div>
             </FadeUp>
@@ -317,7 +317,7 @@ export default function PaperDetail() {
                 <EvidenceLevelNode />
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                     <div>
-                      <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 2</span>
+                      <span className="text-[.72rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 2</span>
                       <h2 className="mt-1 font-display text-xl font-bold text-ink">المستوى الثاني: الأبعاد المنهجية والأكاديمية</h2>
                     </div>
                     <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">{arabicCountPhrase(dataCards.length, DIMENSION_FORMS)}</span>
@@ -366,7 +366,7 @@ export default function PaperDetail() {
                 <EvidenceLevelNode />
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hair pb-4">
                   <div>
-                    <span className="text-[.7rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 3</span>
+                    <span className="text-[.72rem] font-extrabold uppercase tracking-widest text-accent">Academic Level 3</span>
                     <h2 className="mt-1 font-display text-xl font-bold text-ink">المستوى الثالث: شبكة الأدلة والمراجع الأصيلة</h2>
                   </div>
                   <span className="rounded-full border border-hair bg-canvas px-3 py-1 text-[.72rem] font-semibold text-soft">توثيق واقتباس أكاديمي</span>
@@ -413,7 +413,7 @@ export default function PaperDetail() {
               <div className="grid gap-3 border-t border-hair bg-canvas px-5 py-5 md:grid-cols-3 md:px-7">
                 {bookRoots.map(({ book, concept }) => (
                   <Link key={book.slug} to={`/publications/${book.slug}#${bookKnowledgeAnchor(concept)}`} className="rounded-2xl border border-hair p-4 transition-colors hover:border-accent">
-                    <span className="text-[.65rem] font-semibold text-accent">{book.slug === 'encyclopedia' ? 'الجذر المرجعي' : 'امتداد في كتاب'} · ص {concept.pageStart}</span>
+                    <span className="text-[.72rem] font-semibold text-accent">{book.slug === 'encyclopedia' ? 'الجذر المرجعي' : 'امتداد في كتاب'} · ص {concept.pageStart}</span>
                     <strong className="mt-1.5 block text-[.82rem] leading-relaxed text-ink">{book.title}</strong>
                     <span className="mt-2 block text-[.72rem] leading-relaxed text-soft">{concept.title}</span>
                   </Link>
@@ -430,7 +430,7 @@ export default function PaperDetail() {
                     <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors group-hover:border-accent group-hover:text-accent sm:h-8 sm:w-8">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                     </span>
-                    <span className="min-w-0 line-clamp-2 text-[.64rem] font-light leading-[1.6] text-soft transition-colors group-hover:text-accent sm:text-[.66rem]">{prev.title}</span>
+                    <span className="min-w-0 line-clamp-2 text-[.72rem] font-light leading-[1.6] text-soft transition-colors group-hover:text-accent sm:text-[.72rem]">{prev.title}</span>
                   </Link>
                 ) : <span aria-hidden className="block h-11 sm:h-8" />}
               </div>
@@ -440,7 +440,7 @@ export default function PaperDetail() {
                     <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors group-hover:border-accent group-hover:text-accent sm:h-8 sm:w-8">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                     </span>
-                    <span className="min-w-0 line-clamp-2 text-[.64rem] font-light leading-[1.6] text-soft transition-colors group-hover:text-accent sm:text-[.66rem]">{next.title}</span>
+                    <span className="min-w-0 line-clamp-2 text-[.72rem] font-light leading-[1.6] text-soft transition-colors group-hover:text-accent sm:text-[.72rem]">{next.title}</span>
                   </Link>
                 ) : <span aria-hidden className="block h-11 sm:h-8" />}
               </div>

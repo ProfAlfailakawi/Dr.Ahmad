@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { Arrow } from '../components/icons'
+import { BadgeCheck, Link2 } from 'lucide-react'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
 import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
@@ -35,13 +37,15 @@ function nodeMatchesFilter(node: ImpactNode, filter: FilterKey) {
 function EvidenceLink({ node }: { node: ImpactNode }) {
   const content = (
     <>
-      <span className="block text-[.7rem] font-semibold text-accent">{node.label}{node.year ? ` · ${node.year}` : ''}</span>
+      <span className="block text-[.72rem] font-semibold text-accent">{node.label}{node.year ? ` · ${node.year}` : ''}</span>
       <strong className="mt-1.5 block font-display text-[.98rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</strong>
       <span className="mt-1.5 block text-[.76rem] font-light leading-[1.78] text-soft">{node.note}</span>
-      {node.source && <span className="mt-2 block text-[.7rem] text-soft/75">المصدر: {node.source}</span>}
+      {node.source && <span className="mt-2 block text-[.72rem] text-soft/75">المصدر: {node.source}</span>}
       {node.kind !== 'origin' && (
-        <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.7rem] font-semibold text-soft transition-colors group-hover:border-accent group-hover:text-accent">
-          {node.confidence === 'موثق' ? 'أثر موثّق' : 'امتداد في الأرشيف'}
+        <span className="mt-2 inline-block rounded-full border border-hair px-2.5 py-1 text-[.72rem] font-semibold text-soft transition-colors group-hover:border-accent group-hover:text-accent">
+          {node.confidence === 'موثق'
+            ? <><BadgeCheck aria-hidden="true" size="1em" strokeWidth={1.6} className="me-1 inline-block align-[-0.15em]" />أثر موثّق</>
+            : <><Link2 aria-hidden="true" size="1em" strokeWidth={1.6} className="me-1 inline-block align-[-0.15em]" />امتداد في الأرشيف</>}
         </span>
       )}
     </>
@@ -116,6 +120,7 @@ export default function Impact() {
     for (const chain of chains) if (chain.year) counts.set(chain.year, (counts.get(chain.year) || 0) + 1)
     return [...counts.entries()].sort((left, right) => right[0].localeCompare(left[0]))
   }, [chains])
+  const yearPeak = Math.max(1, ...yearSummary.map(([, count]) => count))
   const linkedNodes = chains.flatMap((chain) => chain.nodes).filter((node) => node.kind !== 'origin')
   const verifiedEvidence = linkedNodes.filter((node) => node.confidence === 'موثق')
   const verifiedNodes = verifiedEvidence.length
@@ -136,14 +141,14 @@ export default function Impact() {
       <PageHead
         label="من الفكرة إلى الميدان"
         title="سجل الأثر الموثق."
-        sub="خريطةٌ تتبع انتقال الفكرة بين المقال والبحث والكتاب والحوار العام. كل محطة تعود إلى مصدرها، وتبقى القرابة الموضوعية منفصلة بوضوح عن الأثر الذي تثبته جهة مستقلة."
+        sub="انتقال الفكرة بين المقال والبحث والكتاب والحوار العام. كل محطة تعود إلى مصدرها، والقرابة الموضوعية منفصلة عن الأثر الذي تثبته جهة مستقلة."
       />
       <ThoughtSystemNav />
 
       <section className="border-b border-hair px-6 py-5 md:px-11">
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3">
           <p className="text-[.78rem] leading-relaxed text-soft">للقراءة الكلية قبل الدخول في المسارات التفصيلية.</p>
-          <Link to="/thought" className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent">فكر د. أحمد في لقطة واحدة ←</Link>
+          <Link to="/thought" className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent">فكر د. أحمد في لقطة واحدة<Arrow /></Link>
         </div>
       </section>
 
@@ -155,7 +160,7 @@ export default function Impact() {
             <dl className="flex flex-wrap gap-x-8 gap-y-3">
               {headlineStats.map((item) => (
                 <div key={item.label}>
-                  <dt className="text-[.7rem] font-semibold text-accent">{item.label}</dt>
+                  <dt className="text-[.72rem] font-semibold text-accent">{item.label}</dt>
                   <dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink"><CountUp value={item.value} format={(input) => number.format(input)} /></dd>
                 </div>
               ))}
@@ -171,7 +176,7 @@ export default function Impact() {
         </div>
         {yearSummary.length > 1 && (
           <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-x-4 gap-y-2">
-            <span className="text-[.68rem] font-semibold text-soft">حصاد السنوات:</span>
+            <span className="text-[.72rem] font-semibold text-soft">حصاد السنوات:</span>
             {yearSummary.map(([year, count]) => (
               <button
                 key={year}
@@ -180,6 +185,7 @@ export default function Impact() {
                 className={`border-b pb-0.5 text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-transparent text-soft hover:text-accent'}`}
               >
                 {year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}
+                <span aria-hidden="true" className="ms-2 inline-block h-1.5 rounded-full bg-accent/50 align-middle" style={{ width: `${Math.max(4, Math.round((count / yearPeak) * 28))}px` }} />
               </button>
             ))}
             <button
@@ -210,7 +216,7 @@ export default function Impact() {
                   <FadeUp key={chain.key} delay={Math.min(chainIndex * .035, .2)}>
                     <article className="grid gap-7 py-9 md:grid-cols-[minmax(0,.8fr)_minmax(0,1.35fr)] md:gap-12 md:py-11">
                       <header>
-                        <span className="text-[.68rem] font-semibold text-accent">رحلة أثر{chain.year ? ` · ${chain.year}` : ''}</span>
+                        <span className="text-[.72rem] font-semibold text-accent">رحلة أثر{chain.year ? ` · ${chain.year}` : ''}</span>
                         {chain.originTo ? (
                           <Link to={chain.originTo} className="group mt-2 block">
                             <h2 className="font-display text-[1.23rem] font-semibold leading-[1.65] text-ink transition-colors group-hover:text-accent">{chain.title}</h2>

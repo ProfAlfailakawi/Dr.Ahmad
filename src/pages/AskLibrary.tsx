@@ -16,7 +16,7 @@ import { loadArticleBodies } from "../lib/article-bodies";
 import { categoryLabel } from "../lib/content-taxonomy";
 import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
-import { SocialIcon } from '../components/icons'
+import { SocialIcon, Arrow } from '../components/icons'
 import { BranchGrove, ComposeScene, type Branch } from '../components/ComposeScene'
 import { buildKnowledgeGraph, graphNeighbors, graphSearch, type KnowledgeGraph, type KnowledgeKind } from '../lib/knowledge-graph'
 import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from '../lib/smart-search'
@@ -984,7 +984,7 @@ export default function AskLibrary() {
                                   </span>
                                   <span className="inline-block text-accent transition-transform duration-300 group-hover:-translate-x-1">
                                     {" "}
-                                    ←
+                                   <Arrow />
                                   </span>
                                 </Link>
                               </li>

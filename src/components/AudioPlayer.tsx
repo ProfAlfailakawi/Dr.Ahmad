@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { rtlSeekFraction, rtlSeekSeconds } from '../lib/audio-seek'
 import { listenIsOpen } from '../lib/listen-catalog'
-import { SocialIcon } from './icons'
+import { SocialIcon, Arrow } from './icons'
 import { VoiceFigure, voiceKindForSpeaker } from './VoiceFigure'
 import { arabicCountPhrase, AUDIO_TRIAL_FORMS } from '../lib/arabic-count.ts'
 import { loadAudioPeaks } from '../lib/audio-peaks'
@@ -177,7 +177,7 @@ const DialogueScriptView = memo(function DialogueScriptView({ script, activeInde
       {/* بابٌ واحد هادئ إلى بقية الحلقات، لا يراه إلا من يستمع الآن. */}
       {listenIsOpen && (
         <Link to="/listen" className="mt-3 inline-block px-2.5 text-[.72rem] text-soft transition-colors hover:text-accent">
-          مجلس الفكرة ←
+          مجلس الفكرة<Arrow />
         </Link>
       )}
     </div>

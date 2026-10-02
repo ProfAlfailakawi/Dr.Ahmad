@@ -2,7 +2,7 @@
    أيقونات الواجهة كلها خطية (lucide، سمك 1.6) كي لا يختلط الخط الرفيع بالمصمت؛
    تبقى شعارات المنصات (LinkedIn وX…) علاماتٍ تجارية كما هي. */
 import {
-  ArrowUp, Bookmark, Calendar, Check, ChevronDown, ChevronLeft, CircleHelp, Copy, Download, FileText, History,
+  ArrowLeft, ArrowRight, ArrowUp, ArrowUpLeft, ArrowUpRight, Bookmark, Calendar, Check, ChevronDown, ChevronLeft, CircleHelp, Copy, Download, FileText, History,
   Image, Link, Mail, PenLine, Play, Printer, Quote, Search, Share2, Sparkles, Trash2, X, type LucideIcon,
 } from 'lucide-react'
 
@@ -10,6 +10,15 @@ const LINE_ICONS: Record<string, LucideIcon> = {
   Link, Check, Calendar, Search, Spark: Sparkles, Mail, Bookmark, Copy, Image, Cite: Quote, Close: X,
   Download, Print: Printer, Play, History, ArrowUp, Edit: PenLine, ChevronDown, Trash: Trash2, Share: Share2,
   ArrowBack: ChevronLeft, Question: CircleHelp, CV: FileText,
+}
+
+/* سهم اتجاهي موحّد يحلّ محلّ الأسهم النصية (← → ↗ ↖) داخل النصوص.
+   kind: next = تقدّم في اتجاه القراءة (يسار في RTL، يمين في LTR) · out = ↗ · back = عودة (يمين في RTL). */
+export function Arrow({ kind = 'next', ltr = false, bare = false, className = '' }: { kind?: 'next' | 'back' | 'out' | 'upstart'; ltr?: boolean; bare?: boolean; className?: string }) {
+  const Cmp = kind === 'out' ? ArrowUpRight
+    : kind === 'upstart' ? (ltr ? ArrowUpRight : ArrowUpLeft)
+    : (kind === 'next') === !ltr ? ArrowLeft : ArrowRight
+  return <Cmp aria-hidden="true" size="1em" strokeWidth={1.6} className={`inline-block shrink-0 align-[-0.125em] ${bare ? '' : kind === 'back' ? 'me-[.3em]' : 'ms-[.3em]'} ${className}`.trim()} />
 }
 
 export function SocialIcon({ name, size = 20 }: { name: string; size?: number }) {

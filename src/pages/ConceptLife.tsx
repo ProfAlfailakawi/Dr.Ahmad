@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Arrow } from '../components/icons'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
@@ -239,7 +240,7 @@ export default function ConceptLife() {
                   <span aria-hidden="true" className="absolute right-0 top-1.5 -mr-[5px] block h-2.5 w-2.5 rounded-full bg-accent" />
                   <div className="pt-0.5">
                     <span className="block font-display text-[1.05rem] font-semibold text-accent tabular-nums">{station.year || '—'}</span>
-                    <span className="mt-0.5 block text-[.66rem] text-soft">{station.kind}</span>
+                    <span className="mt-0.5 block text-[.72rem] text-soft">{station.kind}</span>
                   </div>
                   <div className="min-w-0">
                     <Link to={station.to || '/'} className="group block">
@@ -258,8 +259,8 @@ export default function ConceptLife() {
                       station.note && <p className="mt-1.5 text-[.8rem] leading-relaxed text-soft">{station.note}</p>
                     )}
                     {station.href && (
-                      <a href={station.href} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[.7rem] font-semibold text-accent transition-opacity hover:opacity-70">
-                        شاهد اللحظة نفسها ↗
+                      <a href={station.href} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[.72rem] font-semibold text-accent transition-opacity hover:opacity-70">
+                        شاهد اللحظة نفسها<Arrow kind="out" />
                       </a>
                     )}
                   </div>

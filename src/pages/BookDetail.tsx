@@ -8,8 +8,9 @@ import { bookCitation, citationToBibTeX, scholarMetaTags } from '../lib/scholar-
 import { useCmsContent } from '../lib/content'
 import { SITE_URL } from '../data'
 import tocData from '../data/book-toc-links.json'
-import { SocialIcon } from '../components/icons'
+import { SocialIcon, Arrow } from '../components/icons'
 import GlyphLoader from '../components/GlyphLoader'
+import { Compass, Lightbulb, Users } from 'lucide-react'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { arabicCountPhrase, TITLE_FORMS } from '../lib/arabic-count.ts'
 import { coverSrcSet } from '../lib/cover-image'
@@ -139,6 +140,38 @@ const BOOK_GUIDES: Record<string, BookGuide> = {
   },
 }
 
+/* لمحة بصرية مشتقّة من الحقول نفسها (idea/audience/entry) دون نص جديد: فئات القرّاء شارات، والمدخل «ابدأ من»، والفكرة سطر واحد.
+   تظهر للكتب ذات الدليل المحرَّر فقط، أما الدليل الاحتياطي العام فلا يُعرض. */
+function BookGlance({ slug }: { slug: string }) {
+  const guide = BOOK_GUIDES[slug]
+  if (!guide) return null
+  const idea = guide.idea.split('؛')[0].replace(/[.،]+$/, '')
+  const audience = guide.audience.replace(/\.$/, '').split('،').map((part) => part.trim().replace(/^و(?=\S{3})/, '')).filter((part) => part && part.length <= 30 && !part.startsWith('كل من')).slice(0, 4)
+  const entryClause = (guide.entry.split('؛').find((part) => part.trim().startsWith('ابدأ')) || guide.entry).split('،')[0].trim()
+  const entry = entryClause.replace(/^ابدأ\s+ب/, '').replace(/[.]+$/, '')
+  return (
+    <div className="mx-auto mt-14 max-w-[880px] space-y-3.5 rounded-2xl border border-hair bg-wash/[.45] px-5 py-5 md:px-7" aria-label="لمحة عن الكتاب">
+      <p className="flex items-start gap-2.5 text-[.9rem] leading-[1.8] text-ink/[.85]">
+        <Lightbulb aria-hidden="true" size={16} strokeWidth={1.6} className="mt-[.5em] shrink-0 text-accent" />
+        <span className="line-clamp-1">{idea}</span>
+      </p>
+      {audience.length > 0 && (
+        <ul className="flex flex-wrap items-center gap-2" aria-label="لمن الكتاب">
+          <li className="inline-flex items-center gap-1.5 text-[.76rem] font-semibold text-accent"><Users aria-hidden="true" size={15} strokeWidth={1.6} />لمن؟</li>
+          {audience.map((item) => <li key={item} className="rounded-full border border-hair px-3 py-1 text-[.76rem] text-soft">{item}</li>)}
+        </ul>
+      )}
+      {entry && (
+        <p className="flex items-center gap-2 text-[.82rem] text-soft">
+          <Compass aria-hidden="true" size={15} strokeWidth={1.6} className="shrink-0 text-accent" />
+          <span className="font-semibold text-accent">ابدأ من</span><Arrow bare className="shrink-0 text-accent" />
+          <span className="min-w-0">{entry}</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
 function bookGuide(slug: string, fallback?: string): BookGuide {
   return BOOK_GUIDES[slug] || {
     idea: fallback || 'يضع المفهوم في سياقه التعليمي، ثم يفتح طريقاً عملياً للفهم والتطبيق.',
@@ -240,7 +273,7 @@ export default function BookDetail() {
       <section className="px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-28 md:px-11 md:pb-24 md:pt-44">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <Link to="/publications" viewTransition className="-my-2 inline-block py-2 text-[.85rem] text-soft transition-colors hover:text-accent">← كل المؤلفات</Link>
+            <Link to="/publications" viewTransition className="-my-2 inline-block py-2 text-[.85rem] text-soft transition-colors hover:text-accent"><Arrow kind="back" />كل المؤلفات</Link>
           </FadeUp>
 
           <div className="book-detail-layout mt-8 grid items-start gap-8 md:mt-10 md:grid-cols-[1fr_1.1fr] md:gap-16">
@@ -276,7 +309,7 @@ export default function BookDetail() {
                   ['ISBN / ردمك', book.isbn],
                 ].map(([label, value]) => (
                   <div key={label} className={`min-w-0 rounded-2xl border border-hair bg-wash px-3.5 py-3 md:px-4 ${label === 'ISBN / ردمك' ? 'col-span-2' : ''}`}>
-                    <dt className="text-[.66rem] leading-relaxed text-soft">{label}</dt>
+                    <dt className="text-[.72rem] leading-relaxed text-soft">{label}</dt>
                     <dd dir={label === 'ISBN / ردمك' ? 'ltr' : undefined} className={`mt-1 break-words text-[.82rem] font-medium leading-relaxed ${label === 'ISBN / ردمك' ? 'text-left tabular-nums' : ''} ${value ? 'text-ink' : 'text-soft/[.65]'}`}>{value || 'غير موثّق بعد'}</dd>
                   </div>
                 ))}
@@ -319,6 +352,8 @@ export default function BookDetail() {
             </FadeUp>
           </div>
 
+          <FadeUp delay={0.12}><BookGlance slug={book.slug} /></FadeUp>
+
           <FadeUp delay={0.14}>
             <details className="group mx-auto mt-14 max-w-[880px] overflow-hidden rounded-2xl border border-hair bg-canvas">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 px-5 py-5 md:px-7">
@@ -339,7 +374,7 @@ export default function BookDetail() {
                   <h2 id="book-toc-title" className="font-display text-2xl font-semibold text-ink">فهرس المحتويات</h2>
                   <p className="mt-1 text-[.72rem] leading-relaxed text-soft">أبوابٌ تُفتح عند الحاجة؛ لا جدار من البطاقات المتشابهة.</p>
                 </div>
-                {toc.length > 0 && <span className="text-[.68rem] text-soft">{arabicCountPhrase(toc.length, TITLE_FORMS)}</span>}
+                {toc.length > 0 && <span className="text-[.72rem] text-soft">{arabicCountPhrase(toc.length, TITLE_FORMS)}</span>}
               </div>
               {toc.length ? (
                 <DeferredBookToc toc={toc} bookSlug={book.slug} />

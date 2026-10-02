@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Arrow } from '../components/icons'
 import { Link, useSearchParams } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
@@ -221,10 +222,10 @@ export default function Decade() {
         label={mode === 'predictions' ? 'الزمن يراجع النص' : (idea ? 'رحلة فكرة' : 'السيرة الفكرية الحيّة')}
         title={mode === 'predictions' ? 'التنبؤات والمراجعات.' : (idea ? `«${idea}» عبر السنوات.` : 'وثيقة العقد.')}
         sub={mode === 'predictions'
-          ? 'كيف قرأت كتاباتي ما لم يكن قد اكتمل بعد؟ تُعاد كل عبارة إلى سياقها، ثم تُقارن بما تكشّف لاحقاً عبر الاتجاه والتوقيت والحجم والنطاق — من غير اختزال القضايا المعقدة في حكم ثنائي.'
+          ? 'كيف قرأت كتاباتي ما لم يكن قد اكتمل بعد؟ تُعاد كل عبارة إلى سياقها وتُقارن بما تكشّف لاحقاً: الاتجاه والتوقيت والحجم والنطاق، لا حكماً ثنائياً.'
           : idea
             ? 'متى بدأتْ هذه الفكرة تُلحّ، وكيف تنقّلت بين أبوابه، وأين استقرّت — بالنصوص والتواريخ لا بالانطباع.'
-            : 'ليست سيرة وظائف ومناصب؛ بل قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام.'}
+            : 'قراءة تتولّد من الأرشيف نفسه: أين بدأ السؤال، ومتى اتسع، وما الذي بقي يُلحّ عاماً بعد عام.'}
       />
       <ThoughtSystemNav />
 
@@ -309,6 +310,32 @@ export default function Decade() {
                 </div>
               </FadeUp>
 
+              {(() => {
+                /* توزيع الحالات كما وردت في السجل نفسه — لا تصنيف مُخترَع ولا أرقام جديدة */
+                const tally = new Map<string, number>()
+                predictionRegister.forEach(({ prediction }) => tally.set(String(prediction.status), (tally.get(String(prediction.status)) || 0) + 1))
+                const rows = Array.from(tally).sort((x, y) => y[1] - x[1])
+                if (rows.length < 2) return null
+                const tones = ['rgb(var(--c-accent))', 'rgb(var(--c-ember))', 'rgb(var(--c-soft))']
+                return (
+                  <div className="mt-6" role="img" aria-label={`توزيع حالات التوقعات: ${rows.map(([label, count]) => `${label} ${number.format(count)}`).join('، ')}`}>
+                    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-wash" aria-hidden="true">
+                      {rows.map(([label, count], i) => (
+                        <span key={label} className="h-full border-e-2 border-canvas last:border-e-0" style={{ width: `${(count / predictionRegister.length) * 100}%`, background: tones[i % tones.length], opacity: i < tones.length ? 1 : 0.45 }} />
+                      ))}
+                    </div>
+                    <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[.76rem] text-soft" aria-hidden="true">
+                      {rows.map(([label, count], i) => (
+                        <li key={label} className="inline-flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full" style={{ background: tones[i % tones.length], opacity: i < tones.length ? 1 : 0.45 }} />
+                          {label} <b className="font-semibold text-ink">{number.format(count)}</b>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })()}
+
               <div className="mt-3 divide-y divide-hair border-b border-hair">
                 {predictionRegister.map(({ article, prediction }, index) => (
                   <FadeUp key={`${article.slug}:${prediction.quote}`} delay={Math.min(index * .025, .18)}>
@@ -316,7 +343,7 @@ export default function Decade() {
                       <summary className="cursor-pointer list-none marker:hidden">
                         <div className="flex items-start justify-between gap-5">
                           <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 text-[.68rem] font-semibold text-accent">
+                            <div className="flex flex-wrap items-center gap-2 text-[.72rem] font-semibold text-accent">
                               <time>{article.iso.slice(0, 4)}</time><span className="text-hair">·</span><span>{prediction.status}</span>
                             </div>
                             <blockquote className="mt-2 font-display text-[1.03rem] font-medium leading-[1.85] text-ink md:text-[1.14rem]">«{prediction.quote}»</blockquote>
@@ -336,26 +363,26 @@ export default function Decade() {
                             ['النطاق', prediction.dimensions.scope],
                           ].map(([term, detail]) => (
                             <div key={term}>
-                              <dt className="text-[.68rem] font-semibold text-accent">{term}</dt>
+                              <dt className="text-[.72rem] font-semibold text-accent">{term}</dt>
                               <dd className="mt-1.5 text-[.8rem] font-light leading-[1.8] text-soft">{detail}</dd>
                             </div>
                           ))}
                         </dl>
                         {prediction.laterArticle && (
                           <Link to={`/articles/${prediction.laterArticle.slug}`} className="mt-6 block border-t border-hair pt-4 text-[.78rem] leading-[1.75] text-soft transition-colors hover:text-accent">
-                            كتابة لاحقة على الخيط نفسه: «{prediction.laterArticle.title}» ←
+                            كتابة لاحقة على الخيط نفسه: «{prediction.laterArticle.title}»<Arrow />
                           </Link>
                         )}
                         {prediction.evidence?.length ? (
                           <div className="mt-5 border-t border-hair pt-4">
-                            <p className="text-[.68rem] font-semibold text-accent">دليل عام قابل للتحقق</p>
+                            <p className="text-[.72rem] font-semibold text-accent">دليل عام قابل للتحقق</p>
                             {prediction.evidence.map((evidence) => (
-                              <a key={evidence.url} href={evidence.url} target="_blank" rel="noreferrer" className="mt-2 block text-[.78rem] leading-[1.75] text-soft transition-colors hover:text-accent">{evidence.title} ↗</a>
+                              <a key={evidence.url} href={evidence.url} target="_blank" rel="noreferrer" className="mt-2 block text-[.78rem] leading-[1.75] text-soft transition-colors hover:text-accent">{evidence.title}<Arrow kind="out" /></a>
                             ))}
                           </div>
                         ) : null}
                         <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2">
-                          <Link to={`/articles/${article.slug}`} className="inline-block border-b border-accent/30 pb-1 text-[.74rem] font-semibold text-accent">اقرأ النص في سياقه الأصلي ←</Link>
+                          <Link to={`/articles/${article.slug}`} className="inline-block border-b border-accent/30 pb-1 text-[.74rem] font-semibold text-accent">اقرأ النص في سياقه الأصلي<Arrow /></Link>
                           <button
                             type="button"
                             onClick={() => sharePrediction(article.slug, `${article.slug}:${prediction.quote}`)}
@@ -410,7 +437,7 @@ export default function Decade() {
                         <strong className="mt-2 block font-display text-[1.12rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">
                           {stage.article.title}
                         </strong>
-                        <span className="mt-3 inline-block text-[.76rem] font-semibold text-accent">اقرأ النص ←</span>
+                        <span className="mt-3 inline-block text-[.76rem] font-semibold text-accent">اقرأ النص<Arrow /></span>
                       </Link>
                     ) : (
                       <p className="mt-5 border-t border-hair pt-5 text-[.82rem] text-soft">لا توجد مادة مؤرخة في هذا الفصل.</p>
@@ -486,7 +513,7 @@ export default function Decade() {
                         <p className="text-[.78rem] text-soft">{arabicCountPhrase(chapter.articles.length, ARTICLE_FORMS, number.format)} · {categoryLabel(chapter.dominant)}</p>
                         {chapter.representative && (
                           <Link to={`/articles/${chapter.representative.slug}`} className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">
-                            {chapter.representative.title} ←
+                            {chapter.representative.title}<Arrow />
                           </Link>
                         )}
                       </div>

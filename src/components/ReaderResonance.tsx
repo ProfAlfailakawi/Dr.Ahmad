@@ -8,7 +8,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
 import { motion, useInView, useReducedMotion } from 'framer-motion'
-import { SocialIcon } from './icons'
+import { SocialIcon, Arrow } from './icons'
+import { ArrowLeftRight } from 'lucide-react'
 
 const READER_QUOTES_KEY = 'reader:quotes:v2'
 const READER_READ_KEY = 'reader:read:v1'
@@ -36,7 +37,7 @@ export function WriterResearcherBridge({ articleTitle, paper }: { articleTitle: 
         </div>
         <div className="flex items-center justify-center" aria-hidden>
           <span className="hidden h-px w-10 bg-gradient-to-l from-transparent via-accent/50 to-transparent md:block" />
-          <span className="mx-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/40 text-accent">⇄</span>
+          <span className="mx-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent/40 text-accent"><ArrowLeftRight aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
           <span className="hidden h-px w-10 bg-gradient-to-r from-transparent via-accent/50 to-transparent md:block" />
         </div>
         <Link
@@ -45,7 +46,7 @@ export function WriterResearcherBridge({ articleTitle, paper }: { articleTitle: 
         >
           <p className="text-[.72rem] font-semibold uppercase tracking-wide text-accent">بوصفي باحثاً</p>
           <p className="mt-2 font-display text-[1.05rem] font-semibold leading-[1.7] text-ink transition-colors group-hover:text-accent">{paper.title}</p>
-          <p className="mt-2 text-[.8rem] font-light text-soft">دليلٌ يقترب من الجواب ←</p>
+          <p className="mt-2 text-[.8rem] font-light text-soft">دليلٌ يقترب من الجواب<Arrow /></p>
         </Link>
       </div>
       <p className="mt-6 text-center text-[.82rem] font-light leading-relaxed text-soft">

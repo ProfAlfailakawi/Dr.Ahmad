@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Arrow } from '../components/icons'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
@@ -110,8 +111,8 @@ export default function ThoughtOverview() {
               ].map((item) => (
                 <div key={item.label} className="flex min-h-[132px] flex-col justify-between rounded-[1.5rem] border border-hair bg-paper p-4 sm:p-5">
                   <div>
-                    <span className="text-[.68rem] font-semibold leading-relaxed text-accent">{item.label}</span>
-                    <p className="mt-1 text-[.62rem] leading-relaxed text-soft">{item.note}</p>
+                    <span className="text-[.72rem] font-semibold leading-relaxed text-accent">{item.label}</span>
+                    <p className="mt-1 text-[.72rem] leading-relaxed text-soft">{item.note}</p>
                   </div>
                   <strong className="mt-4 block font-display text-[clamp(1.9rem,5vw,3rem)] font-semibold leading-none text-ink">{item.value}</strong>
                 </div>
@@ -125,10 +126,10 @@ export default function ThoughtOverview() {
               <section className="h-full rounded-[1.75rem] border border-hair bg-canvas p-6 md:p-8" aria-labelledby="thought-themes-title">
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <p className="text-[.7rem] font-semibold text-accent">المحاور الأكثر حضوراً</p>
+                    <p className="text-[.72rem] font-semibold text-accent">المحاور الأكثر حضوراً</p>
                     <h2 id="thought-themes-title" className="mt-1 font-display text-2xl font-semibold text-ink">خريطة الحضور في الأرشيف</h2>
                   </div>
-                  <span className="text-[.68rem] text-soft">بحسب عدد المواد المنشورة</span>
+                  <span className="text-[.72rem] text-soft">بحسب عدد المواد المنشورة</span>
                 </div>
                 <ol className="mt-7 grid gap-4">
                   {model.categories.map(([category, count], index) => (
@@ -148,13 +149,13 @@ export default function ThoughtOverview() {
 
             <FadeUp delay={0.08}>
               <section className="h-full rounded-[1.75rem] border border-accent/25 bg-accent/[.045] p-6 md:p-8" aria-labelledby="thought-return-title">
-                <p className="text-[.7rem] font-semibold text-accent">ما الذي بقي يعود؟</p>
+                <p className="text-[.72rem] font-semibold text-accent">ما الذي بقي يعود؟</p>
                 <h2 id="thought-return-title" className="mt-1 font-display text-2xl font-semibold text-ink">المحور الأكثر امتداداً</h2>
                 <strong className="mt-7 block font-display text-4xl font-semibold leading-tight text-accent">{model.recurring?.category || '—'}</strong>
                 <p className="mt-4 text-[.88rem] font-light leading-[1.9] text-soft">
                   ظهر هذا المحور في {arabicCountPhrase(model.recurring?.years || 0, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, number.format)} داخل الأرشيف، ولذلك يُقرأ هنا بوصفه سؤالاً متجدداً لا موضوعاً عابراً.
                 </p>
-                <Link to={`/decade?idea=${encodeURIComponent(model.recurring?.category || '')}`} className="-mb-2 mt-4 inline-flex items-center gap-2 py-2 text-[.8rem] font-semibold text-accent">تتبّع رحلته عبر السنوات ←</Link>
+                <Link to={`/decade?idea=${encodeURIComponent(model.recurring?.category || '')}`} className="-mb-2 mt-4 inline-flex items-center gap-2 py-2 text-[.8rem] font-semibold text-accent">تتبّع رحلته عبر السنوات<Arrow /></Link>
               </section>
             </FadeUp>
           </div>
@@ -163,7 +164,7 @@ export default function ThoughtOverview() {
             <section className="mt-6 rounded-[1.75rem] border border-hair bg-paper p-6 md:p-8" aria-labelledby="thought-time-title">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-[.7rem] font-semibold text-accent">الزمن لا الأرقام وحدها</p>
+                  <p className="text-[.72rem] font-semibold text-accent">الزمن لا الأرقام وحدها</p>
                   <h2 id="thought-time-title" className="mt-1 font-display text-2xl font-semibold text-ink">كيف تغيّر مركز الكتابة؟</h2>
                 </div>
                 <span className="rounded-full border border-hair bg-canvas px-4 py-2 text-[.72rem] text-soft">أكثر محور اتساعاً: <strong className="text-ink">{model.evolving?.category || '—'}</strong></span>
@@ -172,31 +173,31 @@ export default function ThoughtOverview() {
                 {model.periods.map((period, index) => (
                   <div key={period.label} className="relative ms-9 rounded-2xl border border-hair bg-canvas p-5 md:ms-0 md:mt-7">
                     <span className="absolute -right-[2.25rem] top-4 flex h-4 w-4 items-center justify-center rounded-full border border-accent/40 bg-paper md:-top-[2.2rem] md:right-4"><span className="h-1.5 w-1.5 rounded-full bg-accent" /></span>
-                    <span className="text-[.68rem] font-semibold text-accent">{period.label} · {period.from}–{period.to}</span>
+                    <span className="text-[.72rem] font-semibold text-accent">{period.label} · {period.from}–{period.to}</span>
                     <strong className="mt-2 block font-display text-xl font-semibold text-ink">{categoryLabel(period.dominant)}</strong>
                     <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{arabicCountPhrase(period.count, MATERIAL_FORMS, number.format)} في هذه المرحلة.</p>
                   </div>
                 ))}
               </div>
-              <Link to="/decade" className="mt-6 inline-flex min-h-11 items-center text-[.78rem] font-semibold text-accent transition-colors hover:text-accent-deep">استكشف الرحلة الزمنية كاملة ←</Link>
+              <Link to="/decade" className="mt-6 inline-flex min-h-11 items-center text-[.78rem] font-semibold text-accent transition-colors hover:text-accent-deep">استكشف الرحلة الزمنية كاملة<Arrow /></Link>
             </section>
           </FadeUp>
 
           {model.strongest && (
             <FadeUp delay={0.14}>
               <section className="mt-6 rounded-[1.75rem] border border-hair bg-canvas p-6 md:p-8" aria-labelledby="thought-relation-title">
-                <p className="text-[.7rem] font-semibold text-accent">العلاقات الأقوى داخل المكتبة</p>
+                <p className="text-[.72rem] font-semibold text-accent">العلاقات الأقوى داخل المكتبة</p>
                 <h2 id="thought-relation-title" className="mt-1 font-display text-2xl font-semibold text-ink">فكرة عبر أكثر من وسيط</h2>
                 <div className="mt-7 grid gap-3 md:grid-cols-3">
                   <Link to={`/articles/${model.strongest.article.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent">
-                    <span className="text-[.7rem] font-semibold text-accent">مقال · {model.strongest.article.iso.slice(0, 4)}</span>
+                    <span className="text-[.72rem] font-semibold text-accent">مقال · {model.strongest.article.iso.slice(0, 4)}</span>
                     <strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{compact(model.strongest.article.title)}</strong>
                   </Link>
-                  {model.strongest.paper ? <Link to={`/research/${model.strongest.paper.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.7rem] font-semibold text-accent">بحث</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.paper.titleAr || model.strongest.paper.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة بحثية قوية بما يكفي للعرض.</div>}
-                  {model.strongest.book ? <Link to={`/publications/${model.strongest.book.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.7rem] font-semibold text-accent">كتاب</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.book.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة كتابية قوية بما يكفي للعرض.</div>}
+                  {model.strongest.paper ? <Link to={`/research/${model.strongest.paper.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.72rem] font-semibold text-accent">بحث</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.paper.titleAr || model.strongest.paper.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة بحثية قوية بما يكفي للعرض.</div>}
+                  {model.strongest.book ? <Link to={`/publications/${model.strongest.book.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.72rem] font-semibold text-accent">كتاب</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.book.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة كتابية قوية بما يكفي للعرض.</div>}
                 </div>
                 <p className="mt-5 text-[.72rem] font-light leading-relaxed text-soft">هنا تتجاور المواد التي تدور حول فكرةٍ واحدة، لتكشف امتدادها بين المقال والبحث والكتاب.</p>
-                <Link to="/thought-paths" className="mt-4 inline-flex min-h-11 items-center text-[.78rem] font-semibold text-accent transition-colors hover:text-accent-deep">استكشف مسارات الفكرة ←</Link>
+                <Link to="/thought-paths" className="mt-4 inline-flex min-h-11 items-center text-[.78rem] font-semibold text-accent transition-colors hover:text-accent-deep">استكشف مسارات الفكرة<Arrow /></Link>
               </section>
             </FadeUp>
           )}
@@ -204,10 +205,10 @@ export default function ThoughtOverview() {
           <FadeUp delay={0.12}>
             <nav className="mt-6 grid overflow-hidden rounded-[1.4rem] border border-hair bg-paper sm:grid-cols-2" aria-label="استكشاف أعمق للخريطة الفكرية">
               <Link to="/atlas" className="group flex min-h-16 items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-wash sm:border-l sm:border-hair">
-                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">افتح سماء المقالات</strong><span className="mt-1 block text-[.7rem] text-soft">استكشاف بصري تفاعلي للأرشيف</span></span><span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
+                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">افتح سماء المقالات</strong><span className="mt-1 block text-[.72rem] text-soft">استكشاف بصري تفاعلي للأرشيف</span></span><span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </Link>
               <Link to="/impact" className="group flex min-h-16 items-center justify-between gap-4 border-t border-hair px-5 py-4 transition-colors hover:bg-wash sm:border-t-0">
-                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">استكشف سجل الأثر</strong><span className="mt-1 block text-[.7rem] text-soft">الدليل الخارجي الموثّق</span></span><span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
+                <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">استكشف سجل الأثر</strong><span className="mt-1 block text-[.72rem] text-soft">الدليل الخارجي الموثّق</span></span><span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </Link>
             </nav>
           </FadeUp>

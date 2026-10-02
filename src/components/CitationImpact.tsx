@@ -1,4 +1,5 @@
 import citationsJson from "../data/citations.json";
+import { Arrow } from './icons'
 
 const ar = (value: number) => value.toLocaleString("en-US");
 
@@ -105,7 +106,7 @@ export default function CitationImpact() {
           rel="noreferrer"
           className="text-[.74rem] font-semibold text-accent transition-colors hover:text-accent-deep"
         >
-          الملف العلمي ←
+          الملف العلمي<Arrow />
         </a>
       </div>
 

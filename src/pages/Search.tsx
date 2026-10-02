@@ -17,7 +17,7 @@ import { searchMediaChapters, stamp } from '../lib/media-chapters'
 import { ReadingShelf } from '../components/ReadingShelf'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { staticQuestions } from '../questions-data'
-import { SocialIcon } from '../components/icons'
+import { SocialIcon, Arrow } from '../components/icons'
 import { VoiceFigure, voiceKindForSpeaker } from '../components/VoiceFigure'
 import { buildSmartQueryPlan, diversifySmartRows, scoreSmartFields, suggestedDomainTerms } from '../lib/smart-search'
 import { normalizeSearchQuery, trackUsage } from '../lib/usage-analytics'
@@ -725,7 +725,7 @@ export default function Search() {
                       <span className="text-[.66rem] font-semibold text-accent">فهم البحث</span>
                       {smartPlan.interpretation && <p className="mt-1 max-w-3xl text-[.8rem] leading-[1.8] text-ink/80">{smartPlan.interpretation}</p>}
                     </div>
-                    <Link to={`/ask?q=${encodeURIComponent(normalizedQuery)}`} className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">حوّلها إلى إجابة موثقة ←</Link>
+                    <Link to={`/ask?q=${encodeURIComponent(normalizedQuery)}`} className="shrink-0 text-[.7rem] font-semibold text-accent transition-colors hover:text-accent-deep">حوّلها إلى إجابة موثقة<Arrow /></Link>
                   </div>
                   <div className="search-query-suggestions mt-2">
                     {smartPlan.suggestions.slice(0, 3).map((suggestion) => (

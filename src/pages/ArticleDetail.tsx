@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import { Arrow } from '../components/icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FadeUp, Page, Reveal } from '../components/ui'
 import { ComposeScene } from '../components/ComposeScene'
@@ -695,7 +696,7 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
             <p className="text-[.76rem] font-semibold text-accent">للإحالة السريعة</p>
             {quickPath ? (
               <Link to={quickPath.to} className="mt-2 inline-block text-[.9rem] leading-relaxed text-soft transition-colors hover:text-accent">
-                {quickPath.label} ←
+                {quickPath.label}<Arrow />
               </Link>
             ) : (
               <p className="mt-2 text-[.9rem] leading-relaxed text-soft">استخدم زر «انسخ الاستشهاد» أسفل المقال، ثم اربطه بأقرب مصدر من «أكمل هذا المسار».</p>
@@ -774,7 +775,7 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
           <a href="#time-dialogue" onClick={(event) => { event.preventDefault(); goToLayer('#time-dialogue') }} className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent">حوار عبر الزمن</a>
           {target && (
             <Link viewTransition to={`/articles/${target.slug}`} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] text-accent transition-colors hover:bg-accent hover:text-white">
-              {target === next ? 'المقال التالي' : 'مقال قريب'} ←
+              {target === next ? 'المقال التالي' : 'مقال قريب'}<Arrow />
             </Link>
           )}
         </div>
@@ -985,7 +986,7 @@ export default function ArticleDetail() {
                       rel="noreferrer"
                       className="mt-6 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
                     >
-                      اقرأ في مصدره الأصلي ←
+                      اقرأ في مصدره الأصلي<Arrow />
                     </a>
                   )}
                 </div>

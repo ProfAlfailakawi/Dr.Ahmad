@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Arrow } from '../components/icons'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, Reveal } from '../components/ui'
 import { JsonLd, useSeo } from '../components/seo'
@@ -95,7 +96,7 @@ export default function WeeklyLetter() {
 
                 <div className="mt-9 flex flex-wrap gap-3">
                   <Link to={`/articles/${latest.slug}`} className="inline-flex items-center rounded-full bg-accent px-7 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
-                    اقرأ الرسالة كاملة ←
+                    اقرأ الرسالة كاملة<Arrow />
                   </Link>
                   {latest.hasAudio && (
                     <Link to={`/articles/${latest.slug}#article-audio`} className="inline-flex items-center rounded-full border-[1.5px] border-accent px-7 py-3.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
@@ -134,7 +135,7 @@ export default function WeeklyLetter() {
                 </ol>
                 <div className="mt-6 ps-7">
                   <Link to="/articles" className="text-[.85rem] font-semibold text-accent transition-colors hover:text-accent-deep">
-                    كل المقالات ({arDigits(ordered.length)}) ←
+                    كل المقالات ({arDigits(ordered.length)})<Arrow />
                   </Link>
                 </div>
               </div>

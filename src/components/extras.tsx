@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useScroll } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { Check, Copy, Download, Moon, Pause, PenLine, Play, Sun } from 'lucide-react'
 import { EASE } from './motion'
-import { SocialIcon } from './icons'
+import { SocialIcon, Arrow } from './icons'
 import { ClarifiedIconAction } from './ClarifiedIconAction'
 import { ALLOW_BROWSER_TTS, NEWSLETTER_ENDPOINT, site } from '../data'
 import audioManifest from '../data/audio.json'
@@ -448,16 +449,16 @@ export function CiteButton({
             <footer className="citation-footer-v2">
               {style === 'bibtex' ? (
                 <button type="button" onClick={exportBib} className="citation-export-v2" aria-live="polite">
-                  {exportState === 'done' ? '✓ نُزّل ملف BibTeX' : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : 'تنزيل ملف .bib ↓'}
+                  {exportState === 'done' ? <><Check aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />نُزّل ملف BibTeX</> : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : <>تنزيل ملف .bib<Download aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] ms-1" /></>}
                 </button>
               ) : isExport ? (
                 <button type="button" onClick={exportRis} className="citation-export-v2" aria-live="polite">
-                  {exportState === 'done' ? '✓ نُزّل ملف RIS' : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : 'تصدير RIS لبرامج المراجع ↓'}
+                  {exportState === 'done' ? <><Check aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />نُزّل ملف RIS</> : exportState === 'error' ? 'تعذّر التنزيل — جرّب النسخ' : <>تصدير RIS لبرامج المراجع<Download aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] ms-1" /></>}
                 </button>
               ) : contextSourceUrl ? (
-                <a href={contextSourceUrl} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel} ↗</a>
+                <a href={contextSourceUrl} target="_blank" rel="noreferrer" className="citation-source-v2">{contextLabel}<Arrow kind="out" /></a>
               ) : <span />}
-              <button type="button" onClick={copy} className="citation-copy-v2">{copied ? '✓ نُسخ الاستشهاد' : `نسخ ${styles.find((item) => item.id === style)?.label}`}</button>
+              <button type="button" onClick={copy} className="citation-copy-v2">{copied ? <><Check aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />نُسخ الاستشهاد</> : `نسخ ${styles.find((item) => item.id === style)?.label}`}</button>
             </footer>
           </motion.section>
         </motion.div>
@@ -513,8 +514,8 @@ export function CiteButton({
     <>
       <div className="mt-8 flex items-stretch rounded-xl border border-hair">
         <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex min-w-0 flex-1 items-center justify-between gap-3 px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
-          <span>✍ الاستشهاد الأكاديمي</span>
-          <span className="text-[.82rem] font-semibold text-accent">APA · MLA · Chicago · BibTeX ↗</span>
+          <span className="inline-flex items-center gap-2"><PenLine aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" />الاستشهاد الأكاديمي</span>
+          <span className="text-[.82rem] font-semibold text-accent">APA · MLA · Chicago · BibTeX<Arrow kind="out" /></span>
         </button>
         {bibtex && (
           <button
@@ -524,7 +525,7 @@ export function CiteButton({
             title="نسخ سجل BibTeX مباشرة"
             className="shrink-0 border-s border-hair px-4 text-[.78rem] font-semibold text-soft transition-colors hover:text-accent"
           >
-            {quickBib === 'done' ? '✓ نُسخ' : quickBib === 'error' ? 'تعذّر' : <span dir="ltr">BibTeX ⧉</span>}
+            {quickBib === 'done' ? <><Check aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] me-1" />نُسخ</> : quickBib === 'error' ? 'تعذّر' : <span dir="ltr">BibTeX <Copy aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em] ms-0.5" /></span>}
           </button>
         )}
       </div>
@@ -598,7 +599,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
           transition={{ duration: 0.28, ease: EASE }}
           className="text-[.95rem] leading-none"
         >
-          {dark ? '☀' : '☾'}
+          {dark ? <Sun aria-hidden="true" size="1em" strokeWidth={1.6} /> : <Moon aria-hidden="true" size="1em" strokeWidth={1.6} />}
         </motion.span>
       </AnimatePresence>
     </button>
@@ -769,7 +770,7 @@ function BrowserTts({ text, active, setActive }: { text: string; active: boolean
   return (
     <div className="mt-8">
       <button onClick={play} className="flex items-center gap-2.5 rounded-full border border-hair px-5 py-2 text-[.85rem] text-ink transition-colors hover:border-accent hover:text-accent">
-        <span className="text-[.75rem] text-accent">{active ? '❚❚' : '▶'}</span>
+        <span className="text-[.75rem] text-accent">{active ? <Pause aria-hidden="true" size="1em" strokeWidth={1.6} /> : <Play aria-hidden="true" size="1em" strokeWidth={1.6} />}</span>
         {active ? 'إيقاف' : 'قراءة آلية'}
       </button>
       <p className="mt-2 text-[.76rem] text-soft">صوت آلي من متصفّحك — جودته محدودة.</p>

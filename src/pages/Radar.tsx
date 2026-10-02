@@ -7,6 +7,7 @@
  * يقرأ من site_radar (المنشور فقط) — يُحدَّث تلقائياً بلا أي رفع.
  */
 import { useEffect, useMemo, useState } from "react";
+import { Arrow } from '../components/icons'
 import { Link } from "react-router";
 import { loadBookPassages, matchBookQuotes, searchBookPassages } from "../lib/book-quotes";
 import { useSeo } from "../components/seo";
@@ -80,15 +81,15 @@ function BookEcho({ item, deep }: { item: RadarItem; deep: boolean }) {
 
   return (
     <div className="border-t border-hair px-6 py-4">
-      <span className="text-[.68rem] font-semibold text-accent">وقد تناوله في كتبه</span>
+      <span className="text-[.72rem] font-semibold text-accent">وقد تناوله في كتبه</span>
       <blockquote className="mt-1.5 border-r-2 border-accent/30 pr-3 text-[.82rem] font-light leading-[1.85] text-ink/80">
         {match.quote.text}
       </blockquote>
       <Link
         to={`/publications/${match.bookSlug}#book-knowledge`}
-        className="mt-2 inline-block pr-3 text-[.68rem] text-soft transition-colors hover:text-accent"
+        className="mt-2 inline-block pr-3 text-[.72rem] text-soft transition-colors hover:text-accent"
       >
-        {match.bookTitle} · ص {match.quote.page} ←
+        {match.bookTitle} · ص {match.quote.page}<Arrow />
       </Link>
     </div>
   );
@@ -117,7 +118,7 @@ function RadarCard({ item, index = 0, deep = false }: { item: RadarItem; index?:
           </p>
         )}
         <span className="mt-auto pt-4 text-[.8rem] text-soft transition-colors group-hover:text-accent">
-          اقرأ المادة في مصدرها ←
+          اقرأ المادة في مصدرها<Arrow />
         </span>
       </a>
       <BookEcho item={item} deep={deep} />
@@ -170,6 +171,8 @@ export default function Radar() {
   }
 
   const sources = new Set(items.map((i) => i.source));
+  const recentWeeks = weeks.slice(0, 12).reverse();
+  const recentPeak = Math.max(1, ...recentWeeks.map((week) => week.items.length));
   const years = Array.from(new Set(weeks.map((week) => week.year))).sort((a, b) => b - a);
   const [year, setYear] = useState<number | "latest">("latest");
   const visibleWeeks = year === "latest" ? weeks : weeks.filter((week) => week.year === year);
@@ -202,6 +205,19 @@ export default function Radar() {
                   {arabicCountPhrase(items.length, MATERIAL_FORMS, arNum)} · {arabicCountPhrase(sources.size, SOURCE_PLAIN_FORMS, arNum)} · الأحدث أولاً
                 </p>
               </FadeUp>
+
+              {recentWeeks.length > 1 && (
+                <FadeUp delay={0.03}>
+                  <div className="-mt-6 mb-10 max-w-xs" role="img" aria-label={`عدد المواد في كل أسبوع من الأقدم إلى الأحدث: ${recentWeeks.map((week) => arNum(week.items.length)).join('، ')}`}>
+                    <div className="flex h-9 items-end gap-1" aria-hidden="true">
+                      {recentWeeks.map((week) => (
+                        <span key={week.key} title={`${week.label} · ${arNum(week.items.length)}`} className="flex-1 rounded-sm bg-accent/60" style={{ height: `${Math.max(12, (week.items.length / recentPeak) * 100)}%` }} />
+                      ))}
+                    </div>
+                    <p className="mt-1.5 text-[.72rem] text-soft" aria-hidden="true">حصاد الأسابيع الأخيرة</p>
+                  </div>
+                </FadeUp>
+              )}
 
               <FadeUp delay={0.05}>
                 <div className="edge-fade mb-10 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

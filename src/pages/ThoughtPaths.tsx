@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Arrow } from '../components/icons'
 import { Link } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
@@ -254,7 +255,7 @@ export default function ThoughtPaths() {
               onClick={() => { selectPath(resumePath.id); setResumeId(null) }}
               className="mb-5 rounded-full border border-hair bg-wash px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent"
             >
-              أكمل من حيث توقفت: {resumePath.title} ←
+              أكمل من حيث توقفت: {resumePath.title}<Arrow />
             </button>
           )}
           <div role="tablist" aria-label="اختر مساراً فكرياً" className="flex gap-6 edge-fade overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -314,11 +315,11 @@ export default function ThoughtPaths() {
                   <>
                     <span className="text-[.73rem] font-medium text-soft">
                       {String(index + 1).padStart(2, '0')} · {node.label}
-                      {node.relation && <span className="ms-2 rounded-full border border-hair px-2 py-0.5 text-[.66rem]">{node.relation}</span>}
+                      {node.relation && <span className="ms-2 rounded-full border border-hair px-2 py-0.5 text-[.72rem]">{node.relation}</span>}
                     </span>
                     <h3 className="mt-2 font-display text-[1.2rem] font-semibold leading-[1.65] text-ink transition-colors group-hover:text-accent">{node.title}</h3>
                     {node.description && <p className="mt-2 text-[.86rem] font-light leading-[1.85] text-soft">{node.description}</p>}
-                    {(node.to || node.href) && <span className="mt-3 inline-block text-[.76rem] font-medium text-soft transition-colors group-hover:text-accent">المادة ←</span>}
+                    {(node.to || node.href) && <span className="mt-3 inline-block text-[.76rem] font-medium text-soft transition-colors group-hover:text-accent">المادة<Arrow /></span>}
                   </>
                 )
                 return (

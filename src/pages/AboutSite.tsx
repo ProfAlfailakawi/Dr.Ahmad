@@ -1,7 +1,19 @@
 import { Link } from 'react-router'
+import type { ReactNode } from 'react'
+import { Compass, Gem, Target, Users, type LucideIcon } from 'lucide-react'
 import { FadeUp, Page, PageHead, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { aboutSite } from '../data'
+
+/* وسم قسم: أيقونة خطية داخل حلقة + العنوان (عرضٌ فقط) */
+function SectionTag({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-3 text-[.8rem] font-semibold text-accent">
+      <span aria-hidden className="grid h-11 w-11 place-items-center rounded-full border border-hair bg-wash"><Icon size={20} strokeWidth={1.6} /></span>
+      {children}
+    </span>
+  )
+}
 
 export default function AboutSite() {
   useSeo({ title: 'حول الموقع', path: '/about', description: aboutSite.hero })
@@ -16,7 +28,7 @@ export default function AboutSite() {
           <div className="grid gap-12 border-b border-hair pb-16 md:grid-cols-2 md:gap-14">
             {aboutSite.sections.map((s, i) => (
               <FadeUp key={s.title} delay={i * 0.08}>
-                <span className="inline-flex items-center gap-2.5 text-[.76rem] font-semibold uppercase text-accent"><span aria-hidden className="visual-dna-node" />{s.title}</span>
+                <SectionTag icon={i ? Target : Compass}>{s.title}</SectionTag>
                 <p className="mt-5 text-[1.12rem] font-light leading-[2] text-ink/80">{s.body}</p>
               </FadeUp>
             ))}
@@ -25,7 +37,7 @@ export default function AboutSite() {
           {/* ما يميّزه */}
           <section className="border-b border-hair py-16">
             <FadeUp>
-              <span className="inline-flex items-center gap-2.5 text-[.76rem] font-semibold uppercase text-accent"><span aria-hidden className="visual-dna-node" />ما الذي يميّز هذا الموقع؟</span>
+              <SectionTag icon={Gem}>ما الذي يميّز هذا الموقع؟</SectionTag>
             </FadeUp>
             <ul className="mt-8 grid gap-6 md:grid-cols-2 md:gap-x-12">
               {aboutSite.distinct.map((t, i) => (
@@ -42,7 +54,7 @@ export default function AboutSite() {
           {/* لمن هذا الموقع؟ — بطاقات إنسانية */}
           <section className="border-b border-hair py-16">
             <FadeUp>
-              <span className="inline-flex items-center gap-2.5 text-[.76rem] font-semibold uppercase text-accent"><span aria-hidden className="visual-dna-node" />لمن هذا الموقع؟</span>
+              <SectionTag icon={Users}>لمن هذا الموقع؟</SectionTag>
             </FadeUp>
             <div className="mobile-card-rail mt-8 grid gap-5 sm:grid-cols-2">
               {aboutSite.audience.map((t, i) => (

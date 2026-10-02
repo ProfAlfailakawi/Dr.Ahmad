@@ -7842,7 +7842,7 @@ html.dark {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   color: rgb(var(--c-ink) / .76);
-  font-size: .66rem;
+  font-size: 11px;
   font-weight: 650;
   line-height: 1;
   letter-spacing: 0;
@@ -7879,7 +7879,7 @@ html.dark {
   .rail-swipe-discovery__label {
     min-block-size: 1.75rem;
     padding-inline: .56rem;
-    font-size: .62rem;
+    font-size: 11px;
   }
 }
 
@@ -8275,4 +8275,58 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 .count-ranked-value { font-weight: 700; font-variant-numeric: tabular-nums; text-align: end; }
 @media (min-width: 900px) {
   .count-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
+}
+
+/* ---------- سماء المقالات على الهاتف: خطوط الممرّات والسنوات ≥ 11px فعلية ----------
+   الخريطة مرسومة في viewBox عرضه 680 وتُصغَّر إلى عرض الشاشة، فنكبّر وحدات الخط
+   بنسبة 680 / عرض الحاوية حتى يبقى الحجم الظاهر ثابتاً (≥ 11px) دون لمس الإحداثيات. */
+.atlas-map-mobile .atlas-lane-label { font-size: 12.5px; }
+.atlas-map-mobile .atlas-year-label { font-size: 17px; }
+@media (max-width: 640px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 14.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 15px; }
+}
+@media (max-width: 520px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 17.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 17.5px; }
+}
+@media (max-width: 430px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 21.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 21.5px; }
+}
+@media (max-width: 380px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 23.5px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 23.5px; }
+}
+@media (max-width: 340px) {
+  .atlas-map-mobile .atlas-lane-label { font-size: 27px; }
+  .atlas-map-mobile .atlas-year-label { font-size: 27px; }
+}
+@media (max-width: 640px) {
+  .atlas-map-mobile .atlas-year-label--up { transform: translateY(-34px); }
+}
+
+/* ---------- الأزرار العائمة على الهاتف: أصغر مظهراً، وأقرب إلى الحافة ----------
+   منطقة اللمس تبقى 44×44 فعلية (بلا ::after، لأن ::before/::after مستعملان في الزر)،
+   أما الدائرة المرسومة فقطرها 36px في الزاوية فتغطّي أقلّ ما يمكن من البطاقات
+   ولا تتداخل مناطق اللمس بين الزرّين. */
+@media (max-width: 639px) {
+  .floating-actions {
+    right: 4px !important;
+    bottom: calc(.75rem + env(safe-area-inset-bottom)) !important;
+    gap: 0 !important;
+  }
+  .floating-actions > button,
+  .floating-actions > .my-space-trigger {
+    inline-size: 44px !important;
+    block-size: 44px !important;
+    min-inline-size: 44px !important;
+    min-block-size: 44px !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    background-image: radial-gradient(circle at center, rgb(var(--c-canvas) / .94) 0 17px, var(--c-hair) 17px 18px, transparent 18.5px) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
 }

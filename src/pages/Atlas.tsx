@@ -128,7 +128,8 @@ export default function Atlas() {
   }, [])
   const cats = useMemo(() => dynamicArticleCategories(articles, false), [articles])
   const H = TOP + Math.max(cats.length, 1) * ROW + 46
-  const mobileH = MOBILE_TOP + Math.max(cats.length, 1) * MOBILE_ROW + 48
+  /* +34: سطر ثانٍ لتسميات السنوات المتجاورة على الهاتف (انظر atlas-year-label--up) */
+  const mobileH = MOBILE_TOP + Math.max(cats.length, 1) * MOBILE_ROW + 82
   useSeo({
     title: 'سماء المقالات',
     path: '/atlas',
@@ -451,6 +452,20 @@ export default function Atlas() {
       count: fullCounts.get(year) || points.desktop.length,
     }))
   }, [articles, stars, mobileStars])
+
+  /* سنوات متجاورة تتزاحم تسمياتها حين تكبر على الهاتف: نوزّعها على سطرين بالتناوب
+     (الأقرب إلى الخريطة أولاً) بحيث لا يقلّ البعد بين تسميتين في السطر نفسه عن 80 وحدة. */
+  const mobileYearUp = useMemo(() => {
+    const ordered = [...years].sort((l, r) => l.mobileX - r.mobileX)
+    const lastX: [number, number] = [-1e9, -1e9]
+    const up = new Set<string>()
+    for (const item of ordered) {
+      const row = item.mobileX - lastX[1] >= 80 ? 1 : item.mobileX - lastX[0] >= 80 ? 0 : (lastX[1] <= lastX[0] ? 1 : 0)
+      lastX[row] = item.mobileX
+      if (row === 1) up.add(item.year)
+    }
+    return up
+  }, [years])
 
   /* «ابحث عن فكرة في السماء» (مقترح معتمد): النجوم غير المطابقة تخفت ولا تختفي */
   const searchMatches = useMemo(() => {
@@ -776,7 +791,7 @@ export default function Atlas() {
                 onPointerMove={(event) => { if (event.pointerType === 'mouse') setLens(pointerToSvg(event, MOBILE_W, mobileH, 'mobile')) }}
               >
                 {view === 'timeline' && years.map((item) => (
-                  <line key={`mobile-year-ray-${item.year}`} x1={item.mobileX} y1={18} x2={item.mobileX} y2={mobileH - 34} className="stroke-accent" strokeWidth={Math.min(9, 2 + item.count)} strokeOpacity={0.026 + Math.min(item.count * 0.006, 0.042)} strokeLinecap="round" />
+                  <line key={`mobile-year-ray-${item.year}`} x1={item.mobileX} y1={18} x2={item.mobileX} y2={mobileH - 68} className="stroke-accent" strokeWidth={Math.min(9, 2 + item.count)} strokeOpacity={0.026 + Math.min(item.count * 0.006, 0.042)} strokeLinecap="round" />
                 ))}
 
                 {view === 'timeline' && cats.map((category, row) => {
@@ -786,7 +801,7 @@ export default function Atlas() {
                     <g key={category} opacity={on ? 1 : 0.25}>
                       <line x1={MOBILE_PAD_L} y1={y} x2={MOBILE_W - MOBILE_PAD_R + 4} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.055} />
                       <line x1={MOBILE_W - 26} y1={y} x2={MOBILE_W - 14} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={3.5} strokeLinecap="round" />
-                      <text x={MOBILE_W - 36} y={y + 4.5} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 12.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
+                      <text x={MOBILE_W - 36} y={y + 4.5} textAnchor="start" className="atlas-lane-label fill-soft font-sans" style={{ fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
                     </g>
                   )
                 })}
@@ -796,7 +811,7 @@ export default function Atlas() {
                 ))}
 
                 {view === 'timeline' && years.map((item) => (
-                  <text key={item.year} x={item.mobileX} y={mobileH - 15} textAnchor="middle" className="fill-soft font-sans" style={{ fontSize: 17 }}>
+                  <text key={item.year} x={item.mobileX} y={mobileH - 15} textAnchor="middle" className={`atlas-year-label${mobileYearUp.has(item.year) ? ' atlas-year-label--up' : ''} fill-soft font-sans`}>
                     {arDigits(item.year)}
                   </text>
                 ))}

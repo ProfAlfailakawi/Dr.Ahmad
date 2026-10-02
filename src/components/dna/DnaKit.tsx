@@ -580,7 +580,8 @@ export function DnaHubMap({
   const tile = narrow ? 44 : 54;
   const hub = narrow ? 66 : 84;
   const nodeW = Math.min(narrow ? 112 : 168, Math.max(84, w / 2 - hub / 2 - 6));
-  const rowGap = tile + (narrow ? 46 : 52);
+  /* مساحة لثلاثة أسطر من التسمية (الاسم الكامل في tooltip العقدة) */
+  const rowGap = tile + (narrow ? 60 : 66);
   const n = nodes.length;
   const startCount = Math.ceil(n / 2);
   const endCount = n - startCount;

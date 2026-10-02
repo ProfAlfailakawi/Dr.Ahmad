@@ -524,7 +524,7 @@ function MobileCardRailGuard() {
       const rect = discoveryRail.getBoundingClientRect()
       const direction = discoveryOverlay.dataset.direction === 'left' ? 'left' : 'right'
       const x = direction === 'left' ? rect.left + 12 : rect.right - 12
-      const y = Math.min(window.innerHeight - 22, Math.max(22, rect.bottom - 7))
+      const y = Math.min(window.innerHeight - 22, Math.max(22, rect.bottom - 24))
       discoveryOverlay.style.left = `${Math.round(x)}px`
       discoveryOverlay.style.top = `${Math.round(y)}px`
     }

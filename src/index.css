@@ -3453,13 +3453,19 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 }
 .impact-map-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   background: rgb(var(--c-ink) / .09);
   border: 1px solid rgb(var(--c-ink) / .10);
   border-radius: 1.4rem;
   overflow: hidden;
   box-shadow: 0 22px 55px -50px rgb(var(--c-ink) / .55);
+}
+/* لا بطاقة فارغة: عدد الأعمدة بعدد البطاقات، وعلى الشاشات الضيقة تمتدّ الأخيرة الفردية على الصف كله */
+.impact-map-grid > .impact-map-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+@media (min-width: 900px) {
+  .impact-map-grid { grid-template-columns: repeat(var(--impact-n, 7), minmax(0, 1fr)); }
+  .impact-map-grid > .impact-map-stat:last-child:nth-child(odd) { grid-column: auto; }
 }
 .impact-map-stat {
   display: flex;

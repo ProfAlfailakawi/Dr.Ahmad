@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useCmsContent } from '../lib/content'
 /* عدّاد الأثر لا يحتاج إلا ثوانيَ المدّة، فيقرؤها من ملف البصمات المضغوط
    بدل جرد R2 الكامل (انظر التعليق في `scripts/build-listen-index.mjs`). */
@@ -133,7 +133,7 @@ export default function ImpactMap() {
     <section ref={ref} className="impact-map-section px-6 py-10 md:px-11 md:py-12" aria-label="خريطة الأثر — الحصيلة بالأرقام">
       <div className="mx-auto max-w-shell">
         <p className="impact-map-eyebrow">الحصيلة في أرقام</p>
-        <div className="impact-map-grid mt-5">
+        <div className="impact-map-grid mt-5" style={{ '--impact-n': items.length } as CSSProperties}>
           {items.map((item) => <Stat key={item.label} value={item.value} label={item.label} active={seen} />)}
         </div>
       </div>

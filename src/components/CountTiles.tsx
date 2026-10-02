@@ -9,7 +9,7 @@ export function RingTile({ value, of, label, note }: { value: number; of: number
   const full = 2 * Math.PI * radius
   const share = of > 0 ? Math.min(1, value / of) : 0
   return (
-    <div className="count-tile count-tile--row">
+    <div className="count-tile count-tile--row" role="img" aria-label={`${label}: ${fmt(value)}${note ? `، ${note}` : ''}`}>
       <svg className="count-ring" viewBox="0 0 88 88" aria-hidden="true">
         <circle cx="44" cy="44" r={radius} fill="none" stroke="rgb(var(--c-ink) / .1)" strokeWidth="6" />
         <circle cx="44" cy="44" r={radius} fill="none" stroke="rgb(var(--c-accent))" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${full * share} ${full}`} transform="rotate(-90 44 44)" />
@@ -47,7 +47,7 @@ export function RankedTile({ title, note, rows }: { title: string; note?: string
     <div className="count-tile count-tile--wide">
       <p className="count-tile-title">{title}</p>
       {note && <p className="count-tile-note">{note}</p>}
-      <div className="count-ranked">
+      <div className="count-ranked" role="img" aria-label={`${title}: ${rows.map((row) => `${row.label} ${fmt(row.value)}`).join('، ')}`}>
         {rows.map((row) => (
           <div key={row.label} className="count-ranked-row">
             <span className="count-ranked-key">{row.label}</span>

@@ -39,7 +39,7 @@ export type ResearchTiles = {
   arabic: { ar: number; en: number } | null
 }
 
-export function researchTiles(papers: Array<{ journal?: string; verification?: string }>): ResearchTiles {
+export function researchTiles(papers: Array<{ journal?: string; verification?: string; year?: string | number }>): ResearchTiles {
   const total = papers.length
   const verified = papers.filter((paper) => paper.verification === 'verified').length
   const langs = papers.map((paper) => paperLanguage(paper.journal))
@@ -48,7 +48,10 @@ export function researchTiles(papers: Array<{ journal?: string; verification?: s
   return {
     total,
     verified: verified > 0 ? verified : null,
-    years: yearBars(papers.map((paper) => paperYear(paper.journal))),
+    years: yearBars(papers.map((paper) => {
+      const own = String(paper.year ?? '').trim()
+      return YEAR.test(own) ? own : paperYear(paper.journal)
+    })),
     arabic: total > 0 && ar + en === total && ar > 0 ? { ar, en } : null,
   }
 }

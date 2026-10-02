@@ -235,7 +235,7 @@ export function ClosingStation({ upcoming, aboutHeading, about }: { upcoming: Si
     <section className="border-t border-hair px-6 py-[58px] md:px-11 md:py-[88px]">
       <div className="mx-auto max-w-shell">
         <div className="grid gap-10 border-b border-hair pb-12 md:grid-cols-2 md:gap-16 md:pb-16">
-          <FadeUp><Label>الرؤية</Label><h2 className="font-display text-[clamp(1.8rem,4.2vw,2.8rem)] font-semibold leading-[1.35] text-ink">{aboutHeading.replace('\n', ' ')}</h2><p className="mt-5 text-[1rem] font-light leading-[1.95] text-soft">{about}</p><Link to="/cv" className="mt-6 inline-block font-semibold text-accent">السيرة الكاملة<Arrow /></Link></FadeUp>
+          <FadeUp><Label>الرؤية</Label><h2 className="font-display text-[clamp(1.8rem,4.2vw,2.8rem)] font-semibold leading-[1.35] text-ink">{aboutHeading.replace(/\n/g, ' ')}</h2><p className="mt-5 text-[1rem] font-light leading-[1.95] text-soft">{about}</p><Link to="/cv" className="mt-6 inline-block font-semibold text-accent">السيرة الكاملة<Arrow /></Link></FadeUp>
           <FadeUp delay={.08}><Newsletter /></FadeUp>
         </div>
         <div className="mt-10 grid gap-8">

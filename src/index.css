@@ -3436,7 +3436,15 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 }
 /* صفحة قائمة البحوث فقط (سطح المكتب): شريط جانبي ثابت بجانب القائمة — صفحات القراءة لا تتأثر */
 .research-main { min-width: 0; }
+.research-year-browse { display: none; }
 @media (min-width: 1100px) {
+  .content-research .research-rail .research-year-browse { display: grid; gap: .6rem; border-top: 1px solid rgb(var(--c-ink) / .12); padding-top: .9rem; }
+  .research-year-browse h3 { margin: 0; color: rgb(var(--c-accent)); font-size: .7rem; font-weight: 850; }
+  .research-year-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .research-year-chip { border: 1px solid rgb(var(--c-ink) / .2); border-radius: 999px; background: transparent; color: rgb(var(--c-ink) / .8); padding: .2rem .65rem; font-size: .76rem; font-weight: 600; cursor: pointer; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+  .research-year-chip:hover { border-color: rgb(var(--c-accent)); }
+  .research-year-chip[aria-pressed="true"] { background: rgb(var(--c-accent)); border-color: rgb(var(--c-accent)); color: rgb(var(--c-canvas)); font-weight: 800; }
+  .research-year-more summary { cursor: pointer; color: rgb(var(--c-accent)); font-size: .76rem; font-weight: 700; margin-bottom: .5rem; }
   .research-split { display: grid; grid-template-columns: 19rem minmax(0, 1fr); gap: 2rem; align-items: start; }
   .research-rail { position: sticky; top: 6.5rem; }
   .content-research .research-rail .research-index-panel { grid-template-columns: minmax(0, 1fr); align-items: stretch; }

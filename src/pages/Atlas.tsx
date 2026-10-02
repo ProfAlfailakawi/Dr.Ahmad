@@ -905,7 +905,7 @@ export default function Atlas() {
                     <g key={category} opacity={on ? 1 : 0.25}>
                       <line x1={PAD_L} y1={y} x2={W - PAD_R + 4} y2={y} stroke="currentColor" className="text-ink" strokeOpacity={0.05} />
                       <line x1={W - 14} y1={y} x2={W - 4} y2={y} stroke={`rgb(var(--atlas-${axisOf(category)}))`} strokeWidth={2.5} strokeLinecap="round" />
-                      <text x={W - 26} y={y + 4} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 10.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
+                      <text x={W - 26} y={y + 4} textAnchor="start" className="fill-soft font-sans" style={{ fontSize: 11.5, fontWeight: activeCat === category ? 700 : 500 }}>{categoryLabel(category)}</text>
                     </g>
                   )
                 })}
@@ -997,7 +997,7 @@ export default function Atlas() {
                         transition={{ duration: 0.45, delay: reduce ? 0 : Math.min(star.i * 0.006, 0.4), ease: EASE }}
                         style={{ ...starStyle(star.cat, star.caution), transformOrigin: `${star.x}px ${star.y}px`, ...(isActive ? { viewTransitionName: `article-${star.slug}` } : {}) }}
                       />
-                      {constellationIndexes.has(star.i) && <text x={star.x + 9} y={star.y - 7} className="fill-soft font-sans" style={{ fontSize: 10.5, fontWeight: 700 }}>{constellationPath.findIndex((item) => item.i === star.i) + 1}</text>}
+                      {constellationIndexes.has(star.i) && <text x={star.x + 9} y={star.y - 7} className="fill-soft font-sans" style={{ fontSize: 11.5, fontWeight: 700 }}>{constellationPath.findIndex((item) => item.i === star.i) + 1}</text>}
                     </g>
                   )
                 })}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { JsonLd, useSeo } from '../components/seo'
 import { Link } from 'react-router'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -34,6 +34,8 @@ export default function Research() {
     return counts
   }, [indexed])
   const yearList = years.slice(1)
+  const [moreOpen, setMoreOpen] = useState(false)
+  useEffect(() => { if (yearList.indexOf(yearFilter) >= 8) setMoreOpen(true) }, [yearFilter, years])
   const yearChip = (year: string) => {
     const selected = yearFilter === year
     const count = year === 'الكل' ? indexed.length : yearCounts.get(year) || 0
@@ -104,7 +106,7 @@ export default function Research() {
                     {yearList.slice(0, 8).map(yearChip)}
                   </div>
                   {yearList.length > 8 && (
-                    <details className="research-year-more" open={yearList.indexOf(yearFilter) >= 8 || undefined}>
+                    <details className="research-year-more" open={moreOpen} onToggle={(event) => setMoreOpen(event.currentTarget.open)}>
                       <summary>المزيد</summary>
                       <div className="research-year-chips">{yearList.slice(8).map(yearChip)}</div>
                     </details>

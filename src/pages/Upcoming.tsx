@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { CalendarDays } from 'lucide-react'
 import { Arrow } from '../components/icons'
 import { FadeUp, Label, Magnetic, Page, SocialIcon } from '../components/ui'
 import { Pagination, usePagedList } from '../components/Pagination'
@@ -129,7 +130,8 @@ export default function Upcoming() {
             </>
           ) : (
             <FadeUp>
-              <div className="rounded-xl border border-hair bg-wash px-6 py-12 text-center md:py-14">
+              <div className="rounded-xl border border-dashed border-hair px-6 py-12 text-center md:py-14">
+                <span className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-hair text-accent" aria-hidden="true"><CalendarDays size={20} strokeWidth={1.5} /></span>
                 <span className="inline-flex items-center gap-2.5 text-[.82rem] font-semibold text-accent">
                   <span className="pulse relative h-2 w-2 rounded-full bg-accent" />
                   الجدول قيد التحديث

@@ -579,7 +579,7 @@ export function DnaHubMap({
   const narrow = w > 0 && w < 520;
   const tile = narrow ? 44 : 54;
   const hub = narrow ? 66 : 84;
-  const nodeW = narrow ? 112 : 168;
+  const nodeW = Math.min(narrow ? 112 : 168, Math.max(84, w / 2 - hub / 2 - 6));
   const rowGap = tile + (narrow ? 46 : 52);
   const n = nodes.length;
   const startCount = Math.ceil(n / 2);
@@ -593,7 +593,7 @@ export function DnaHubMap({
   const mx = w / 2;
   const my = topPad + inner / 2;
   const maxOffset = ((rows - 1) / 2) * rowGap || 1;
-  const rx = Math.max(hub / 2 + tile + 12, w / 2 - nodeW / 2 - (narrow ? 8 : 26));
+  const rx = Math.min(Math.max(hub / 2 + tile + 12, w / 2 - nodeW / 2 - (narrow ? 8 : 26)), w / 2 - nodeW / 2 - 4);
   const startSide = box.rtl ? 1 : -1;
 
   const column = (count: number, side: number) =>

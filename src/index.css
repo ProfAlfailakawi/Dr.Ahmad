@@ -7153,6 +7153,24 @@ html.dark {
     position: relative;
     z-index: 0;
   }
+
+  /* chips الأقسام: صفٌّ أفقيّ واحد يُسحب بدل التفاف على أسطر؛ اللمس ≥44px */
+  .listen-filter-tabs .listen-cat-row {
+    display: flex;
+    flex: 1 1 100%;
+    min-inline-size: 0;
+    flex-wrap: nowrap;
+    gap: .5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-block-end: .25rem;
+  }
+  .listen-filter-tabs .listen-cat-row::-webkit-scrollbar { display: none; }
+  .listen-filter-tabs .listen-cat-row > button {
+    min-block-size: 44px;
+    white-space: nowrap;
+  }
 }
 
 /* تنقّل البحث السابق/التالي معلومة ثانوية فقط؛ مساحة اللمس مريحة لكن

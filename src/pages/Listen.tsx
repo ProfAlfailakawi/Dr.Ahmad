@@ -308,7 +308,7 @@ export default function Listen() {
                 <button type="button" onClick={() => chooseVariant('standard')} aria-pressed={variant === 'standard'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'standard' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>فصحى</button>
               </div>
             )}
-            <div className="contents" role="group" aria-label="تصفية أسئلة المجلس">
+            <div className="listen-cat-row contents" role="group" aria-label="تصفية أسئلة المجلس">
             {categories.map((item) => (
               <button
                 key={item}

@@ -579,8 +579,8 @@ export function DnaHubMap({
   const narrow = w > 0 && w < 520;
   const tile = narrow ? 44 : 54;
   const hub = narrow ? 66 : 84;
-  const nodeW = narrow ? 92 : 116;
-  const rowGap = tile + (narrow ? 32 : 36);
+  const nodeW = narrow ? 112 : 168;
+  const rowGap = tile + (narrow ? 46 : 52);
   const n = nodes.length;
   const startCount = Math.ceil(n / 2);
   const endCount = n - startCount;

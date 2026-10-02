@@ -899,8 +899,13 @@ button.dna-hubn:focus-visible .dna-hubt { transform: translateY(-2px); }
 .dna-hubl {
   max-inline-size: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   font-size: 12px;
   font-weight: 600;
   line-height: 1.3;

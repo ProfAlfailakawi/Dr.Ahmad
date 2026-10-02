@@ -109,7 +109,7 @@ export function FloatingActions() {
   const { scrollY } = useScroll()
 
   useEffect(() => scrollY.on('change', (value) => {
-    setShow(value > 700)
+    setShow(value > 1800)
     const remaining = document.documentElement.scrollHeight - (value + window.innerHeight)
     setNearPageEnd(remaining < Math.max(360, window.innerHeight * .34))
   }), [scrollY])
@@ -118,7 +118,7 @@ export function FloatingActions() {
     const update = () => {
       const value = window.scrollY
       const remaining = document.documentElement.scrollHeight - (value + window.innerHeight)
-      setShow(value > 700)
+      setShow(value > 1800)
       setNearPageEnd(remaining < Math.max(360, window.innerHeight * .34))
     }
     update()

@@ -95,8 +95,8 @@ export default function KnowledgeFingerprint({ feature = false }: { feature?: bo
           <circle cx={C} cy={C} r="28" fill="rgb(var(--c-canvas))" stroke="rgb(var(--c-accent) / .3)" strokeWidth="1" />
           <text x={C} y={C + 9} textAnchor="middle" className="fill-accent font-display" style={{ fontSize: 25, fontWeight: 700 }}>أ</text>
 
-          <text x={C} y={C - R0 - 6} textAnchor="middle" className="fill-soft" style={{ fontSize: 10.5 }}>{firstYear}</text>
-          <text x={C} y={C - model.bookRing - 6} textAnchor="middle" className="fill-soft" style={{ fontSize: 10.5 }}>{lastYear}</text>
+          <text x={C} y={C - R0 - 6} textAnchor="middle" className="fill-soft" style={{ fontSize: 11.5 }}>{firstYear}</text>
+          <text x={C} y={C - model.bookRing - 6} textAnchor="middle" className="fill-soft" style={{ fontSize: 11.5 }}>{lastYear}</text>
         </svg>
 
         <div>

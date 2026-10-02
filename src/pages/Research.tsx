@@ -9,6 +9,8 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { analyzeResearch, researchArchiveProjection } from '../lib/research-intelligence'
 import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-count.ts'
 import { ArrowLeft, BookOpen, CalendarDays } from 'lucide-react'
+import { CountTiles, RingTile, YearBarsTile } from '../components/CountTiles'
+import { researchTiles } from '../lib/count-tiles'
 
 const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => arabicCountPhrase(count, PAPER_FORMS)
@@ -34,6 +36,7 @@ export default function Research() {
   }), [indexed, term, typeFilter, yearFilter])
   const paged = usePagedList(filtered, 12, `${papers.length}|${term}|${typeFilter}|${yearFilter}`)
   const count = paperCount(papers.length)
+  const tiles = useMemo(() => researchTiles(papers), [papers])
 
   useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} في تكنولوجيا التعليم والممارسة التربوية.` })
   return (
@@ -47,6 +50,13 @@ export default function Research() {
 
       <section className="editorial-breath-section px-6 py-16 md:px-11 md:py-24">
         <div className="mx-auto max-w-shell">
+          {(tiles.verified || tiles.years || tiles.arabic) && (
+            <CountTiles label="الأبحاث بالأرقام" className="mb-8">
+              {tiles.verified && <RingTile value={tiles.verified} of={tiles.total} label="بحثاً موثَّق المصدر" note={tiles.verified < tiles.total ? `من أصل ${tiles.total}` : undefined} />}
+              {tiles.years && <YearBarsTile title="الأبحاث بحسب السنة" bars={tiles.years} />}
+              {tiles.arabic && <RingTile value={tiles.arabic.ar} of={tiles.total} label="في مجلات عربية" note={`${tiles.arabic.ar} عربية، ${tiles.arabic.en} إنجليزية`} />}
+            </CountTiles>
+          )}
           <FadeUp delay={0.04}>
             <section className="research-index-panel" aria-label="الفهرسة الداخلية للأبحاث">
               <div className="research-index-search">

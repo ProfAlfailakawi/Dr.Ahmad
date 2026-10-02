@@ -8216,3 +8216,34 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 .text-\[\.65rem\], .text-\[\.66rem\], .text-\[\.68rem\], .text-\[\.7rem\] {
   font-size: .72rem !important;
 }
+
+/* ============================================================
+   بلاطات العدّ فوق قوائم البحوث والكتب — عرض فقط
+   ============================================================ */
+.count-tiles { display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr); }
+.count-tile {
+  min-width: 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--c-hair);
+  border-radius: .9rem;
+  background: rgb(var(--c-wash));
+}
+.count-tile--row { display: flex; align-items: center; gap: 1rem; }
+.count-ring { width: 5.25rem; height: 5.25rem; flex: none; }
+.count-ring-text { font: 700 1.6rem 'El Messiri', serif; fill: rgb(var(--c-ink)); font-variant-numeric: tabular-nums; }
+.count-tile-title { font-size: .92rem; font-weight: 700; line-height: 1.6; color: rgb(var(--c-ink)); }
+.count-tile-note { margin-top: .15rem; font-size: .76rem; line-height: 1.6; color: rgb(var(--c-soft)); }
+.count-bars { display: flex; align-items: flex-end; gap: .4rem; height: 6.5rem; margin-top: .5rem; }
+.count-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+.count-bar i { display: block; width: 100%; max-width: 1.6rem; border-radius: 5px 5px 2px 2px; background: rgb(var(--c-accent)); }
+.count-bar-value { font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 1em; }
+.count-bar-key { font-size: .62rem; color: rgb(var(--c-soft)); font-variant-numeric: tabular-nums; }
+.count-ranked { display: grid; gap: .45rem; margin-top: .65rem; }
+.count-ranked-row { display: grid; grid-template-columns: minmax(0, 8.6em) minmax(0, 1fr) 2.2em; gap: .5rem; align-items: center; font-size: .72rem; }
+.count-ranked-key { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(var(--c-soft)); }
+.count-ranked-track { height: 6px; border-radius: 3px; background: rgb(var(--c-ink) / .1); overflow: hidden; }
+.count-ranked-track i { display: block; height: 100%; border-radius: 3px; background: rgb(var(--c-accent)); }
+.count-ranked-value { font-weight: 700; font-variant-numeric: tabular-nums; text-align: end; }
+@media (min-width: 900px) {
+  .count-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
+}

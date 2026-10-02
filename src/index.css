@@ -7879,7 +7879,7 @@ html.dark {
   .rail-swipe-discovery__label {
     min-block-size: 1.75rem;
     padding-inline: .56rem;
-    font-size: .62rem;
+    font-size: 11px;
   }
 }
 

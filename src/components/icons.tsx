@@ -45,10 +45,11 @@ export function SocialIcon({ name, size = 20 }: { name: string; size?: number })
   if (name === 'Google Scholar') {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M2.7 9.1 12 4l9.3 5.1L12 14.2 2.7 9.1Z" fill="currentColor" />
-        <path d="M6.3 11.2v4.1c0 1.55 2.55 3.2 5.7 3.2s5.7-1.65 5.7-3.2v-4.1L12 14.35l-5.7-3.15Z" fill="currentColor" opacity=".78" />
-        <path d="M20.2 10.15v5.25" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="20.2" cy="16.9" r="1.15" fill="currentColor" />
+        <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2.7 9.1 12 4l9.3 5.1L12 14.2 2.7 9.1Z" />
+          <path d="M6.3 11.9v3.4c0 1.55 2.55 3.2 5.7 3.2s5.7-1.65 5.7-3.2v-3.4" />
+          <path d="M20.7 9.9v5.5" />
+        </g>
       </svg>
     )
   }

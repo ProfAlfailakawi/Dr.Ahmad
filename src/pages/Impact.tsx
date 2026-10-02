@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Arrow } from '../components/icons'
-import { BadgeCheck, Link2 } from 'lucide-react'
+import { BadgeCheck, Building2, Link2, Route as RouteIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
 import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
@@ -130,10 +130,10 @@ export default function Impact() {
   }).filter(Boolean)).size
 
   const headlineStats = [
-    { label: 'مسارات مكتشفة', value: chains.length },
-    { label: 'صلات قابلة للتحقق', value: linkedNodes.length },
-    { label: 'آثار خارجية مثبتة', value: verifiedNodes },
-    { label: 'جهات مستقلة', value: sourceCount },
+    { label: 'مسارات مكتشفة', value: chains.length, Icon: RouteIcon },
+    { label: 'صلات قابلة للتحقق', value: linkedNodes.length, Icon: Link2 },
+    { label: 'آثار خارجية مثبتة', value: verifiedNodes, Icon: BadgeCheck },
+    { label: 'جهات مستقلة', value: sourceCount, Icon: Building2 },
   ].filter((item) => item.value > 10)
 
   return (
@@ -157,14 +157,17 @@ export default function Impact() {
       <section className="border-b border-hair px-6 py-7 md:px-11">
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-6">
           {headlineStats.length > 0 && (
-            <dl className="flex flex-wrap gap-x-8 gap-y-3">
+            <ul className="flex flex-wrap gap-3">
               {headlineStats.map((item) => (
-                <div key={item.label}>
-                  <dt className="text-[.72rem] font-semibold text-accent">{item.label}</dt>
-                  <dd className="mt-1 font-display text-[1.35rem] font-semibold text-ink"><CountUp value={item.value} format={(input) => number.format(input)} /></dd>
-                </div>
+                <li key={item.label} className="flex min-w-[8.5rem] items-center gap-3 rounded-2xl border border-hair bg-canvas px-4 py-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent" aria-hidden="true"><item.Icon size={18} strokeWidth={1.6} /></span>
+                  <span>
+                    <span className="block font-display text-[1.35rem] font-semibold leading-none text-ink"><CountUp value={item.value} format={(input) => number.format(input)} /></span>
+                    <span className="mt-1 block text-[.76rem] font-semibold text-accent">{item.label}</span>
+                  </span>
+                </li>
               ))}
-            </dl>
+            </ul>
           )}
           <div role="tablist" aria-label="تصفية سجل الأثر" className="editorial-tablist edge-fade flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {[
@@ -175,17 +178,17 @@ export default function Impact() {
           </div>
         </div>
         {yearSummary.length > 1 && (
-          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-2">
             <span className="text-[.72rem] font-semibold text-soft">حصاد السنوات:</span>
             {yearSummary.map(([year, count]) => (
               <button
                 key={year}
                 type="button"
                 onClick={() => setYearFilter(yearFilter === year ? null : year)}
-                className={`border-b pb-0.5 text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-transparent text-soft hover:text-accent'}`}
+                className={`flex min-h-11 min-w-[6.5rem] flex-col justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-start text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
               >
-                {year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}
-                <span aria-hidden="true" className="ms-2 inline-block h-1.5 rounded-full bg-accent/50 align-middle" style={{ width: `${Math.max(4, Math.round((count / yearPeak) * 44))}px` }} />
+                <span>{year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}</span>
+                <span aria-hidden="true" className="block h-1.5 w-full overflow-hidden rounded-full bg-hair"><span className="block h-full rounded-full bg-accent/60" style={{ width: `${Math.max(6, Math.round((count / yearPeak) * 100))}%` }} /></span>
               </button>
             ))}
             <button

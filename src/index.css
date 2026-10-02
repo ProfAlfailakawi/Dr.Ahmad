@@ -8305,3 +8305,28 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 @media (max-width: 640px) {
   .atlas-map-mobile .atlas-year-label--up { transform: translateY(-34px); }
 }
+
+/* ---------- الأزرار العائمة على الهاتف: أصغر مظهراً، وأقرب إلى الحافة ----------
+   منطقة اللمس تبقى 44×44 فعلية (بلا ::after، لأن ::before/::after مستعملان في الزر)،
+   أما الدائرة المرسومة فقطرها 36px في الزاوية فتغطّي أقلّ ما يمكن من البطاقات
+   ولا تتداخل مناطق اللمس بين الزرّين. */
+@media (max-width: 639px) {
+  .floating-actions {
+    right: 4px !important;
+    bottom: calc(.75rem + env(safe-area-inset-bottom)) !important;
+    gap: 0 !important;
+  }
+  .floating-actions > button,
+  .floating-actions > .my-space-trigger {
+    inline-size: 44px !important;
+    block-size: 44px !important;
+    min-inline-size: 44px !important;
+    min-block-size: 44px !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    background-image: radial-gradient(circle at center, rgb(var(--c-canvas) / .94) 0 17px, var(--c-hair) 17px 18px, transparent 18.5px) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}

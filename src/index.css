@@ -3338,7 +3338,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 .content-research .research-smart-reader-rail button span {
   color: rgb(var(--c-accent));
   font-family: var(--font-display, inherit);
-  font-size: .62rem;
+  font-size: .7rem;
   font-weight: 900;
 }
 .content-research .research-smart-reader-rail button:hover,
@@ -7531,7 +7531,7 @@ html.dark {
 }
 .concept-shift-note > span {
   color: rgb(var(--c-accent));
-  font-size: .64rem;
+  font-size: .7rem;
   font-weight: 650;
   white-space: nowrap;
 }
@@ -7701,7 +7701,7 @@ html.dark {
 }
 .site-footer__icon-link:hover { color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .055); }
 .site-footer__project { height: 2.3rem !important; border: 0 !important; padding-inline: .35rem !important; background: transparent !important; font-size: .68rem !important; }
-.site-footer__project svg { width: 14px; height: 14px; }
+.site-footer__project svg { width: 17px; height: 17px; }
 .site-footer__rights,
 .home-footer-rights {
   margin-top: 1.15rem;
@@ -8374,5 +8374,10 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 
 /* /thought: بلاطات الأرقام الأربع — أيقونة رفيعة وشريط حصّة من مجموع المواد (عرض فقط). */
 .thought-stat-icon { display: inline-flex; width: 2.25rem; height: 2.25rem; flex: none; align-items: center; justify-content: center; border: 1px solid rgb(var(--c-ink) / .12); border-radius: 999px; color: rgb(var(--c-accent)); }
+@media (max-width: 359px) {
+  /* 320px: عمود النصّ بجانب الأيقونة يضيق حتى تتكسّر الملاحظة في ٤ أسطر؛ الأيقونة فوقه والنصّ بعرض البطاقة. */
+  .thought-stat-head { flex-direction: column-reverse; align-items: flex-start; gap: .5rem; }
+  .thought-stat-head > div { width: 100%; }
+}
 .thought-stat-track { display: block; height: 4px; margin-top: .75rem; border-radius: 2px; background: rgb(var(--c-ink) / .08); overflow: hidden; }
 .thought-stat-track i { display: block; height: 100%; border-radius: 2px; background: rgb(var(--c-accent)); }

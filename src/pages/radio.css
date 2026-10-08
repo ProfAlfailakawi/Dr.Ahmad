@@ -40,7 +40,7 @@ html.dark {
   min-height: 100svh; /* آيفون يحسب vh بأكبر من المرئي فيفيض ويترك بياضاً */
   background: var(--radio-bg);
   color: var(--radio-fg);
-  font-family: 'El Messiri Radio', 'SF Arabic', 'Geeza Pro', 'Noto Naskh Arabic', system-ui, sans-serif;
+  font-family: 'El Messiri Radio', 'El Messiri', 'SF Arabic', 'Geeza Pro', 'Noto Naskh Arabic', system-ui, sans-serif;
   line-height: 1.8;
   overflow-x: hidden;
 }

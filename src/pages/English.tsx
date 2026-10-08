@@ -144,13 +144,13 @@ export function EnglishHome() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <Label>Selected research</Label>
-                <h2 className="mt-3 font-display text-[clamp(1.6rem,3.5vw,2.3rem)] font-bold text-ink">Peer-reviewed contributions</h2>
+                <h2 className="mt-3 font-display text-[clamp(1.6rem,3.5vw,2.3rem)] font-bold leading-[1.3] text-ink">Peer-reviewed contributions</h2>
               </div>
               <Link to="/en/research" className="text-[.9rem] font-medium text-accent transition-opacity hover:opacity-70">
                 All {papers.length} papers<Arrow ltr />
               </Link>
             </div>
-            <ul className="mobile-card-rail mt-10 grid gap-8 md:grid-cols-3">
+            <ul className="mobile-card-rail mt-10 grid gap-8 md:grid-cols-3" style={{ direction: 'ltr' }}>
               {papers.slice(0, 3).map((p) => (
                 <li key={p.slug} className="border-l-2 border-hair pl-5 transition-colors hover:border-accent">
                   <p className="text-[1rem] font-medium leading-[1.6] text-ink">{paperTitlesEn[p.slug] || p.slug}</p>
@@ -250,7 +250,7 @@ export function EnglishCV() {
           </Section>
 
           <Section title="Advisory & consulting">
-            <ul className="mobile-card-rail grid gap-6 md:grid-cols-2">
+            <ul className="mobile-card-rail grid gap-6 md:grid-cols-2" style={{ direction: 'ltr' }}>
               {advisoryEn.map((a) => (
                 <li key={a.org}>
                   <span className="block text-[1rem] font-medium text-ink">{a.org}</span>

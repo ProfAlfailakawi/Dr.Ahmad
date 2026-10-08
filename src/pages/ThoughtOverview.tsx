@@ -110,7 +110,7 @@ export default function ThoughtOverview() {
                 { label: 'المقالات', value: number.format(articles.length), note: 'نصوص منشورة داخل الأرشيف', Icon: PenLine, share: articles.length },
               ].map((item) => (
                 <div key={item.label} className="thought-stat-tile flex min-h-[132px] flex-col justify-between rounded-[1.5rem] border border-hair bg-paper p-4 sm:p-5">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="thought-stat-head flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <span className="text-[.72rem] font-semibold leading-relaxed text-accent">{item.label}</span>
                       <p className="mt-1 text-[.72rem] leading-relaxed text-soft">{item.note}</p>
@@ -130,7 +130,7 @@ export default function ThoughtOverview() {
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.12fr_.88fr]">
             <FadeUp delay={0.04}>
               <section className="h-full rounded-[1.75rem] border border-hair bg-canvas p-6 md:p-8" aria-labelledby="thought-themes-title">
-                <div className="flex items-end justify-between gap-4">
+                <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
                   <div>
                     <p className="text-[.72rem] font-semibold text-accent">المحاور الأكثر حضوراً</p>
                     <h2 id="thought-themes-title" className="mt-1 font-display text-2xl font-semibold text-ink">خريطة الحضور في الأرشيف</h2>

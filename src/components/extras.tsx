@@ -513,9 +513,9 @@ export function CiteButton({
   return (
     <>
       <div className="mt-8 flex items-stretch rounded-xl border border-hair">
-        <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex min-w-0 flex-1 items-center justify-between gap-3 px-5 py-3 text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
+        <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog" className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-5 py-3 text-start text-[.88rem] font-medium text-soft transition-colors hover:text-accent">
           <span className="inline-flex items-center gap-2"><PenLine aria-hidden="true" size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" />الاستشهاد الأكاديمي</span>
-          <span className="text-[.82rem] font-semibold text-accent">APA · MLA · Chicago · BibTeX<Arrow kind="out" /></span>
+          <span className="min-w-0 text-[.82rem] font-semibold text-accent">APA · MLA · Chicago · BibTeX<Arrow kind="out" /></span>
         </button>
         {bibtex && (
           <button

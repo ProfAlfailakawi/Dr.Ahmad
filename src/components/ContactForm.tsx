@@ -124,13 +124,13 @@ export function ContactForm({ locale = 'ar' }: { locale?: Locale }) {
 
   const field = 'w-full rounded-xl border border-hair bg-canvas px-5 py-3.5 text-[.98rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent'
   return (
-    <div className={`rounded-2xl border border-hair bg-wash p-8 md:p-10 ${locale === 'ar' ? 'text-right' : 'text-left'}`} dir={ui.dir}>
+    <div className={`rounded-2xl border border-hair bg-wash p-5 sm:p-8 md:p-10 ${locale === 'ar' ? 'text-right' : 'text-left'}`} dir={ui.dir}>
       <span className="text-[.76rem] font-semibold uppercase text-accent">{ui.eyebrow}</span>
       <h3 className="mt-3 font-display text-[1.5rem] font-semibold text-ink">{ui.title}</h3>
       {!active ? (
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           {TOPICS.map((item) => (
-            <button key={item.key} type="button" onClick={() => setTopic(item.key)} className={`group flex min-h-[44px] items-start gap-4 rounded-xl border border-hair bg-canvas p-5 transition-colors hover:border-accent ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
+            <button key={item.key} type="button" onClick={() => setTopic(item.key)} className={`group flex min-h-[44px] items-start gap-3 rounded-xl border border-hair bg-canvas p-4 transition-colors sm:gap-4 sm:p-5 hover:border-accent ${locale === 'ar' ? 'text-right' : 'text-left'}`}>
               {(() => { const Icon = TOPIC_ICON[item.key]; return Icon ? <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-hair bg-wash text-accent transition-colors group-hover:border-accent"><Icon size={20} strokeWidth={1.6} /></span> : null })()}
               <span className="min-w-0">
                 <span className="block font-display text-[1.05rem] font-semibold text-ink transition-colors group-hover:text-accent">{locale === 'ar' ? item.ar : item.en}</span>

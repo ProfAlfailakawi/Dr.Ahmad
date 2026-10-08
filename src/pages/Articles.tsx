@@ -130,7 +130,7 @@ export default function Articles() {
         sub="مقالاتٌ أكتبها منذ عام 2015، أقرأ فيها تحولات التعليم والتكنولوجيا والمجتمع وما تتركه في الإنسان والممارسة."
       />
 
-      <section className="articles-filter-bar border-b border-hair bg-canvas px-4 py-3 sm:px-6 md:sticky md:top-16 md:z-[120] md:bg-canvas/[.96] md:px-11 md:backdrop-blur-md">
+      <section className="articles-filter-bar border-b border-hair bg-canvas px-6 py-3 md:sticky md:top-16 md:z-[120] md:bg-canvas/[.96] md:px-11 md:backdrop-blur-md">
         <div className="mx-auto max-w-shell">
           <div className="editorial-tablist flex flex-wrap items-center gap-x-3 gap-y-1 pb-2" role="tablist" aria-label="تصنيفات المقالات">
             {categories.map((c) => (
@@ -170,7 +170,7 @@ export default function Articles() {
       </section>
 
       {/* featured trio — بنية موحّدة، والاختلاف تحريري لا زخرفي */}
-      {!term && featured.length > 0 && <section className="border-b border-hair px-4 py-10 sm:px-6 md:px-11 md:py-16">
+      {!term && featured.length > 0 && <section className="border-b border-hair px-6 py-10 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-[.85rem] font-bold text-accent">

@@ -6846,8 +6846,10 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   .media-feature-card.is-secondary > a > div:last-child { padding: .85rem; }
   .media-feature-card.is-secondary h3 { font-size: .88rem; line-height: 1.55; }
   .media-feature-card.is-secondary > a > div:last-child > div:last-child { display: none; }
-  .media-year-group { grid-template-columns: 3.5rem minmax(0,1fr); gap: .65rem; }
-  .media-year-mark { font-size: .7rem; }
+  /* السنة صارت ترويسة فوق الصفوف بدل عمود 56px يضيّق العنوان إلى كلمتين على 320 */
+  .media-year-group { grid-template-columns: minmax(0,1fr); gap: 0; }
+  .media-year-mark { display: flex; align-items: center; gap: .6rem; padding-block: 1rem .15rem; font-size: .76rem; direction: rtl; text-align: start; }
+  .media-year-mark i { position: static; flex: 1; width: auto; height: 1px; background: rgb(var(--c-ink) / .08); }
   .media-editorial-row__link { grid-template-columns: 4.8rem minmax(0,1fr); gap: .7rem; min-height: 6.1rem; padding-inline-end: 2.3rem; }
   .media-editorial-row__meta { display: none; }
   .media-editorial-row__save { transform: translateY(-50%) scale(.88) !important; }
@@ -6972,6 +6974,14 @@ html.site-silent .signature-label > span:first-child { animation: none !importan
     max-width: 100% !important;
     margin-inline: 0 !important;
     scroll-snap-align: none !important;
+  }
+
+  /* سكة «الآن» في الرئيسية كانت تلامس حافتي الشاشة بعد عقد البطاقة الكاملة؛
+     حاشية 24px وفاصل بالمقدار نفسه فلا تظهر شريحة من البطاقة التالية (لا peek). */
+  .home-motion-rail[data-mobile-card-rail="true"] {
+    padding-inline: 1.5rem !important;
+    gap: 1.5rem !important;
+    scroll-padding-inline: 1.5rem !important;
   }
 
   /* زر «مساحتي» يعود دائرياً ومختصراً كما كان؛ لا تسمية مرئية ولا تمدد على الهاتف. */
@@ -7153,6 +7163,12 @@ html.dark {
     position: relative;
     z-index: 0;
   }
+
+  /* الصفّ الأفقيّ غير الملتفّ كان يوسّع مسار الشبكة فيخرج حقل البحث عن الشاشة؛
+     المسار يُقيَّد بعرض الشاشة وتتوافق الحواشي مع بقيّة الصفحة (24px). */
+  .listen-filter-bar { padding-inline: 1.5rem; }
+  .listen-filter-bar > .grid { grid-template-columns: minmax(0, 1fr); }
+  .listen-filter-bar > .grid > * { min-inline-size: 0; }
 
   /* chips الأقسام: صفٌّ أفقيّ واحد يُسحب بدل التفاف على أسطر؛ اللمس ≥44px */
   .listen-filter-tabs .listen-cat-row {
@@ -7587,6 +7603,11 @@ html.dark {
 }
 .article-share-actions::-webkit-scrollbar { display: none; }
 .article-share-actions > div { flex-wrap: nowrap !important; flex: 0 0 auto; }
+/* على 320px تتجاوز السبع أدوات عرض الصف فيُقصّ أولها؛ تلتفّ هنا متوازنة بدل القصّ. */
+@media (max-width: 340px) {
+  .article-share-actions { flex-wrap: wrap !important; overflow: visible !important; justify-content: center !important; }
+  .article-share-actions > div { flex-wrap: wrap !important; justify-content: center; }
+}
 @media (max-width: 520px) {
   .article-share-actions { justify-content: flex-start !important; }
   .article-share-actions .article-tool-icon,
@@ -8022,6 +8043,8 @@ html.dark {
 
 .card-live__links { display: flex; flex-wrap: wrap; gap: 8px; margin-block-end: 22px; }
 .card-live__chip {
+  display: inline-flex;
+  align-items: center;
   font-size: 12px;
   color: rgb(var(--card-cream) / .84);
   text-decoration: none;
@@ -8348,3 +8371,8 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     backdrop-filter: none !important;
   }
 }
+
+/* /thought: بلاطات الأرقام الأربع — أيقونة رفيعة وشريط حصّة من مجموع المواد (عرض فقط). */
+.thought-stat-icon { display: inline-flex; width: 2.25rem; height: 2.25rem; flex: none; align-items: center; justify-content: center; border: 1px solid rgb(var(--c-ink) / .12); border-radius: 999px; color: rgb(var(--c-accent)); }
+.thought-stat-track { display: block; height: 4px; margin-top: .75rem; border-radius: 2px; background: rgb(var(--c-ink) / .08); overflow: hidden; }
+.thought-stat-track i { display: block; height: 100%; border-radius: 2px; background: rgb(var(--c-accent)); }

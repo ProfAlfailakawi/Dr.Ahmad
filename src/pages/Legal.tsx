@@ -61,14 +61,14 @@ function LegalDocument({ path, label, title, subtitle, englishTitle, updated, ar
   return (
     <Page>
       <PageHead label={label} title={title} sub={subtitle} />
-      <div className="px-5 py-12 md:px-11 md:py-18">
+      <div className="px-6 py-12 md:px-11 md:py-18">
         <div className="mx-auto max-w-[980px]">
           <FadeUp>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-wash px-5 py-4 text-[.84rem] text-soft">
               <span>آخر تحديث: {updated}</span>
               <nav aria-label="الصفحات القانونية" className="flex flex-wrap gap-x-4 gap-y-2">
                 {legalLinks.map((item) => (
-                  <Link key={item.to} to={item.to} className={`transition-colors hover:text-accent ${item.to === path ? 'font-semibold text-accent' : ''}`}>
+                  <Link key={item.to} to={item.to} className={`inline-flex min-h-11 items-center transition-colors hover:text-accent ${item.to === path ? 'font-semibold text-accent' : ''}`}>
                     {item.label}
                   </Link>
                 ))}
@@ -78,9 +78,9 @@ function LegalDocument({ path, label, title, subtitle, englishTitle, updated, ar
 
           {glance && glance.length > 0 && (
             <FadeUp delay={0.03}>
-              <nav aria-label="مفاتيح سريعة لمحتوى الصفحة" className="mt-6 flex flex-wrap gap-2.5">
+              <nav aria-label="مفاتيح سريعة لمحتوى الصفحة" className="mt-6 grid gap-2.5 sm:flex sm:flex-wrap">
                 {glance.map(({ index, icon: Icon }) => arabic[index] && (
-                  <a key={index} href={`#legal-ar-${index}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hair px-4 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent">
+                  <a key={index} href={`#legal-ar-${index}`} className="inline-flex min-h-11 w-full items-center gap-2 rounded-full border border-hair px-4 text-[.82rem] sm:w-auto text-soft transition-colors hover:border-accent hover:text-accent">
                     <Icon aria-hidden="true" size={15} strokeWidth={1.6} className="shrink-0 text-accent" />
                     {arabic[index].title.replace(/^\d+\.\s*/, '')}
                   </a>

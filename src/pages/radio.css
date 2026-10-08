@@ -267,7 +267,7 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
 /* زرٌّ واحد لا غير */
 .radio-play {
   position: fixed;
-  inset-block-end: clamp(20px, 4vh, 34px);
+  inset-block-end: calc(clamp(20px, 4vh, 34px) + env(safe-area-inset-bottom, 0px));
   inset-inline-end: clamp(20px, 4vw, 34px);
   z-index: 3;
   min-width: 54px;

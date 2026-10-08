@@ -157,7 +157,7 @@ export default function Impact() {
       <section className="border-b border-hair px-6 py-7 md:px-11">
         <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-6">
           {headlineStats.length > 0 && (
-            <ul className="flex flex-wrap gap-3">
+            <ul className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
               {headlineStats.map((item) => (
                 <li key={item.label} className="flex min-w-[8.5rem] items-center gap-3 rounded-2xl border border-hair bg-canvas px-4 py-3">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent" aria-hidden="true"><item.Icon size={18} strokeWidth={1.6} /></span>

@@ -9,7 +9,7 @@ import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 import { categoryLabel } from '../lib/content-taxonomy'
 import { arabicCountPhrase, DIFFERENT_YEAR_AFTER_PREPOSITION_FORMS, MATERIAL_FORMS } from '../lib/arabic-count.ts'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BookOpen, CalendarRange, FlaskConical, PenLine } from 'lucide-react'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -104,17 +104,23 @@ export default function ThoughtOverview() {
           <FadeUp>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[
-                { label: 'سنوات الرحلة العلمية', value: `${getMinimumCompletedJourneyYears()}+`, note: `بدأت عام ${PROJECT_START_YEAR}` },
-                { label: 'الكتب', value: number.format(books.length), note: 'مؤلفات علمية وفكرية منشورة' },
-                { label: 'الأبحاث', value: number.format(papers.length), note: 'دراسات ومساهمات محكمة' },
-                { label: 'المقالات', value: number.format(articles.length), note: 'نصوص منشورة داخل الأرشيف' },
+                { label: 'سنوات الرحلة العلمية', value: `${getMinimumCompletedJourneyYears()}+`, note: `بدأت عام ${PROJECT_START_YEAR}`, Icon: CalendarRange, share: null as number | null },
+                { label: 'الكتب', value: number.format(books.length), note: 'مؤلفات علمية وفكرية منشورة', Icon: BookOpen, share: books.length },
+                { label: 'الأبحاث', value: number.format(papers.length), note: 'دراسات ومساهمات محكمة', Icon: FlaskConical, share: papers.length },
+                { label: 'المقالات', value: number.format(articles.length), note: 'نصوص منشورة داخل الأرشيف', Icon: PenLine, share: articles.length },
               ].map((item) => (
-                <div key={item.label} className="flex min-h-[132px] flex-col justify-between rounded-[1.5rem] border border-hair bg-paper p-4 sm:p-5">
-                  <div>
-                    <span className="text-[.72rem] font-semibold leading-relaxed text-accent">{item.label}</span>
-                    <p className="mt-1 text-[.72rem] leading-relaxed text-soft">{item.note}</p>
+                <div key={item.label} className="thought-stat-tile flex min-h-[132px] flex-col justify-between rounded-[1.5rem] border border-hair bg-paper p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="text-[.72rem] font-semibold leading-relaxed text-accent">{item.label}</span>
+                      <p className="mt-1 text-[.72rem] leading-relaxed text-soft">{item.note}</p>
+                    </div>
+                    <span className="thought-stat-icon" aria-hidden="true"><item.Icon size={17} strokeWidth={1.5} /></span>
                   </div>
-                  <strong className="mt-4 block font-display text-[clamp(1.9rem,5vw,3rem)] font-semibold leading-none text-ink">{item.value}</strong>
+                  <div>
+                    <strong className="mt-4 block font-display text-[clamp(1.9rem,5vw,3rem)] font-semibold leading-none text-ink">{item.value}</strong>
+                    {item.share !== null && <span className="thought-stat-track" aria-hidden="true"><i style={{ width: `${Math.max(3, Math.round((item.share / Math.max(1, books.length + papers.length + articles.length)) * 100))}%` }} /></span>}
+                  </div>
                 </div>
               ))}
             </div>

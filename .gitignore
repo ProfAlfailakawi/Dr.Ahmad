@@ -141,3 +141,7 @@ public/books/passages/
 # build-time canonical CMS snapshot (contains public Firestore content + deletion decisions)
 .cache/canonical-cms.json
 dist-demo
+
+# مخرجات بناء مولَّدة (scripts/build-listen-index.mjs) — لا تُلتزم في Git
+public/spoken
+public/spoken-kw

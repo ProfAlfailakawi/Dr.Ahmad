@@ -52,7 +52,7 @@ export default function Publications() {
       <PageHead label="المؤلفات العلمية والفكرية" title="كتبٌ تبني مشروعاً واحداً." sub={`${count} ترسم مساراً بدأ عام 2015؛ من التعليم والتكنولوجيا إلى أسئلة التحول المجتمعي ومكان الإنسان في العصر الرقمي.`} />
       <section className="flex flex-col overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 md:px-11 md:py-24">
         {tiles.total > 0 && (tiles.years || tiles.pages) && (
-          <CountTiles label="الكتب بالأرقام" className="mx-auto mt-12 w-full max-w-shell max-md:order-2 md:mb-12 md:mt-0">
+          <CountTiles label="الكتب بالأرقام" className="mx-auto mt-12 w-full max-w-shell max-lg:order-2 lg:mb-12 lg:mt-0">
             <RingTile value={tiles.total} of={tiles.total} label="كتب منشورة" />
             {tiles.years && <YearBarsTile title="الكتب بحسب سنة النشر" bars={tiles.years} />}
             {tiles.pages && <RankedTile title="عدد الصفحات" note={tiles.pages.sum ? `المجموع ${tiles.pages.sum} صفحة` : undefined} rows={tiles.pages.top} />}

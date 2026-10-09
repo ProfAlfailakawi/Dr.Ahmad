@@ -470,4 +470,8 @@ console.log('\nSpatial continuity + final visual closure')
   'الانتقال السينمائي جراحي لا شامل: لا يغلّف التنقل العام بل يقتصر على بطاقات المحتوى وتفاصيلها حفاظاً على سرعة النقر')
 }
 
+const searchPage = read('src/pages/Search.tsx')
+ok(/setQuery\(idea\); setTab\('all'\); setCat\('الكل'\); setYear\('الكل'\)/.test(searchPage),
+  'أفكار البحث المقترحة تصفّر التبويب والتصنيف والسنة كي لا يبقى الزائر على شاشة بلا نتائج')
+
 console.log('\nAll requested polish guards passed.')

@@ -692,7 +692,7 @@ export default function Atlas() {
   }
 
   const categoryButtons = (
-    <div className="atlas-axis-filter mb-8 flex flex-wrap gap-x-4 gap-y-2 md:pb-0" aria-label="تصفية السماء حسب المحور">
+    <div className="atlas-axis-filter edge-fade mb-4 flex gap-x-4 gap-y-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mb-8 md:flex-wrap md:overflow-visible md:pb-0" aria-label="تصفية السماء حسب المحور">
       <button
         onClick={() => { setActiveCat(null); setSelected(null) }}
         className={`atlas-axis-filter__item min-h-11 shrink-0 whitespace-nowrap border-b px-1 py-1.5 text-[.8rem] font-medium transition-colors duration-200 ${
@@ -726,7 +726,7 @@ export default function Atlas() {
         sub="كل نجمة مقال، وكل خط مسارٌ موثّق: تطور داخل الموضوع أو صلة فكرية بين مقالات متباعدة."
       />
 
-      <section className="px-4 py-14 md:px-11 md:py-16">
+      <section className="px-4 py-8 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
           {entryStar && (
             <FadeUp>
@@ -739,7 +739,7 @@ export default function Atlas() {
           <FadeUp>{categoryButtons}</FadeUp>
 
           <FadeUp delay={0.04}>
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 md:mb-5 md:gap-4">
               <div className="w-full sm:max-w-[19rem]">
                 <input
                   value={query}
@@ -765,7 +765,7 @@ export default function Atlas() {
           </FadeUp>
 
           <FadeUp delay={0.06}>
-            <div className="mb-5 flex flex-wrap items-center gap-2.5">
+            <div className="mb-4 flex flex-wrap items-center gap-2.5 md:mb-5">
               <button type="button" onClick={() => { setCompareMode((value) => !value); setCompareIndexes([]) }} aria-pressed={compareMode} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>مقارنة نجمتين</button>
               {journeyStars.length > 0 && <button type="button" onClick={() => setShowJourney((value) => !value)} aria-pressed={showJourney} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${showJourney ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>بصمتي · {arDigits(journeyStars.length)}</button>}
               {constellations.length > 0 && (

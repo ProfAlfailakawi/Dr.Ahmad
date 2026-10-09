@@ -145,12 +145,12 @@ export default function Articles() {
               </button>
             ))}
           </div>
-          <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
-            <div className="relative">
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+            <div className="relative col-span-2 sm:col-span-1">
               <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="ابحث في المقالات…" aria-label="بحث" className="w-full rounded-full border border-hair bg-canvas py-3 pe-12 ps-5 text-[.9rem] text-ink outline-none transition-colors placeholder:text-soft/70 focus:border-accent" />
               <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-soft"><SocialIcon name="Search" size={17} /></span>
             </div>
-            <label className="relative min-w-36">
+            <label className="relative min-w-0 sm:min-w-36">
               <span className="sr-only">تصفية المقالات حسب السنة</span>
               <select value={year} onChange={(event) => setYear(event.target.value)} className="min-h-11 w-full appearance-none rounded-full border border-hair bg-canvas py-2 pe-9 ps-4 text-[.82rem] font-medium text-soft outline-none transition-colors hover:border-accent focus:border-accent">
                 <option value="الكل">كل السنوات</option>
@@ -172,8 +172,8 @@ export default function Articles() {
       {/* featured trio — بنية موحّدة، والاختلاف تحريري لا زخرفي */}
       {!term && featured.length > 0 && <section className="border-b border-hair px-6 py-10 md:px-11 md:py-16">
         <div className="mx-auto max-w-shell">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-[.85rem] font-bold text-accent">
+          <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-display text-[1.05rem] font-semibold text-accent sm:text-[.85rem] sm:font-sans sm:font-bold">
               {cat === 'الكل' ? 'إضاءات مختارة وقراءات فكرية متنوّعة' : `إضاءات مختارة في قسم (${categoryLabel(cat)})`}
             </h2>
             <span className="text-[.75rem] text-soft">3 عدسات موضوعية متجددة</span>

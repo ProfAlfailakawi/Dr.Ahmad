@@ -117,12 +117,12 @@ function PathsIndex() {
                       <h2 className="mt-4 font-display text-[clamp(1.45rem,2.6vw,1.8rem)] font-semibold leading-[1.45] text-ink transition-colors group-hover:text-accent">{path.title}</h2>
                       <p className="mt-3 text-[.92rem] font-light leading-[1.9] text-soft">{path.intro}</p>
 
-                      <span aria-hidden className="mt-6 flex items-center gap-1.5">
-                        {path.steps.map((step) => (
-                          <span
-                            key={stepKey(step)}
-                            className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${done.has(stepKey(step)) ? 'bg-accent' : 'bg-wash'}`}
-                          />
+                      <span aria-hidden className="mt-6 flex items-center">
+                        {path.steps.map((step, stepIndex) => (
+                          <span key={stepKey(step)} className="flex flex-1 items-center last:flex-none">
+                            <span className={`h-3 w-3 shrink-0 rounded-full border-2 transition-colors duration-500 ${done.has(stepKey(step)) ? 'border-accent bg-accent' : 'border-hair bg-canvas group-hover:border-accent'}`} />
+                            {stepIndex < path.steps.length - 1 && <span className={`h-px flex-1 transition-colors duration-500 ${done.has(stepKey(step)) ? 'bg-accent' : 'bg-hair'}`} />}
+                          </span>
                         ))}
                       </span>
 

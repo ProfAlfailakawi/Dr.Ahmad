@@ -133,9 +133,9 @@ export default function Research() {
                         <Link to={`/research/${p.slug}`} viewTransition dir="auto" style={{ viewTransitionName: sharedViewName('paper-title', p.slug) }} className="research-title-link measure block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
                         {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="measure mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
                         {(journal || year) && (
-                          <p className="mt-3 flex flex-wrap gap-x-1.5 gap-y-1 text-[.74rem] text-soft">
-                            {journal && <span dir="auto" className="inline-flex items-center gap-1.5"><BookOpen aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{journal}</span>}
-                            {year && <span className="inline-flex items-center gap-1.5 font-semibold text-accent"><CalendarDays aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{year}</span>}
+                          <p className="mt-3 flex flex-wrap gap-2 text-[.8rem] text-soft">
+                            {journal && <span dir="auto" className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-hair bg-wash px-3 py-1"><BookOpen aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{journal}</span>}
+                            {year && <span className="inline-flex items-center gap-1.5 rounded-full border border-hair bg-wash px-3 py-1 font-semibold text-accent"><CalendarDays aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{year}</span>}
                           </p>
                         )}
                         <Link to={`/research/${p.slug}#research-passport`} className="research-understand-link mt-4 inline-flex">افهم هذا البحث <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>

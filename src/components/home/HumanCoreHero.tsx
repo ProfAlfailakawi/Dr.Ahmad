@@ -45,6 +45,7 @@ export default function HumanCoreHero() {
   const [settled, setSettled] = useState(false)
   const { scrollY } = useScroll()
   const portraitY = useTransform(scrollY, [0, 800], [0, 34])
+  const orbitTurn = useTransform(scrollY, [0, 900], [0, 36])
 
   useEffect(() => {
     if (reduce) { setSettled(true); return }
@@ -341,11 +342,11 @@ export default function HumanCoreHero() {
               transition={{ duration: 0.82, delay: 0.58, ease: EASE }}
               data-hover={mobileVisual ? undefined : true}
             >
-              <div className="human-core__orbit" aria-hidden="true"><span /><span /><span /></div>
-              <div className="human-core__portrait-media relative overflow-hidden rounded-xl border border-hair">
-                <img src="/portrait.webp" alt={profile.fullName} width={1345} height={2048} decoding="async" className="human-core__portrait-base block h-full w-full object-cover" />
+              <motion.div className="pointer-events-none absolute inset-0" style={reduce ? undefined : { rotate: orbitTurn }} aria-hidden="true"><div className="human-core__orbit"><span /><span /><span /></div></motion.div>
+              <div className="human-core__portrait-media relative overflow-hidden rounded-xl border border-hair max-md:max-h-[50svh]">
+                <img src="/portrait.webp" alt={profile.fullName} width={1345} height={2048} decoding="async" className="human-core__portrait-base block h-full w-full object-cover object-top" />
                 <div className="human-core__portrait-color absolute inset-0" aria-hidden="true">
-                  <img src="/portrait.webp" alt="" width={1345} height={2048} decoding="async" className="block h-full w-full object-cover" />
+                  <img src="/portrait.webp" alt="" width={1345} height={2048} decoding="async" className="block h-full w-full object-cover object-top" />
                 </div>
                 <div className="human-core__scan absolute inset-0" aria-hidden="true" />
               </div>
@@ -364,7 +365,7 @@ export default function HumanCoreHero() {
               <span className="block text-[.7rem] font-semibold text-accent">المسار الأكاديمي والمهني</span>
               <span className="mt-1 block font-display text-[1rem] font-semibold leading-[1.5] text-ink transition-colors group-hover:text-accent md:text-[1.15rem]">المسيرة التي صنعت الأسئلة.</span>
             </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="CV" size={17} /></span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-canvas"><SocialIcon name="CV" size={17} /></span>
           </Link>
         </motion.div>
       </div>

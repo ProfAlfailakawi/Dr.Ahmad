@@ -47,7 +47,7 @@ function CourseArchive({ items }: { items: CvTextItem[] }) {
   const technical = items.filter((item) => !containsArabic(item.text))
   const groups = [
     { title: 'الشهادات والدورات المهنية', items: professional, open: true },
-    { title: 'الخبرات القيادية في التحول الرقمي وتقنيات التعليم', items: technical, open: false },
+    { title: 'الخبرات القيادية في التحول الرقمي وتكنولوجيا التعليم', items: technical, open: false },
   ].filter((group) => group.items.length > 0)
 
   return (
@@ -108,15 +108,14 @@ export default function CV() {
             <p className="mt-7 max-w-[690px] text-[clamp(1rem,2vw,1.15rem)] font-light leading-[1.9] text-ink/75">
               مسارٌ امتد من قاعة الدرس إلى البحث والتأليف والاستشارة وصناعة المبادرات؛ لا ليجمع محطاتٍ أكثر، بل ليجعل المعرفة أقرب إلى الإنسان والحياة.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[.78rem] font-semibold text-soft" aria-label="مجالات السيرة">
-              <span>التعليم</span>
-              <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" />
-              <span>البحث</span>
-              <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" />
-              <span>التأليف</span>
-              <span className="h-1 w-1 rounded-full bg-accent" aria-hidden="true" />
-              <span>صناعة المبادرات</span>
-            </div>
+            <ul className="mt-8 flex flex-wrap items-center gap-2.5" aria-label="مجالات السيرة">
+              {['التعليم', 'البحث', 'التأليف', 'صناعة المبادرات'].map((field) => (
+                <li key={field} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-hair bg-wash px-4 text-[.95rem] font-medium text-ink">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+                  {field}
+                </li>
+              ))}
+            </ul>
           </FadeUp>
         </div>
       </header>

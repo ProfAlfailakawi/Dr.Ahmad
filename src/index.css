@@ -8055,8 +8055,8 @@ html.dark {
   font-variant-numeric: tabular-nums;
 }
 .card-live__lbl {
-  font-size: 10.5px;
-  font-weight: 300;
+  font-size: 12px;
+  font-weight: 400;
   color: rgb(var(--card-muted));
   margin-block-start: 6px;
   /* بلا letter-spacing: «كتب منشورة» عربية، ووصلاتها لا تُفكّ لأجل أناقةٍ لاتينية. */
@@ -8066,7 +8066,7 @@ html.dark {
 .card-live__chip {
   display: inline-flex;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
   color: rgb(var(--card-cream) / .84);
   text-decoration: none;
   padding: 7px 13px;

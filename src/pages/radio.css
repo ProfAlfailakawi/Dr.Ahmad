@@ -352,6 +352,16 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
   animation: radio-line-enter .26s cubic-bezier(.22, 1, .36, 1) both,
              radio-waiting 2.4s ease-in-out .3s infinite;
 }
+/* تسميةٌ صغيرة تشرح النقاط: الكلام آتٍ — حروفٌ ثابتة بلا حركة، وتظهر مع النقاط وحدها. */
+.radio-line--waiting::after {
+  content: "الكلام آتٍ بعد لحظات.";
+  display: block;
+  margin-top: .9rem;
+  font-family: "Tajawal", system-ui, sans-serif;
+  font-size: .9rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
 @keyframes radio-waiting {
   0%, 100% { opacity: .42 }
   50% { opacity: .92 }

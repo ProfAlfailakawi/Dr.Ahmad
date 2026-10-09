@@ -147,6 +147,16 @@ export default function Atlas() {
     if (typeof window === 'undefined') return null
     return new URLSearchParams(window.location.search).get('cat') || null
   })
+  /* على الهاتف تُعرض السماء أولاً ثم المرشّحات؛ نرتّب الشيفرة نفسها (لا الـCSS)
+     كي يطابق ترتيب لوحة المفاتيح ما يراه الزائر. */
+  const [mobileSky, setMobileSky] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches === true)
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)')
+    const update = () => setMobileSky(query.matches)
+    update()
+    query.addEventListener?.('change', update)
+    return () => query.removeEventListener?.('change', update)
+  }, [])
   const [view, setView] = useState<AtlasView>(() => {
     if (typeof window === 'undefined') return 'timeline'
     return new URLSearchParams(window.location.search).get('view') === 'graph' ? 'graph' : 'timeline'
@@ -718,27 +728,24 @@ export default function Atlas() {
     </div>
   )
 
-  return (
-    <Page>
-      <PageHead
-        label="خريطة"
-        title="سماء المقالات."
-        sub="كل نجمة مقال، وكل خط مسارٌ موثّق: تطور داخل الموضوع أو صلة فكرية بين مقالات متباعدة."
-      />
-
-      <section className="px-4 py-8 md:px-11 md:py-16">
-        <div className="mx-auto flex max-w-shell flex-col md:block">
+  const entryBlock = (
+    <>
           {entryStar && (
-            <FadeUp className="max-md:order-2">
+            <FadeUp>
               <aside className="atlas-arrival mb-6 border-y border-accent/20 py-4" aria-live="polite">
                 <span className="text-[.66rem] font-semibold text-accent">المقال القادم</span>
                 <strong className="mt-1 block break-words font-display text-[1rem] font-semibold leading-[1.7] text-ink md:text-[1.15rem]">{entryStar.title}</strong>
               </aside>
             </FadeUp>
           )}
-          <FadeUp className="max-md:order-3">{categoryButtons}</FadeUp>
+    </>
+  )
 
-          <FadeUp delay={0.04} className="max-md:order-3">
+  const filtersBlock = (
+    <div className={mobileSky ? 'mt-6' : undefined}>
+          <FadeUp>{categoryButtons}</FadeUp>
+
+          <FadeUp delay={0.04}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3 md:mb-5 md:gap-4">
               <div className="w-full sm:max-w-[19rem]">
                 <input
@@ -764,7 +771,7 @@ export default function Atlas() {
             </div>
           </FadeUp>
 
-          <FadeUp delay={0.06} className="max-md:order-3">
+          <FadeUp delay={0.06}>
             <div className="mb-4 flex flex-wrap items-center gap-2.5 md:mb-5">
               <button type="button" onClick={() => { setCompareMode((value) => !value); setCompareIndexes([]) }} aria-pressed={compareMode} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>مقارنة نجمتين</button>
               {journeyStars.length > 0 && <button type="button" onClick={() => setShowJourney((value) => !value)} aria-pressed={showJourney} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${showJourney ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>بصمتي · {arDigits(journeyStars.length)}</button>}
@@ -779,8 +786,23 @@ export default function Atlas() {
               )}
             </div>
           </FadeUp>
+    </div>
+  )
 
-          <FadeUp delay={0.08} className="max-md:order-1 max-md:mb-5">
+  return (
+    <Page>
+      <PageHead
+        label="خريطة"
+        title="سماء المقالات."
+        sub="كل نجمة مقال، وكل خط مسارٌ موثّق: تطور داخل الموضوع أو صلة فكرية بين مقالات متباعدة."
+      />
+
+      <section className="px-4 py-8 md:px-11 md:py-16">
+        <div className="mx-auto max-w-shell">
+          {!mobileSky && entryBlock}
+          {!mobileSky && filtersBlock}
+
+          <FadeUp delay={0.08} className={mobileSky ? 'mb-5' : undefined}>
             <div className={`atlas-night atlas-atmosphere--${atmosphere.period}${atmosphere.seasonal ? ' is-seasonal' : ''} relative overflow-hidden rounded-2xl border border-hair lg:overflow-x-auto ${view === 'graph' ? 'is-graph' : 'is-timeline'}`} onPointerLeave={() => { setHover(null); setLens(null) }}>
               {/* نسخة الهاتف: تتكيّف مع العرض، بلا تمرير جانبي ولا نافذة عائمة مقصوصة. */}
               <svg
@@ -1034,8 +1056,10 @@ export default function Atlas() {
             </div>
           </FadeUp>
 
+          {mobileSky && entryBlock}
+
           {compareMode && (
-            <section className="mt-4 rounded-xl max-md:order-2 border border-hair bg-wash/[.42] p-4" aria-live="polite">
+            <section className="mt-4 rounded-xl border border-hair bg-wash/[.42] p-4" aria-live="polite">
               <div className="flex items-center justify-between gap-4">
                 <p className="text-[.72rem] font-semibold text-accent">كيف تتحاور الفكرتان؟</p>
                 <span className="text-[.68rem] text-soft">{comparedStars.length}/2</span>
@@ -1057,7 +1081,7 @@ export default function Atlas() {
           )}
 
           {showJourney && journeyStars.length > 0 && (
-            <section className="mt-4 flex flex-wrap max-md:order-2 items-center justify-between gap-4 rounded-xl border border-accent/[.22] bg-canvas p-4">
+            <section className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-accent/[.22] bg-canvas p-4">
               <div>
                 <p className="text-[.72rem] font-semibold text-accent">قرأتَ {arDigits(journeyStars.length)} من {arDigits(articles.length)} · محورك الغالب: {categoryLabel(journeyTopAxis)}</p>
                 <p className="mt-1 text-[.68rem] font-light text-soft">أول نجمة: {journeyStars[0]?.title} · آخر نجمة: {journeyStars[journeyStars.length - 1]?.title}</p>
@@ -1067,14 +1091,14 @@ export default function Atlas() {
           )}
 
           {constellation && constellationPath.length > 1 && (
-            <ol className="mt-4 flex gap-2 max-md:order-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [touch-action:pan-x_pan-y_pinch-zoom] overscroll-x-contain" aria-label={`ترتيب قراءة ${constellation.title}`}>
+            <ol className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [touch-action:pan-x_pan-y_pinch-zoom] overscroll-x-contain" aria-label={`ترتيب قراءة ${constellation.title}`}>
               {constellationPath.map((star, index) => (
                 <li key={star.slug} className="contents"><Link to={`/articles/${star.slug}`} className="min-w-[12rem] rounded-xl border border-hair bg-canvas p-3 text-[.72rem] text-soft transition-colors hover:border-accent hover:text-accent"><span className="font-bold text-accent">{index + 1}</span><span className="mx-2"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>{star.title}</Link></li>
               ))}
             </ol>
           )}
 
-          <div id="atlas-selection" className="mt-4 min-h-[94px] max-md:order-2 scroll-mt-24">
+          <div id="atlas-selection" className="mt-4 min-h-[94px] scroll-mt-24">
             {active ? (
               <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-hair bg-canvas p-5">
                 <div className="flex flex-wrap items-center gap-2 text-[.74rem] text-soft">
@@ -1141,7 +1165,9 @@ export default function Atlas() {
             )}
           </div>
 
-          <FadeUp delay={0.14} className="max-md:order-4">
+          {mobileSky && filtersBlock}
+
+          <FadeUp delay={0.14}>
             <div className="mobile-card-rail mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
               <p><span className="font-medium text-ink">الحجم</span> — كلّما كبرت النجمة، طال المقال.</p>
               <p><span className="font-medium text-ink">المسار</span> — خط متصل يروي قبل المقال وبعده داخل الموضوع نفسه.</p>

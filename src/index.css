@@ -6849,6 +6849,13 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   .media-feature-card.is-secondary .spatial-media { height: 100%; aspect-ratio: auto !important; }
   .media-feature-card.is-secondary > a > div:last-child { display: flex; flex-direction: column; justify-content: center; }
 }
+/* الجدول القيّد: بين 760 و1023 يضيق عمود البطاقة الثانوية فيلتفّ نصّها في عمودٍ ضيق؛
+   فتُكدَّس البطاقات هناك وتبقى الصورة بجانب النص. */
+@media (min-width: 760px) and (max-width: 1023px) {
+  .media-feature-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .media-feature-card.is-lead { grid-row: auto; }
+  .media-feature-card.is-secondary > a { grid-template-columns: minmax(10rem, .6fr) minmax(0, 1fr); }
+}
 @media (max-width: 640px) {
   .media-feature-grid { gap: .8rem; }
   .media-feature-card.is-secondary > a { display: grid; grid-template-columns: 7rem minmax(0,1fr); }

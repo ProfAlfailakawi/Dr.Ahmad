@@ -162,7 +162,7 @@ export default function Questions() {
               {/* الجسر إلى العقل الحي: السؤال يفتح المكتبة كلها بنقرة (مقترح معتمد) */}
               <Link
                 to={`/ask?q=${encodeURIComponent(currentQuestion.ar)}`}
-                className="inline-flex items-center gap-2 rounded-full border border-accent/[.35] px-5 py-2.5 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+                className="inline-flex items-center gap-2 rounded-full border border-accent/[.35] px-5 py-2.5 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas"
               >
                 ابحث عن هذا السؤال في أرشيفي
                 <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
@@ -181,7 +181,7 @@ export default function Questions() {
                   <button
                     type="button"
                     onClick={() => setTopicFilter(null)}
-                    className={`rounded-full border px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${!topicFilter ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                    className={`rounded-full border px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${!topicFilter ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                   >
                     الكل
                   </button>
@@ -190,7 +190,7 @@ export default function Questions() {
                       key={topic}
                       type="button"
                       onClick={() => setTopicFilter(topicFilter === topic ? null : topic)}
-                      className={`rounded-full border px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${topicFilter === topic ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                      className={`rounded-full border px-3.5 py-1.5 text-[.74rem] font-semibold transition-colors ${topicFilter === topic ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                     >
                       {topic}
                     </button>

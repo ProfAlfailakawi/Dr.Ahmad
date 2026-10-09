@@ -204,7 +204,7 @@ export default function ConceptLife() {
             <FadeUp>
               <div className="flex flex-wrap gap-2 border-b border-hair pb-6">
                 {kinds.map(([kind, count]) => (
-                  <button key={kind} type="button" onClick={() => setActiveKind((current) => current === kind ? null : kind)} aria-pressed={activeKind === kind} className={`relative z-10 min-h-11 rounded-full border px-4 py-2 text-[.72rem] font-medium transition-colors ${activeKind === kind ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
+                  <button key={kind} type="button" onClick={() => setActiveKind((current) => current === kind ? null : kind)} aria-pressed={activeKind === kind} className={`relative z-10 min-h-11 rounded-full border px-4 py-2 text-[.72rem] font-medium transition-colors ${activeKind === kind ? 'border-accent bg-accent text-canvas' : 'border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
                     {kind} · {count}
                   </button>
                 ))}
@@ -273,7 +273,7 @@ export default function ConceptLife() {
             <FadeUp>
               <div className="mt-6 flex flex-wrap gap-3 border-t border-hair pt-8">
                 <Link to={`/search?q=${encodeURIComponent(term)}`} className="rounded-full border border-hair px-5 py-2.5 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent">ابحث في الأرشيف كله</Link>
-                <Link to={`/ask?q=${encodeURIComponent(term)}`} className="rounded-full border border-accent/[.35] px-5 py-2.5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">اسأل الأرشيف عنه</Link>
+                <Link to={`/ask?q=${encodeURIComponent(term)}`} className="rounded-full border border-accent/[.35] px-5 py-2.5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">اسأل الأرشيف عنه</Link>
               </div>
             </FadeUp>
           )}

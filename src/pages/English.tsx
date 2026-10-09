@@ -91,7 +91,7 @@ export function EnglishHome() {
             </p>
             <p className="mt-6 max-w-[560px] text-[1rem] font-light leading-[1.8] text-soft">{profileEn.tagline}</p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link to="/en/research" className="rounded-full bg-accent px-7 py-3 text-[.9rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+              <Link to="/en/research" className="rounded-full bg-accent px-7 py-3 text-[.9rem] font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                 Research
               </Link>
               <Link to="/en/cv" className="rounded-full border border-hair px-7 py-3 text-[.9rem] font-medium text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
@@ -183,7 +183,7 @@ export function EnglishHome() {
                 <p className="font-display text-[1.3rem] font-semibold leading-[1.5] text-ink">Working with institutions on education, media and AI.</p>
                 <p className="mt-3 text-[.92rem] font-light leading-[1.8] text-soft">Consulting, keynotes and digital-transformation projects — in Kuwait and beyond.</p>
                 <div className="mt-6 flex flex-wrap gap-3.5">
-                  <Link to="/en/contact#booking-form" className="rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+                  <Link to="/en/contact#booking-form" className="rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                     Book a meeting
                   </Link>
                   <a href="https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5" target="_blank" rel="noreferrer" className="rounded-full border border-hair px-6 py-2.5 text-[.88rem] font-medium text-ink transition-colors hover:border-accent hover:text-accent">
@@ -281,7 +281,7 @@ export function EnglishCV() {
 
           <FadeUp>
             <div className="mt-14">
-              <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+              <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                 Download CV (PDF)
               </a>
             </div>

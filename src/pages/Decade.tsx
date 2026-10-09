@@ -261,7 +261,7 @@ export default function Decade() {
               placeholder={mode === 'predictions' ? 'صفِّ التنبؤات بفكرة — الشهادة، الذكاء الاصطناعي…' : 'اكتب فكرةً — الامتحان، الهوية، الذكاء الاصطناعي…'}
               className="min-w-[16rem] flex-1 rounded-full border border-hair bg-canvas px-5 py-2.5 text-[.88rem] text-ink outline-none focus:border-accent"
             />
-            <button type="submit" className="rounded-full bg-accent px-6 py-2.5 text-[.85rem] font-semibold text-white transition-opacity hover:opacity-90">
+            <button type="submit" className="rounded-full bg-accent px-6 py-2.5 text-[.85rem] font-semibold text-canvas transition-opacity hover:opacity-90">
               {mode === 'predictions' ? 'صفِّ السجل' : 'تتبّع الرحلة'}
             </button>
             {idea && (
@@ -388,7 +388,7 @@ export default function Decade() {
                             onClick={() => sharePrediction(article.slug, `${article.slug}:${prediction.quote}`)}
                             aria-label={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع' : 'نسخ رابط هذا التوقع'}
                             title={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع' : 'نسخ رابط هذا التوقع'}
-                            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${copiedPrediction === `${article.slug}:${prediction.quote}` ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${copiedPrediction === `${article.slug}:${prediction.quote}` ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                           >
                             <SocialIcon name={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'Check' : 'Copy'} size={16} />
                           </button>

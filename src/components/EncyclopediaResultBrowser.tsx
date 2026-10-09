@@ -91,7 +91,7 @@ function Group({ id, title, count, children, empty }: {
             <button
               type="button"
               onClick={() => setVisible((current) => current + PAGE_SIZE)}
-              className="justify-self-start rounded-full border border-hair px-4 py-1.5 text-[.68rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+              className="justify-self-start rounded-full border border-hair px-4 py-1.5 text-[.68rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"
             >
               عرض المزيد ({formatArabicNumber(items.length - visible)})
             </button>

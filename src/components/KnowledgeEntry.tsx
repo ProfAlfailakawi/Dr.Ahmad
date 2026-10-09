@@ -48,7 +48,7 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
           aria-label="ابحث في كتاب"
           title="ابحث في كتاب"
           aria-current={bookActive ? 'page' : undefined}
-          className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[.66rem] font-semibold transition-colors ${bookActive ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+          className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[.66rem] font-semibold transition-colors ${bookActive ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
         >
           <SocialIcon name="Search" size={12} />
           داخل كتاب
@@ -63,7 +63,7 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
             role="tab"
             aria-selected={option.active}
             aria-current={option.active ? 'page' : undefined}
-            className={`group min-w-0 rounded-[.82rem] px-3 py-2.5 transition-[background-color,color,box-shadow] ${option.active ? 'bg-accent text-white shadow-sm' : 'text-ink hover:bg-wash hover:text-accent'}`}
+            className={`group min-w-0 rounded-[.82rem] px-3 py-2.5 transition-[background-color,color,box-shadow] ${option.active ? 'bg-accent text-canvas shadow-sm' : 'text-ink hover:bg-wash hover:text-accent'}`}
           >
             <span className="flex items-center gap-2">
               <SocialIcon name={option.icon} size={14} />

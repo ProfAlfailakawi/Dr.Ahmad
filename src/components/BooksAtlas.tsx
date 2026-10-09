@@ -133,7 +133,7 @@ export function BooksAtlas() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     to={`/concept/${encodeURIComponent(activeBridge.term)}`}
-                    className="inline-flex rounded-full border border-accent/[.35] px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+                    className="inline-flex rounded-full border border-accent/[.35] px-4 py-2 text-[.72rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas"
                   >
                     سيرة هذا المفهوم عبر السنوات<Arrow />
                   </Link>

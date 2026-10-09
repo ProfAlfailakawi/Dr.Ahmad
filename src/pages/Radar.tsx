@@ -240,7 +240,7 @@ export default function Radar() {
                       role="tab"
                       aria-selected={year === "latest"}
                       onClick={() => setYear("latest")}
-                      className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${year === "latest" ? "bg-accent text-white" : "border border-hair text-soft hover:border-accent hover:text-accent"}`}
+                      className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${year === "latest" ? "bg-accent text-canvas" : "border border-hair text-soft hover:border-accent hover:text-accent"}`}
                     >
                       الأحدث
                     </button>
@@ -251,7 +251,7 @@ export default function Radar() {
                         role="tab"
                         aria-selected={year === value}
                         onClick={() => setYear(value)}
-                        className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${year === value ? "bg-accent text-white" : "border border-hair text-soft hover:border-accent hover:text-accent"}`}
+                        className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${year === value ? "bg-accent text-canvas" : "border border-hair text-soft hover:border-accent hover:text-accent"}`}
                       >
                         {arNum(value)}
                       </button>

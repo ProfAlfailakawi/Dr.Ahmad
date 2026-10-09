@@ -81,7 +81,7 @@ export function Pagination({
       aria-label={`الصفحة ${number}`}
       className={`tap-44 flex ${compact ? 'h-9 min-w-9' : 'h-10 min-w-10'} items-center justify-center rounded-full border px-2 text-[.82rem] font-semibold transition-colors ${
         number === page
-          ? 'border-accent bg-accent text-white shadow-[0_8px_20px_-12px_rgba(28,69,103,.8)]'
+          ? 'border-accent bg-accent text-canvas shadow-[0_8px_20px_-12px_rgba(28,69,103,.8)]'
           : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'
       }`}
     >

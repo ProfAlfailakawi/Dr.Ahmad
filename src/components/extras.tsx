@@ -86,7 +86,7 @@ export function Newsletter({ compact = false }: { compact?: boolean }) {
         <button
           onClick={submit}
           disabled={state === 'sending'}
-          className={`shrink-0 rounded-full bg-accent font-semibold text-white transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60 ${compact ? 'px-4 py-2 text-[.78rem]' : 'px-5 py-2.5 text-[.9rem]'}`}
+          className={`shrink-0 rounded-full bg-accent font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep disabled:opacity-60 ${compact ? 'px-4 py-2 text-[.78rem]' : 'px-5 py-2.5 text-[.9rem]'}`}
         >
           {state === 'sending' ? '…' : 'اشتراك'}
         </button>

@@ -689,7 +689,7 @@ export default function AskLibrary() {
               />
               <button
                 onClick={() => ask(q)}
-                className="min-h-12 rounded-xl bg-accent px-8 py-3 font-semibold text-white transition-colors hover:bg-accent-deep"
+                className="min-h-12 rounded-xl bg-accent px-8 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep"
               >
                 اسأل
               </button>
@@ -719,7 +719,7 @@ export default function AskLibrary() {
                             ['timeline', 'المسار'],
                             ['connections', 'امتدادات'],
                           ] as [AnswerMode, string][]).map(([id, label]) => (
-                            <button key={id} type="button" role="tab" aria-selected={answerMode === id} onClick={() => setAnswerMode(id)} className={`min-h-11 rounded-xl border px-2 py-2 text-[.7rem] font-semibold transition ${answerMode === id ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
+                            <button key={id} type="button" role="tab" aria-selected={answerMode === id} onClick={() => setAnswerMode(id)} className={`min-h-11 rounded-xl border px-2 py-2 text-[.7rem] font-semibold transition ${answerMode === id ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>{label}</button>
                           ))}
                         </div>
                         {coverage && (
@@ -756,8 +756,8 @@ export default function AskLibrary() {
                                 الإجابة مستندة إلى مواد منشورة وموثّقة. سؤالك خاص ولا يُنشر.
                               </p>
                               <div className="mt-5 flex flex-wrap gap-2">
-                                <button type="button" onClick={() => { void copyArchiveAnswer(); trackUsage('living_mind_result_used', { type: 'copy_answer' }) }} aria-label="نسخ الجواب بمصادره" title={answerCopied ? 'نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'} className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition hover:border-accent hover:text-accent ${answerCopied ? 'border-accent bg-accent text-white' : 'border-hair text-ink'}`}><SocialIcon name={answerCopied ? 'Check' : 'Copy'} size={17} /></button>
-                                <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/[.35] px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استكشف المسار الفكري <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
+                                <button type="button" onClick={() => { void copyArchiveAnswer(); trackUsage('living_mind_result_used', { type: 'copy_answer' }) }} aria-label="نسخ الجواب بمصادره" title={answerCopied ? 'نُسخ الجواب بمصادره' : 'نسخ الجواب بمصادره'} className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition hover:border-accent hover:text-accent ${answerCopied ? 'border-accent bg-accent text-canvas' : 'border-hair text-ink'}`}><SocialIcon name={answerCopied ? 'Check' : 'Copy'} size={17} /></button>
+                                <Link to="/thought-paths" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-accent/[.35] px-5 text-[.76rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">استكشف المسار الفكري <span aria-hidden><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link>
                               </div>
                             </motion.div>
                           ) : null}

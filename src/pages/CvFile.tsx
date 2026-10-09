@@ -133,7 +133,7 @@ export default function CvFile() {
         ) : (
           <>
             <p className="font-display text-[1.08rem] font-semibold text-ink">{kind === 'ar' ? 'تعذّر تجهيز النسخة المحدثة.' : 'The updated CV could not be prepared.'}</p>
-            <a href={fallback} className="mt-5 inline-flex rounded-full bg-accent px-6 py-3 text-[.82rem] font-semibold text-white">{kind === 'ar' ? 'فتح النسخة الأساسية' : 'Open the built-in copy'}</a>
+            <a href={fallback} className="mt-5 inline-flex rounded-full bg-accent px-6 py-3 text-[.82rem] font-semibold text-canvas">{kind === 'ar' ? 'فتح النسخة الأساسية' : 'Open the built-in copy'}</a>
           </>
         )}
       </div>

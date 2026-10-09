@@ -114,7 +114,7 @@ export default function Card() {
           </div>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href={links.booking} target="_blank" rel="noreferrer" className="rounded-full border border-accent px-5 py-2 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">احجز لقاءً</a>
+            <a href={links.booking} target="_blank" rel="noreferrer" className="rounded-full border border-accent px-5 py-2 text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">احجز لقاءً</a>
             <a href={links.cv} target="_blank" rel="noreferrer" className="rounded-full border border-hair px-5 py-2 text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">السيرة الذاتية (PDF)</a>
           </div>
         </div>

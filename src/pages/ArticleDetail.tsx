@@ -774,7 +774,7 @@ function ArticleClosingNote({ next, related }: { next?: ArticleRecord; related: 
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           <a href="#time-dialogue" onClick={(event) => { event.preventDefault(); goToLayer('#time-dialogue') }} className="rounded-full border border-hair px-4 py-2 text-[.78rem] text-soft transition-colors hover:border-accent hover:text-accent">حوار عبر الزمن</a>
           {target && (
-            <Link viewTransition to={`/articles/${target.slug}`} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] text-accent transition-colors hover:bg-accent hover:text-white">
+            <Link viewTransition to={`/articles/${target.slug}`} className="rounded-full border border-accent/30 px-4 py-2 text-[.78rem] text-accent transition-colors hover:bg-accent hover:text-canvas">
               {target === next ? 'المقال التالي' : 'مقال قريب'}<Arrow />
             </Link>
           )}
@@ -984,7 +984,7 @@ export default function ArticleDetail() {
                       href={liveLink(a.source)}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-6 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
+                      className="mt-6 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep"
                     >
                       اقرأ في مصدره الأصلي<Arrow />
                     </a>
@@ -1022,7 +1022,7 @@ export default function ArticleDetail() {
               <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 sm:gap-3">
                 <div className="flex min-w-0 items-center gap-1.5">
                   {next ? (
-                    <Link viewTransition to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white sm:h-8 sm:w-8">
+                    <Link viewTransition to={`/articles/${next.slug}`} aria-label={`انتقل إلى المقال السابق: ${next.title}`} title="المقال السابق" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-canvas sm:h-8 sm:w-8">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
                     </Link>
                   ) : <span className="h-11 w-11 shrink-0 sm:h-8 sm:w-8" aria-hidden />}
@@ -1035,7 +1035,7 @@ export default function ArticleDetail() {
 
                 <div className="flex min-w-0 flex-row-reverse items-center gap-1.5 text-left">
                   {prev ? (
-                    <Link viewTransition to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-white sm:h-8 sm:w-8">
+                    <Link viewTransition to={`/articles/${prev.slug}`} aria-label={`انتقل إلى المقال التالي: ${prev.title}`} title="المقال التالي" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-soft transition-colors hover:border-accent hover:bg-accent hover:text-canvas sm:h-8 sm:w-8">
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="m11 6-6 6 6 6" /></svg>
                     </Link>
                   ) : <span className="h-11 w-11 shrink-0 sm:h-8 sm:w-8" aria-hidden />}

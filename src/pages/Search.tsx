@@ -794,7 +794,7 @@ export default function Search() {
                   </div>
                 )}
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يجري البحث في المتن…' : 'ابحث في الكتاب'}</button>
+                  <button type="submit" disabled={!selectedAskBook || askBookQuestion.trim().length < 2 || askBookLoading} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45">{askBookLoading ? 'يجري البحث في المتن…' : 'ابحث في الكتاب'}</button>
                   <button type="button" onClick={chooseReadyQuestion} disabled={!readyQuestions.length} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45">سؤال جاهز</button>
                 </div>
                 {askBookError && <p className="text-[.72rem] leading-relaxed text-accent" role="alert">{askBookError}</p>}
@@ -860,7 +860,7 @@ export default function Search() {
                     onClick={() => playSpoken(hit)}
                     className="group flex w-full items-start gap-3.5 py-5 text-start transition-colors"
                   >
-                    <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent/[.75] transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-white"><SocialIcon name="Play" size={14} /></span>
+                    <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hair text-accent/[.75] transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-canvas"><SocialIcon name="Play" size={14} /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-display text-[1.05rem] leading-[1.8] text-ink transition-colors group-hover:text-accent">
                         {hit.text}
@@ -914,7 +914,7 @@ export default function Search() {
                       to={`/search?tab=askbook&book=${encodeURIComponent(row.slug)}`}
                       aria-label={`ابحث داخل كتاب ${row.title}`}
                       title="ابحث في هذا الكتاب"
-                      className="absolute bottom-3 left-0 inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent/[.35] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                      className="absolute bottom-3 left-0 inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent/[.35] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"
                     >
                       <SocialIcon name="Search" size={14} />
                     </Link>
@@ -959,7 +959,7 @@ export default function Search() {
                   <p className="text-[.8rem] text-soft">أو ابدأ بإحدى هذه الأفكار</p>
                   <div className="mt-3 flex flex-wrap justify-center gap-2">
                     {['الذكاء الاصطناعي', 'المعلم', 'الامتحان', 'الطفل والتكنولوجيا'].map((idea) => (
-                      <button key={idea} type="button" onClick={() => setQuery(idea)} className="min-h-10 rounded-full border border-hair bg-wash px-4 text-[.85rem] text-ink transition-colors hover:border-accent hover:text-accent">{idea}</button>
+                      <button key={idea} type="button" onClick={() => { setQuery(idea); setTab('all'); setCat('الكل'); setYear('الكل') }} className="min-h-10 rounded-full border border-hair bg-wash px-4 text-[.85rem] text-ink transition-colors hover:border-accent hover:text-accent">{idea}</button>
                     ))}
                   </div>
                 </div>

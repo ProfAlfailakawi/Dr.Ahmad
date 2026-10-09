@@ -90,7 +90,7 @@ function QuickArticleActions({ article, className = '' }: { article: ArticleReco
         onClick={(event) => { event.preventDefault(); event.stopPropagation(); setSaved(toggleSavedArticle(article)) }}
         aria-label={saved ? 'إزالة المقال من مساحتي' : 'حفظ المقال في مساحتي'}
         title={saved ? 'إزالة المقال من مساحتي' : 'حفظ المقال في مساحتي'}
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-[.9rem] transition-colors ${saved ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-[.9rem] transition-colors ${saved ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
       >
         <ActionIcon name="Bookmark" size={16} />
       </button>
@@ -99,7 +99,7 @@ function QuickArticleActions({ article, className = '' }: { article: ArticleReco
         onClick={(event) => { event.preventDefault(); event.stopPropagation(); void shareArticle() }}
         aria-label={copied ? 'تمت مشاركة المقال' : 'مشاركة المقال'}
         title={copied ? 'تمت مشاركة المقال' : 'مشاركة المقال'}
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-[.9rem] transition-colors ${copied ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-[.9rem] transition-colors ${copied ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
       >
         <ActionIcon name={copied ? 'Check' : 'Share'} size={16} />
       </button>

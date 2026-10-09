@@ -142,7 +142,7 @@ export function MediaSaveButton({ slug, className = '', compact = true }: { slug
       aria-label={saved ? "إزالة اللقاء من محفوظاتي" : "حفظ اللقاء في مساحتي"}
       aria-pressed={saved}
       title={saved ? "محفوظ في مساحتي" : "حفظ اللقاء في مساحتي"}
-      className={`${compact ? "tap-44 flex h-9 w-9 items-center justify-center rounded-full" : "inline-flex min-h-11 items-center gap-2 rounded-full px-4"} border transition-colors ${saved ? "border-accent bg-accent text-white" : "border-hair bg-canvas/[.92] text-soft hover:border-accent hover:text-accent"} ${className}`}
+      className={`${compact ? "tap-44 flex h-9 w-9 items-center justify-center rounded-full" : "inline-flex min-h-11 items-center gap-2 rounded-full px-4"} border transition-colors ${saved ? "border-accent bg-accent text-canvas" : "border-hair bg-canvas/[.92] text-soft hover:border-accent hover:text-accent"} ${className}`}
     >
       <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill={saved ? "currentColor" : "none"} aria-hidden="true">
         <path d="M7 4.75h10v14.5L12 16.2 7 19.25V4.75Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
@@ -262,7 +262,7 @@ function CrossDeviceSync({ onActiveChange }: { onActiveChange?: (active: boolean
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={syncAgain} className="rounded-full bg-accent px-4 py-2 text-[.72rem] font-semibold text-white">زامن الآن</button>
+                <button type="button" onClick={syncAgain} className="rounded-full bg-accent px-4 py-2 text-[.72rem] font-semibold text-canvas">زامن الآن</button>
                 <button type="button" onClick={clearCloud} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-soft hover:border-accent hover:text-accent">امسح النسخة السحابية</button>
                 <button type="button" onClick={disable} className="rounded-full border border-hair px-4 py-2 text-[.72rem] font-semibold text-soft hover:border-red-400 hover:text-red-500">أوقفها على هذا الجهاز</button>
               </div>
@@ -270,7 +270,7 @@ function CrossDeviceSync({ onActiveChange }: { onActiveChange?: (active: boolean
             </>
           ) : (
             <>
-              <button type="button" onClick={enable} className="rounded-full bg-accent px-4 py-2.5 text-[.76rem] font-semibold text-white">فعّل المزامنة وأنشئ رمزاً</button>
+              <button type="button" onClick={enable} className="rounded-full bg-accent px-4 py-2.5 text-[.76rem] font-semibold text-canvas">فعّل المزامنة وأنشئ رمزاً</button>
               <div className="rounded-xl border border-hair bg-canvas p-3">
                 <p className="text-[.66rem] font-semibold text-soft">أو أدخل رمزاً من جهاز آخر</p>
                 <div className="mt-2 flex items-center gap-2">
@@ -468,7 +468,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                       <h3 className="mt-5 font-display text-[1.15rem] font-semibold text-ink">تبدأ المساحة مع أول خطوة.</h3>
                       <p className="mx-auto mt-2 max-w-md text-[.86rem] font-light leading-[1.9] text-soft">اقرأ مقالاً، احفظ لقاءً إعلامياً، احتفظ باقتباس، أو شغّل حلقة؛ وستجد خيطك هنا.</p>
                       <div className="mt-6 flex flex-wrap justify-center gap-2">
-                        <Link to="/articles" onClick={() => setOpen(false)} className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white">ابدأ من المقالات</Link>
+                        <Link to="/articles" onClick={() => setOpen(false)} className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-canvas">ابدأ من المقالات</Link>
                         <Link to="/media" onClick={() => setOpen(false)} className="rounded-full border border-hair px-5 py-2.5 text-[.82rem] font-semibold text-soft hover:border-accent hover:text-accent">استكشف اللقاءات</Link>
                       </div>
                     </div>
@@ -495,7 +495,7 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
                                 </motion.div>
                               ) : latestIsAudio && snapshot.audio ? (
                                 <button type="button" onClick={() => void resumeAudio()} className="group flex w-full items-center gap-5 p-5 text-right md:p-6">
-                                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-white"><PlayMark /></span>
+                                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-canvas"><PlayMark /></span>
                                   <span className="min-w-0 flex-1"><span className="text-[.68rem] font-semibold text-accent">أكمل الاستماع</span><strong className="mt-1 line-clamp-2 block font-display text-[1.08rem] leading-[1.65] text-ink group-hover:text-accent">{snapshot.audio.track.title}</strong><span className="mt-1 line-clamp-2 block text-[.76rem] leading-[1.8] text-soft">{leftAtLine ? <><span className="me-1.5 inline-flex h-5 w-5 translate-y-[3px] items-center justify-center rounded-full border border-hair bg-canvas text-accent" aria-label={voiceKindForSpeaker(leftAtLine.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}><VoiceFigure kind={voiceKindForSpeaker(leftAtLine.speaker)} size={12} /></span>{leftAtLine.text}</> : <>توقفت عند {arNumber(Math.floor(snapshot.audio.current / 60))}:{arNumber(String(Math.floor(snapshot.audio.current % 60)).padStart(2, "0"))}</>}</span></span>
                                 </button>
                               ) : snapshot.last ? (

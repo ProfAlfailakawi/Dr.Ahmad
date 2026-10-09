@@ -318,7 +318,7 @@ export default function BookDetail() {
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link
                   to={`/publications/${book.slug}#ask-book-section`}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.78rem] font-semibold text-canvas transition-colors hover:bg-accent-deep"
                 >
                   <SocialIcon name="Search" size={16} />
                   <span>ابحث في هذا الكتاب</span>

@@ -309,8 +309,8 @@ export default function Listen() {
           <div className="listen-filter-tabs flex flex-wrap items-center gap-2 pb-1 lg:pb-0">
             {KUWAITI_AVAILABLE && (
               <div className="me-1 flex items-center gap-1 rounded-full border border-accent/[.28] bg-accent/[.04] p-1" role="group" aria-label="لهجة مجلس الفكرة">
-                <button type="button" onClick={() => chooseVariant('kuwaiti')} aria-pressed={variant === 'kuwaiti'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'kuwaiti' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>كويتي · {KUWAITI_SLUGS.size}</button>
-                <button type="button" onClick={() => chooseVariant('standard')} aria-pressed={variant === 'standard'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'standard' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>فصحى</button>
+                <button type="button" onClick={() => chooseVariant('kuwaiti')} aria-pressed={variant === 'kuwaiti'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'kuwaiti' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>كويتي · {KUWAITI_SLUGS.size}</button>
+                <button type="button" onClick={() => chooseVariant('standard')} aria-pressed={variant === 'standard'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'standard' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>فصحى</button>
               </div>
             )}
             <div className="listen-cat-row contents" role="group" aria-label="تصفية أسئلة المجلس">
@@ -320,7 +320,7 @@ export default function Listen() {
                 type="button"
                 onClick={() => setCat(item)}
                 aria-pressed={cat === item}
-                className={`shrink-0 rounded-full border px-4 py-2 text-[.8rem] font-medium transition-colors duration-300 ${cat === item ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                className={`shrink-0 rounded-full border px-4 py-2 text-[.8rem] font-medium transition-colors duration-300 ${cat === item ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
                 {item === 'الكل' ? 'الكل' : categoryLabel(item)}
               </button>

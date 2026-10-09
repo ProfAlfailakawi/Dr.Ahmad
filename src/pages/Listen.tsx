@@ -276,13 +276,18 @@ export default function Listen() {
               onClick={() => open(resume, { resumeSaved: resumeIsContinuation })}
               className="flex w-full items-center gap-3.5 rounded-xl border border-hair bg-wash/[.55] px-4 py-3.5 text-start transition-colors hover:border-accent/[.45] md:px-5"
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Play" size={16} /></span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ember text-canvas"><SocialIcon name="Play" size={16} /></span>
               <span className="min-w-0">
                 <span className="block text-[.84rem] font-semibold text-ink">افتح المجلس</span>
                 <span className="mt-0.5 block truncate text-[.72rem] text-soft" title={resume.title}>
                   {resumeIsContinuation ? `يكمل: ${resume.title}` : resume.title}
                 </span>
               </span>
+              <svg className="ms-auto h-7 w-16 shrink-0 text-ember sm:h-8 sm:w-24" viewBox="0 0 96 32" fill="none" aria-hidden="true">
+                {[6, 12, 20, 14, 26, 18, 10, 22, 28, 16, 8, 20, 12, 24, 14, 6].map((h, i) => (
+                  <line key={i} x1={3 + i * 6} x2={3 + i * 6} y1={16 - h / 2} y2={16 + h / 2} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                ))}
+              </svg>
             </button>
           </FadeUp>
         )}
@@ -304,8 +309,8 @@ export default function Listen() {
           <div className="listen-filter-tabs flex flex-wrap items-center gap-2 pb-1 lg:pb-0">
             {KUWAITI_AVAILABLE && (
               <div className="me-1 flex items-center gap-1 rounded-full border border-accent/[.28] bg-accent/[.04] p-1" role="group" aria-label="لهجة مجلس الفكرة">
-                <button type="button" onClick={() => chooseVariant('kuwaiti')} aria-pressed={variant === 'kuwaiti'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'kuwaiti' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>كويتي · {KUWAITI_SLUGS.size}</button>
-                <button type="button" onClick={() => chooseVariant('standard')} aria-pressed={variant === 'standard'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'standard' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>فصحى</button>
+                <button type="button" onClick={() => chooseVariant('kuwaiti')} aria-pressed={variant === 'kuwaiti'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'kuwaiti' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>كويتي · {KUWAITI_SLUGS.size}</button>
+                <button type="button" onClick={() => chooseVariant('standard')} aria-pressed={variant === 'standard'} className={`rounded-full px-3 py-1.5 text-[.76rem] font-semibold transition-colors ${variant === 'standard' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>فصحى</button>
               </div>
             )}
             <div className="listen-cat-row contents" role="group" aria-label="تصفية أسئلة المجلس">
@@ -315,7 +320,7 @@ export default function Listen() {
                 type="button"
                 onClick={() => setCat(item)}
                 aria-pressed={cat === item}
-                className={`shrink-0 rounded-full border px-4 py-2 text-[.8rem] font-medium transition-colors duration-300 ${cat === item ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                className={`shrink-0 rounded-full border px-4 py-2 text-[.8rem] font-medium transition-colors duration-300 ${cat === item ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
                 {item === 'الكل' ? 'الكل' : categoryLabel(item)}
               </button>

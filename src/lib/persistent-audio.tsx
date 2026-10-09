@@ -304,7 +304,7 @@ export function PersistentAudioDock() {
     return (
       <div className="persistent-audio-dock fixed inset-x-3 bottom-[calc(5.7rem+env(safe-area-inset-bottom))] z-[275] mx-auto max-w-[520px] rounded-2xl border border-hair bg-canvas/[.97] p-2.5 shadow-[0_22px_65px_-34px_rgba(21,22,26,.6)] backdrop-blur md:bottom-5 md:left-5 md:right-auto md:mx-0 md:w-[min(420px,calc(100vw-2.5rem))]">
         <div className="flex items-center gap-2.5">
-          <button onClick={() => void audio.toggle()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
+          <button onClick={() => void audio.toggle()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-canvas" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
             {audio.playing ? <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.2" height="11" rx="1"/><rect x="9.8" y="2.5" width="3.2" height="11" rx="1"/></svg> : <SocialIcon name="Play" size={14} />}
           </button>
           <div className="min-w-0 flex-1">
@@ -333,7 +333,7 @@ export function PersistentAudioDock() {
   return (
     <div className="reader-hide-focus fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[230] mx-auto max-w-3xl rounded-2xl border border-hair bg-canvas/95 p-3 shadow-[0_24px_70px_-34px_rgba(21,22,26,.55)] backdrop-blur md:bottom-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => void audio.toggle()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
+        <button onClick={() => void audio.toggle()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-canvas" aria-label={audio.playing ? 'إيقاف مؤقت' : 'تشغيل'}>
           {audio.playing ? <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2.5" width="3.2" height="11" rx="1"/><rect x="9.8" y="2.5" width="3.2" height="11" rx="1"/></svg> : <SocialIcon name="Play" size={14} />}
         </button>
         <div className="min-w-0 flex-1">

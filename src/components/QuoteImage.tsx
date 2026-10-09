@@ -98,7 +98,7 @@ export function QuoteImage({ text, attribution }: { text: string; attribution: s
             onClick={() => void download()}
             aria-label="تنزيل الصورة"
             title="تنزيل الصورة"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-accent/[.35] text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-accent/[.35] text-[.82rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas"
           >
             <SocialIcon name="Download" size={16} />
           </button>

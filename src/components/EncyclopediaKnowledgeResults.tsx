@@ -179,7 +179,7 @@ export function EncyclopediaKnowledgeResults({
               {primarySlide.presentation && <span dir="ltr" className="truncate text-end">{fileName(primarySlide.presentation)}</span>}
             </div>
             <div className="mt-4 flex justify-end border-t border-hair pt-3">
-              <button type="button" onClick={() => onOpenTeaching(primarySlide.topic.doorId, primarySlide.topic.title)} className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-hair px-3 text-[.65rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><span>اعرض الشرائح</span><SocialIcon name="ArrowBack" size={13} /></button>
+              <button type="button" onClick={() => onOpenTeaching(primarySlide.topic.doorId, primarySlide.topic.title)} className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-hair px-3 text-[.65rem] font-semibold text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"><span>اعرض الشرائح</span><SocialIcon name="ArrowBack" size={13} /></button>
             </div>
           </article>
         )}

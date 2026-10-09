@@ -24,6 +24,7 @@ export default function Contact() {
       <section className="px-6 pb-20 pt-32 text-center md:px-11 md:pb-24 md:pt-40">
         <div className="mx-auto max-w-shell">
           <FadeUp>
+            <img src="/portrait.webp" alt="" width={1345} height={2048} decoding="async" className="mx-auto mb-6 h-24 w-24 rounded-full border border-hair object-cover object-top" />
             <Label center>للاستشارة أو التعاون</Label>
             <h1 className="font-display text-[clamp(2.6rem,8vw,5.2rem)] font-bold leading-[1.25] text-ink">
               <Reveal>لنعمل معاً.</Reveal>
@@ -33,7 +34,7 @@ export default function Contact() {
             </p>
 
             <div className="mt-10">
-              <a href="#booking-form" className="inline-flex min-h-11 items-center rounded-full bg-accent px-8 py-3 font-semibold text-white transition-colors hover:bg-accent-deep">
+              <a href="#booking-form" className="inline-flex min-h-11 items-center rounded-full bg-accent px-8 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">
                 احجز موعداً
               </a>
             </div>

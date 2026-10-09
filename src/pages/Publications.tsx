@@ -50,9 +50,9 @@ export default function Publications() {
         },
       }} />
       <PageHead label="المؤلفات العلمية والفكرية" title="كتبٌ تبني مشروعاً واحداً." sub={`${count} ترسم مساراً بدأ عام 2015؛ من التعليم والتكنولوجيا إلى أسئلة التحول المجتمعي ومكان الإنسان في العصر الرقمي.`} />
-      <section className="overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 md:px-11 md:py-24">
+      <section className="flex flex-col overflow-hidden px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-20 sm:px-6 md:px-11 md:py-24">
         {tiles.total > 0 && (tiles.years || tiles.pages) && (
-          <CountTiles label="الكتب بالأرقام" className="mx-auto mb-12 w-full max-w-shell">
+          <CountTiles label="الكتب بالأرقام" className="mx-auto mt-12 w-full max-w-shell max-md:order-2 md:mb-12 md:mt-0">
             <RingTile value={tiles.total} of={tiles.total} label="كتب منشورة" />
             {tiles.years && <YearBarsTile title="الكتب بحسب سنة النشر" bars={tiles.years} />}
             {tiles.pages && <RankedTile title="عدد الصفحات" note={tiles.pages.sum ? `المجموع ${tiles.pages.sum} صفحة` : undefined} rows={tiles.pages.top} />}
@@ -87,7 +87,7 @@ export default function Publications() {
                       <div className="absolute left-5 top-5 sm:left-8 sm:top-8 md:static md:mt-0">
                         <div className="md:hidden">
                           <ClarifiedIconAction id="book-search-featured" label="ابحث داخل هذا الكتاب">
-                            <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                            <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas">
                               <SocialIcon name="Search" size={16} />
                             </Link>
                           </ClarifiedIconAction>
@@ -96,7 +96,7 @@ export default function Publications() {
                       
                       <div className="hidden md:flex md:absolute md:left-0 md:top-0">
                          <ClarifiedIconAction id="book-search-featured-desktop" label="ابحث داخل هذا الكتاب">
-                            <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                            <Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-accent/[.28] bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas">
                               <SocialIcon name="Search" size={18} />
                             </Link>
                           </ClarifiedIconAction>
@@ -114,7 +114,7 @@ export default function Publications() {
                     <BookTerrain slug={b.slug} title={b.title} compact />
                     <div className="mt-3 flex items-start gap-2 sm:mt-5">
                       <Link to={`/publications/${b.slug}`} viewTransition className="min-w-0 flex-1"><h2 style={{ viewTransitionName: sharedViewName('book-title', b.slug) }} className="break-words font-display text-[1rem] font-medium leading-[1.45] text-ink transition-colors hover:text-accent sm:text-[1.2rem] md:text-[1.3rem]">{b.title}</h2></Link>
-                      <ClarifiedIconAction id="book-search-list" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="Search" size={14} /></Link></ClarifiedIconAction>
+                      <ClarifiedIconAction id="book-search-list" label="ابحث داخل هذا الكتاب"><Link to={`/search?tab=askbook&book=${encodeURIComponent(b.slug)}`} aria-label={`ابحث داخل كتاب ${b.title}`} title="ابحث في هذا الكتاب" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/[.35] text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"><SocialIcon name="Search" size={14} /></Link></ClarifiedIconAction>
                     </div>
                   </>
                 )}
@@ -122,7 +122,7 @@ export default function Publications() {
             )
           })}
         </div>
-        <div className="mx-auto mt-10 max-w-shell"><Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={books.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="books-grid" label="صفحات الكتب" /></div>
+        <div className="mx-auto mt-10 w-full max-w-shell"><Pagination page={paged.page} pageCount={paged.pageCount} onChange={paged.setPage} totalItems={books.length} firstItem={paged.firstItem} lastItem={paged.lastItem} scrollTargetId="books-grid" label="صفحات الكتب" /></div>
       </section>
 
       <BooksAtlas />

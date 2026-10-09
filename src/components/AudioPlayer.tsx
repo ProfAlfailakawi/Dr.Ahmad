@@ -467,7 +467,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
               type="button"
               onClick={() => active && player.playing ? void player.toggle() : void play()}
               aria-label={active && player.playing ? 'إيقاف مؤقت' : 'تشغيل'}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-deep"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-canvas transition-colors hover:bg-accent-deep"
             >
               {active && player.playing ? (
                 <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg>
@@ -538,7 +538,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                 type="button"
                 onClick={toggleArticleFollow}
                 aria-pressed={articleFollow}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.72rem] font-semibold transition-colors ${articleFollow ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.72rem] font-semibold transition-colors ${articleFollow ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${articleFollow ? 'bg-white' : 'bg-accent'}`} />
                 تتبع النص
@@ -554,7 +554,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                   onClick={() => choose(item.key)}
                   aria-pressed={source.key === item.key}
                   aria-label={dialogueChoice ? item.label : ((item as { avatar?: string }).avatar === 'woman' ? 'القراءة بالصوت النسائي' : 'القراءة بالصوت الرجالي')}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.72rem] font-semibold transition-colors ${source.key === item.key ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[.72rem] font-semibold transition-colors ${source.key === item.key ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
                 >
                   <AudioWave dialogue={dialogueChoice} size={16} />
                   {dialogueChoice

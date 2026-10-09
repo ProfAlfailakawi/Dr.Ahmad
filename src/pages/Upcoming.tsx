@@ -27,7 +27,7 @@ function eventOutcome(event: SiteEvent, articles: { slug: string; title: string 
 }
 
 const statusTone: Record<string, string> = {
-  today: 'bg-accent text-white',
+  today: 'bg-accent text-canvas',
   soon: 'border border-accent/50 text-accent',
   open: 'border border-hair text-soft',
   announced: 'border border-hair text-soft',
@@ -54,7 +54,7 @@ export default function Upcoming() {
                 <h1 className="font-display text-[clamp(2rem,5vw,3.2rem)] font-semibold leading-[1.25] text-ink">اللقاءات القادمة.</h1>
                 <p className="mt-3 max-w-2xl text-[.95rem] font-light leading-[1.8] text-soft">محاضرات وورش ومؤتمرات — بموعدها ورابط التسجيل المباشر.</p>
               </div>
-              <Magnetic to="/contact#booking-form" className="inline-block rounded-full border border-accent px-5 py-2.5 text-[.84rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">
+              <Magnetic to="/contact#booking-form" className="inline-block rounded-full border border-accent px-5 py-2.5 text-[.84rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">
                 ادعُني إلى لقاء
               </Magnetic>
             </div>
@@ -96,7 +96,7 @@ export default function Upcoming() {
                           href={e.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="w-fit rounded-full border border-accent px-4 py-2 text-[.8rem] font-semibold text-accent transition-colors duration-300 hover:bg-accent hover:text-white"
+                          className="w-fit rounded-full border border-accent px-4 py-2 text-[.8rem] font-semibold text-accent transition-colors duration-300 hover:bg-accent hover:text-canvas"
                         >
                           التسجيل
                         </a>
@@ -143,7 +143,7 @@ export default function Upcoming() {
                   اشترك في النشرة ليصلك إعلان اللقاء القادم أولاً — أو احجز موعداً مباشراً.
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
-                  <Magnetic to="/contact#booking-form" className="inline-block rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+                  <Magnetic to="/contact#booking-form" className="inline-block rounded-full bg-accent px-6 py-2.5 text-[.88rem] font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                     احجز موعداً
                   </Magnetic>
                 </div>

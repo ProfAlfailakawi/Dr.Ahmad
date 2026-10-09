@@ -332,7 +332,7 @@ function UnitVideoCarousel({
             <button
               type="button"
               onClick={() => scroll('right')}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"
               aria-label="التنقل لليمين بين الفيديوهات"
               title="التنقل لليمين"
             >
@@ -341,7 +341,7 @@ function UnitVideoCarousel({
             <button
               type="button"
               onClick={() => scroll('left')}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"
               aria-label="التنقل لليسار بين الفيديوهات"
               title="التنقل لليسار"
             >
@@ -445,7 +445,7 @@ function DoorRow({
             <strong className="block min-w-0 font-display text-[1.12rem] font-semibold leading-[1.55] text-ink md:text-[1.28rem]">{door.title}</strong>
             {door.presentation && (
               <ClarifiedIconAction id="encyclopedia-door-materials" label="مواد التدريس المرتبطة بهذا الباب">
-                <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onOpenTeaching(door) }} aria-label={`مواد الباب: ${door.title}`} title="مواد الباب" className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                <button type="button" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onOpenTeaching(door) }} aria-label={`مواد الباب: ${door.title}`} title="مواد الباب" className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas">
                   <SocialIcon name="Image" size={15} />
                 </button>
               </ClarifiedIconAction>
@@ -473,11 +473,11 @@ function DoorRow({
                   </div>
                   <div className="flex min-h-9 items-start justify-end">
                     {unitVideos.length > 0 ? (
-                      <button type="button" onClick={() => onOpenPath(door, unit)} aria-label={`شاهد الشرح: ${unit.title}`} title="شاهد الشرح" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                      <button type="button" onClick={() => onOpenPath(door, unit)} aria-label={`شاهد الشرح: ${unit.title}`} title="شاهد الشرح" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas">
                         <SocialIcon name="Play" size={14} />
                       </button>
                     ) : hasTeaching ? (
-                      <button type="button" onClick={() => onOpenTeaching(door, unit.title)} aria-label={`مواد التدريس: ${unit.title}`} title="مواد التدريس" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white">
+                      <button type="button" onClick={() => onOpenTeaching(door, unit.title)} aria-label={`مواد التدريس: ${unit.title}`} title="مواد التدريس" className="flex h-9 w-9 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas">
                         <SocialIcon name="Image" size={15} />
                       </button>
                     ) : null}
@@ -956,7 +956,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 </dl>
 
                 <div className="mt-7 flex flex-wrap items-center gap-3">
-                  <Link to={`/publications/${book.slug}#ask-book-section`} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep">
+                  <Link to={`/publications/${book.slug}#ask-book-section`} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.78rem] font-semibold text-canvas transition-colors hover:bg-accent-deep">
                     <SocialIcon name="Search" size={16} />
                     <span>ابحث في هذا الكتاب</span>
                   </Link>
@@ -988,15 +988,15 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                 <h2 id="encyclopedia-map-title" className="font-display text-[clamp(1.25rem,3vw,1.7rem)] font-semibold leading-[1.4] text-ink">الموسوعة المرئية</h2>
               </div>
               <div className="flex items-center gap-2">
-                {catalogError && <button type="button" onClick={retryCatalog} aria-label="إعادة تحميل فهرس الفيديوهات" title="إعادة التحميل" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="History" size={15} /></button>}
-                <a href={CHANNEL_URL} target="_blank" rel="noreferrer" aria-label="فتح قناة الموسوعة على يوتيوب" title="قناة الموسوعة" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"><SocialIcon name="YouTube" size={16} /></a>
+                {catalogError && <button type="button" onClick={retryCatalog} aria-label="إعادة تحميل فهرس الفيديوهات" title="إعادة التحميل" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"><SocialIcon name="History" size={15} /></button>}
+                <a href={CHANNEL_URL} target="_blank" rel="noreferrer" aria-label="فتح قناة الموسوعة على يوتيوب" title="قناة الموسوعة" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hair text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"><SocialIcon name="YouTube" size={16} /></a>
               </div>
             </div>
 
             <div id="encyclopedia-search" className="mt-6 flex items-center gap-2 rounded-full border border-hair bg-canvas p-1.5">
               <label htmlFor="encyclopedia-query" className="sr-only">ابحث في موسوعة تكنولوجيا التعليم</label>
               <input id="encyclopedia-query" value={query} onChange={(event) => { const value = event.target.value; setQuery(value); searchStartedAt.current ||= Date.now() }} onKeyDown={(event) => { if (event.key === 'Enter') { const clean = normalizeSearchQuery(query); updateDeepLink({ q: clean, tab: resultTab }, 'push'); if (clean && clean !== lastTrackedQuery.current) { trackUsage(lastTrackedQuery.current ? 'search_refined' : 'search_submitted', { searchType: 'encyclopedia', query: clean }); lastTrackedQuery.current = clean } } }} placeholder="ابحث في فيديو أو صفحة أو شريحة" dir="rtl" className="w-0 min-w-0 flex-1 bg-transparent px-2 py-2.5 text-[clamp(.66rem,3.05vw,.82rem)] text-ink outline-none placeholder:text-soft/[.6] sm:px-4" />
-              {query ? <button type="button" onClick={() => { setQuery(''); setResultTab('all'); updateDeepLink({ q: null, tab: null, video: null, t: null, result: null }, 'push') }} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Search" size={15} /></span>}
+              {query ? <button type="button" onClick={() => { setQuery(''); setResultTab('all'); updateDeepLink({ q: null, tab: null, video: null, t: null, result: null }, 'push') }} aria-label="مسح البحث" title="مسح البحث" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-soft hover:text-accent"><SocialIcon name="Close" size={13} /></button> : <span aria-label="ابحث في الموسوعة" title="ابحث في الموسوعة" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-canvas"><SocialIcon name="Search" size={15} /></span>}
             </div>
             {query.trim().length >= 2 && <p className="mt-2 text-[.7rem] text-soft">{resultCount ? `${formatArabicNumber(resultCount)} نتيجة مرتبطة` : knowledgePending ? 'أبحث في صفحات الموسوعة…' : 'لا توجد نتيجة مطابقة.'}</p>}
           </FadeUp>
@@ -1012,7 +1012,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                     aria-pressed={resultTab === value}
                     /* تبديل التبويب لا يعيد البحث: النتائج محسوبة مسبقاً ومحفوظة. */
                     onClick={() => { setResultTab(value); updateDeepLink({ q: query.trim(), tab: value }, 'push') }}
-                    className={`rounded-full border px-3 py-1.5 text-[.68rem] transition-colors ${resultTab === value ? 'border-accent bg-accent text-white' : `border-hair ${count ? 'text-soft hover:border-accent hover:text-accent' : 'text-soft/[.55]'}`}`}
+                    className={`rounded-full border px-3 py-1.5 text-[.68rem] transition-colors ${resultTab === value ? 'border-accent bg-accent text-canvas' : `border-hair ${count ? 'text-soft hover:border-accent hover:text-accent' : 'text-soft/[.55]'}`}`}
                   >
                     {({all:'الكل',video:'الفيديو',book:'الكتاب',slides:'الشرائح',chapters:'الأبواب والفصول'} as Record<string,string>)[value]}
                     <span className="ms-1.5 text-[.62rem] opacity-80">{formatArabicNumber(count)}</span>
@@ -1064,7 +1064,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                   <button
                     type="button"
                     onClick={() => moveFeatured(-1)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"
                     aria-label="التنقل لليمين بين الشروحات المرئية"
                     title="التنقل لليمين"
                   >
@@ -1073,7 +1073,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                   <button
                     type="button"
                     onClick={() => moveFeatured(1)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-hair bg-canvas text-accent transition-colors hover:border-accent hover:bg-accent hover:text-canvas"
                     aria-label="التنقل لليسار بين الشروحات المرئية"
                     title="التنقل لليسار"
                   >
@@ -1207,7 +1207,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
                       <p className="mt-1.5 font-display text-[1rem] font-semibold leading-[1.7] text-ink">{teachingSlideLabel}</p>
                       <p className="mt-1 text-[.65rem] text-soft">{formatArabicNumber(teachingSlidesCount)} شريحة مرتبطة.</p>
                     </div>
-                    <a href={teachingMaterial.door.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${teachingMaterial.door.number}.pptx`} aria-label="تحميل عرض الباب" title="تحميل عرض الباب" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-accent/[.3] text-accent transition-colors hover:bg-accent hover:text-white"><SocialIcon name="Download" size={16} /></a>
+                    <a href={teachingMaterial.door.presentation} download={`موسوعة تكنولوجيا التعليم - الباب ${teachingMaterial.door.number}.pptx`} aria-label="تحميل عرض الباب" title="تحميل عرض الباب" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-accent/[.3] text-accent transition-colors hover:bg-accent hover:text-canvas"><SocialIcon name="Download" size={16} /></a>
                   </div>
                 </div>
               </>

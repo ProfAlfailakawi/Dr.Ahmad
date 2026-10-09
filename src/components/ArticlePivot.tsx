@@ -282,7 +282,7 @@ export function ArticleSignal({ signal, title }: { signal: ArticleSignalData; ti
 
             <span className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-hair pt-4">
               <span className="flex items-center gap-3">
-                <button type="button" onClick={copy} aria-label={copied ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'} title={copied ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'} className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${copied ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}><SocialIcon name={copied ? 'Check' : 'Copy'} size={15} /></button>
+                <button type="button" onClick={copy} aria-label={copied ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'} title={copied ? 'نُسخ الاقتباس' : 'نسخ الاقتباس'} className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${copied ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}><SocialIcon name={copied ? 'Check' : 'Copy'} size={15} /></button>
                 <QuoteImage text={signal.text} attribution={title} />
               </span>
               {signal.count > 0 && <span className="text-[.66rem] text-soft">{new Intl.NumberFormat('ar-KW-u-nu-latn').format(signal.count)} إشارة قراءة</span>}

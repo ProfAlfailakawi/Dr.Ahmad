@@ -448,7 +448,7 @@ function SettingChoice<T extends string | number | boolean>({ value, current, la
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`reader-setting-choice rounded-full border px-3.5 py-2 text-[.76rem] font-medium transition-colors ${active ? 'is-active border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+      className={`reader-setting-choice rounded-full border px-3.5 py-2 text-[.76rem] font-medium transition-colors ${active ? 'is-active border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
     >
       {label}
     </button>
@@ -582,7 +582,7 @@ export function ReaderControls({ article, saveControl, onSerenity, conceptArchiv
           >
             <p className="text-[.8rem] font-semibold text-ink">متابعة من حيث توقفت؟</p>
             <div className="mt-2 flex items-center gap-2">
-              <button type="button" onClick={resume} className="rounded-full bg-accent px-4 py-1.5 text-[.74rem] font-semibold text-white">متابعة</button>
+              <button type="button" onClick={resume} className="rounded-full bg-accent px-4 py-1.5 text-[.74rem] font-semibold text-canvas">متابعة</button>
               <button type="button" onClick={restart} className="rounded-full border border-hair px-4 py-1.5 text-[.74rem] text-soft">من البداية</button>
               <button type="button" onClick={() => setShowResume(false)} aria-label="إغلاق" title="إغلاق" className="ms-auto flex h-7 w-7 items-center justify-center rounded-full text-soft"><SocialIcon name="Close" size={14} /></button>
             </div>
@@ -1476,7 +1476,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                     <>
                       <img decoding="async" src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
                       <div className="mt-4 flex flex-wrap justify-center gap-2">
-                        <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Share" size={17} /></button>
+                        <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-canvas"><SocialIcon name="Share" size={17} /></button>
                         <button type="button" onClick={() => void downloadCard()} aria-label="حفظ الصورة" title="حفظ الصورة" className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Download" size={17} /></button>
                       </div>
                       <div className="mt-3 flex justify-center">
@@ -1496,7 +1496,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
               ) : sheet === 'share' ? (
                 <div className="mt-5">
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <button type="button" onClick={() => void directShare()} className="rounded-full bg-accent px-5 py-3 text-[.8rem] font-semibold text-white">مشاركة النص والرابط</button>
+                    <button type="button" onClick={() => void directShare()} className="rounded-full bg-accent px-5 py-3 text-[.8rem] font-semibold text-canvas">مشاركة النص والرابط</button>
                     <button type="button" onClick={() => void createCard()} disabled={cardBusy} className="rounded-full border border-hair px-5 py-3 text-[.8rem] font-semibold text-ink hover:border-accent hover:text-accent disabled:opacity-50">{cardBusy ? 'أصنع البطاقة…' : cardUrl ? 'تحديث البطاقة' : 'إنشاء بطاقة اقتباس'}</button>
                   </div>
                   <button type="button" onClick={() => setSheet('thread')} className="mt-3 w-full rounded-full px-5 py-2.5 text-[.76rem] font-semibold text-soft transition-colors hover:text-accent">تتبّع الفكرة عبر السنوات</button>
@@ -1505,7 +1505,7 @@ export function SelectionTools({ current, articles }: { current: ReaderArticle; 
                     <div className="mt-5">
                       <img decoding="async" src={cardUrl} alt="بطاقة اقتباس" className="mx-auto w-full max-w-[360px] rounded-2xl border border-hair shadow-[0_26px_60px_-36px_rgba(21,22,26,.7)]" />
                       <div className="mt-3 flex flex-wrap justify-center gap-2">
-                        <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-white"><SocialIcon name="Share" size={17} /></button>
+                        <button type="button" onClick={() => void shareCard()} aria-label="مشاركة البطاقة" title="مشاركة البطاقة" className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-canvas"><SocialIcon name="Share" size={17} /></button>
                         <button type="button" onClick={() => void downloadCard()} aria-label="حفظ الصورة" title="حفظ الصورة" className="flex h-11 w-11 items-center justify-center rounded-full border border-hair text-soft hover:border-accent hover:text-accent"><SocialIcon name="Download" size={17} /></button>
                       </div>
                       <p className="mt-2 text-center text-[.68rem] text-soft">صورة عالية الجودة 1080×1350 مناسبة لواتساب وX وإنستغرام.</p>

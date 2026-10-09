@@ -261,7 +261,7 @@ export default function Decade() {
               placeholder={mode === 'predictions' ? 'صفِّ التنبؤات بفكرة — الشهادة، الذكاء الاصطناعي…' : 'اكتب فكرةً — الامتحان، الهوية، الذكاء الاصطناعي…'}
               className="min-w-[16rem] flex-1 rounded-full border border-hair bg-canvas px-5 py-2.5 text-[.88rem] text-ink outline-none focus:border-accent"
             />
-            <button type="submit" className="rounded-full bg-accent px-6 py-2.5 text-[.85rem] font-semibold text-white transition-opacity hover:opacity-90">
+            <button type="submit" className="rounded-full bg-accent px-6 py-2.5 text-[.85rem] font-semibold text-canvas transition-opacity hover:opacity-90">
               {mode === 'predictions' ? 'صفِّ السجل' : 'تتبّع الرحلة'}
             </button>
             {idea && (
@@ -388,7 +388,7 @@ export default function Decade() {
                             onClick={() => sharePrediction(article.slug, `${article.slug}:${prediction.quote}`)}
                             aria-label={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع' : 'نسخ رابط هذا التوقع'}
                             title={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'نُسخ رابط التوقع' : 'نسخ رابط هذا التوقع'}
-                            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${copiedPrediction === `${article.slug}:${prediction.quote}` ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${copiedPrediction === `${article.slug}:${prediction.quote}` ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                           >
                             <SocialIcon name={copiedPrediction === `${article.slug}:${prediction.quote}` ? 'Check' : 'Copy'} size={16} />
                           </button>
@@ -404,7 +404,10 @@ export default function Decade() {
       ) : (loading || (Boolean(idea) && !bodiesReady)) && !document ? (
         <div className="px-6 py-24 text-center text-soft">تُقرأ خيوط الأرشيف…</div>
       ) : !document ? (
-        <div className="px-6 py-24 text-center text-soft">لا توجد مقالات مؤرخة تكفي لبناء الوثيقة بعد.</div>
+        <div className="px-6 py-24 text-center text-soft">
+          <p className="font-display text-[1.25rem] font-semibold text-ink">لا توجد مقالات مؤرخة تكفي لبناء الوثيقة بعد.</p>
+          <p className="mt-3 text-[.92rem]">يمكنك في هذه الأثناء <Link to="/articles" className="font-semibold text-accent hover:underline">تصفّح المقالات</Link> أو <Link to="/search" className="font-semibold text-accent hover:underline">البحث في الأرشيف</Link>.</p>
+        </div>
       ) : (
         <>
           <section className="border-b border-hair px-6 py-14 md:px-11 md:py-20">

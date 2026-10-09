@@ -299,7 +299,7 @@ export function BookWorld({
             <h2 id="book-world-title" className="mt-2 font-display text-[clamp(1.55rem,3vw,2.2rem)] font-semibold leading-[1.35] text-ink">امتدادات الكتاب داخل الأرشيف</h2>
             <p className="mt-2 text-[.82rem] leading-[1.8] text-soft">خريطة مبنيّة من الكتاب، تصل مفاهيمه بما نُشر في الأرشيف من مقالات وأبحاث ولقاءات.</p>
           </div>
-          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="max-w-full rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">المسار الفكري الكامل<Arrow /></Link>
+          <Link to={`/thought-paths?idea=${encodeURIComponent(book.title)}`} className="max-w-full rounded-full border border-accent/[.35] px-4 py-2 text-[.74rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-canvas">المسار الفكري الكامل<Arrow /></Link>
         </div>
 
         <div className="mt-6 grid min-w-0 max-w-full gap-3">
@@ -382,7 +382,7 @@ export function BookWorld({
                 aria-label={`ابحث داخل كتاب ${book.title}`}
                 className="min-w-0 w-full max-w-full rounded-full border border-hair bg-canvas px-4 py-3 text-[.82rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent"
               />
-              <button type="submit" className="min-h-11 w-full rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep sm:w-auto">ابحث</button>
+              <button type="submit" className="min-h-11 w-full rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-canvas transition-colors hover:bg-accent-deep sm:w-auto">ابحث</button>
             </form>
             {terrainQuote && (
               <figure className="mt-4 rounded-xl border border-accent/[.28] bg-wash px-4 py-3.5">

@@ -156,7 +156,7 @@ export function PageHead({ label, title, sub }: { label: string; title: string; 
   }, [label, title])
 
   return (
-    <header ref={headRef} className="page-head page-head-scene spatial-stage border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
+    <header ref={headRef} data-tone={[...label].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 3} className="page-head page-head-scene spatial-stage border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
       <div className="page-head-scene__inner mx-auto max-w-shell">
         <FadeUp>
           <Label>{label}</Label>
@@ -587,7 +587,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
           <Link
             to="/contact#booking-form"
             onClick={close}
-            className="rounded-full bg-accent px-5 py-2.5 text-center text-[.82rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep md:px-6 md:text-[.88rem]"
+            className="rounded-full bg-accent px-5 py-2.5 text-center text-[.82rem] font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep md:px-6 md:text-[.88rem]"
           >
             احجز موعداً مباشراً
           </Link>
@@ -650,7 +650,7 @@ function EnglishOverlay({ close, openSearch }: { close: () => void; openSearch: 
       <div className="border-t border-hair px-6 py-4 md:px-11 md:py-6">
         <div className="mx-auto flex max-w-shell items-center justify-between gap-4">
           <div className="flex items-center gap-2"><ThemeToggle className="h-11 w-11" /><Link to={AR_OF[loc.pathname] || '/'} onClick={close} className="flex h-11 min-w-11 items-center justify-center rounded-full border border-hair px-3 text-[.76rem] font-semibold text-soft">العربية</Link></div>
-          <Link to="/en/contact#booking-form" onClick={close} className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white">Book a meeting</Link>
+          <Link to="/en/contact#booking-form" onClick={close} className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-canvas">Book a meeting</Link>
         </div>
       </div>
     </motion.div>

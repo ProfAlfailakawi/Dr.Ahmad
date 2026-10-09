@@ -86,7 +86,7 @@ export default function AboutSite() {
               <h2 className="mx-auto max-w-[640px] font-display text-[clamp(1.5rem,3.6vw,2.4rem)] font-semibold leading-[1.55] text-ink">
                 <Reveal>{aboutSite.hero}</Reveal>
               </h2>
-              <Link to="/contact" className="mt-9 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-white transition-colors duration-300 hover:bg-accent-deep">
+              <Link to="/contact" className="mt-9 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                 للاستشارة أو التعاون
               </Link>
             </div>

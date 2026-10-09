@@ -117,12 +117,12 @@ function PathsIndex() {
                       <h2 className="mt-4 font-display text-[clamp(1.45rem,2.6vw,1.8rem)] font-semibold leading-[1.45] text-ink transition-colors group-hover:text-accent">{path.title}</h2>
                       <p className="mt-3 text-[.92rem] font-light leading-[1.9] text-soft">{path.intro}</p>
 
-                      <span aria-hidden className="mt-6 flex items-center gap-1.5">
-                        {path.steps.map((step) => (
-                          <span
-                            key={stepKey(step)}
-                            className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${done.has(stepKey(step)) ? 'bg-accent' : 'bg-wash'}`}
-                          />
+                      <span aria-hidden className="mt-6 flex items-center">
+                        {path.steps.map((step, stepIndex) => (
+                          <span key={stepKey(step)} className="flex flex-1 items-center last:flex-none">
+                            <span className={`h-3 w-3 shrink-0 rounded-full border-2 transition-colors duration-500 ${done.has(stepKey(step)) ? 'border-accent bg-accent' : 'border-hair bg-canvas group-hover:border-accent'}`} />
+                            {stepIndex < path.steps.length - 1 && <span className={`h-px flex-1 transition-colors duration-500 ${done.has(stepKey(step)) ? 'bg-accent' : 'bg-hair'}`} />}
+                          </span>
                         ))}
                       </span>
 
@@ -156,7 +156,7 @@ function PathsIndex() {
 function StepAction({ step, primary = false }: { step: LearningStep; primary?: boolean }) {
   const player = usePersistentAudio()
   const base = primary
-    ? 'inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.8rem] font-semibold text-white transition-colors hover:bg-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]'
+    ? 'inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-[.8rem] font-semibold text-canvas transition-colors hover:bg-accent-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]'
     : 'inline-flex min-h-10 items-center gap-2 rounded-full border border-hair px-4 text-[.76rem] font-semibold text-ink transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]'
 
   if (step.kind === 'podcast') {
@@ -248,7 +248,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
                   <p className="text-[.88rem] font-light leading-[1.85] text-soft">مرّت الفكرة بكل محطاتها. يمكنك أن تعيد المسار متى شئت، أو تنتقل إلى مسارٍ آخر.</p>
                   <div className="flex flex-wrap gap-2">
-                    {following && <Link to={`/paths/${following.id}`} className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.76rem] font-semibold text-white transition-colors hover:bg-accent-deep">{following.title}<Arrow /></Link>}
+                    {following && <Link to={`/paths/${following.id}`} className="inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.76rem] font-semibold text-canvas transition-colors hover:bg-accent-deep">{following.title}<Arrow /></Link>}
                     <button type="button" onClick={() => resetPath(live.id)} className="inline-flex min-h-10 items-center rounded-full border border-hair px-4 text-[.76rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent">ابدأ من جديد</button>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                     aria-hidden
                     className={`thread-node absolute -right-[34px] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 md:-right-[46px] ${isDone ? 'border-accent bg-accent' : isCurrent ? 'border-accent bg-canvas' : 'border-hair bg-canvas'}`}
                   >
-                    {isDone && <svg viewBox="0 0 12 12" className="h-2 w-2 text-white" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 6.2 5 8.5l4.5-5" /></svg>}
+                    {isDone && <svg viewBox="0 0 12 12" className="h-2 w-2 text-canvas" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 6.2 5 8.5l4.5-5" /></svg>}
                   </span>
 
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[.73rem] font-medium text-soft">
@@ -307,7 +307,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                       onClick={() => markDone(step, !isDone)}
                       className={`inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-[.74rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35] ${isDone ? 'text-accent hover:text-accent-deep' : 'text-soft hover:text-accent'}`}
                     >
-                      <span aria-hidden className={`flex h-4 w-4 items-center justify-center rounded-[5px] border ${isDone ? 'border-accent bg-accent text-white' : 'border-hair'}`}>
+                      <span aria-hidden className={`flex h-4 w-4 items-center justify-center rounded-[5px] border ${isDone ? 'border-accent bg-accent text-canvas' : 'border-hair'}`}>
                         {isDone && <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 6.2 5 8.5l4.5-5" /></svg>}
                       </span>
                       <span>{isDone ? 'أتممتها' : 'علّمها مكتملة'}</span>

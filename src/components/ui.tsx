@@ -156,7 +156,7 @@ export function PageHead({ label, title, sub }: { label: string; title: string; 
   }, [label, title])
 
   return (
-    <header ref={headRef} className="page-head page-head-scene spatial-stage border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
+    <header ref={headRef} data-tone={[...label].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 3} className="page-head page-head-scene spatial-stage border-b border-hair px-6 pb-12 pt-28 md:px-11 md:pb-12 md:pt-32">
       <div className="page-head-scene__inner mx-auto max-w-shell">
         <FadeUp>
           <Label>{label}</Label>

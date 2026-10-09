@@ -283,7 +283,7 @@ export default function Listen() {
                   {resumeIsContinuation ? `يكمل: ${resume.title}` : resume.title}
                 </span>
               </span>
-              <svg className="ms-auto hidden h-8 w-24 shrink-0 text-ember sm:block" viewBox="0 0 96 32" fill="none" aria-hidden="true">
+              <svg className="ms-auto h-7 w-16 shrink-0 text-ember sm:h-8 sm:w-24" viewBox="0 0 96 32" fill="none" aria-hidden="true">
                 {[6, 12, 20, 14, 26, 18, 10, 22, 28, 16, 8, 20, 12, 24, 14, 6].map((h, i) => (
                   <line key={i} x1={3 + i * 6} x2={3 + i * 6} y1={16 - h / 2} y2={16 + h / 2} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
                 ))}

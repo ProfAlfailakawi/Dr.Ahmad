@@ -955,6 +955,14 @@ export default function Search() {
                 ) : (
                   <p className="mt-3 text-[.95rem] text-soft">جرّب كلمة أوسع، أو بدّل التبويب، أو ألغِ أحد الفلاتر.</p>
                 )}
+                <div className="mx-auto mt-6 max-w-md">
+                  <p className="text-[.8rem] text-soft">أو ابدأ بإحدى هذه الأفكار</p>
+                  <div className="mt-3 flex flex-wrap justify-center gap-2">
+                    {['الذكاء الاصطناعي', 'المعلم', 'الامتحان', 'الطفل والتكنولوجيا'].map((idea) => (
+                      <button key={idea} type="button" onClick={() => setQuery(idea)} className="min-h-10 rounded-full border border-hair bg-wash px-4 text-[.85rem] text-ink transition-colors hover:border-accent hover:text-accent">{idea}</button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </FadeUp>
           )}

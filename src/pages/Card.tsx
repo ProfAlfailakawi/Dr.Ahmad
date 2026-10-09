@@ -57,16 +57,14 @@ export default function Card() {
     <Page>
       <section className="flex min-h-[88svh] items-center justify-center px-6 py-20">
         <div className="mx-auto w-full max-w-md text-center">
-          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-hair bg-wash">
-            <img decoding="async" src="/tebyan-icon.png" alt="" width={30} height={30} className="opacity-90" />
-          </span>
+          <img decoding="async" src="/portrait.webp" alt="" width={1345} height={2048} className="mx-auto h-24 w-24 rounded-full border border-hair object-cover object-top" />
           <h1 className="mt-6 font-display text-[clamp(1.6rem,5vw,2.1rem)] font-bold leading-[1.25] text-ink">{profile.fullName}</h1>
           <p className="mt-2 text-[.86rem] font-light leading-[1.8] text-soft">{profile.eyebrow}</p>
 
           <button
             type="button"
             onClick={saveContact}
-            className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3 text-[.9rem] font-semibold text-white transition-colors duration-300 hover:bg-accent-deep"
+            className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3 text-[.9rem] font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep"
           >
             {saved ? (
               <><span aria-hidden><Check aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span> حُفظت جهة الاتصال</>

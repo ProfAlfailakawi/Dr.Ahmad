@@ -6725,6 +6725,10 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   transform-origin: right center;
   animation: scene-rule-arrive .78s var(--motion-curve) both;
 }
+.page-head[data-tone="1"] .scene-heading__rule { width: min(17rem, 48vw); }
+.page-head[data-tone="1"] .signature-label > span:first-child { width: 3rem; }
+.page-head[data-tone="2"] .scene-heading__rule { width: min(36rem, 84vw); height: 6px; }
+.page-head[data-tone="2"] .signature-label > span:first-child { width: 1rem; }
 .scene-heading__rule--section { width: min(15rem, 44vw); margin-top: .9rem; }
 .page-head-scene__sub {
   margin-top: 1.75rem !important;

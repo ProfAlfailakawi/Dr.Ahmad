@@ -404,7 +404,10 @@ export default function Decade() {
       ) : (loading || (Boolean(idea) && !bodiesReady)) && !document ? (
         <div className="px-6 py-24 text-center text-soft">تُقرأ خيوط الأرشيف…</div>
       ) : !document ? (
-        <div className="px-6 py-24 text-center text-soft">لا توجد مقالات مؤرخة تكفي لبناء الوثيقة بعد.</div>
+        <div className="px-6 py-24 text-center text-soft">
+          <p className="font-display text-[1.25rem] font-semibold text-ink">لا توجد مقالات مؤرخة تكفي لبناء الوثيقة بعد.</p>
+          <p className="mt-3 text-[.92rem]">يمكنك في هذه الأثناء <Link to="/articles" className="font-semibold text-accent hover:underline">تصفّح المقالات</Link> أو <Link to="/search" className="font-semibold text-accent hover:underline">البحث في الأرشيف</Link>.</p>
+        </div>
       ) : (
         <>
           <section className="border-b border-hair px-6 py-14 md:px-11 md:py-20">

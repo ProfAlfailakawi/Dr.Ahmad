@@ -22,6 +22,7 @@ import { buildKnowledgeGraph, graphNeighbors, graphSearch, type KnowledgeGraph, 
 import { buildSmartQueryPlan, scoreSmartFields, smartRoots } from '../lib/smart-search'
 import { arabicCountPhrase, EVIDENCE_FORMS, SOURCE_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 import { saveAskLibraryMemory } from '../lib/ask-library-memory'
+import { AskHowItWorks } from '../components/AskHowItWorks'
 import { ArrowLeft, Plus, RotateCcw } from 'lucide-react'
 
 const tokenize = (value: string) => smartRoots(value)
@@ -696,6 +697,7 @@ export default function AskLibrary() {
           </FadeUp>
 
           <div ref={resRef} className="scroll-mt-28">
+            {!result && !asked && <AskHowItWorks />}
             {result && (
               <div className="mt-12">
                 {result.hits.length > 0 || result.refs.length > 0 ? (

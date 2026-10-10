@@ -536,15 +536,13 @@ export function CiteButton({
 
 /* ---------- مبدّل الوضع الليلي ---------- */
 export function ThemeToggle({ className = '' }: { className?: string }) {
-  const [dark, setDark] = useState(false)
+  const [dark, setDark] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
 
   useEffect(() => {
-    /* النهار هو الأصل دائماً — الليل فقط باختيارٍ صريح من الزائر بنفسه (`theme-choice`).
-       السمة المحسومة وُضعت على <html> قبل أوّل رسم (public/boot.js)؛ وتفضيل الجهاز لا يُقرأ. */
-    const choice = (() => { try { return localStorage.getItem('theme-choice') } catch { return null } })()
-    const on = choice === 'dark'
-    setDark(on)
-    document.documentElement.classList.toggle('dark', on)
+    /* النهار هو الأصل دائماً — الليل فقط باختيارٍ صريح من الزائر (`theme-choice`). السمة الفعلية حُسمت
+       على <html> قبل أوّل رسم (public/boot.js) وقد يعدّلها القارئ (الورقي نهاريّ)؛ فالمبدّل يقرأها
+       ولا يكتب على <html> عند التركيب، وإنما عند النقر فقط. */
+    setDark(document.documentElement.classList.contains('dark'))
     const syncFromReader = (event: Event) => setDark(Boolean((event as CustomEvent<{ dark?: boolean }>).detail?.dark))
     window.addEventListener('reader:theme-changed', syncFromReader)
     return () => window.removeEventListener('reader:theme-changed', syncFromReader)

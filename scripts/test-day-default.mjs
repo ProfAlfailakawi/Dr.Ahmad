@@ -33,7 +33,8 @@ ok(!/prefers-color-scheme/.test(html), 'index.html بلا media بتفضيل ا�
 ok(/<meta name="theme-color" content="#FCFCFA"/.test(html), 'theme-color الأصل نهاريّ')
 
 /* المبدّل والقارئ */
-ok(toggle.includes("localStorage.getItem('theme-choice')") && toggle.includes("choice === 'dark'"), 'المبدّل يقرأ الاختيار الصريح فقط')
+ok(toggle.includes("document.documentElement.classList.contains('dark')") && !toggle.includes("localStorage.getItem('theme-choice')"), 'المبدّل يقرأ السمة الفعلية من <html> (boot.js طبّق الاختيار قبل الرسم)')
+ok(!/useEffect\(\(\) => \{[\s\S]{0,900}?classList\.toggle\('dark'/.test(toggle.slice(0, toggle.indexOf('const toggle'))), 'التركيب لا يكتب صنف dark على <html> (فلا يهزم الورقي)؛ النقر فقط')
 ok(!toggle.includes("localStorage.getItem('theme')"), 'المبدّل لا يقرأ المفتاح القديم')
 ok(toggle.includes("localStorage.setItem('theme-choice', on ? 'dark' : 'light')"), 'الضغط على الزر يحفظ اختياراً صريحاً (نهار أو ليل)')
 ok(toggle.includes("aria-label={dark ? 'الوضع النهاري' : 'الوضع الليلي'}") && toggle.includes("key={dark ? 'sun' : 'moon'}"), 'الأيقونة (شمس في الليل، قمر في النهار) والوصف يعكسان الحالة')

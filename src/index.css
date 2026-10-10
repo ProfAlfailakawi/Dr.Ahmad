@@ -4530,14 +4530,21 @@ html, body, #root { max-inline-size: 100%; }
   inset: 0;
   background: var(--journey-fill);
   transform: scaleX(0);
-  transform-origin: right;
+  transform-origin: var(--journey-origin-x, right) center;
   transition: transform .5s var(--E);
 }
-.journey:dir(ltr) .journey__link::after { transform-origin: left; }
-.journey__item[data-state="done"] .journey__link::after { transform: scale(1); }
+/* اتجاه الامتلاء = بداية السطر. يُقرأ من أقرب سلفٍ يحمل dir (وسمٌ صريح) عبر متغيّرٍ موروث،
+   فجزيرة dir=ltr داخل صفحةٍ RTL تمتلئ من اليسار، ويعود dir=rtl داخلها إلى اليمين.
+   لا نستعمل :dir() هنا عمداً: مُصغِّر CSS في البناء يخفضه إلى قائمة :lang() تخمينيّة
+   (ar/he/fa…) فيخطئ حين يخالف dir اللغةَ (فُحص على dist). الافتراضيّ RTL كالموقع. */
+[dir="ltr"] { --journey-origin-x: left; }
+[dir="rtl"] { --journey-origin-x: right; }
+.journey__item[data-link="on"] .journey__link::after { transform: scale(1); }
 
-/* حركة الهالة: دورةٌ واحدة على أحدث محطّة أُضيئت ثم تهدأ. */
-.journey__item[data-just] .journey__node { animation: journey-halo 1.5s var(--E) .1s 1 both; }
+/* حركة الهالة: دورةٌ واحدة على كل محطّة تُضاء، أقصر من زمن المحطّة فلا تُقطع حين تُضاء التالية؛
+   والأخيرة (data-last) تأخذ الهالة كاملةً ثم تستقرّ. */
+.journey__item[data-just] .journey__node { animation: journey-halo calc(var(--journey-step, 500ms) * .9) var(--E) 0s 1 both; }
+.journey__item[data-just][data-last] .journey__node { animation-duration: 1.5s; }
 @keyframes journey-halo {
   from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--journey-fill) 30%, transparent); }
   to { box-shadow: 0 0 0 .65rem color-mix(in srgb, var(--journey-fill) 0%, transparent); }
@@ -4552,8 +4559,8 @@ html, body, #root { max-inline-size: 100%; }
   inline-size: 1px;
   block-size: calc(100% + var(--journey-gap) - var(--journey-node) - .5rem);
 }
-.journey--full .journey__link::after { transform: scaleY(0); transform-origin: top; }
-.journey--full .journey__item[data-state="done"] .journey__link::after { transform: scale(1); }
+.journey--full .journey__link::after { transform: scaleY(0); transform-origin: center top; }
+.journey--full .journey__item[data-link="on"] .journey__link::after { transform: scale(1); }
 .journey__text { display: block; }
 .journey__index { display: block; font-size: .7rem; font-weight: 500; color: rgb(var(--c-soft)); }
 .journey__title {
@@ -4584,9 +4591,8 @@ html, body, #root { max-inline-size: 100%; }
     inline-size: calc(100% + var(--journey-gap) - var(--journey-node) - .5rem);
     block-size: 1px;
   }
-  .journey--full .journey__link::after { transform: scaleX(0); transform-origin: right; }
-  .journey--full:dir(ltr) .journey__link::after { transform-origin: left; }
-  .journey--full .journey__item[data-state="done"] .journey__link::after { transform: scale(1); }
+  .journey--full .journey__link::after { transform: scaleX(0); transform-origin: var(--journey-origin-x, right) center; }
+  .journey--full .journey__item[data-link="on"] .journey__link::after { transform: scale(1); }
 }
 
 /* ── النقاط والشريط: صفٌّ واحد يضيق بلا التفاف، عدد المحطات متغيّر ── */

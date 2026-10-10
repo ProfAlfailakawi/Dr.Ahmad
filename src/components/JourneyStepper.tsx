@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type CSSProperties } from 'react'
+import { createPlayedStore, effectiveThreshold, journeyStepMs, journeyTarget, linkFilled, shownState, type JourneyState } from '../lib/journey-logic.ts'
+
+export { journeyStepMs }
+export type { JourneyState }
 
 /**
  * محطّاتٌ تُضاء واحدةً بعد أخرى حين تدخل الشاشة، ثم تستقرّ على حالها الحقيقيّ.
@@ -8,10 +12,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Compone
  * `pending`، ولا تتجاوز الحركةُ آخر محطةٍ منجزة أو جارية. وتُعرض مرةً واحدة
  * لكل تركيب (و`playKey` يمنع إعادتها عند العودة إلى الصفحة في الجلسة نفسها).
  *
- * بلا JS — أو مع تقليل الحركة — الحالة الأولى هي الحالة النهائية كاملة.
+ * الحالة الأولى للمكوّن (render الأول، أو بلا IntersectionObserver، أو مع تقليل الحركة)
+ * هي الحالة النهائية كاملة. ملاحظة: صفحات الموقع الساكنة قشرةٌ لتطبيق React، فلا يُخرج
+ * البناءُ ماركَب هذه المحطات بلا JS؛ والمقصود هنا ألا يكون ثمة وميضٌ للحالة الأخيرة
+ * ولا إخفاءٌ لها حين لا تعمل الحركة.
  */
-
-export type JourneyState = 'done' | 'current' | 'pending'
 
 export type JourneyStation = {
   key: string
@@ -25,25 +30,11 @@ export type JourneyStation = {
 const STATE_TEXT: Record<JourneyState, string> = { done: 'أُنجزت', current: 'الحالية', pending: 'لم تُنجز بعد' }
 
 /** مفاتيح ما عُرض فعلاً في هذه الجلسة — لا يُعاد عرض المقدّمة عند العودة. */
-const played = new Set<string>()
-const STORE = 'journey-played:'
-
-function alreadyPlayed(playKey?: string) {
-  if (!playKey) return false
-  if (played.has(playKey)) return true
-  try { return window.sessionStorage.getItem(STORE + playKey) === '1' } catch { return false }
-}
-
-function markPlayed(playKey?: string) {
-  if (!playKey) return
-  played.add(playKey)
-  try { window.sessionStorage.setItem(STORE + playKey, '1') } catch { /* التخزين اختياري */ }
-}
+const store = createPlayedStore(() => (typeof window === 'undefined' ? undefined : window.sessionStorage))
+const alreadyPlayed = store.has
+const markPlayed = store.mark
 
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
-
-/** مدة المحطّة الواحدة: تُقسَّم ~4 ثوانٍ على العدد وتُحصر بين 350 و750ms. */
-export const journeyStepMs = (count: number) => Math.round(Math.min(750, Math.max(350, 4000 / Math.max(1, count))))
 
 /** بعد آخر محطة تبقى الهالة قائمةً حتى تنتهي دورتها الوحيدة ثم تستقرّ. */
 const SETTLE_MS = 1600
@@ -79,8 +70,7 @@ export function useJourneyReveal({ target, stepMs, delayMs = 0, threshold = 0.5,
        ما يمكن بلوغه، وإن لم يكن للعنصر قياسٌ الآن فلا نُخفي حالته الحقيقية أصلاً. */
     const rect = node.getBoundingClientRect()
     if (!rect.height || !rect.width) return
-    const reachable = (0.85 * window.innerHeight) / rect.height
-    const effective = Math.max(0.05, Math.min(threshold, reachable))
+    const effective = effectiveThreshold(threshold, rect.height, window.innerHeight)
 
     setLit(0) // قبل الرسم: لا وميض للحالة النهائية
     let count = 0
@@ -133,7 +123,7 @@ export type JourneyVariant = 'full' | 'dots' | 'strip'
  * - `dots`: نقاطٌ موصولة بخطوط (بطاقات المسارات) — بلا نص.
  * - `strip`: شريطٌ مضغوط بأرقام المحطات (تفاصيل المسار).
  */
-export function JourneyStepper({ steps, variant = 'full', label, playKey, delayMs = 0, animate = true, decorative = false, className = '' }: {
+export function JourneyStepper({ steps, variant = 'full', label, playKey, delayMs = 0, animate = true, decorative = false, stateText, className = '' }: {
   steps: JourneyStation[]
   variant?: JourneyVariant
   label?: string
@@ -143,19 +133,23 @@ export function JourneyStepper({ steps, variant = 'full', label, playKey, delayM
   animate?: boolean
   /** زخرفيّ: يُخفى عن قارئ الشاشة (النص الحقيقيّ موجودٌ حوله). */
   decorative?: boolean
+  /** نصّ الحالة لقارئ الشاشة؛ يُستبدل حين لا يناسب «أُنجزت» (كشرحٍ ثابتٍ لا تقدّمٍ لأحد). */
+  stateText?: Partial<Record<JourneyState, string>>
   className?: string
 }) {
-  const target = steps.reduce((last, step, index) => (step.state === 'pending' ? last : index + 1), 0)
+  const target = journeyTarget(steps.map((step) => step.state))
+  const stepMs = journeyStepMs(steps.length)
+  const texts = { ...STATE_TEXT, ...stateText }
   const { ref, lit } = useJourneyReveal({
     target,
-    stepMs: journeyStepMs(steps.length),
+    stepMs,
     delayMs,
     enabled: animate && steps.length > 0,
     playKey,
     threshold: variant === 'full' ? 0.6 : 0.9,
   })
 
-  const shown = (step: JourneyStation, index: number): JourneyState => (lit === null || index < lit ? step.state : 'pending')
+  const shown = steps.map((step, index) => shownState(step.state, index, lit))
 
   return (
     <ol
@@ -164,13 +158,15 @@ export function JourneyStepper({ steps, variant = 'full', label, playKey, delayM
       aria-hidden={decorative || undefined}
       data-journey={variant}
       data-reveal={lit ?? 'done'}
-      style={{ ['--journey-n' as string]: steps.length } as CSSProperties}
+      style={{ ['--journey-n' as string]: steps.length, ['--journey-step' as string]: `${stepMs}ms` } as CSSProperties}
       className={`journey journey--${variant} ${className}`.trim()}
     >
       {steps.map((step, index) => {
-        const state = shown(step, index)
+        const state = shown[index]
         const link = index < steps.length - 1
         const just = lit !== null && lit > 0 && index === lit - 1 && state !== 'pending'
+        /* الأخيرة تأخذ الهالة كاملةً قبل الاستقرار؛ ما قبلها هالةٌ أقصر من زمن المحطة فلا تُقطع. */
+        const last = just && lit === target
         const { Icon } = step
         return (
           <li
@@ -178,6 +174,8 @@ export function JourneyStepper({ steps, variant = 'full', label, playKey, delayM
             className="journey__item"
             data-state={state}
             data-just={just || undefined}
+            data-last={last || undefined}
+            data-link={linkFilled(shown, index) ? 'on' : undefined}
             aria-current={state === 'current' ? 'step' : undefined}
           >
             <span className="journey__node">
@@ -189,9 +187,10 @@ export function JourneyStepper({ steps, variant = 'full', label, playKey, delayM
                 <span className="journey__index">{index + 1}</span>
                 <span className="journey__title">{step.label}</span>
                 {step.note && <span className="journey__note">{step.note}</span>}
+                {!decorative && <span className="sr-only">{` — ${texts[step.state]}`}</span>}
               </span>
             ) : null}
-            {!decorative && variant !== 'full' && <span className="sr-only">{`${index + 1}. ${step.label} — ${STATE_TEXT[step.state]}`}</span>}
+            {!decorative && variant !== 'full' && <span className="sr-only">{`${index + 1}. ${step.label} — ${texts[step.state]}`}</span>}
           </li>
         )
       })}

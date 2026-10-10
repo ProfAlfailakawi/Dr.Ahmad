@@ -87,7 +87,8 @@ test('تبديل التبويب لا يعيد البحث', () => {
   const tabClick = portal.match(/onClick=\{\(\) => \{ setResultTab\(value\);[\s\S]{0,160}?\}\}/)?.[0] || ''
   assert.ok(tabClick, 'زر التبويب موجود')
   assert.ok(!/searchEncyclopediaKnowledge|setSpokenMoments/.test(tabClick), 'لا إعادة بحث عند التبديل')
-  assert.match(portal, /const knowledgeResults = useMemo\(/, 'النتائج محفوظة')
+  assert.match(portal, /const \[knowledgeResults, setKnowledgeResults\] = useState</, 'النتائج محفوظة في حالة لا تتأثر بالتبويب')
+  assert.match(portal, /\}, \[knowledgeContext, query\]\)/, 'البحث يتبع العبارة والسياق فقط لا التبويب')
 })
 
 test('سقف المحرك يتّسع لما تعرضه الواجهة', () => {

@@ -7,6 +7,9 @@ import { buildSearchPostings, buildSimilarityGraph, createArchiveIndex, queryArc
 import { buildSitemapDocuments, sitemapLocsFromDist } from './archive-sitemap.mjs'
 
 const COUNT = Number(process.env.ARCHIVE_SCALE_COUNT || 100_000)
+/* ميزانيات الزمن تُقاس بوقت المعالج (user+system) لا بساعة الجدار: على جهازٍ مزدحم تتضخّم ساعة الجدار
+   فتفشل الميزانية دون أن تتغيّر الخوارزمية، بينما وقت المعالج يبقى مقياساً للعمل الفعلي. */
+const cpuNow = () => { const usage = process.cpuUsage(); return (usage.user + usage.system) / 1000 }
 const heapStart = process.memoryUsage().heapUsed
 const categories = Array.from({ length: 24 }, (_, i) => `محور ${i + 1}`)
 const concepts = Array.from({ length: 5000 }, (_, i) => `مفهوم${i}`)
@@ -29,7 +32,7 @@ const rows = Array.from({ length: COUNT }, (_, index) => {
   }
 })
 
-const indexStart = performance.now()
+const indexStart = cpuNow()
 const archive = createArchiveIndex(rows, {
   getText: (item) => `${item.title} ${item.excerpt}`,
   getYear: (item) => item.year,
@@ -37,12 +40,12 @@ const archive = createArchiveIndex(rows, {
   getSortKey: (item) => item.iso,
   maxTokensPerItem: 32,
 })
-const indexMs = performance.now() - indexStart
+const indexMs = cpuNow() - indexStart
 assert.equal(archive.items.length, COUNT)
 assert.equal(archive.years.length, 22)
 assert.equal(archive.categories.length, categories.length)
 
-const queryStart = performance.now()
+const queryStart = cpuNow()
 let checksum = 0
 for (let iteration = 0; iteration < 40; iteration += 1) {
   const result = queryArchiveIndex(archive, {
@@ -54,36 +57,36 @@ for (let iteration = 0; iteration < 40; iteration += 1) {
   })
   checksum += result.total + result.items.length
 }
-const queryMs = performance.now() - queryStart
+const queryMs = cpuNow() - queryStart
 assert.ok(checksum >= 0)
 
-const searchStart = performance.now()
+const searchStart = cpuNow()
 const postings = buildSearchPostings(rows, { getText: (item) => `${item.title} ${item.excerpt}`, maxTokensPerItem: 28 })
 for (let iteration = 0; iteration < 50; iteration += 1) {
   const candidates = searchPostingCandidates(postings, `${concepts[(iteration * 97) % concepts.length]} تعليم`, 700)
   assert.ok(candidates.length <= 700)
 }
-const searchMs = performance.now() - searchStart
+const searchMs = cpuNow() - searchStart
 
-const topKStart = performance.now()
+const topKStart = cpuNow()
 const topK = selectTopK(rows, 12, (item) => (item.id * 37) % 1009, (item) => item.slug)
-const topKMs = performance.now() - topKStart
+const topKMs = cpuNow() - topKStart
 assert.equal(topK.length, 12)
 
-const visualStart = performance.now()
+const visualStart = cpuNow()
 const pinnedSlugs = ['item-3', 'item-55555', 'item-99999']
 const visualSample = sampleVisualArchive(rows, 2400, {
   keyOf: (item) => item.slug,
   groupOf: (item) => `${item.cat}|${item.year}`,
   pinKeys: pinnedSlugs,
 })
-const visualMs = performance.now() - visualStart
+const visualMs = cpuNow() - visualStart
 assert.equal(visualSample.length, 2400, 'visual LOD must obey the DOM budget')
 for (const slug of pinnedSlugs) assert.ok(visualSample.some((item) => item.slug === slug), `pinned visual record missing: ${slug}`)
 assert.ok(new Set(visualSample.map((item) => item.cat)).size >= 20, 'visual LOD lost archive category breadth')
 
 const graphNodes = rows
-const graphStart = performance.now()
+const graphStart = cpuNow()
 const edges = buildSimilarityGraph(graphNodes, {
   getText: (item) => `${item.title} ${item.excerpt}`,
   getTitle: (item) => item.title,
@@ -96,16 +99,16 @@ const edges = buildSimilarityGraph(graphNodes, {
   minScore: 5,
   conceptKind: '__none__',
 })
-const graphMs = performance.now() - graphStart
+const graphMs = cpuNow() - graphStart
 assert.ok(edges.length <= COUNT * 3, `edge cap broken: ${edges.length}`)
 
-const sitemapStart = performance.now()
+const sitemapStart = cpuNow()
 const sitemapDocuments = buildSitemapDocuments(rows.map((item) => ({
   loc: `https://dr-alfailakawi.com/archive/${item.slug}`,
   lastmod: item.iso,
   priority: '0.6',
 })), 'https://dr-alfailakawi.com')
-const sitemapMs = performance.now() - sitemapStart
+const sitemapMs = cpuNow() - sitemapStart
 const sitemapIndex = sitemapDocuments.get('sitemap.xml') || ''
 assert.ok(sitemapIndex.includes('<sitemapindex'), '100k routes must produce a sitemap index')
 assert.equal([...sitemapDocuments.keys()].filter((name) => /^sitemap-\d+\.xml$/.test(name)).length, Math.ceil(COUNT / 45_000))

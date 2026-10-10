@@ -121,10 +121,10 @@ assert.ok(controller.includes('[^{}\\n]{1,24}'), 'تنظيف أي حقل مجه�
 /* دفتر الأسماء: الأسماء أولاً ورقاقة بلا ألغاز */
 assert.match(controller, /leftNamed \? -1 : 1/, 'أصحاب الأسماء يتقدمون الدفتر')
 assert.match(audiencePanel, /بلا اسم/, 'مجهول الاسم يسمى صراحة')
-assert.match(audiencePanel, /في قائمة|قوائم`/, 'عدد القوائم صار جملة لا صفراً شارداً')
+assert.match(audiencePanel, /في \{arabicCountPhrase\(contact\.lists, LIST_AFTER_PREPOSITION_FORMS\)\}/, 'عدد القوائم صار جملة (بصيغة العدّ العربية) لا صفراً شارداً')
 
 /* أناقة بوابة اليوم في المقتطفات */
-assert.match(controller, /«\$\{excerpt\}/, 'المقتطف اقتباس بين قوسي تنصيص')
+assert.match(controller, /«\$\{verbatim\(excerpt\)\}/, 'المقتطف اقتباس بين قوسي تنصيص (حرفياً عبر verbatim)')
 
 /* المحرك المجاني في الخادم */
 assert.match(serverSource, /callCloudflareStructured/, 'محرك CF المنظم موجود')

@@ -60,7 +60,24 @@ const ARABIC_DIACRITICS = /[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]/gu
 const STOP = new Set(['في', 'من', 'على', 'عن', 'مع', 'الى', 'إلى', 'ال', 'هذا', 'هذه', 'هو', 'هي', 'و', 'او', 'أو', 'ثم', 'قد', 'ما', 'هل'])
 const POSITIVE_MOODS: DomainMood[] = ['bright', 'playful', 'energetic', 'optimistic', 'creative', 'warm', 'collaborative', 'curious', 'dynamic']
 
+/* دالة خالصة تُستدعى آلاف المرات لنفس المدخلات (كل وسمٍ × كل مرادف)؛ ذاكرة صغيرة محدودة تُسقط
+   كلفتها دون أن تغيّر الناتج (تُفرَّغ عند الامتلاء فلا تنمو بلا حدّ). */
+const NORMALIZE_CACHE = new Map<string, string>()
+const NORMALIZE_CACHE_MAX = 4000
+
 export function normalizeDomainTerm(value = '') {
+  const key = String(value)
+  const cached = key.length <= 160 ? NORMALIZE_CACHE.get(key) : undefined
+  if (cached !== undefined) return cached
+  const result = normalizeDomainTermUncached(key)
+  if (key.length <= 160) {
+    if (NORMALIZE_CACHE.size >= NORMALIZE_CACHE_MAX) NORMALIZE_CACHE.clear()
+    NORMALIZE_CACHE.set(key, result)
+  }
+  return result
+}
+
+function normalizeDomainTermUncached(value: string) {
   return String(value)
     .toLowerCase()
     .replace(ARABIC_DIACRITICS, '')

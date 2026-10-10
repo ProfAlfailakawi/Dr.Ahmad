@@ -200,10 +200,13 @@ check('مصطلح صدى الفكرة استبدل «يوسّعها» بلفظ �
 })
 
 check('تسميات محاور سماء المقالات تعيش في هامش مستقل ولا تتقاطع مع النجوم', () => {
-  assert.match(atlas, /<text x=\{MOBILE_W - 18\}[^>]*textAnchor="end"[^>]*>\{categoryLabel\(category\)\}<\/text>/)
-  assert.match(atlas, /<line x1=\{MOBILE_W - 105\}[^>]*x2=\{MOBILE_W - 91\}/)
-  assert.match(atlas, /<text x=\{W - 18\}[^>]*textAnchor="end"[^>]*>\{categoryLabel\(category\)\}<\/text>/)
-  assert.match(atlas, /<line x1=\{W - 116\}[^>]*x2=\{W - 102\}/)
+  /* الهامش المستقل: خطّ ملوّن عند الحافة ثم التسمية قبله، والمسار نفسه ينتهي قبلهما */
+  assert.match(atlas, /<line x1=\{MOBILE_PAD_L\}[^>]*x2=\{MOBILE_W - MOBILE_PAD_R \+ 4\}/)
+  assert.match(atlas, /<line x1=\{MOBILE_W - 26\}[^>]*x2=\{MOBILE_W - 14\}/)
+  assert.match(atlas, /<text x=\{MOBILE_W - 36\}[^>]*textAnchor="start"[^>]*>\{categoryLabel\(category\)\}<\/text>/)
+  assert.match(atlas, /<line x1=\{PAD_L\}[^>]*x2=\{W - PAD_R \+ 4\}/)
+  assert.match(atlas, /<line x1=\{W - 14\}[^>]*x2=\{W - 4\}/)
+  assert.match(atlas, /<text x=\{W - 26\}[^>]*textAnchor="start"[^>]*>\{categoryLabel\(category\)\}<\/text>/)
 })
 
 check('الأرشيف الإعلامي مرتب حسب الظهور من الأحدث إلى الأقدم مع احترام التاريخ الدقيق', () => {

@@ -7,14 +7,18 @@ import { findBookEvidence } from '../server.mjs'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(resolve(ROOT, path), 'utf8')
 const manifest = JSON.parse(read('src/data/book-knowledge.json'))
-const evidence = JSON.parse(read('src/data/book-evidence.json'))
+/* فهرس المتن الكامل محلي ومهمل من Git عمداً (.gitignore) — يُنتَج على جهاز الدكتور من كتبه الخاصة.
+   في نسخةٍ نظيفة أو CI يغيب، فتُجرى كل الفحوص العامة ويُعلَن صراحةً تخطّي ما يحتاج المتن الكامل. */
+const evidencePath = resolve(ROOT, 'src/data/book-evidence.json')
+const evidence = existsSync(evidencePath) ? JSON.parse(readFileSync(evidencePath, 'utf8')) : null
+if (!evidence) console.log('• فهرس المتن المحلي (src/data/book-evidence.json) غائب: تُخطّى فحوص شواهد الخادم الكاملة (١٥٩٦ صفحة / ٧٠ مقطعاً لكل كتاب).')
 const failures = []
 const expect = (condition, message) => { if (!condition) failures.push(message) }
 
 expect(manifest.coverage?.books === 9, 'الخريطة لا تحتوي الكتب التسعة')
 expect(manifest.coverage?.pages === 1596, 'عدد الصفحات المفهرسة ليس ١٥٩٦')
 expect(manifest.coverage?.complete === true, 'تغطية الخريطة غير مكتملة')
-expect(evidence.coverage?.books === 9 && evidence.coverage?.pages === 1596, 'فهرس الخادم لا يطابق تغطية الخريطة')
+expect(!evidence || (evidence.coverage?.books === 9 && evidence.coverage?.pages === 1596), 'فهرس الخادم لا يطابق تغطية الخريطة')
 
 const encyclopedia = manifest.books.find((book) => book.slug === 'encyclopedia')
 expect(encyclopedia?.pageCount === 696, 'الموسوعة لا تغطي ٦٩٦ صفحة')
@@ -22,16 +26,18 @@ expect((encyclopedia?.concepts || []).length >= 24, 'الموسوعة لا تح�
 expect(/الجذر المرجعي/.test(encyclopedia?.role || ''), 'الموسوعة لا تتميز بوصفها الجذر المرجعي')
 
 for (const book of manifest.books) {
-  const serverBook = evidence.books.find((item) => item.slug === book.slug)
+  const serverBook = evidence?.books.find((item) => item.slug === book.slug)
   expect(book.concepts.length >= 8, `${book.slug}: مفاهيم قليلة`)
   expect(book.questions.length >= 6, `${book.slug}: أسئلة الكتاب قليلة`)
-  expect(serverBook?.chunks?.length >= 70, `${book.slug}: شواهد الخادم ناقصة`)
-  expect(serverBook?.chunks?.every((chunk) => chunk.page >= 1 && chunk.page <= book.pageCount), `${book.slug}: رقم صفحة خارج النطاق`)
+  if (evidence) {
+    expect(serverBook?.chunks?.length >= 70, `${book.slug}: شواهد الخادم ناقصة`)
+    expect(serverBook?.chunks?.every((chunk) => chunk.page >= 1 && chunk.page <= book.pageCount), `${book.slug}: رقم صفحة خارج النطاق`)
+  }
 }
 
 const forbidden = ['.pdf', '/Users/', 'PrivateBooks', 'localPath', 'fileName']
 const manifestText = JSON.stringify(manifest)
-const evidenceText = JSON.stringify(evidence)
+const evidenceText = JSON.stringify(evidence || {})
 for (const marker of forbidden) {
   expect(!manifestText.includes(marker), `الخريطة العامة تحمل الأثر الممنوع ${marker}`)
   expect(!evidenceText.includes(marker), `فهرس الخادم يحمل الأثر الممنوع ${marker}`)
@@ -76,7 +82,7 @@ const collectSource = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap
 })
 const publicImports = collectSource(resolve(ROOT, 'src')).filter((file) => readFileSync(file, 'utf8').includes('book-evidence.json'))
 expect(publicImports.length === 0, `فهرس الخادم مستورد في React: ${publicImports.join(', ')}`)
-expect(existsSync(resolve(ROOT, 'src/data/book-evidence.json')), 'فهرس أدلة الخادم غير موجود')
+expect(read('.gitignore').includes('src/data/book-evidence.json'), 'فهرس المتن الكامل يجب أن يبقى مهملاً من Git')
 
 if (failures.length) {
   console.error('✘ اختبار تكامل معرفة الكتب:')

@@ -29,10 +29,17 @@ const hero = read('src/components/home/HumanCoreHero.tsx')
 const quoteMerge = read('src/lib/quote-merge.ts')
 
 let passed = 0
+const failed = []
+/* يكمل بقية الفحوص بعد أول إخفاق ثم يفشل في النهاية: فلا يحجب إخفاقٌ واحد ما بعده. */
 const check = (label, fn) => {
-  fn()
-  passed += 1
-  console.log(`✓ ${label}`)
+  try {
+    fn()
+    passed += 1
+    console.log(`✓ ${label}`)
+  } catch (error) {
+    failed.push(label)
+    console.log(`✘ ${label}\n    ${String(error.message).split('\n').slice(0, 3).join(' ').slice(0, 220)}`)
+  }
 }
 
 check('تحديد iPhone يبقى Native وقابلاً للتمديد بلا removeAllRanges أو سقف 800 حرف', () => {
@@ -79,20 +86,21 @@ check('سماء المقالات تستقبل deep-link وتحفظ الألوا�
 
 check('شريط البحث العلمي يبدأ من 1 ويتبع 1→2→3 بلا transform jitter', () => {
   assert.ok(paper.includes("useState<ResearchLayer>('layer1')"))
-  assert.ok(paper.includes('new IntersectionObserver'))
+  assert.ok(paper.includes("addEventListener('scroll', handleScroll, { passive: true })"), 'الطبقة النشطة تتبع التمرير بمستمع passive (بلا transform)')
   assert.ok(paper.includes("'research-passport-layer1'"))
   assert.ok(paper.includes("'research-passport-layer2'"))
   assert.ok(paper.includes("'research-passport-layer3'"))
   assert.ok(researchNav.includes('research-section-nav'))
   assert.ok(!researchNav.includes('translate3d'))
   assert.ok(!researchNav.includes('willChange'))
-  assert.ok(researchNav.includes('min-h-[3.55rem]'))
+  assert.ok(researchNav.includes('flex flex-1 flex-col items-center py-3'), 'ارتفاع الشريط ثابت بحشوة عمودية موحّدة لا تتغيّر بحالة الطبقة (بدل min-h القديمة)')
 })
 
 check('الأرشيف الإعلامي لا يركّب ألف بطاقة دفعة واحدة على الهاتف', () => {
   assert.ok(media.includes('useState(25)'))
-  assert.ok(media.includes('media.slice(0, visibleCount)'))
-  assert.ok(media.includes("'is-featured' : 'is-compact-mobile'"))
+  assert.ok(media.includes('filteredMedia.slice(0, visibleCount)'))
+  assert.ok(media.includes('visibleMedia.slice(0, 3)') && media.includes('visibleMedia.slice(3)'), 'ثلاث بطاقات بارزة والباقي مجموعات تُعرض من المرئيّ فقط')
+  assert.ok(media.includes('media-poster--compact'), 'ملصق مضغوط للبطاقات الصغيرة')
   assert.ok(media.includes('count + 24'))
 })
 
@@ -125,9 +133,12 @@ check('أزرار مشاركة المقال تلتف بأمان ولا تُقص 
 })
 
 check('مسارات الطباعة الحالية تحافظ على user activation وتملك عقد A4', () => {
-  assert.ok(articleDetail.includes('window.print()'))
-  assert.ok(readingShelf.includes('window.print()'))
-  assert.ok(impact.includes('window.print()'))
+  /* الطباعة مركزية في printSiteContent وتُستدعى مباشرةً من معالج النقر (فيبقى user activation) */
+  const printLib = read('src/lib/print.ts')
+  assert.ok(articleDetail.includes("onClick={() => { setSerenity(false); window.dispatchEvent(new CustomEvent('reader:close-overlays')); printSiteContent("), 'المقال: الطباعة من نفس النقرة')
+  assert.ok(readingShelf.includes('printSiteContent('))
+  assert.ok(impact.includes('onClick={() => printSiteContent('))
+  assert.ok(printLib.includes('window.print()') && printLib.includes("window.open('', '_blank')"), 'المكتبة: window.print() على سطح المكتب وwindow.open من النقرة نفسها على الجوال')
   assert.ok(ask.includes('print()'))
   assert.ok(css.includes('@page'))
   assert.ok(css.includes('size: A4'))
@@ -172,4 +183,8 @@ check('Hero المحمي بقي بالنص والحركات المطلوبة', (
   assert.ok(hero.includes('في قلبِ الآلة.'))
 })
 
-console.log(`\nالنتيجة: ${passed} تحققاً ناجحاً، 0 إخفاقاً.`)
+console.log(`\nالنتيجة: ${passed} تحققاً ناجحاً، ${failed.length} إخفاقاً.`)
+if (failed.length) {
+  console.error(`إخفاقات: ${failed.join(' | ')}`)
+  process.exit(1)
+}

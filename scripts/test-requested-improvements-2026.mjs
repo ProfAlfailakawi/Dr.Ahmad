@@ -31,13 +31,13 @@ ok(broadcast.includes('متابعة الحملات') && broadcast.includes('ال
 console.log('\nVisitor UI polish')
 ok(home.includes("createPortal(modal, document.body)") && home.includes('home-thought-maps-overlay') && home.includes("document.body.style.overflow = 'hidden'"), 'نافذة خرائط الفكر معزولة في Portal وتمنع تمرير الخلفية')
 ok(home.includes('أربع زوايا، ورؤية تتجدّد.'), 'العبارة الداخلية استبدلت بصياغة نهائية احترافية')
-const articlesItem = ui.match(/\{ to: '\/articles', label: 'المقالات الفكرية'[^\n]*\}/)?.[0] || ''
-ok(articlesItem && !articlesItem.includes('sub:'), 'سماء المقالات ومسارات الفكرة أزيلتا من مدخل المقالات فقط')
+const articlesItem = ui.match(/\{ to: '\/articles', label: 'المقالات الفكرية', children: \[[\s\S]*?\] \}/)?.[0] || ''
+ok(articlesItem && !articlesItem.includes('sub:') && articlesItem.includes("to: '/atlas'") && !articlesItem.includes('/paths'), 'مدخل المقالات بلا سطور sub؛ سماء المقالات فرعٌ يُفتح بالنقر (children) ومسارات الفكرة غير مدرجة')
 const aboutBlock = ui.slice(ui.indexOf("label: 'عن الدكتور'"), ui.indexOf("function Overlay"))
 ok(!aboutBlock.includes('وثيقة العقد'), 'وثيقة العقد أزيلت من «عن الدكتور» فقط')
 ok(article.includes('aria-label="فتح المصدر الأصلي"') && article.includes('<CiteButton compact') && !article.includes('compactLabel="استشهاد"'), 'المصدر والاستشهاد أيقونتان فقط في صف المشاركة')
-ok(home.includes('<TebyanProjectLink />') && !home.includes('h-4 w-px bg-hair') && home.includes('overflow-x-auto'), 'شريط أدوات الرئيسية موحد في صف قابل للانزلاق من دون فاصل عمودي أو كلمة تبيان')
+ok(home.includes('<TebyanProjectLink label="تبيان" iconOnly') && home.includes('home-footer-tools') && !home.includes('h-4 w-px bg-hair'), 'أدوات تذييل الرئيسية صفٌّ موحّد بأيقونات فقط (تبيان بلا كلمة) ومن دون فاصل عمودي')
 ok(!adminNav.includes("{ tab: 'image-lab', label: 'مختبر الصور'") && adminNav.includes("HIDDEN_ADMIN_TABS: AdminTab[] = ['image-lab']"), 'مختبر الصور مخفي من الواجهة مع إبقاء المسار البرمجي للمستقبل')
-ok(search.includes('placeholder="كلمة، فكرة، عنوان، باحث، أو سؤال"') && search.includes('pe-4 ps-14'), 'عبارة البحث كاملة ولا تصطدم بأيقونة البحث على الجوال')
+ok(search.includes('placeholder="اكتب بطريقتك: سؤال، موقف، فكرة"') && search.includes('pe-16 ps-3'), 'عبارة البحث كاملة ولا تصطدم بأيقونة البحث على الجوال (حشوة نهاية الحقل pe-16)')
 
 console.log('\nAll requested improvements are guarded.')

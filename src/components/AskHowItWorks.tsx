@@ -24,7 +24,7 @@ export function AskHowItWorks() {
   return (
     <section aria-label="كيف يُبنى الجواب" className="mt-12 border-t border-hair pt-8">
       <p className="text-[.75rem] font-medium text-soft">كيف يُبنى الجواب</p>
-      <JourneyStepper steps={STATIONS} variant="full" playKey="ask-how-it-works" className="mt-6" />
+      <JourneyStepper steps={STATIONS} variant="full" label="مراحل بناء الجواب" stateText={{ done: 'مرحلة من مراحل الجواب' }} playKey="ask-how-it-works" className="mt-6" />
     </section>
   )
 }

@@ -536,14 +536,13 @@ export function CiteButton({
 
 /* ---------- مبدّل الوضع الليلي ---------- */
 export function ThemeToggle({ className = '' }: { className?: string }) {
-  const [dark, setDark] = useState(false)
+  const [dark, setDark] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'))
 
   useEffect(() => {
-    // الوضع النهاري هو الأصل دائماً — لا يتحوّل للّيلي إلا إذا اختاره الزائر بنفسه (يُحفظ اختياره)
-    const saved = (() => { try { return localStorage.getItem('theme') } catch { return null } })()
-    const on = saved === 'dark'
-    setDark(on)
-    document.documentElement.classList.toggle('dark', on)
+    /* النهار هو الأصل دائماً — الليل فقط باختيارٍ صريح من الزائر (`theme-choice`). السمة الفعلية حُسمت
+       على <html> قبل أوّل رسم (public/boot.js) وقد يعدّلها القارئ (الورقي نهاريّ)؛ فالمبدّل يقرأها
+       ولا يكتب على <html> عند التركيب، وإنما عند النقر فقط. */
+    setDark(document.documentElement.classList.contains('dark'))
     const syncFromReader = (event: Event) => setDark(Boolean((event as CustomEvent<{ dark?: boolean }>).detail?.dark))
     window.addEventListener('reader:theme-changed', syncFromReader)
     return () => window.removeEventListener('reader:theme-changed', syncFromReader)
@@ -564,7 +563,10 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       setDark(on)
       root.classList.toggle('dark', on)
       root.classList.remove('reader-paper')
+      /* اختيارٌ صريح: يُحفظ ويبقى عبر الزيارات (والمفتاح القديم `theme` مرآته للنسخ القديمة المخزّنة). */
+      try { localStorage.setItem('theme-choice', on ? 'dark' : 'light') } catch { /* noop */ }
       try { localStorage.setItem('theme', on ? 'dark' : 'light') } catch { /* noop */ }
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', on ? '#111215' : '#FCFCFA')
       try {
         const raw = localStorage.getItem('reader:preferences:v2')
         if (raw) localStorage.setItem('reader:preferences:v2', JSON.stringify({ ...JSON.parse(raw), theme: on ? 'dark' : 'light' }))

@@ -4465,6 +4465,134 @@ html, body, #root { max-inline-size: 100%; }
   .next-step-thread .next-step-node { transform: scale(1); }
 }
 
+/* ── رحلة المحطّات ──
+   تُضاء المحطّات واحدةً بعد أخرى (src/components/JourneyStepper.tsx) ثم تستقرّ
+   على حالها الحقيقيّ. اللون من متغيّرٍ واحد: --journey-fill (افتراضه لون التمييز).
+   الحالة النهائية هي الأصل في CSS؛ الحركة طبقةٌ فوقها. */
+.journey {
+  --journey-fill: rgb(var(--c-accent));
+  --journey-node: 2.5rem;
+  --journey-gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.journey__item { position: relative; }
+.journey__node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  inline-size: var(--journey-node);
+  block-size: var(--journey-node);
+  border: 1px solid rgb(var(--c-accent) / .3);
+  border-radius: 9999px;
+  background: rgb(var(--c-canvas));
+  color: rgb(var(--c-accent));
+  transition: background-color .3s var(--E), border-color .3s var(--E), color .3s var(--E), box-shadow .4s var(--E);
+}
+.journey__item:is([data-state="done"], [data-state="current"]) .journey__node { border-color: var(--journey-fill); }
+.journey__item[data-state="done"] .journey__node {
+  background: var(--journey-fill);
+  color: rgb(var(--c-canvas));
+}
+
+/* الخيط بعد المحطّة: مسارٌ خافت، وتعبئته تمتدّ من جهة البداية (يمين في RTL). */
+.journey__link {
+  position: absolute;
+  background: rgb(var(--c-accent) / .22);
+  overflow: hidden;
+}
+.journey__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--journey-fill);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform .5s var(--E);
+}
+.journey:dir(ltr) .journey__link::after { transform-origin: left; }
+.journey__item[data-state="done"] .journey__link::after { transform: scale(1); }
+
+/* حركة الهالة: دورةٌ واحدة على أحدث محطّة أُضيئت ثم تهدأ. */
+.journey__item[data-just] .journey__node { animation: journey-halo 1.5s var(--E) .1s 1 both; }
+@keyframes journey-halo {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--journey-fill) 30%, transparent); }
+  to { box-shadow: 0 0 0 .65rem color-mix(in srgb, var(--journey-fill) 0%, transparent); }
+}
+
+/* ── النمط الكامل: أيقونة وعنوان؛ عموديّ على الهاتف، أفقيّ من md ── */
+.journey--full { position: relative; display: grid; gap: var(--journey-gap); }
+.journey--full .journey__item { display: flex; align-items: flex-start; gap: 1rem; }
+.journey--full .journey__link {
+  inset-inline-start: calc(var(--journey-node) / 2 - .5px);
+  inset-block-start: calc(var(--journey-node) + .25rem);
+  inline-size: 1px;
+  block-size: calc(100% + var(--journey-gap) - var(--journey-node) - .5rem);
+}
+.journey--full .journey__link::after { transform: scaleY(0); transform-origin: top; }
+.journey--full .journey__item[data-state="done"] .journey__link::after { transform: scale(1); }
+.journey__text { display: block; }
+.journey__index { display: block; font-size: .7rem; font-weight: 500; color: rgb(var(--c-soft)); }
+.journey__title {
+  display: block;
+  font-family: "El Messiri", serif;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.7;
+  color: rgb(var(--c-soft));
+  transition: color .4s var(--E);
+}
+.journey__note {
+  display: block;
+  font-size: .8rem;
+  line-height: 1.7;
+  color: rgb(var(--c-soft));
+  opacity: .75;
+  transition: opacity .4s var(--E);
+}
+.journey__item:is([data-state="done"], [data-state="current"]) .journey__title { color: rgb(var(--c-ink)); }
+.journey__item:is([data-state="done"], [data-state="current"]) .journey__note { opacity: 1; }
+@media (min-width: 768px) {
+  .journey--full { grid-template-columns: repeat(var(--journey-n), minmax(0, 1fr)); gap: 1rem; --journey-gap: 1rem; }
+  .journey--full .journey__item { flex-direction: column; align-items: center; gap: .75rem; text-align: center; }
+  .journey--full .journey__link {
+    inset-inline-start: calc(50% + var(--journey-node) / 2 + .25rem);
+    inset-block-start: calc(var(--journey-node) / 2 - .5px);
+    inline-size: calc(100% + var(--journey-gap) - var(--journey-node) - .5rem);
+    block-size: 1px;
+  }
+  .journey--full .journey__link::after { transform: scaleX(0); transform-origin: right; }
+  .journey--full:dir(ltr) .journey__link::after { transform-origin: left; }
+  .journey--full .journey__item[data-state="done"] .journey__link::after { transform: scale(1); }
+}
+
+/* ── النقاط والشريط: صفٌّ واحد يضيق بلا التفاف، عدد المحطات متغيّر ── */
+.journey--dots, .journey--strip { display: flex; align-items: center; }
+.journey--dots .journey__item, .journey--strip .journey__item { display: flex; flex: 1 1 0; align-items: center; min-inline-size: 0; }
+.journey--dots .journey__item:last-child, .journey--strip .journey__item:last-child { flex: none; }
+.journey--dots .journey__link, .journey--strip .journey__link { position: relative; flex: 1 1 0; block-size: 1px; background: var(--c-hair); }
+.journey--dots .journey__node { --journey-node: .75rem; border-width: 2px; border-color: var(--c-hair); }
+.journey--dots .journey__item[data-state="current"] .journey__node { border-color: var(--journey-fill); }
+a:hover .journey--dots .journey__item[data-state="pending"] .journey__node { border-color: var(--journey-fill); }
+.journey--strip .journey__node { --journey-node: 1.5rem; }
+.journey--strip .journey__item[data-state="pending"] .journey__node { border-color: var(--c-hair); color: rgb(var(--c-soft)); }
+.journey--strip .journey__num { font-size: .72rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+/* المحطّة الجارية: حلقةٌ هادئة ثابتة بعد استقرار المقدّمة (لا نبض دائم) */
+.journey--dots .journey__item[data-state="current"] .journey__node,
+.journey--strip .journey__item[data-state="current"] .journey__node {
+  box-shadow: 0 0 0 .25rem color-mix(in srgb, var(--journey-fill) 14%, transparent);
+}
+.journey--dots .journey__item[data-state="current"][data-just] .journey__node,
+.journey--strip .journey__item[data-state="current"][data-just] .journey__node { box-shadow: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .journey__node, .journey__link::after, .journey__title, .journey__note { transition: none; }
+  .journey__item[data-just] .journey__node { animation: none; }
+}
+
 /* ── لحظة الجلاء ──
    في الفيديو لا تظهر الصورة، بل **تُجلى**: من ضبابٍ خفيفٍ وحجمٍ أصغر بقليل
    إلى وضوحها الكامل، واحدةً بعد أخرى. هنا الأمر نفسه على الأغلفة الموجودة:

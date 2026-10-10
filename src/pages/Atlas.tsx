@@ -175,6 +175,8 @@ export default function Atlas() {
   const [showGraphDiscovery, setShowGraphDiscovery] = useState(false)
   const [compareMode, setCompareMode] = useState(false)
   const [compareIndexes, setCompareIndexes] = useState<number[]>([])
+  /* لا نكتب الرابط قبل أن تُقرأ حالته الأولى (المقارنة تحتاج النجوم محمّلة)، وإلا مسحنا ?compare= قبل استعادته. */
+  const [queryHydrated, setQueryHydrated] = useState(false)
   const [activeConstellation, setActiveConstellation] = useState('')
   const [showJourney, setShowJourney] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('journey') === '1')
   const [journey, setJourney] = useState<StoredArticle[]>(() => readJourney())
@@ -258,15 +260,6 @@ export default function Atlas() {
     setView('graph')
     trackUsage('atlas_interaction', { type: 'view_graph' })
   }
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (view === 'graph') params.set('view', 'graph'); else params.delete('view')
-    if (activeCat) params.set('cat', activeCat); else params.delete('cat')
-    if (query.trim()) params.set('q', query.trim()); else params.delete('q')
-    const search = params.toString()
-    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
-  }, [view, activeCat, query])
 
   const deferredAtlasQuery = useDeferredValue(query)
   const articleIndexBySlug = useMemo(() => new Map(articles.map((article, index) => [article.slug, index])), [articles])
@@ -408,7 +401,8 @@ export default function Atlas() {
   const mobileLayout = view === 'graph' ? graphMobileStars : mobileStars
 
   useEffect(() => {
-    const slug = new URLSearchParams(window.location.search).get('star')
+    const params = new URLSearchParams(window.location.search)
+    const slug = params.get('star')
     if (!slug) return
     const target = stars.find((star) => star.slug === slug)
     if (target) setSelected(target.i)
@@ -602,6 +596,47 @@ export default function Atlas() {
     ? 'المسار الزمني صار يقرأ ولادة الفكرة: سنوات خافتة، ونهرٌ يظهر قبل النجمة وبعدها عند الاختيار.'
     : 'شبكة الأفكار تعرض أقوى القرابات فقط: كوكبات ذكية لا شبكة أسلاك مزدحمة.'
   const comparedStars = compareIndexes.map((index) => stars.find((star) => star.i === index)).filter((star): star is (typeof stars)[number] => Boolean(star))
+  /* استعادة المقارنة من الرابط مرةً واحدة حين تتوفّر النجوم: ‎?compare=slugA,slugB */
+  useEffect(() => {
+    if (queryHydrated || !stars.length) return
+    const params = new URLSearchParams(window.location.search)
+    const picked = (params.get('compare') || '').split(',').filter(Boolean)
+      .map((slug) => stars.find((star) => star.slug === slug)?.i)
+      .filter((index): index is number => typeof index === 'number')
+      .slice(0, 2)
+    if (picked.length) {
+      setCompareMode(true)
+      setCompareIndexes(picked)
+      setSelected(picked[picked.length - 1])
+    }
+    setQueryHydrated(true)
+  }, [stars, queryHydrated])
+
+  /* حالة الخريطة تعيش في الرابط: العرض والكوكبة والبحث والمقارنة. */
+  const compareParam = compareMode ? comparedStars.map((star) => star.slug).join(',') : ''
+  useEffect(() => {
+    if (!queryHydrated) return
+    const params = new URLSearchParams(window.location.search)
+    if (view === 'graph') params.set('view', 'graph'); else params.delete('view')
+    if (activeCat) params.set('cat', activeCat); else params.delete('cat')
+    if (query.trim()) params.set('q', query.trim()); else params.delete('q')
+    if (compareParam) params.set('compare', compareParam); else params.delete('compare')
+    const search = params.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
+  }, [view, activeCat, query, compareParam, queryHydrated])
+
+  /* رجوعٌ/تقدّمٌ من خارج الصفحة يعيد قراءة الرابط (replaceState لا يُطلق popstate، فهذا لمن يصل بتنقّلٍ فعلي). */
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      setActiveCat(params.get('cat') || null)
+      setView(params.get('view') === 'graph' ? 'graph' : 'timeline')
+      setQuery(params.get('q') || '')
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
   const journeyTopAxis = useMemo(() => {
     const counts = new Map<string, number>()
     journeyStars.forEach((star) => counts.set(star.cat, (counts.get(star.cat) || 0) + 1))

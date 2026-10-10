@@ -71,9 +71,11 @@ check('بعد القراءة أزيل كواجهة فقط وموقعها في ا
   assert.ok(articleDetail.includes('/atlas?star=${encodeURIComponent(article.slug)}'))
 })
 
-check('سماء المقالات تستقبل deep-link وتحفظ الألوان والمقارنة', () => {
-  assert.ok(atlas.includes("new URLSearchParams(window.location.search).get('colors')"))
-  assert.ok(atlas.includes('ألوان المحاور'))
+check('سماء المقالات تستقبل deep-link وتحفظ المقارنة؛ ومفتاح الألوان دُمج في الفلتر', () => {
+  /* لوحة «ألوان المحاور» و?colors= استُبدلتا عمداً بنقاط اللون داخل فلتر المحاور
+     (scripts/test-site-polish-2026.mjs يحرس غيابها)، فلا نطلب هنا ما يناقضه. */
+  assert.ok(atlas.includes('atlas-axis-filter__dot'))
+  assert.ok(!atlas.includes('ألوان المحاور') && !atlas.includes("get('colors')"))
   assert.ok(atlas.includes('compareMode'))
   assert.ok(atlas.includes('compareIndex'))
   assert.ok(atlas.includes("params.get('star')"))

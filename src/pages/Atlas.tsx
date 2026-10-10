@@ -9,6 +9,7 @@ import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, WORD_PLAIN_FORMS } from '../lib/arabic-count.ts'
 import { readArticleJourney, SPACE_EVENT, type StoredArticle } from '../lib/reading-space'
 import { useAtlasSettings, visibleConstellations } from '../lib/atlas-settings'
+import { compareSlugsFromSearch, resolveCompare } from '../lib/atlas-compare.ts'
 import { currentSeason } from '../lib/seasons'
 import rawArticleCaution from '../data/article-caution.json' with { type: 'json' }
 import { sampleVisualArchive } from '../lib/archive-scale.mjs'
@@ -118,7 +119,7 @@ export default function Atlas() {
     trackUsage('atlas_opened', { entry: document.referrer && new URL(document.referrer).origin === location.origin ? 'internal' : 'direct' }, { onceKey: 'atlas-opened' })
     return () => trackUsage('atlas_interaction', { type: 'session_duration', durationMs: Math.round(performance.now() - openedAt) })
   }, [openedAt])
-  const { articles } = useCmsContent()
+  const { articles, loading: contentLoading } = useCmsContent()
   const atlasSettings = useAtlasSettings()
   /* المحرَّرة بيده ثم المولّدة من الأرشيف — مُنتقٍ يستحقّ أن يُفتح. */
   const constellations = useMemo(() => visibleConstellations(atlasSettings), [atlasSettings])
@@ -175,6 +176,10 @@ export default function Atlas() {
   const [showGraphDiscovery, setShowGraphDiscovery] = useState(false)
   const [compareMode, setCompareMode] = useState(false)
   const [compareIndexes, setCompareIndexes] = useState<number[]>([])
+  /* لا نكتب الرابط قبل أن تُقرأ حالته الأولى (المقارنة تحتاج النجوم محمّلة)، وإلا مسحنا ?compare= قبل استعادته. */
+  const [queryHydrated, setQueryHydrated] = useState(false)
+  /* slugs المقارنة المذكورة في الرابط: تُثبَّت في عيّنة النجوم (ميزانية ١٦٠٠) فلا يُسقطها أخذ العيّنة. */
+  const [urlCompareSlugs, setUrlCompareSlugs] = useState<string[]>(() => typeof window === 'undefined' ? [] : compareSlugsFromSearch(window.location.search))
   const [activeConstellation, setActiveConstellation] = useState('')
   const [showJourney, setShowJourney] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('journey') === '1')
   const [journey, setJourney] = useState<StoredArticle[]>(() => readJourney())
@@ -259,15 +264,6 @@ export default function Atlas() {
     trackUsage('atlas_interaction', { type: 'view_graph' })
   }
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (view === 'graph') params.set('view', 'graph'); else params.delete('view')
-    if (activeCat) params.set('cat', activeCat); else params.delete('cat')
-    if (query.trim()) params.set('q', query.trim()); else params.delete('q')
-    const search = params.toString()
-    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
-  }, [view, activeCat, query])
-
   const deferredAtlasQuery = useDeferredValue(query)
   const articleIndexBySlug = useMemo(() => new Map(articles.map((article, index) => [article.slug, index])), [articles])
   const latestArticleSlug = useMemo(() => {
@@ -278,8 +274,8 @@ export default function Atlas() {
   const atlasBaseArticles = useMemo(() => sampleVisualArchive(articles, ATLAS_STAR_BUDGET, {
     keyOf: (article) => article.slug,
     groupOf: (article) => `${article.cat}|${article.iso.slice(0, 4)}`,
-    pinKeys: [entrySlug, atlasSettings.dailyStarSlug || '', latestArticleSlug, ...journey.slice(-80).map((item) => item.slug)].filter(Boolean),
-  }), [articles, atlasSettings.dailyStarSlug, entrySlug, journey, latestArticleSlug])
+    pinKeys: [entrySlug, ...urlCompareSlugs, atlasSettings.dailyStarSlug || '', latestArticleSlug, ...journey.slice(-80).map((item) => item.slug)].filter(Boolean),
+  }), [articles, atlasSettings.dailyStarSlug, entrySlug, journey, latestArticleSlug, urlCompareSlugs])
   const queryPinnedArticles = useMemo(() => {
     if (articles.length <= ATLAS_STAR_BUDGET) return []
     const needle = foldAtlas(deferredAtlasQuery.trim())
@@ -408,7 +404,8 @@ export default function Atlas() {
   const mobileLayout = view === 'graph' ? graphMobileStars : mobileStars
 
   useEffect(() => {
-    const slug = new URLSearchParams(window.location.search).get('star')
+    const params = new URLSearchParams(window.location.search)
+    const slug = params.get('star')
     if (!slug) return
     const target = stars.find((star) => star.slug === slug)
     if (target) setSelected(target.i)
@@ -602,6 +599,51 @@ export default function Atlas() {
     ? 'المسار الزمني صار يقرأ ولادة الفكرة: سنوات خافتة، ونهرٌ يظهر قبل النجمة وبعدها عند الاختيار.'
     : 'شبكة الأفكار تعرض أقوى القرابات فقط: كوكبات ذكية لا شبكة أسلاك مزدحمة.'
   const comparedStars = compareIndexes.map((index) => stars.find((star) => star.i === index)).filter((star): star is (typeof stars)[number] => Boolean(star))
+  /* استعادة المقارنة من الرابط (عند الفتح وعند الرجوع/التقدّم): ‎?compare=slugA,slugB
+     slugٌ لم يصل بعد (محتوى يُحدَّث لاحقاً) يبقى في الرابط ولا تُكتب الحالة حتى ينتهي تحميل المحتوى؛
+     وبعد انتهائه يُسقَط وحده ما لا وجود له فعلاً. */
+  useEffect(() => {
+    if (queryHydrated || !stars.length) return
+    const { picked, done } = resolveCompare(urlCompareSlugs, (slug) => stars.find((star) => star.slug === slug)?.i, contentLoading)
+    if (picked.length) {
+      setCompareMode(true)
+      setCompareIndexes(picked)
+      setSelected(picked[picked.length - 1])
+    }
+    if (done) setQueryHydrated(true)
+  }, [stars, queryHydrated, urlCompareSlugs, contentLoading])
+
+  /* حالة الخريطة تعيش في الرابط: العرض والكوكبة والبحث والمقارنة. */
+  const compareParam = compareMode ? comparedStars.map((star) => star.slug).join(',') : ''
+  useEffect(() => {
+    if (!queryHydrated) return
+    const params = new URLSearchParams(window.location.search)
+    if (view === 'graph') params.set('view', 'graph'); else params.delete('view')
+    if (activeCat) params.set('cat', activeCat); else params.delete('cat')
+    if (query.trim()) params.set('q', query.trim()); else params.delete('q')
+    if (compareParam) params.set('compare', compareParam); else params.delete('compare')
+    const search = params.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`)
+  }, [view, activeCat, query, compareParam, queryHydrated])
+
+  /* رجوعٌ/تقدّمٌ بين روابط الخريطة يعيد قراءة الرابط كلَّه (العرض والكوكبة والبحث والمقارنة؛
+     replaceState وحده لا يُطلق popstate). المقارنة تُمسح ثم تُستعاد من الرابط الجديد بمنطق الفتح نفسه،
+     وبينهما لا يكتب مزامن الرابط شيئاً (queryHydrated=false) فلا تتسرّب مقارنةٌ قديمة إلى المدخل الجديد. */
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      setActiveCat(params.get('cat') || null)
+      setView(params.get('view') === 'graph' ? 'graph' : 'timeline')
+      setQuery(params.get('q') || '')
+      setCompareMode(false)
+      setCompareIndexes([])
+      setUrlCompareSlugs(compareSlugsFromSearch(window.location.search))
+      setQueryHydrated(false)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
   const journeyTopAxis = useMemo(() => {
     const counts = new Map<string, number>()
     journeyStars.forEach((star) => counts.set(star.cat, (counts.get(star.cat) || 0) + 1))

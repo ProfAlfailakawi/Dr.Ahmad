@@ -71,13 +71,18 @@ check('بعد القراءة أزيل كواجهة فقط وموقعها في ا
   assert.ok(articleDetail.includes('/atlas?star=${encodeURIComponent(article.slug)}'))
 })
 
-check('سماء المقالات تستقبل deep-link وتحفظ الألوان والمقارنة', () => {
-  assert.ok(atlas.includes("new URLSearchParams(window.location.search).get('colors')"))
-  assert.ok(atlas.includes('ألوان المحاور'))
+check('سماء المقالات تستقبل deep-link وتحفظ المقارنة؛ ومفتاح الألوان دُمج في الفلتر', () => {
+  /* لوحة «ألوان المحاور» و?colors= استُبدلتا عمداً بنقاط اللون داخل فلتر المحاور
+     (scripts/test-site-polish-2026.mjs يحرس غيابها)، فلا نطلب هنا ما يناقضه. */
+  assert.ok(atlas.includes('atlas-axis-filter__dot'))
+  assert.ok(!atlas.includes('ألوان المحاور') && !atlas.includes("get('colors')"))
   assert.ok(atlas.includes('compareMode'))
   assert.ok(atlas.includes('compareIndex'))
   assert.ok(atlas.includes("params.get('star')"))
-  assert.ok(atlas.includes("params.get('compare')"))
+  assert.ok(read('src/lib/atlas-compare.ts').includes(".get('compare')") && atlas.includes('compareSlugsFromSearch'))
+  assert.ok(atlas.includes('...urlCompareSlugs'), 'slugs المقارنة تُثبَّت في عيّنة النجوم')
+  assert.ok(atlas.includes('contentLoading') && atlas.includes('resolveCompare('), 'لا يُسقَط slug قبل انتهاء تحميل المحتوى')
+  assert.ok(/onPopState[\s\S]{0,700}setCompareMode\(false\)[\s\S]{0,200}setUrlCompareSlugs\(compareSlugsFromSearch[\s\S]{0,120}setQueryHydrated\(false\)/.test(atlas), 'الرجوع/التقدّم يمسح المقارنة ويعيد استعادتها من الرابط الجديد')
   assert.ok(atlas.includes('queryHydrated'))
   assert.ok(atlas.includes('if (!queryHydrated) return'))
   assert.ok(atlas.includes('setQueryHydrated(true)'))

@@ -170,7 +170,8 @@ test('لا حقول فارغة في أي مخرج', () => {
 /* 14 — RIS وبقية الصيغ باقية دون تغيير */
 test('RIS وAPA وMLA وChicago باقية كما هي', () => {
   const extras = readFileSync(resolve(ROOT, 'src/components/extras.tsx'), 'utf8')
-  assert.match(extras, /TY {2}- JOUR/, 'رأس RIS باقٍ')
+  assert.match(extras, /`TY {2}- \$\{risType\}`/, 'رأس RIS باقٍ (النوع يُشتقّ من نوع المرجع)')
+  assert.match(extras, /: 'JOUR'/, 'نوع RIS الافتراضي لغير مراجع BibTeX هو JOUR')
   assert.match(extras, /application\/x-research-info-systems/, 'نوع ملف RIS باقٍ')
   assert.match(extras, /'ER {2}- '/, 'خاتمة RIS باقية')
   for (const style of ['apa', 'mla', 'chicago', 'bibtex']) assert.ok(extras.includes(`${style}:`), `النمط ${style} مفقود`)

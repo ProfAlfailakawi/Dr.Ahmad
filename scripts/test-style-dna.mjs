@@ -166,9 +166,10 @@ assert.deepEqual(citationsOf('ويؤكد ذلك تحليلٌ حديث (Tang et a
 /* الحارس الحرفي: اسم الباحث وسنته ليسا نقلاً، لكن الرقم المنقول مع جملته نقل. */
 assert.deepEqual(verbatimOverlap('نعود إلى Ryan وDeci (2000) في نظرية الدافعية الذاتية لنفهم الطالب', ['وإذا أضفنا منظور Ryan وDeci (2000) في نظرية الدافعية الذاتية، تتضح الصورة أكثر']), [], 'الاستشهاد بالمرجع نفسه ليس نقلاً')
 assert.ok(verbatimOverlap('وجدت مراجعة شملت 128 دراسة أن المكافآت تضعف الدافعية الداخلية', ['المراجعة التي راجعت 128 دراسة أن المكافآت تضعف الدافعية الداخلية عند الطالب']).length > 0, 'والجملة المنقولة برقمها تُرصد')
-const redosStarted = Date.now()
+const cpuMs = () => { const usage = process.cpuUsage(); return (usage.user + usage.system) / 1000 } // وقت المعالج لا ساعة الجدار: لا يتضخّم بازدحام الجهاز
+const redosStarted = cpuMs()
 citationsOf(`A'&A${"'andA".repeat(5000)}x (2019)`)
-assert.ok(Date.now() - redosStarted < 250, `استخراج المراجع خطّيّ (${Date.now() - redosStarted} ms)`)
+assert.ok(cpuMs() - redosStarted < 250, `استخراج المراجع خطّيّ (${cpuMs() - redosStarted} ms)`)
 /* الزاوية ترجّح ولا تُقصي: فكرةٌ بكلمةٍ واحدة مميّزة تجد متونها مهما كانت الزاوية. */
 const gamified = domainKnowledge('التلعيب', { angle: 'القيادة لا الاستبدال' })
 assert.ok(gamified.من_كتبك.some((item) => item.مصدر.includes('التلعيب')), 'مقاطع كتاب التلعيب تصل رغم زاويةٍ لا تذكره')
@@ -840,10 +841,10 @@ const { isSchoolIdea, schoolParagraphShare } = await import(resolve(root, 'serve
 assert.deepEqual(['التوقّعات التي تصنع طالباً', 'حين يصبح الامتحان هو الهدف', 'العودة التي لا تُصلِح ما قبلها', 'السنة التي لا تبدأ من التقويم'].map(isSchoolIdea), [true, true, false, false], 'الفكرة المدرسية تُعرف بمفرداتها، و«التقويم» تقويم السنة')
 assert.ok(schoolParagraphShare(strongBody) > .5, 'حصة الفقرات المدرسية تُقاس')
 assert.deepEqual(['للمدرسة دورها', 'وبالمعلمين نبدأ', 'مدارسنا', 'الحصة الأولى', 'صفقة العمر', 'الحصار', 'طلبت منه'].map(isSchoolIdea), [true, true, true, true, false, false, false], 'السوابق («للـ»، «وبالـ») والتاء المربوطة تُعرف، ولا تُلتبس «صفقة» و«الحصار»')
-const schoolRedos = Date.now()
+const schoolRedos = cpuMs()
 isSchoolIdea(`${'لل'.repeat(20_000)}x`)
 schoolParagraphShare('وبال'.repeat(5_000))
-assert.ok(Date.now() - schoolRedos < 250, `مصنّف المدرسة خطّيّ (${Date.now() - schoolRedos} ms، CodeQL)`)
+assert.ok(cpuMs() - schoolRedos < 250, `مصنّف المدرسة خطّيّ (${cpuMs() - schoolRedos} ms، CodeQL)`)
 let generalRule = ''
 let driftOrder = ''
 await generatePerfectArticle({ ...input, styleDna: eraDna, idea: 'العودة التي لا تُصلِح ما قبلها', angle: '' }, async (url, init) => {

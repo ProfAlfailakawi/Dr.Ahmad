@@ -14,12 +14,12 @@ const cv = read('src/components/CvDownloadCards.tsx')
 const thought = read('src/pages/ThoughtOverview.tsx')
 const css = read('src/index.css')
 
-assert.match(home, /aria-label="منصات الدكتور"/)
+assert.match(home, /<SocialDock centered \/>/, 'أيقونات المنصات في تذييل الرئيسية')
 assert.match(home, /aria-label="أدوات الموقع"/)
-assert.match(home, /grid justify-items-center gap-3\.5/)
+assert.match(home, /grid justify-items-center gap-4 text-center/)
 
 assert.match(article, />شارك المقال<\/p>/)
-assert.match(article, /flex flex-nowrap items-center gap-2\.5 overflow-x-auto/)
+assert.match(article, /article-share-actions flex flex-wrap items-center justify-center gap-2\.5 sm:justify-start/)
 assert.match(extras, /compact \? 'flex shrink-0 flex-nowrap items-center gap-2\.5'/)
 assert.doesNotMatch(extras, /\{compact && <span[^>]*>شارك المقال/)
 
@@ -39,8 +39,8 @@ assert.doesNotMatch(audio, /player\.cycleSpeed|player\.jump\(-15\)|player\.jump\
 
 assert.match(dock, /canJumpArticleSentence/)
 assert.match(dock, /article-audio-jump-sentence/)
-assert.match(dock, /aria-label="السابق"[^>]*>◀<\/button>/)
-assert.match(dock, /aria-label="التالي"[^>]*>▶<\/button>/)
+assert.match(dock, /jumpArticleSentence\('prev'\)[^>]*aria-label="السابق"/)
+assert.match(dock, /jumpArticleSentence\('next'\)[^>]*aria-label="التالي"/)
 
 assert.match(css, /\.inbox-page \.archive-dialogue-rail[\s\S]*touch-action: pan-x pan-y !important;/)
 assert.match(css, /overscroll-behavior-y: auto !important;/)

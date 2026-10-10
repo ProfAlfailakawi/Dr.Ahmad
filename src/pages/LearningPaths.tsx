@@ -5,6 +5,7 @@ import { useSeo, JsonLd } from '../components/seo'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
 import { useRevealOnView } from '../components/ComposeScene'
+import { JourneyStepper, type JourneyStation } from '../components/JourneyStepper'
 import { versionedAudioUrl } from '../components/extras'
 import { SITE_URL } from '../data'
 import { useCmsContent } from '../lib/content'
@@ -48,21 +49,30 @@ function useLivePaths() {
   }, [articles, books])
 }
 
-function ProgressLine({ done, total, label }: { done: number; total: number; label: string }) {
-  const percent = total ? Math.round((done / total) * 100) : 0
+/** حالات المحطات من التقدّم الحقيقي: المنجز، ثم «التالية» إن بدأ القارئ ولم يُتمّ. */
+function pathStations(path: LearningPath, done: Set<string>, next: number | null): JourneyStation[] {
+  const started = done.size > 0
+  return path.steps.map((step, index) => ({
+    key: stepKey(step),
+    label: step.title,
+    state: done.has(stepKey(step)) ? 'done' : started && index === next ? 'current' : 'pending',
+  }))
+}
+
+/* شريط المحطات: يحلّ محلّ الخطّ الرفيع القديم ويحمل معناه نفسه (أكملتَ كذا من كذا).
+   الحركة معاينةٌ تستقرّ عند تقدّمك الفعليّ — لا تملأ ما لم تُنجزه. */
+function ProgressLine({ path, done, next, label }: { path: LearningPath; done: Set<string>; next: number | null; label: string }) {
+  const total = path.steps.length
   return (
-    <div>
-      <div
-        role="progressbar"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={done}
-        aria-valuetext={`أكملت ${done} من ${total}`}
-        className="h-[3px] w-full overflow-hidden rounded-full bg-wash"
-      >
-        <span className="block h-full rounded-full bg-accent transition-[width] duration-700 ease-out motion-reduce:transition-none" style={{ width: `${percent}%` }} />
-      </div>
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={done.size}
+      aria-valuetext={`أكملت ${done.size} من ${total}`}
+    >
+      <JourneyStepper steps={pathStations(path, done, next)} variant="strip" decorative playKey={`path-strip:${path.id}`} />
     </div>
   )
 }
@@ -117,14 +127,14 @@ function PathsIndex() {
                       <h2 className="mt-4 font-display text-[clamp(1.45rem,2.6vw,1.8rem)] font-semibold leading-[1.45] text-ink transition-colors group-hover:text-accent">{path.title}</h2>
                       <p className="mt-3 text-[.92rem] font-light leading-[1.9] text-soft">{path.intro}</p>
 
-                      <span aria-hidden className="mt-6 flex items-center">
-                        {path.steps.map((step, stepIndex) => (
-                          <span key={stepKey(step)} className="flex flex-1 items-center last:flex-none">
-                            <span className={`h-3 w-3 shrink-0 rounded-full border-2 transition-colors duration-500 ${done.has(stepKey(step)) ? 'border-accent bg-accent' : 'border-hair bg-canvas group-hover:border-accent'}`} />
-                            {stepIndex < path.steps.length - 1 && <span className={`h-px flex-1 transition-colors duration-500 ${done.has(stepKey(step)) ? 'bg-accent' : 'bg-hair'}`} />}
-                          </span>
-                        ))}
-                      </span>
+                      <JourneyStepper
+                        steps={pathStations(path, done, next)}
+                        variant="dots"
+                        decorative
+                        playKey={`paths-card:${path.id}`}
+                        delayMs={Math.min(index, 3) * 350}
+                        className="mt-6"
+                      />
 
                       <span className="mt-auto flex items-center justify-between gap-4 pt-5 text-[.8rem]">
                         <span className="text-soft">
@@ -232,7 +242,7 @@ function PathDetail({ path }: { path: LearningPath }) {
                 <span className="font-semibold text-ink">{finished ? 'أتممت هذا المسار' : nextStep ? 'الخطوة التالية' : ''}</span>
                 <span className="tabular-nums text-soft">أكملت {done.size} من {live.steps.length}</span>
               </div>
-              <div className="mt-3"><ProgressLine done={done.size} total={live.steps.length} label={`تقدّمك في مسار ${live.title}`} /></div>
+              <div className="mt-3"><ProgressLine path={live} done={done} next={next} label={`تقدّمك في مسار ${live.title}`} /></div>
               {nextStep && next !== null ? (
                 <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">

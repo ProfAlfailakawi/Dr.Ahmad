@@ -65,6 +65,8 @@ export function useJourneyReveal({ target, stepMs, delayMs = 0, threshold = 0.5,
   const [node, setNode] = useState<HTMLElement | null>(null)
   const targetRef = useRef(target)
   targetRef.current = target
+  const stepMsRef = useRef(stepMs)
+  stepMsRef.current = stepMs
   const ref = useCallback((el: HTMLElement | null) => setNode(el), [])
 
   useIsoLayoutEffect(() => {
@@ -72,6 +74,13 @@ export function useJourneyReveal({ target, stepMs, delayMs = 0, threshold = 0.5,
     if (typeof IntersectionObserver === 'undefined'
       || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       || alreadyPlayed(playKey)) return
+
+    /* العتبة قد لا تُبلغ أبداً (عنصرٌ أطول من الشاشة، أو نافذةٌ قصيرة): فنُنزلها إلى
+       ما يمكن بلوغه، وإن لم يكن للعنصر قياسٌ الآن فلا نُخفي حالته الحقيقية أصلاً. */
+    const rect = node.getBoundingClientRect()
+    if (!rect.height || !rect.width) return
+    const reachable = (0.85 * window.innerHeight) / rect.height
+    const effective = Math.max(0.05, Math.min(threshold, reachable))
 
     setLit(0) // قبل الرسم: لا وميض للحالة النهائية
     let count = 0
@@ -85,23 +94,25 @@ export function useJourneyReveal({ target, stepMs, delayMs = 0, threshold = 0.5,
       if (count < goal) {
         count += 1
         setLit(count)
-        timer = window.setTimeout(tick, stepMs)
+        timer = window.setTimeout(tick, stepMsRef.current)
       } else if (goal > 0) {
         // الهالة تُكمل دورتها الوحيدة ثم تستقرّ
         if (!settling) { settling = true; timer = window.setTimeout(settle, SETTLE_MS) }
       } else {
-        // التقدّم يُقرأ بعد التركيب: إن لم يظهر شيء خلال لحظات فلا حركة
+        // التقدّم قد يصل بعد التركيب (localStorage أو محتوى متأخر): ننتظره بصبر، فإن بدأ
+        // (target من 0 إلى أكثر) تبدأ المقدّمة حينها. وكل المحطات «لم تُنجز» حالتها الحقيقية أصلاً.
         waited += 120
-        if (waited > 600) settle()
+        if (waited > 4000) setLit(null) // لا تقدّم يأتي: استقرّ دون أن نعدّها عُرضت
         else timer = window.setTimeout(tick, 120)
       }
     }
 
     const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return
+      // isIntersecting يصدق بمقدار بكسلٍ واحد؛ نشترط بلوغ العتبة الفعلية قبل البدء
+      if (!entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= effective - 0.01)) return
       observer.disconnect()
       timer = window.setTimeout(tick, delayMs + 120)
-    }, { threshold, rootMargin: '0px 0px -8% 0px' })
+    }, { threshold: effective, rootMargin: '0px 0px -8% 0px' })
     observer.observe(node)
 
     return () => {
@@ -109,8 +120,8 @@ export function useJourneyReveal({ target, stepMs, delayMs = 0, threshold = 0.5,
       window.clearTimeout(timer)
       setLit(null)
     }
-    // التشغيل مرةً لكل عنصر؛ target يُقرأ عبر مرجع كي لا تُعاد الحركة عند تغيّر البيانات.
-  }, [node, enabled, playKey, stepMs, delayMs, threshold])
+    // التشغيل مرةً لكل عنصر؛ target وstepMs يُقرآن عبر مرجع كي لا تُعاد الحركة عند تغيّر البيانات.
+  }, [node, enabled, playKey, delayMs, threshold])
 
   return { ref, lit }
 }

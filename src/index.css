@@ -3901,6 +3901,26 @@ body.selection-active .floating-actions {
   letter-spacing: .08em; /* latin — أرقام السنوات · ARCHIVE */
   color: rgb(var(--c-soft) / .75);
 }
+/* عمق الغلاف التحريري: سطور ورقٍ خافتة تتلاشى نحو الأعلى، وحرفٌ أوضح قليلاً، ودخولٌ قصير. */
+.archive-editorial-cover::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  height: 62%;
+  background: repeating-linear-gradient(0deg, rgb(var(--c-accent) / .09) 0 1px, transparent 1px 12px);
+  -webkit-mask-image: linear-gradient(to top, #000, transparent);
+  mask-image: linear-gradient(to top, #000, transparent);
+  pointer-events: none;
+}
+.archive-editorial-mark { font-size: 3.75rem; color: rgb(var(--c-accent) / .2); }
+/* تباين النصوص الصغيرة على الغلاف (كانت 3.4 و3.0 في النهار). */
+.archive-editorial-kicker { color: rgb(var(--c-accent)); }
+.archive-editorial-year { color: rgb(var(--c-soft)); }
+@keyframes archive-mark-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .archive-editorial-mark { animation: archive-mark-in .6s cubic-bezier(.22, 1, .36, 1) .1s backwards; }
+}
 
 
 /* ═══ لحظة الانعطاف ═══

@@ -124,11 +124,11 @@ html.dark [data-dna-tone] {
 
 /* لمسة عمق: عدّاد بخط عرض، وتدرّج خافت على البلاطة، وظهور قصير لمرة واحدة. */
 .admin-decision-text strong { font-size: 1.75rem; letter-spacing: -.01em; }
-.admin-decision-tile {
+.dna .admin-decision-tile {
   background-image: linear-gradient(160deg, color-mix(in srgb, var(--dna-accent) 8%, transparent), transparent 72%);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--dna-ink) 6%, transparent);
 }
-.admin-decision-tile[data-empty='true'] { background-image: none; box-shadow: none; }
+.dna .admin-decision-tile[data-empty='true'] { background-image: none; box-shadow: none; }
 @keyframes admin-tile-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: no-preference) {
   .admin-decision-grid > li { animation: admin-tile-rise .45s cubic-bezier(.22, 1, .36, 1) backwards; }

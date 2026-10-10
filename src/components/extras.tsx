@@ -539,9 +539,10 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
   const [dark, setDark] = useState(false)
 
   useEffect(() => {
-    // الوضع النهاري هو الأصل دائماً — لا يتحوّل للّيلي إلا إذا اختاره الزائر بنفسه (يُحفظ اختياره)
-    const saved = (() => { try { return localStorage.getItem('theme') } catch { return null } })()
-    const on = saved === 'dark'
+    /* النهار هو الأصل دائماً — الليل فقط باختيارٍ صريح من الزائر بنفسه (`theme-choice`).
+       السمة المحسومة وُضعت على <html> قبل أوّل رسم (public/boot.js)؛ وتفضيل الجهاز لا يُقرأ. */
+    const choice = (() => { try { return localStorage.getItem('theme-choice') } catch { return null } })()
+    const on = choice === 'dark'
     setDark(on)
     document.documentElement.classList.toggle('dark', on)
     const syncFromReader = (event: Event) => setDark(Boolean((event as CustomEvent<{ dark?: boolean }>).detail?.dark))
@@ -564,7 +565,10 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       setDark(on)
       root.classList.toggle('dark', on)
       root.classList.remove('reader-paper')
+      /* اختيارٌ صريح: يُحفظ ويبقى عبر الزيارات (والمفتاح القديم `theme` مرآته للنسخ القديمة المخزّنة). */
+      try { localStorage.setItem('theme-choice', on ? 'dark' : 'light') } catch { /* noop */ }
       try { localStorage.setItem('theme', on ? 'dark' : 'light') } catch { /* noop */ }
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', on ? '#111215' : '#FCFCFA')
       try {
         const raw = localStorage.getItem('reader:preferences:v2')
         if (raw) localStorage.setItem('reader:preferences:v2', JSON.stringify({ ...JSON.parse(raw), theme: on ? 'dark' : 'light' }))

@@ -219,12 +219,13 @@ function writeJson(key: string, value: unknown) {
 function getPreferences(): ReaderPreferences {
   if (typeof window === 'undefined') return DEFAULT_PREFS
   const stored = readJson<Partial<ReaderPreferences>>(PREFS_KEY, {})
-  const siteTheme: ReaderTheme = window.localStorage.getItem('theme') === 'dark' || document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  /* الليل/النهار يُحسم في الموقع (اختيار الزائر الصريح فقط) ويُقرأ من <html>؛ لا يُشتقّ هنا من مفتاحٍ قديم. */
+  const siteTheme: ReaderTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
   return {
     scale: Number.isFinite(stored.scale) ? Math.min(1.2, Math.max(.88, Number(stored.scale))) : DEFAULT_PREFS.scale,
     lineHeight: Number.isFinite(stored.lineHeight) ? Math.min(2.42, Math.max(1.85, Number(stored.lineHeight))) : DEFAULT_PREFS.lineHeight,
     width: Number.isFinite(stored.width) ? Math.min(80, Math.max(56, Number(stored.width))) : DEFAULT_PREFS.width,
-    theme: stored.theme === 'dark' || stored.theme === 'paper' || stored.theme === 'light' ? stored.theme : siteTheme,
+    theme: stored.theme === 'paper' ? 'paper' : siteTheme,
     showPopular: stored.showPopular !== false,
     focus: Boolean(stored.focus),
     vocalized: Boolean(stored.vocalized),
@@ -242,10 +243,9 @@ function applyPreferences(preferences: ReaderPreferences) {
   root.classList.remove('reader-focus')
   root.dataset.readerPopular = 'on'
 
-  const dark = preferences.theme === 'dark'
-  root.classList.toggle('dark', dark)
-  try { window.localStorage.setItem('theme', dark ? 'dark' : 'light') } catch { /* noop */ }
-  window.dispatchEvent(new CustomEvent('reader:theme-changed', { detail: { dark } }))
+  /* القارئ لا يفرض الليل ولا النهار (ذلك للموقع وحده)؛ «الورقي» وحده نهاريّ بطبعه. */
+  if (preferences.theme === 'paper') root.classList.remove('dark')
+  window.dispatchEvent(new CustomEvent('reader:theme-changed', { detail: { dark: root.classList.contains('dark') } }))
 }
 
 export function useReaderPreferences() {

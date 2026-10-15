@@ -1213,7 +1213,7 @@ export function Page({ children, className = '' }: { children: React.ReactNode; 
       if (bound) return true
       const heading = root.querySelector('h1') as HTMLElement | null
       if (!heading) return false
-      const title = heading.textContent?.replace(/\s+/g, ' ').trim() || ''
+      const title = (heading.innerText || heading.textContent || '').replace(/\s+/g, ' ').trim()
       if (!title) return false
       bound = true
       const emit = (compact: boolean) => window.dispatchEvent(new CustomEvent('site:page-title', { detail: { title, label: '', compact } }))

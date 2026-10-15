@@ -951,8 +951,9 @@ iframe { color-scheme: light; }
   opacity: 1;
 }
 @keyframes sig-twinkle {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: .7; } /* = الراحة (opacity أعلاه): لا قفزة عند بدء التلألؤ المتأخر ولا عند انتهائه */
+  30% { opacity: 0.45; }
+  62% { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sig-star { animation: none; }
@@ -1028,7 +1029,7 @@ html.reader-paper .sentence-item.is-sentence-active {
   background-color: currentColor;
   border-radius: 1px;
   /* تهتزّ مرةً واحدة عند بدء الجملة ثم تستقرّ على ارتفاعاتها (eq-bounce محفوظة كما هي) */
-  animation: eq-settle 2.2s var(--E) 1;
+  animation: eq-settle 2.2s var(--E) 1 backwards; /* backwards: الأعمدة المتأخرة تنتظر عند 20٪ لا عند ارتفاعها النهائي، فلا قفزة عند بدء تأخيرها */
 }
 
 .sentence-equalizer span:nth-child(1) { --eq-h: 35%; height: 35%; animation-delay: 0s; }
@@ -7067,13 +7068,13 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
 /* 6) «الموقع الذي يتنفس» — حركة صغيرة بطيئة، وتُطفأ عند القراءة العميقة. */
 @media (prefers-reduced-motion: no-preference) {
   html:not(.site-silent) .idea-signature-trace__dot {
-    animation: signature-dot-breathe 4.8s var(--E) 3;
+    animation: signature-dot-settle 4.8s var(--E) 3;
   }
   html:not(.site-silent) .scene-heading__rule > i {
     animation: scene-rule-arrive .78s var(--motion-curve) both, scene-rule-breathe 7.5s var(--E) 1s 2 alternate;
   }
   html:not(.site-silent) .signature-label > span:first-child {
-    animation: signature-label-breathe 6.5s var(--E) 3 alternate;
+    animation: signature-label-settle 6.5s var(--E) 3;
     transform-origin: right center;
   }
   @media (hover: hover) and (pointer: fine) {
@@ -7090,6 +7091,17 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
 @keyframes signature-dot-breathe {
   0%, 100% { opacity: .58; transform: scale(.92); }
   50% { opacity: 1; transform: scale(1.08); }
+}
+/* نسختان تبدآن وتنتهيان عند الراحة نفسها (opacity 1 / scale 1): لا قفزة عند انتهاء الدورات المحدودة.
+   (signature-dot-breathe / signature-label-breathe محفوظتان كما هما.) */
+@keyframes signature-dot-settle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .58; transform: scale(.92); }
+}
+@keyframes signature-label-settle {
+  0%, 100% { opacity: 1; transform: scaleX(1); }
+  30% { opacity: .72; transform: scaleX(.9); }
+  70% { opacity: 1; transform: scaleX(1.08); }
 }
 @keyframes scene-rule-breathe {
   from { transform: translateX(0); }

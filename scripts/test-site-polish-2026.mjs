@@ -72,7 +72,7 @@ ok((generatedAtlas.constellations || []).every((item) => glossaryCanon.has(item.
 
 console.log('\nHomepage polish')
 ok(home.includes('من الأرشيف اليوم') && home.includes('أربع زوايا، ورؤية تتجدّد.'), 'قسم الأعمال أصبح «من الأرشيف اليوم» مع بقاء الاكتشاف المتجدد')
-ok(home.includes('archive-editorial-cover') && home.includes("item.kind === 'paper' ? 'RESEARCH'") && home.includes("item.kind === 'media' ? 'MEDIA' : 'ESSAY'"), 'المقال والبحث يحصلان على أغلفة تحريرية أصلية، مع هوية احتياطية صحيحة لكل نوع بلا صور stock')
+ok(home.includes('archive-editorial-cover') && home.includes("item.kind === 'paper' ? 'بحث'") && home.includes("item.kind === 'media' ? 'إعلام' : 'مقال'") && home.includes("'كتاب'") && home.includes("'أرشيف'"), 'المقال والبحث يحصلان على أغلفة تحريرية أصلية، مع هوية احتياطية صحيحة لكل نوع بلا صور stock')
 ok(home.includes('home-idea-thread-line') && home.includes('<i /><i /><i /><i />'), 'خيط الفكرة موجود كصلة بصرية هادئة بين المحطات')
 ok(!home.includes('function QuietEnding()') && !home.includes('الخاتمة الهادئة') && !home.includes('يفتح طريقاً إلى الفكرة'), 'الخاتمة الهادئة محذوفة بالكامل من الرئيسية')
 ok(!homeExperience.includes('الخاتمة الهادئة') && !homeExperience.includes('يفتح طريقاً إلى الفكرة'), 'لا توجد نسخة قديمة مخفية من الخاتمة الهادئة')

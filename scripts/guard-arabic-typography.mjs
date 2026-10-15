@@ -9,9 +9,9 @@
  *
  * ثلاثة فحوص، كلها طباعية بحتة ولا تمسّ ميزة:
  *
- *  ١) الرصف: عقد العرض الحالي للمقالات هو justify مع inter-word، لكن آخر
- *     السطر يبقى من جهة البدء. الحارس يتأكد أن القواعد التي ترصف متن المقال
- *     تصرّح بالثلاثة معاً، في الشاشة والطباعة، حتى لا ينزلق عقد إلى آخر.
+ *  ١) الرصف: عقد العرض هو justify مع inter-word وآخر السطر start فوق 640px،
+ *     و text-align: start على الهاتف (≤640px)؛ والطباعة justify. الحارس يتأكد
+ *     أن كل قاعدة تلتزم بنصيبها، حتى لا ينزلق عقد إلى آخر.
  *
  *  ٢) تباعد الحروف: العربية متّصلة الحروف، والتباعد يفكّ وصلاتها. فكل
  *     `letter-spacing` موجب يجب أن يحمل في سطره الوسم `latin` ليعلن أن نصّه
@@ -44,7 +44,7 @@ function eachRule(css, visit) {
     if (ch === '{') { stack.push({ prelude: buf.trim(), line }); buf = '' }
     else if (ch === '}') {
       const top = stack.pop()
-      if (top && !top.prelude.startsWith('@')) visit(top.prelude.replace(/\s+/g, ' '), buf, top.line)
+      if (top && !top.prelude.startsWith('@')) visit(top.prelude.replace(/\s+/g, ' '), buf, top.line, stack.map((frame) => frame.prelude).filter((p) => p.startsWith('@')).join(' ').replace(/\s+/g, ' '))
       buf = ''
     } else buf += ch
   }
@@ -52,10 +52,22 @@ function eachRule(css, visit) {
 
 const PROSE = /article-body|synced-paragraph/
 function checkJustify(css) {
-  let proseJustifyRules = 0
-  eachRule(css, (prelude, body, line) => {
-    if (!PROSE.test(prelude) || !/text-align\s*:\s*justify/.test(body)) return
-    proseJustifyRules += 1
+  // العقد: justify + inter-word + آخر السطر start على الشاشات الأوسع من 640px،
+  // و text-align: start على الهاتف (≤640px). الطباعة تبقى justify.
+  let desktopJustify = 0
+  let mobileStart = 0
+  const MOBILE = /max-width\s*:\s*640px/
+  eachRule(css, (prelude, body, line, atRules) => {
+    if (!PROSE.test(prelude) || !/text-align\s*:/.test(body)) return
+    const mobile = MOBILE.test(atRules)
+    const justify = /text-align\s*:\s*justify/.test(body)
+    if (mobile) {
+      if (justify) problems.push(`src/index.css:${line}  «${prelude}» يرصف متن المقال justify على الهاتف (≤640px)؛ العقد: start.`)
+      else if (/text-align\s*:\s*start/.test(body)) mobileStart += 1
+      return
+    }
+    if (!justify) return
+    if (!/print/.test(atRules)) desktopJustify += 1
     if (!/text-justify\s*:\s*inter-word/.test(body)) {
       problems.push(`src/index.css:${line}  «${prelude}» يرصف متن المقال بلا text-justify: inter-word.`)
     }
@@ -63,7 +75,8 @@ function checkJustify(css) {
       problems.push(`src/index.css:${line}  «${prelude}» يرصف متن المقال بلا text-align-last: start.`)
     }
   })
-  if (!proseJustifyRules) problems.push('src/index.css: لا توجد قاعدة justify صريحة لمتن المقال وفق عقد العرض الحالي.')
+  if (!desktopJustify) problems.push('src/index.css: لا توجد قاعدة justify صريحة لمتن المقال على الشاشات الأوسع من 640px.')
+  if (!mobileStart) problems.push('src/index.css: لا توجد قاعدة text-align: start لمتن المقال على الهاتف (≤640px).')
   const screenContract = /\.content-articles[\s\S]{0,900}text-align\s*:\s*justify[^}]*text-justify\s*:\s*inter-word[^}]*text-align-last\s*:\s*start/.test(css)
   if (!screenContract) problems.push('src/index.css: عقد شاشة المقال لا يجمع justify + inter-word + text-align-last:start في قاعدة واحدة.')
 }

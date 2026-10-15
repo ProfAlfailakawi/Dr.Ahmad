@@ -551,7 +551,7 @@ function MobileCardRailGuard() {
       overlay.dataset.direction = direction
       overlay.setAttribute('role', 'status')
       overlay.setAttribute('aria-live', 'polite')
-      overlay.innerHTML = '<span class="rail-swipe-discovery__dot" aria-hidden="true"></span><span class="rail-swipe-discovery__label">اسحب للتنقّل</span>'
+      overlay.innerHTML = '<span class="rail-swipe-discovery__dot" aria-hidden="true"></span><span class="rail-swipe-discovery__label">' + (/^\/en(\/|$)/.test(window.location.pathname) ? 'Swipe to browse' : 'اسحب للتنقّل') + '</span>'
       document.body.appendChild(overlay)
       discoveryOverlay = overlay
       discoveryRail = rail

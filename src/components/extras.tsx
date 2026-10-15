@@ -161,7 +161,7 @@ export function FloatingActions() {
                 exit={{ opacity: 0, scale: 0.8, y: 10 }}
                 transition={{ duration: 0.3, ease: EASE }}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                aria-label="العودة للأعلى"
+                aria-label={location.pathname === '/en' || location.pathname.startsWith('/en/') ? 'Back to top' : 'العودة للأعلى'}
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-hair bg-canvas/90 text-ink shadow-[0_10px_28px_-14px_rgba(21,22,26,.5)] backdrop-blur transition-colors hover:border-accent hover:text-accent"
               >
                 <SocialIcon name="ArrowUp" size={17} />

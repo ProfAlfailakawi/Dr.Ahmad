@@ -386,7 +386,7 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
         <div className="flex min-w-0 flex-col items-start gap-3 text-accent">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
-            <p className="min-w-0 whitespace-nowrap text-[clamp(.7rem,2.25vw,.74rem)] font-semibold leading-none">
+            <p className="min-w-0 whitespace-nowrap text-[clamp(.75rem,2.25vw,.78rem)] font-semibold leading-none">
               في مثل هذا الأسبوع {yearsAgo(n)}
             </p>
           </div>
@@ -1072,7 +1072,7 @@ function HomeSocialFooter() {
           <KuficMark framed className="h-9 w-[52px] text-ink opacity-90" />
           <SocialDock centered />
           <div className="home-footer-tools" aria-label="أدوات الموقع">
-            <button
+            <span className="site-footer__item"><button
               type="button"
               onClick={() => {
                 const willOpen = !newsletterOpen
@@ -1085,9 +1085,9 @@ function HomeSocialFooter() {
               className={`home-footer-tools__item is-icon-only ${newsletterOpen ? 'is-active' : ''}`}
             >
               <SocialIcon name="Mail" size={16} />
-            </button>
-            <TebyanProjectLink label="تبيان" iconOnly className="home-footer-tools__item is-icon-only" />
-            <ScheduleProjectLink label="الجدول" iconOnly className="home-footer-tools__item is-icon-only" />
+            </button><span className="site-footer__caption">النشرة</span></span>
+            <span className="site-footer__item"><TebyanProjectLink label="تبيان" iconOnly className="home-footer-tools__item is-icon-only" /><span className="site-footer__caption">تبيان</span></span>
+            <span className="site-footer__item"><ScheduleProjectLink label="الجدول" iconOnly className="home-footer-tools__item is-icon-only" /><span className="site-footer__caption">الجدول</span></span>
           </div>
         </div>
         <AnimatePresence initial={false}>

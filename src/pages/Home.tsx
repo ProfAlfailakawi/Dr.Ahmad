@@ -1048,6 +1048,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
                 <span className="min-w-0">
                   <span className="block text-[.72rem] font-semibold text-accent">خرائط الفكر والأثر</span>
                   <span className="mt-1 block font-display text-[1.03rem] font-semibold leading-[1.55] text-ink md:text-[1.2rem]">مدخل واحد إلى سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
+                  <span className="mt-1 block text-[.8rem] leading-[1.7] text-soft">أي: خريطة تُريك كيف تتصل مقالاتي بعضها ببعض، وأين وصل أثرها.</span>
                 </span>
               </span>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-all group-hover:border-accent group-hover:-translate-x-0.5"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>

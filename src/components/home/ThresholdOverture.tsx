@@ -602,7 +602,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
 
           {/* شريط البكرة + التخطّي */}
           <header className="tho-top">
-            <button ref={skipRef} type="button" className="tho-skip" onClick={() => close()}>
+            <button ref={skipRef} type="button" className="tho-skip" title={atThreshold ? undefined : 'تجاوز المشهد التمهيدي والدخول إلى الموقع مباشرة'} onClick={() => close()}>
               {atThreshold ? 'إغلاق' : 'تخطَّ التقديم'}
             </button>
             {!reduced && !prologueOn && (

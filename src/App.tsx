@@ -892,7 +892,7 @@ function RoutedApplication() {
         <RouteViewTracker />
         <RouteScrollManager />
         <RoutePrefetcher />
-        <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
+        <a href="#main" className="skip-link" title="الانتقال مباشرة إلى المحتوى الرئيسي وتجاوز القائمة">تخطَّ إلى المحتوى الرئيسي</a>
         <ConditionalNav />
         <ThoughtTrace />
         <main id="main">

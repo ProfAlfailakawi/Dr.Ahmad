@@ -3879,9 +3879,9 @@ body.selection-active .floating-actions {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  font-size: .7rem;
+  font-size: .8rem;
   font-weight: 700;
-  letter-spacing: .16em; /* latin — ESSAY · RESEARCH */
+  letter-spacing: 0; /* عربي: التباعد يفكّ اتصال الحروف */
   color: rgb(var(--c-accent) / .72);
 }
 .archive-editorial-mark {
@@ -3898,7 +3898,7 @@ body.selection-active .floating-actions {
   right: 1rem;
   bottom: .9rem;
   font-size: .7rem;
-  letter-spacing: .08em; /* latin — أرقام السنوات · ARCHIVE */
+  letter-spacing: 0;
   color: rgb(var(--c-soft) / .75);
 }
 /* عمق الغلاف التحريري: سطور ورقٍ خافتة تتلاشى نحو الأعلى، وحرفٌ أوضح قليلاً، ودخولٌ قصير. */

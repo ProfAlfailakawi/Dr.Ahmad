@@ -29,7 +29,7 @@ const timeAgo = (at: number) => {
   if (days <= 0) return "اليوم";
   if (days === 1) return "أمس";
   if (days < 7) return `قبل ${arabicCountPhrase(days, DAY_AFTER_PREPOSITION_FORMS, (value) => arNumber(value))}`;
-  return new Date(at).toLocaleDateString("ar-KW-u-nu-arab", {
+  return new Date(at).toLocaleDateString("ar-KW-u-nu-latn", {
     day: "numeric",
     month: "short",
   });

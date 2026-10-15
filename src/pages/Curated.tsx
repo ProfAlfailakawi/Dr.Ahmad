@@ -79,7 +79,7 @@ function CurioBody({ c }: { c: Curio }) {
 
 const fmtAdded = (iso: string) => {
   try {
-    return new Date(`${iso}T12:00:00`).toLocaleDateString("ar-KW-u-nu-arab", {
+    return new Date(`${iso}T12:00:00`).toLocaleDateString("ar-KW-u-nu-latn", {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -244,7 +244,7 @@ export default function Curated() {
   useEffect(() => {
     try {
       setToday(
-        new Date().toLocaleDateString("ar-KW-u-nu-arab", {
+        new Date().toLocaleDateString("ar-KW-u-nu-latn", {
           weekday: "long",
           day: "numeric",
           month: "long",

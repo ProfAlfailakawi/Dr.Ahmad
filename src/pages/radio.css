@@ -376,3 +376,8 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
   .radio-nx time { white-space: nowrap; }
   .radio-nx p { white-space: normal; overflow: visible; }
 }
+
+/* زرّ الاستماع ثابتٌ في الركن؛ يُترك للتذييل متّسعٌ تحته كي لا يغطّي سطرَ الحقوق عند آخر الصفحة */
+body:has(.radio-root) .site-footer {
+  padding-block-end: calc(5.25rem + env(safe-area-inset-bottom, 0px)) !important;
+}

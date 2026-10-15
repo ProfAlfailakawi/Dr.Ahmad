@@ -57,7 +57,7 @@ export function encyclopediaSlideCount(ranges: readonly EncyclopediaSlideRange[]
   return ranges.reduce((total, range) => total + Math.max(0, range.to - range.from + 1), 0)
 }
 
-const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
+const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-latn').format(value)
 
 export function encyclopediaSlideRangeLabel(ranges: readonly EncyclopediaSlideRange[]) {
   if (!ranges.length) return ''

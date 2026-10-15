@@ -133,7 +133,7 @@ export function radarDateArabic(iso = "") {
   try {
     const date = new Date(`${iso.slice(0, 10)}T12:00:00`);
     if (Number.isNaN(date.getTime())) return "حديث";
-    return date.toLocaleDateString("ar-KW-u-nu-arab", {
+    return date.toLocaleDateString("ar-KW-u-nu-latn", {
       day: "numeric",
       month: "long",
       year: "numeric",

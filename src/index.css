@@ -5198,10 +5198,14 @@ img[loading="lazy"],
 
 /* العنوان الكبير يترك أثراً صغيراً في الشريط بعد أن يغادر مجال النظر. */
 .nav-page-echo {
+  /* motion يكتب transform مضمَّناً فيمحو -translate-x-1/2؛ خاصية translate المستقلة تُبقي العنوان في منتصف الشريط
+     فلا يزحف إلى الشعار حين يطول */
+  translate: -50% 0;
   letter-spacing: -.012em;
   text-shadow: 0 1px 18px rgb(var(--c-canvas) / .9);
 }
-html.dark .nav-page-echo { text-shadow: 0 1px 20px rgb(0 0 0 / .55); }
+/* الظلّ الأسود يرسم في الليل مستطيلاً أغمق خلف العنوان على الشريط الصلب؛ الشريط لا يحتاج حاجزاً خلفه */
+html.dark .nav-page-echo { text-shadow: none; }
 
 /* انتقال الصفحة القصير، بينما العناصر المشتركة تأخذ زمناً أطول قليلاً لتبدو
    وكأن البطاقة نفسها أصبحت الصفحة. لا طبقة انتظار ولا spinner إضافي. */
@@ -7967,6 +7971,11 @@ html.dark {
   .site-footer__utility { justify-self: center; justify-content: center; }
   .site-footer__rights { text-align: center; margin-top: .95rem; padding-top: .75rem; }
   .site-footer--calm { padding-block: 1.65rem !important; }
+}
+/* السطر الضيّق: الرابط يُفرد سطراً لنفسه، فلا تبقى نقطةُ الفصل معلّقةً في آخر السطر الأول */
+@media (max-width: 520px) {
+  .site-footer__rights > span[aria-hidden="true"] { display: none; }
+  .site-footer__rights > .site-footer__text-link { display: block; margin-top: .15rem; }
 }
 
 /* iOS/PWA — التحديد يظل أصلياً، لكن قائمة النظام لا تصبح طبقة منافسة لأداة المقال. */

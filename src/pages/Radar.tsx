@@ -47,7 +47,7 @@ function weekOf(dayIso: string) {
   const sunday = new Date(monday);
   sunday.setUTCDate(monday.getUTCDate() + 6);
   const fmt = (x: Date) =>
-    x.toLocaleDateString("ar-KW-u-nu-arab", {
+    x.toLocaleDateString("ar-KW-u-nu-latn", {
       day: "numeric",
       month: "long",
     });

@@ -351,7 +351,7 @@ function printPersonalBook(
   } catch {
     /* حماية إضافية من وصول النافذة إلى الأصل */
   }
-  const date = new Date().toLocaleDateString("ar-KW-u-nu-arab", {
+  const date = new Date().toLocaleDateString("ar-KW-u-nu-latn", {
     day: "numeric",
     month: "long",
     year: "numeric",

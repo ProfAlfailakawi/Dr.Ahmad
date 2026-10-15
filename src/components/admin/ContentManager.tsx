@@ -735,7 +735,7 @@ function ChangeLog({ kind, slug, onRestore }: { kind: ManagedKind; slug: string;
           <ul className="mt-3 grid gap-2">
             {versions.map((version) => (
               <li key={version.id} className="flex items-center justify-between gap-3 rounded-xl border border-hair bg-canvas px-3 py-2">
-                <span className="min-w-0 text-[.72rem] text-soft">{version.savedAt ? new Date(version.savedAt).toLocaleString('ar-KW-u-nu-arab', { dateStyle: 'medium', timeStyle: 'short' }) : 'نسخة سابقة'}</span>
+                <span className="min-w-0 text-[.72rem] text-soft">{version.savedAt ? new Date(version.savedAt).toLocaleString('ar-KW-u-nu-latn', { dateStyle: 'medium', timeStyle: 'short' }) : 'نسخة سابقة'}</span>
                 <button type="button" onClick={() => { if (window.confirm('استعادة هذه النسخة إلى المحرّر؟ راجعها ثم اضغط حفظ لاعتمادها.')) onRestore(version.snapshot) }} className="shrink-0 rounded-full border border-accent/40 px-3 py-1 text-[.7rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">استعادة</button>
               </li>
             ))}

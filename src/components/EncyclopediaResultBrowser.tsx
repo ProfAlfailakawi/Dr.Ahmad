@@ -24,7 +24,7 @@ export type UnitMatch = {
 }
 
 const PAGE_SIZE = 6
-const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
+const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-latn').format(value)
 
 function formatMoment(seconds: number) {
   const value = Math.max(0, Math.floor(Number(seconds) || 0))

@@ -50,7 +50,7 @@ const MANUAL_VIDEO_PLACEMENTS: Record<string, { doorNumber: number; chapterNumbe
   // فيديو «نبذة تاريخية عن الإنترنت»
   '8u5a5WQ_RGA': { doorNumber: 2, chapterNumber: 2 },
 }
-const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-arab').format(value)
+const formatArabicNumber = (value: number) => new Intl.NumberFormat('ar-KW-u-nu-latn').format(value)
 
 type StructureUnit = {
   number: number

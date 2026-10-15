@@ -214,7 +214,8 @@ function MeasuredWave({ peaks, fill, playKey }: { peaks: number[]; fill: number;
     return { d: `M${x} ${50 - half}V${50 + half}`, delay: Math.round((index / Math.max(1, peaks.length)) * 700) }
   }), [peaks])
   const width = Math.max(1, peaks.length)
-  const paths = bars.map((bar, index) => <path key={index} className="dw-peak" d={bar.d} style={drawDelay(bar.delay)} />)
+  /* العناصر نفسُها بين تحديثات التقدّم (≈40/ث أثناء التشغيل): React يتخطّى إعادة مطابقتها، فيتغيّر المقطع وحده */
+  const paths = useMemo(() => bars.map((bar, index) => <path key={index} className="dw-peak" d={bar.d} style={drawDelay(bar.delay)} />), [bars])
   return (
     <span className="audio-measured-wave" aria-hidden="true" {...draw.props}>
       <svg viewBox={`0 0 ${width} 100`} preserveAspectRatio="none">{paths}</svg>

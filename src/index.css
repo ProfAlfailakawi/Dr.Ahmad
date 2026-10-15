@@ -1527,7 +1527,7 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   }
   .human-core__micro { margin-bottom: .65rem; font-size: .56rem; letter-spacing: .12em; } /* latin — direction: ltr */
   .human-core__words { opacity: .5; }
-  .human-core__words span { font-size: .7rem; }
+  .human-core__words span { font-size: .75rem; }
   .human-core__portrait-shell { margin-top: -.2rem; }
   .human-core__portrait { margin-inline: auto; }
   .human-core__signal { margin-block: 1.15rem; }
@@ -8691,3 +8691,14 @@ html.site-silent [data-draw] *, html.site-silent [data-draw]::before { transitio
 
 /* مؤشرات «يعمل/يُحمَّل» في لوحة التحكم: أربع نبضات بمنحنى الموقع ثم تهدأ (animate-pulse نفسها، بلا مساس بالهياكل الرمادية). */
 .animate-pulse.is-calm-pulse { animation-iteration-count: 4; animation-timing-function: var(--E); }
+
+/* 2026-10 final — حدّ أدنى للنصّ 12px وللأهداف 40px (قياسٌ على 390 و1440). */
+.site-footer__rights, .home-footer-rights, .site-footer__text-link { font-size: .75rem; }
+.archive-editorial-year, .archive-editorial-kicker { font-size: .75rem; }
+.ent-kicker { font-size: .75rem; }
+.content-research .research-index-panel label, .content-research .research-index-panel h3,
+.content-research .research-index-result, .content-research .research-year-browse h3 { font-size: .75rem; }
+.content-research .research-year-chip { min-block-size: 2.5rem; padding-block: .45rem; }
+.search-palette-shortcut { min-block-size: 2.5rem; }
+.home-footer-tools__item.is-icon-only { inline-size: 2.5rem !important; min-inline-size: 2.5rem !important; min-height: 2.5rem !important; height: 2.5rem !important; }
+.site-footer__project { min-width: 2.5rem; }

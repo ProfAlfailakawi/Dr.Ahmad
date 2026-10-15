@@ -1076,6 +1076,8 @@ export function SocialDock({ english = false, centered = false }: { english?: bo
         <SocialIcon name="Share" size={17} />
       </button>
       <div className="site-social-dock__panel" aria-label={english ? 'Social and academic profiles' : 'الحضور الرقمي والأكاديمي'}>
+        <div className="site-social-dock__group">
+        <span className="site-social-dock__heading">{english ? 'Social' : 'التواصل'}</span>
         <div className="site-social-dock__socials">
           {socials.map((item) => (
             <a key={item.label} href={item.url} target="_blank" rel="noreferrer" aria-label={item.label} title={item.label}>
@@ -1083,7 +1085,10 @@ export function SocialDock({ english = false, centered = false }: { english?: bo
             </a>
           ))}
         </div>
+        </div>
         <span className="site-social-dock__divider" aria-hidden="true" />
+        <div className="site-social-dock__group">
+        <span className="site-social-dock__heading">{english ? 'Academic platforms' : 'منصات أكاديمية'}</span>
         <div className="site-social-dock__academic">
           {academicProfiles.map((item) => (
             <ClarifiedIconAction key={item.label} id={`social-dock-${item.label.toLowerCase().replace(/\s+/g, '-')}`} label={item.label}>
@@ -1092,6 +1097,7 @@ export function SocialDock({ english = false, centered = false }: { english?: bo
               </a>
             </ClarifiedIconAction>
           ))}
+        </div>
         </div>
       </div>
     </div>
@@ -1116,11 +1122,14 @@ export function Footer() {
             <SocialDock english />
             <nav className="site-footer__utility" aria-label="Site links">
               <Link to="/" className="site-footer__text-link">العربية</Link>
-              <ClarifiedIconAction id="footer-cv-en" label="CV">
-                <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" aria-label="CV" title="CV" className="site-footer__icon-link"><SocialIcon name="CV" size={17} /></a>
-              </ClarifiedIconAction>
-              <TebyanProjectLink label="Tebyan" iconOnly className="site-footer__project" />
-              <ScheduleProjectLink label="Schedule" iconOnly className="site-footer__project" />
+              <span className="site-footer__item">
+                <ClarifiedIconAction id="footer-cv-en" label="CV">
+                  <a href={cv.en || cv.ar} target="_blank" rel="noreferrer" aria-label="CV" title="CV" className="site-footer__icon-link"><SocialIcon name="CV" size={17} /></a>
+                </ClarifiedIconAction>
+                <span className="site-footer__caption">CV</span>
+              </span>
+              <span className="site-footer__item"><TebyanProjectLink label="Tebyan" iconOnly className="site-footer__project" /><span className="site-footer__caption">Tebyan</span></span>
+              <span className="site-footer__item"><ScheduleProjectLink label="Schedule" iconOnly className="site-footer__project" /><span className="site-footer__caption">Schedule</span></span>
             </nav>
           </div>
           <div className="site-footer__rights">© {year} Ahmad H. Alfailakawi · All rights reserved</div>
@@ -1138,12 +1147,15 @@ export function Footer() {
           </Link>
           <SocialDock />
           <nav className="site-footer__utility" aria-label="روابط الموقع المختصرة">
-            <MySpace variant="footer" />
-            <ClarifiedIconAction id="footer-cv-ar" label="السيرة الذاتية">
-              <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية" title="السيرة الذاتية" className="site-footer__icon-link"><SocialIcon name="CV" size={17} /></a>
-            </ClarifiedIconAction>
-            <TebyanProjectLink label="تبيان" iconOnly className="site-footer__project" />
-            <ScheduleProjectLink label="الجدول" iconOnly className="site-footer__project" />
+            <span className="site-footer__item"><MySpace variant="footer" /><span className="site-footer__caption">مساحتي</span></span>
+            <span className="site-footer__item">
+              <ClarifiedIconAction id="footer-cv-ar" label="السيرة الذاتية">
+                <a href={cv.ar} target="_blank" rel="noreferrer" aria-label="السيرة الذاتية" title="السيرة الذاتية" className="site-footer__icon-link"><SocialIcon name="CV" size={17} /></a>
+              </ClarifiedIconAction>
+              <span className="site-footer__caption">السيرة</span>
+            </span>
+            <span className="site-footer__item"><TebyanProjectLink label="تبيان" iconOnly className="site-footer__project" /><span className="site-footer__caption">تبيان</span></span>
+            <span className="site-footer__item"><ScheduleProjectLink label="الجدول" iconOnly className="site-footer__project" /><span className="site-footer__caption">الجدول</span></span>
           </nav>
         </div>
         <div className="site-footer__rights">

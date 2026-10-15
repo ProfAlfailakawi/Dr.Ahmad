@@ -7875,6 +7875,11 @@ html.dark {
 .site-footer__main { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 1.25rem; }
 .site-footer__mark { display: inline-flex; align-items: center; }
 .site-footer__utility { display: inline-flex; justify-self: end; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; }
+.site-footer__item { display: inline-flex; flex-direction: column; align-items: center; gap: .1rem; }
+.site-footer__item > :first-child { min-block-size: 2.5rem; display: inline-flex; align-items: center; justify-content: center; }
+.site-footer__caption { color: rgb(var(--c-soft)); font-size: .72rem; font-weight: 500; line-height: 1.4; }
+.site-social-dock__group { display: flex; flex-direction: column; align-items: center; gap: .15rem; }
+.site-social-dock__heading { color: rgb(var(--c-soft)); font-size: .72rem; font-weight: 500; line-height: 1.4; }
 .site-footer__text-link { color: rgb(var(--c-soft)); font-size: .7rem; font-weight: 550; transition: color .2s ease; }
 .site-footer__text-link:hover { color: rgb(var(--c-accent)); }
 .site-footer__icon-link {
@@ -7923,7 +7928,7 @@ html.dark {
   /* ٧rem كما كانت: اللوحة في عرضها الأصلي (٢٢rem وسطاً) ارتفاعها ٥٫٩rem فتسع
      الصفّين والفاصل بلا قصّ. القصّ الذي رأيته كان من تمديدي للوحة عرضَ التذييل
      كلّه لا من الرقم — فرُدّ التمديد ورُدّ الرقم معه. */
-  .site-social-dock.is-open .site-social-dock__panel { max-height: 7rem; opacity: 1; transform: translateY(0); }
+  .site-social-dock.is-open .site-social-dock__panel { max-height: 11rem; opacity: 1; transform: translateY(0); }
 
   /* التذييل: القمر وزرّ التواصل أيقونتان متجاورتان في صفٍّ واحد وسطاً، واللوحة
      تحتهما بكتلتها الأصلية (٢٢rem وسطاً) لا ممدودةً عرض التذييل — التمديد هو ما

@@ -321,7 +321,7 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
 @keyframes drop { 0% { top: -30px } 55% { top: 30px } 100% { top: 30px } }
 .cue span::after {
   content: ""; position: absolute; top: -30px; left: 0; width: 100%; height: 30px;
-  background: rgb(var(--c-accent)); animation: drop 2.6s ease-in-out infinite;
+  background: rgb(var(--c-accent)); animation: drop 2.6s var(--E) 4;
 }
 /* الشاشات القصيرة: يختفي مؤشر «اكتشف» كي لا يزاحم الأزرار */
 @media (max-height: 720px) { .cue { display: none; } }
@@ -330,7 +330,8 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
 @keyframes pulse { 0% { transform: scale(1); opacity: 0.55 } 100% { transform: scale(3.4); opacity: 0 } }
 .pulse::after {
   content: ""; position: absolute; inset: 0; border-radius: 9999px;
-  background: rgb(var(--c-accent)); animation: pulse 2.2s ease-out infinite;
+  background: rgb(var(--c-accent)); opacity: 0; /* الراحة = نهاية الحركة: الحلقة خافتة */
+  animation: pulse 2.2s var(--E) 3; /* ثلاث نبضات ثم تهدأ — الحركة تُروي ولا تُلفت */
 }
 
 /* nav underline */
@@ -939,7 +940,8 @@ iframe { color-scheme: light; }
   background: rgb(var(--c-accent) / 0.9);
   transform: translate(50%, var(--dy, -8px)) scale(1);
   transition: transform 0.45s var(--E), box-shadow 0.45s var(--E);
-  animation: sig-twinkle 4.5s ease-in-out infinite;
+  opacity: .7; /* الراحة بعد التلألؤ */
+  animation: sig-twinkle 4.5s var(--E) 2;
   animation-delay: var(--tw, 0s);
 }
 .sig-item:hover .sig-star {
@@ -1004,7 +1006,7 @@ html.dark .sentence-item.is-sentence-active {
 }
 
 html.reader-paper .sentence-item.is-sentence-active {
-  background-color: rgba(62, 92, 120, 0.18);
+  background-color: rgb(var(--c-accent) / 0.18);
 }
 
 /* Equalizer Bars Animation */
@@ -1017,7 +1019,7 @@ html.reader-paper .sentence-item.is-sentence-active {
   margin-inline-end: 0.35em;
   margin-inline-start: 0.15em;
   vertical-align: middle;
-  color: rgb(var(--c-accent));
+  color: rgb(var(--c-ember)); /* جمرة: هذا صوتٌ يُسمع لا نصٌّ يُقرأ */
 }
 
 .sentence-equalizer span {
@@ -1025,16 +1027,24 @@ html.reader-paper .sentence-item.is-sentence-active {
   width: 2px;
   background-color: currentColor;
   border-radius: 1px;
-  animation: eq-bounce 0.85s ease-in-out infinite alternate;
+  /* تهتزّ مرةً واحدة عند بدء الجملة ثم تستقرّ على ارتفاعاتها (eq-bounce محفوظة كما هي) */
+  animation: eq-settle 2.2s var(--E) 1;
 }
 
-.sentence-equalizer span:nth-child(1) { height: 35%; animation-delay: 0s; }
-.sentence-equalizer span:nth-child(2) { height: 85%; animation-delay: 0.22s; }
-.sentence-equalizer span:nth-child(3) { height: 55%; animation-delay: 0.44s; }
+.sentence-equalizer span:nth-child(1) { --eq-h: 35%; height: 35%; animation-delay: 0s; }
+.sentence-equalizer span:nth-child(2) { --eq-h: 85%; height: 85%; animation-delay: 0.22s; }
+.sentence-equalizer span:nth-child(3) { --eq-h: 55%; height: 55%; animation-delay: 0.44s; }
 
 @keyframes eq-bounce {
   0% { height: 20%; }
   100% { height: 100%; }
+}
+@keyframes eq-settle {
+  0% { height: 20%; }
+  25% { height: 100%; }
+  50% { height: 30%; }
+  75% { height: 90%; }
+  100% { height: var(--eq-h, 60%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2098,7 +2108,7 @@ html.dark .book-3d-pages {
 /* ---------- 3) البصمة المعرفية: دوران سماوي بطيء جداً ---------- */
 .kf-rotate {
   transform-origin: 250px 250px;
-  animation: kf-rotate 160s linear infinite;
+  animation: kf-rotate 160s linear 1; /* دورةٌ واحدة ثم تسكن (360° = 0°: لا قفزة) */
 }
 @keyframes kf-rotate { to { transform: rotate(360deg); } }
 
@@ -3157,7 +3167,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 }
 .content-research .research-accordion-panel {
   border-top: 1px solid rgb(var(--c-ink) / .11);
-  animation: research-panel-in .28s ease both;
+  animation: research-panel-in .28s var(--E) both;
 }
 @keyframes research-panel-in {
   from { opacity: 0; transform: translateY(-6px); }
@@ -4283,7 +4293,8 @@ html, body, #root { max-inline-size: 100%; }
   margin: -4.5px 0 0 -4.5px;
   border-radius: 50%;
   background: rgb(var(--c-accent));
-  animation: compose-breathe 1.75s ease-in-out infinite;
+  opacity: .34; transform: scale(.72); /* الراحة = نهاية الحركة */
+  animation: compose-breathe 1.75s var(--E) 8; /* ~14 ث: تغطّي الانتظار المعتاد ثم تهدأ */
 }
 .compose-drop::after {
   content: "";
@@ -4291,7 +4302,8 @@ html, body, #root { max-inline-size: 100%; }
   inset: -11px;
   border-radius: 50%;
   border: 1px solid rgb(var(--c-accent) / .3);
-  animation: compose-ripple 1.75s ease-out infinite;
+  opacity: 0;
+  animation: compose-ripple 1.75s var(--E) 8;
 }
 @keyframes compose-breathe {
   0%, 100% { opacity: .34; transform: scale(.72); }
@@ -5164,7 +5176,7 @@ img[loading="lazy"],
   transition: width .14s linear, opacity .3s ease, filter .3s ease;
 }
 .audio-wave-progress.is-playing .audio-wave-fill {
-  animation: audio-wave-alive 1.55s ease-in-out infinite alternate;
+  animation: audio-wave-alive 1.55s var(--E) infinite alternate;
 }
 @keyframes audio-wave-alive {
   from { opacity: .82; filter: saturate(.88) brightness(.97); }
@@ -5204,7 +5216,7 @@ html.dark .nav-page-echo { text-shadow: 0 1px 20px rgb(0 0 0 / .55); }
   }
   ::view-transition-group(root) { animation-duration: .24s; }
   ::view-transition-old(root) {
-    animation: spatial-root-out .2s ease both;
+    animation: spatial-root-out .2s var(--E) both;
   }
   ::view-transition-new(root) {
     animation: spatial-root-in .28s var(--motion-curve) both;
@@ -6146,7 +6158,7 @@ html.reader-paper .sentence-item.is-sentence-active {
   border-radius: 50%;
   background: rgb(var(--c-accent));
   box-shadow: 0 0 0 0 rgb(var(--c-accent) / .22);
-  animation: atlas-graph-discovery-pulse 1.65s ease-out 2;
+  animation: atlas-graph-discovery-pulse 1.65s var(--E) 2;
 }
 @keyframes atlas-graph-discovery-pulse {
   55% { box-shadow: 0 0 0 7px rgb(var(--c-accent) / 0); }
@@ -7055,13 +7067,13 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
 /* 6) «الموقع الذي يتنفس» — حركة صغيرة بطيئة، وتُطفأ عند القراءة العميقة. */
 @media (prefers-reduced-motion: no-preference) {
   html:not(.site-silent) .idea-signature-trace__dot {
-    animation: signature-dot-breathe 4.8s ease-in-out infinite;
+    animation: signature-dot-breathe 4.8s var(--E) 3;
   }
   html:not(.site-silent) .scene-heading__rule > i {
-    animation: scene-rule-arrive .78s var(--motion-curve) both, scene-rule-breathe 7.5s ease-in-out 1s infinite alternate;
+    animation: scene-rule-arrive .78s var(--motion-curve) both, scene-rule-breathe 7.5s var(--E) 1s 2 alternate;
   }
   html:not(.site-silent) .signature-label > span:first-child {
-    animation: signature-label-breathe 6.5s ease-in-out infinite alternate;
+    animation: signature-label-breathe 6.5s var(--E) 3 alternate;
     transform-origin: right center;
   }
   @media (hover: hover) and (pointer: fine) {
@@ -7249,7 +7261,7 @@ html.dark {
   pointer-events: none;
   opacity: .26;
   background: radial-gradient(42% 36% at 72% 16%, rgb(var(--atlas-education) / .08), transparent 72%);
-  animation: atlas-breathe 12s ease-in-out infinite alternate;
+  animation: atlas-breathe 12s var(--E) 2 alternate;
 }
 .atlas-night > * { position: relative; z-index: 1; }
 .atlas-night.atlas-atmosphere--morning::after { opacity: .18; transform: translate3d(8%, -4%, 0); }
@@ -7579,8 +7591,8 @@ html.dark {
   inset: -.32rem;
   border: 1px solid rgb(var(--c-accent) / .14);
   border-radius: inherit;
-  opacity: .7;
-  animation: concept-echo-breathe 4.8s ease-in-out infinite;
+  opacity: .2; transform: scale(.78); /* الراحة = نهاية الحركة */
+  animation: concept-echo-breathe 4.8s var(--E) 3;
 }
 @keyframes concept-echo-breathe {
   0%, 100% { opacity: .2; transform: scale(.78); }
@@ -8563,3 +8575,73 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 }
 .thought-stat-track { display: block; height: 4px; margin-top: .75rem; border-radius: 2px; background: rgb(var(--c-ink) / .08); overflow: hidden; }
 .thought-stat-track i { display: block; height: 100%; border-radius: 2px; background: rgb(var(--c-accent)); }
+
+/* ═════════════════════════════════════════════════════════════════
+   رسمٌ عند الظهور — الحركة تُروي ولا تُلفت
+   مرةً واحدة لكل جلسة حين يدخل الشاشة، بمنحنى الموقع الوحيد --E، ثم يستقرّ.
+   الحالة الافتراضية (بلا data-draw) هي النهائية كاملة: بلا JS أو مع تقليل الحركة
+   أو بعد أن عُرضت لا يُخفى شيء. data-draw يضعه useDrawIn (components/DrawIn.tsx):
+   wait = الحالة الابتدائية قبل الرسم الأول، go = تُرسم الآن.
+   transform / opacity / stroke-dashoffset / background-color فقط.
+   ═════════════════════════════════════════════════════════════════ */
+.dw-y, .dw-x, .dw-pop, .dw-peak { transform-box: fill-box; }
+.dw-y { transform-origin: 50% 100%; }
+.dw-x { transform-origin: 100% 50%; } /* بداية السطر في الواجهة العربية: اليمين */
+.dw-pop { transform-origin: 50% 50%; }
+.dw-peak { transform-origin: 50% 50%; } /* الموجة: تنبت من خطّ المنتصف */
+
+[data-draw="wait"] .dw-y { transform: scaleY(0); }
+[data-draw="wait"] .dw-x { transform: scaleX(0); }
+[data-draw="wait"] .dw-pop { transform: scale(0); }
+[data-draw="wait"] .dw-peak { transform: scaleY(0); }
+[data-draw="wait"] .dw-fade { opacity: 0; }
+[data-draw="wait"] .dw-dot { background-color: rgb(var(--c-canvas)); }
+[data-draw="wait"].dw-rail::before { transform: scaleY(0); }
+
+[data-draw="go"] .dw-y,
+[data-draw="go"] .dw-x { transition: transform .6s var(--E) var(--dw-d, 0ms); }
+[data-draw="go"] .dw-pop { transition: transform .3s var(--E) var(--dw-d, 0ms); }
+[data-draw="go"] .dw-peak { transition: transform .5s var(--E) var(--dw-d, 0ms); }
+[data-draw="go"] .dw-fade { transition: opacity .4s var(--E) var(--dw-d, .45s); }
+[data-draw="go"] .dw-dot { transition: background-color .3s var(--E) var(--dw-d, 0ms); }
+[data-draw="go"].dw-rail::before { transition: transform .6s var(--E); }
+[data-draw="go"] .dw-ring { transition: stroke-dashoffset .9s var(--E), opacity .3s var(--E); }
+
+/* الخط الزمني: الخط الشعريّ نفسه يُرسم من الأعلى، والنقاط تمتلئ بالتمييز واحدةً بعد أخرى. */
+.dw-rail { position: relative; border-right-color: transparent !important; }
+.dw-rail::before { content: ""; position: absolute; top: 0; bottom: 0; right: -2px; width: 2px; background: var(--c-hair); transform-origin: 50% 0; }
+.dw-dot { background-color: rgb(var(--c-accent)); }
+
+/* وميضُ تغيّرٍ حقيقيّ: لمسة تمييزٍ واحدة تخفت إلى الراحة (لا دورات ولا ظلال). */
+@keyframes dw-flash-ring {
+  from { outline-color: rgb(var(--c-accent) / .45); }
+  to { outline-color: rgb(var(--c-accent) / 0); }
+}
+@keyframes dw-flash-text {
+  from { color: rgb(var(--c-accent)); }
+}
+.journey__item[data-flash] .journey__node { outline: 2px solid transparent; outline-offset: 3px; animation: dw-flash-ring 1.2s var(--E) 1; }
+.dw-flash-text[data-flash] { animation: dw-flash-text 1.2s var(--E) 1; }
+
+/* موجة الصوت المقيسة (AudioPlayer.MeasuredWave): الجمرة لأن الصوت هو الموضوع.
+   القمم المسموعة بالجمرة كاملة، وما لم يُسمع بعدُ بالجمرة الخافتة. */
+.audio-measured-wave { position: absolute; inset: 0; z-index: 1; display: block; pointer-events: none; }
+.audio-measured-wave > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.audio-measured-wave path { fill: none; stroke: rgb(var(--c-ember) / .32); stroke-width: .55; stroke-linecap: butt; }
+.audio-measured-wave__fill path { stroke: rgb(var(--c-ember)); }
+.audio-wave-progress.has-measured-wave::before { display: none; }
+
+/* أثر الاستشهاد (CitationImpact — مخفيّ حالياً): خطّ الاتجاه يُكشف مرةً واحدة بقناعٍ يمتدّ مع الزمن
+   (القناع لا dasharray: الخطّ يستعمل non-scaling-stroke فلا تصحّ وحدات الشرطات). */
+.dw-clip { transform-box: fill-box; transform-origin: 0% 50%; }
+[data-draw="wait"] .dw-clip { transform: scaleX(0); }
+[data-draw="go"] .dw-clip { transition: transform .9s var(--E); }
+
+html.site-silent [data-draw] *, html.site-silent [data-draw]::before { transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  [data-draw] *, [data-draw]::before { transition: none !important; }
+  .journey__item[data-flash] .journey__node, .dw-flash-text[data-flash] { animation: none; }
+}
+
+/* مؤشرات «يعمل/يُحمَّل» في لوحة التحكم: أربع نبضات بمنحنى الموقع ثم تهدأ (animate-pulse نفسها، بلا مساس بالهياكل الرمادية). */
+.animate-pulse.is-calm-pulse { animation-iteration-count: 4; animation-timing-function: var(--E); }

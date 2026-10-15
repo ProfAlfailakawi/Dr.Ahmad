@@ -283,6 +283,21 @@
   box-shadow: inset 0 0 0 1.5px var(--dna-line-2);
   transition: background-color 0.3s var(--dna-ease), box-shadow 0.3s var(--dna-ease);
 }
+/* وميضُ انتقالٍ حقيقيّ (DnaStepper flashKey): حلقةٌ واحدة تخفت ثم تستقرّ — عرضٌ فقط، لا دورات. */
+.dna-stepi[data-flash] .dna-node::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--dna-accent);
+  pointer-events: none;
+  animation: dna-flash 1.2s var(--E, var(--dna-ease)) 1;
+  opacity: 0;
+}
+@keyframes dna-flash {
+  from { opacity: 0.55; }
+  to { opacity: 0; }
+}
 .dna-node > svg {
   inline-size: var(--icon) !important;
   block-size: var(--icon) !important;
@@ -546,7 +561,7 @@
 .dna-ringt { stroke: var(--dna-line-2); }
 .dna-ringv {
   stroke: var(--t-fg);
-  transition: stroke-dasharray 0.8s var(--dna-ease);
+  transition: stroke-dasharray 0.8s var(--dna-ease), opacity 0.3s var(--dna-ease);
 }
 .dna-ringc {
   position: relative;
@@ -990,4 +1005,5 @@ button.dna-hubn:focus-visible .dna-hubt { transform: translateY(-2px); }
   }
   .dna-ringv,
   .dna-stepi + .dna-stepi::before { transition: none !important; }
+  .dna-stepi[data-flash] .dna-node::after { animation: none !important; }
 }

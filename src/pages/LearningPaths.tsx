@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useChangeFlash, useNewlyAdded } from '../components/DrawIn'
 import { Arrow } from '../components/icons'
 import { Link, useParams } from 'react-router'
 import { useSeo, JsonLd } from '../components/seo'
@@ -63,6 +64,7 @@ function pathStations(path: LearningPath, done: Set<string>, next: number | null
    الحركة معاينةٌ تستقرّ عند تقدّمك الفعليّ — لا تملأ ما لم تُنجزه. */
 function ProgressLine({ path, done, next, label }: { path: LearningPath; done: Set<string>; next: number | null; label: string }) {
   const total = path.steps.length
+  const flashKey = useNewlyAdded([...done])
   return (
     <div
       role="progressbar"
@@ -72,7 +74,7 @@ function ProgressLine({ path, done, next, label }: { path: LearningPath; done: S
       aria-valuenow={done.size}
       aria-valuetext={`أكملت ${done.size} من ${total}`}
     >
-      <JourneyStepper steps={pathStations(path, done, next)} variant="strip" decorative playKey={`path-strip:${path.id}`} />
+      <JourneyStepper steps={pathStations(path, done, next)} variant="strip" decorative playKey={`path-strip:${path.id}`} flashKey={flashKey} />
     </div>
   )
 }
@@ -202,6 +204,7 @@ function PathDetail({ path }: { path: LearningPath }) {
   const done = completedSteps(live, progress)
   const next = nextStepIndex(live, done)
   const finished = live.steps.length > 0 && next === null
+  const countFlash = useChangeFlash(done.size)
   const nextStep = next === null ? null : live.steps[next]
   const others = paths.filter((item) => item.id !== live.id)
   const position = paths.findIndex((item) => item.id === live.id)
@@ -240,7 +243,7 @@ function PathDetail({ path }: { path: LearningPath }) {
             <div className="mt-8 rounded-2xl border border-hair bg-wash/[.55] p-5 md:p-7" aria-live="polite">
               <div className="flex items-baseline justify-between gap-4 text-[.78rem]">
                 <span className="font-semibold text-ink">{finished ? 'أتممت هذا المسار' : nextStep ? 'الخطوة التالية' : ''}</span>
-                <span className="tabular-nums text-soft">أكملت {done.size} من {live.steps.length}</span>
+                <span className="dw-flash-text tabular-nums text-soft" data-flash={countFlash ? true : undefined}>أكملت {done.size} من {live.steps.length}</span>
               </div>
               <div className="mt-3"><ProgressLine path={live} done={done} next={next} label={`تقدّمك في مسار ${live.title}`} /></div>
               {nextStep && next !== null ? (

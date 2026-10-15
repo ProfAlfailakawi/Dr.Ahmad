@@ -123,7 +123,7 @@ export type JourneyVariant = 'full' | 'dots' | 'strip'
  * - `dots`: نقاطٌ موصولة بخطوط (بطاقات المسارات) — بلا نص.
  * - `strip`: شريطٌ مضغوط بأرقام المحطات (تفاصيل المسار).
  */
-export function JourneyStepper({ steps, variant = 'full', label, playKey, delayMs = 0, animate = true, decorative = false, stateText, className = '' }: {
+export function JourneyStepper({ steps, variant = 'full', label, playKey, delayMs = 0, animate = true, decorative = false, stateText, flashKey, className = '' }: {
   steps: JourneyStation[]
   variant?: JourneyVariant
   label?: string
@@ -135,6 +135,8 @@ export function JourneyStepper({ steps, variant = 'full', label, playKey, delayM
   decorative?: boolean
   /** نصّ الحالة لقارئ الشاشة؛ يُستبدل حين لا يناسب «أُنجزت» (كشرحٍ ثابتٍ لا تقدّمٍ لأحد). */
   stateText?: Partial<Record<JourneyState, string>>
+  /** مفتاح محطةٍ تغيّرت حالتها الآن (أُنجزت للتو): تأخذ وميضاً واحداً هادئاً ثم تستقرّ. عرضٌ فقط. */
+  flashKey?: string | null
   className?: string
 }) {
   const target = journeyTarget(steps.map((step) => step.state))
@@ -175,6 +177,7 @@ export function JourneyStepper({ steps, variant = 'full', label, playKey, delayM
             data-state={state}
             data-just={just || undefined}
             data-last={last || undefined}
+            data-flash={flashKey && flashKey === step.key ? true : undefined}
             data-link={linkFilled(shown, index) ? 'on' : undefined}
             aria-current={state === 'current' ? 'step' : undefined}
           >

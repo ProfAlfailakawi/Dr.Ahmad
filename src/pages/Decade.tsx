@@ -13,6 +13,8 @@ import { predictionRecordsFor, type IdeaLifeRemoteRecord } from '../lib/idea-lif
 import { categoryLabel } from '../lib/content-taxonomy'
 import { arabicCountPhrase, ARTICLE_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, CHAPTER_FORMS, PREDICTION_FORMS, TEXT_FORMS, YEAR_IMPACT_FORMS } from '../lib/arabic-count.ts'
 import { RotateCcw } from 'lucide-react'
+import { drawDelay, useDrawIn } from '../components/DrawIn'
+import { staggerMs } from '../lib/draw-logic.ts'
 
 const number = new Intl.NumberFormat('ar-KW-u-nu-latn')
 
@@ -76,6 +78,9 @@ export default function Decade() {
   const [bodiesReady, setBodiesReady] = useState(false)
   /* مشاركة بطاقة توقع (مقترح معتمد): رابط يفتح السجل على التوقع نفسه */
   const [copiedPrediction, setCopiedPrediction] = useState('')
+  /* أشرطة تنمو مرةً واحدة عند الظهور (الحالة النهائية هي الأصل؛ انظر components/DrawIn.tsx). */
+  const statusDraw = useDrawIn('decade-status')
+  const categoryDraw = useDrawIn('decade-categories')
   const sharePrediction = (slug: string, key: string) => {
     const query = new URLSearchParams({ 'عرض': 'تنبؤات', 'مقال': slug })
     const url = `${window.location.origin}/decade?${query.toString()}`
@@ -318,11 +323,13 @@ export default function Decade() {
                 if (rows.length < 2) return null
                 const tones = ['rgb(var(--c-accent))', 'rgb(var(--c-ember))', 'rgb(var(--c-soft))']
                 return (
-                  <div className="mt-6" role="img" aria-label={`توزيع حالات التوقعات: ${rows.map(([label, count]) => `${label} ${number.format(count)}`).join('، ')}`}>
+                  <div className="mt-6" {...statusDraw.props} role="img" aria-label={`توزيع حالات التوقعات: ${rows.map(([label, count]) => `${label} ${number.format(count)}`).join('، ')}`}>
                     <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-wash" aria-hidden="true">
+                      <div className="dw-x flex h-full w-full" style={drawDelay(0)}>
                       {rows.map(([label, count], i) => (
                         <span key={label} className="h-full border-e-2 border-canvas last:border-e-0" style={{ width: `${(count / predictionRegister.length) * 100}%`, background: tones[i % tones.length], opacity: i < tones.length ? 1 : 0.45 }} />
                       ))}
+                      </div>
                     </div>
                     <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[.76rem] text-soft" aria-hidden="true">
                       {rows.map(([label, count], i) => (
@@ -458,7 +465,7 @@ export default function Decade() {
                   <span className="text-[.78rem] font-semibold text-accent">الموضوعات المُلحّة</span>
                   <h2 className="mt-3 font-display text-[clamp(1.7rem,3.5vw,2.5rem)] font-bold text-ink">ما الذي عاد أكثر؟</h2>
                 </FadeUp>
-                <div className="mt-8 space-y-5">
+                <div className="mt-8 space-y-5" {...categoryDraw.props}>
                   {document.categories.slice(0, 6).map(([category, count], index) => {
                     const maximum = document.categories[0]?.[1] || 1
                     return (
@@ -468,7 +475,7 @@ export default function Decade() {
                           <span className="text-soft">{number.format(count)}</span>
                         </div>
                         <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-hair">
-                          <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(5, (count / maximum) * 100)}%` }} />
+                          <div className="dw-x h-full rounded-full bg-accent" style={{ ...drawDelay(staggerMs(index, 60, 360)), width: `${Math.max(5, (count / maximum) * 100)}%` }} />
                         </div>
                       </FadeUp>
                     )

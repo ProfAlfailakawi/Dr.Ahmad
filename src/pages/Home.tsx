@@ -24,6 +24,8 @@ import { SocialIcon as ActionIcon, Arrow } from '../components/icons'
 import { trackUsage } from '../lib/usage-analytics'
 import { arabicCountPhrase, ARTICLE_THOUGHT_AFTER_PREPOSITION_FORMS, ARTICLE_FORMS, BOOK_FORMS, BOOK_PLAIN_FORMS, NEW_ARTICLE_FORMS, PAPER_FORMS, YEAR_AFTER_PREPOSITION_FORMS } from '../lib/arabic-count.ts'
 import { coverSrcSet } from '../lib/cover-image'
+import { drawDelay, useDrawIn } from '../components/DrawIn'
+import { staggerMs } from '../lib/draw-logic.ts'
 
 /* افتتاحيةُ العتبة 768 سطراً ولا يراها إلا الزائر الأول (تحرسها localStorage)،
    فإبقاؤها في حزمة الدخول يُثقل كلَّ زائرٍ عائد بلا فائدة ويتجاوز ميزانية الأداء */
@@ -556,6 +558,9 @@ function ThoughtCompass() {
    خط زمني هادئ يُحسب من المحتوى نفسه، فيقول «ماذا صنعت» لا «كم». */
 function ImpactTimeline() {
   const { articles, books, papers } = useCmsContent()
+  /* الرسم مرةً واحدة عند الظهور: الأعمدة ترتفع والذروة آخرها، ثم الخط يُرسم والنقاط تمتلئ بالتمييز واحدةً بعد أخرى. */
+  const barsDraw = useDrawIn('home-impact-bars')
+  const railDraw = useDrawIn('home-impact-rail', 0.3)
   const years = articles.map((a) => +a.iso.slice(0, 4))
   if (!articles.length) return null
   const firstYear = Math.min(PROJECT_START_YEAR, ...years)
@@ -586,14 +591,19 @@ function ImpactTimeline() {
           </h2>
         </FadeUp>
         {yearSpan.length > 1 && (
-          <figure className="mb-10 max-w-xl md:mb-12">
+          <figure className="mb-10 max-w-xl md:mb-12" {...barsDraw.props}>
             <svg viewBox={`0 0 ${yearSpan.length * barStep} 64`} className="block h-16 w-full" role="img" aria-label={`رسم أعمدة لعدد المقالات في كل سنة، من ${firstYear} إلى ${latestYear}؛ الذروة في ${peakYear[0]}`} preserveAspectRatio="none">
               <line x1="0" x2={yearSpan.length * barStep} y1="63.5" y2="63.5" stroke="rgb(var(--c-soft))" strokeOpacity=".35" strokeWidth="1" vectorEffect="non-scaling-stroke" />
               {yearSpan.map((y, i) => {
                 const n = byYear[y] || 0
                 const h = n ? Math.max(3, (n / maxPerYear) * 58) : 0
+                /* الترتيب من اليمين (الأقدم)، والذروة تصل أخيراً */
+                const rank = yearSpan.slice(0, i).filter((yy) => byYear[yy] && String(yy) !== peakYear[0]).length
+                const delay = String(y) === peakYear[0]
+                  ? staggerMs(yearSpan.filter((yy) => byYear[yy] && String(yy) !== peakYear[0]).length, 50, 700) + 80
+                  : staggerMs(rank, 50, 700)
                 return n ? (
-                  <rect key={y} x={(yearSpan.length - 1 - i) * barStep + 4} y={62 - h} width={barStep - 8} height={h} rx="2" fill="rgb(var(--c-accent))" fillOpacity={String(y) === peakYear[0] ? 1 : 0.5}>
+                  <rect key={y} className="dw-y" style={drawDelay(delay)} x={(yearSpan.length - 1 - i) * barStep + 4} y={62 - h} width={barStep - 8} height={h} rx="2" fill="rgb(var(--c-accent))" fillOpacity={String(y) === peakYear[0] ? 1 : 0.5}>
                     <title>{`${y}: ${arabicCountPhrase(n, ARTICLE_FORMS)}`}</title>
                   </rect>
                 ) : null
@@ -604,11 +614,11 @@ function ImpactTimeline() {
             </figcaption>
           </figure>
         )}
-        <ol className="relative mr-2 border-r-2 border-hair pr-8">
+        <ol className="dw-rail relative mr-2 border-r-2 border-transparent pr-8" {...railDraw.props}>
           {steps.map((s, i) => (
             <FadeUp key={s.t} delay={Math.min(i * 0.1, 0.4)}>
               <li className="relative pb-5 last:pb-0 md:pb-10">
-                <span className="absolute right-[-2.6rem] top-1.5 h-3 w-3 rounded-full border-2 border-accent bg-canvas" />
+                <span className="dw-dot absolute right-[-2.6rem] top-1.5 h-3 w-3 rounded-full border-2 border-accent" style={drawDelay(160 + i * 110)} />
                 <span className="font-display text-[1.05rem] font-bold text-accent">{s.y}</span>
                 <p className="mt-1 max-w-xl text-[.98rem] font-light leading-[1.8] text-ink/80 md:mt-1.5 md:text-[1.05rem] md:leading-[1.85]">{s.t}</p>
               </li>

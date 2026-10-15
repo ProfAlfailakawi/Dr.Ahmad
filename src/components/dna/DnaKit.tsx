@@ -120,10 +120,12 @@ export interface DnaStepperProps {
   showLabels?: boolean;
   ariaLabel?: string;
   stateText?: Partial<Record<DnaStepState, string>>;
+  /** مفتاح الخطوة التي تقدّم إليها المسار للتو: حلقةٌ واحدة هادئة ثم استقرار. */
+  flashKey?: string | null;
   className?: string;
 }
 
-export function DnaStepper({ steps, size = 'md', showLabels = true, ariaLabel, stateText, className }: DnaStepperProps) {
+export function DnaStepper({ steps, size = 'md', showLabels = true, ariaLabel, stateText, flashKey, className }: DnaStepperProps) {
   const text = { ...DEFAULT_STATE_TEXT, ...stateText };
   const labels = showLabels && size !== 'xs';
   return (
@@ -139,6 +141,7 @@ export function DnaStepper({ steps, size = 'md', showLabels = true, ariaLabel, s
             data-state={step.state}
             data-link={link}
             data-stamp={stamped ? 'true' : undefined}
+            data-flash={flashKey && flashKey === step.key ? 'true' : undefined}
             aria-current={step.state === 'current' ? 'step' : undefined}
             title={step.title ?? (size === 'xs' && typeof step.label === 'string' ? step.label : undefined)}
           >
@@ -292,7 +295,7 @@ export function DnaRing({ value, max = 100, size = 52, stroke = 4, tone = 'accen
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         <circle className="dna-ringt" cx={mid} cy={mid} r={r} fill="none" strokeWidth={stroke} strokeDasharray={has ? undefined : '3 4'} />
-        {has && fraction > 0 && (
+        {has && (
           <circle
             className="dna-ringv"
             cx={mid}
@@ -302,6 +305,7 @@ export function DnaRing({ value, max = 100, size = 52, stroke = 4, tone = 'accen
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${c * fraction} ${c}`}
+            style={{ opacity: fraction > 0 ? 1 : 0 }}
             transform={`rotate(-90 ${mid} ${mid})`}
           />
         )}

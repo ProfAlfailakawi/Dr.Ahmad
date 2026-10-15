@@ -5198,6 +5198,9 @@ img[loading="lazy"],
 
 /* العنوان الكبير يترك أثراً صغيراً في الشريط بعد أن يغادر مجال النظر. */
 .nav-page-echo {
+  /* motion يكتب transform مضمَّناً فيمحو -translate-x-1/2؛ خاصية translate المستقلة تُبقي العنوان في منتصف الشريط
+     فلا يزحف إلى الشعار حين يطول */
+  translate: -50% 0;
   letter-spacing: -.012em;
   text-shadow: 0 1px 18px rgb(var(--c-canvas) / .9);
 }

@@ -5,6 +5,8 @@ import { FadeUp, Page, PageHead } from '../components/ui'
 import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
+import { drawDelay, useDrawIn } from '../components/DrawIn'
+import { staggerMs } from '../lib/draw-logic.ts'
 import { ideaWords } from '../lib/idea-life'
 import { PROJECT_START_YEAR, getMinimumCompletedJourneyYears } from '../lib/project-meta'
 import { categoryLabel } from '../lib/content-taxonomy'
@@ -89,6 +91,10 @@ export default function ThoughtOverview() {
   }, [articles, books, papers])
 
   const maxCategory = Math.max(1, ...model.categories.map(([, count]) => count))
+  /* الرسم مرةً واحدة عند الظهور: أشرطة الحصّة، ثم أشرطة المحاور، ثم نقاط المراحل بالتتابع. */
+  const statsDraw = useDrawIn('thought-stats')
+  const categoriesDraw = useDrawIn('thought-categories')
+  const periodsDraw = useDrawIn('thought-periods', 0.3)
 
   return (
     <Page className="content-thought-overview page-journey">
@@ -102,13 +108,13 @@ export default function ThoughtOverview() {
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" {...statsDraw.props}>
               {[
                 { label: 'سنوات الرحلة العلمية', value: `${getMinimumCompletedJourneyYears()}+`, note: `بدأت عام ${PROJECT_START_YEAR}`, Icon: CalendarRange, share: null as number | null },
                 { label: 'الكتب', value: number.format(books.length), note: 'مؤلفات علمية وفكرية منشورة', Icon: BookOpen, share: books.length },
                 { label: 'الأبحاث', value: number.format(papers.length), note: 'دراسات ومساهمات محكمة', Icon: FlaskConical, share: papers.length },
                 { label: 'المقالات', value: number.format(articles.length), note: 'نصوص منشورة داخل الأرشيف', Icon: PenLine, share: articles.length },
-              ].map((item) => (
+              ].map((item, tileIndex) => (
                 <div key={item.label} className="thought-stat-tile flex min-h-[132px] flex-col justify-between rounded-[1.5rem] border border-hair bg-paper p-4 sm:p-5">
                   <div className="thought-stat-head flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -119,7 +125,7 @@ export default function ThoughtOverview() {
                   </div>
                   <div>
                     <strong className="mt-4 block font-display text-[clamp(1.9rem,5vw,3rem)] font-semibold leading-none text-ink">{item.value}</strong>
-                    {item.share !== null && <span className="thought-stat-track" aria-hidden="true"><i style={{ width: `${Math.max(3, Math.round((item.share / Math.max(1, books.length + papers.length + articles.length)) * 100))}%` }} /></span>}
+                    {item.share !== null && <span className="thought-stat-track" aria-hidden="true"><i className="dw-x" style={{ ...drawDelay(staggerMs(tileIndex, 80, 400)), width: `${Math.max(3, Math.round((item.share / Math.max(1, books.length + papers.length + articles.length)) * 100))}%` }} /></span>}
                   </div>
                 </div>
               ))}
@@ -137,7 +143,7 @@ export default function ThoughtOverview() {
                   </div>
                   <span className="text-[.72rem] text-soft">بحسب عدد المواد المنشورة</span>
                 </div>
-                <ol className="mt-7 grid gap-4">
+                <ol className="mt-7 grid gap-4" {...categoriesDraw.props}>
                   {model.categories.map(([category, count], index) => (
                     <li key={category}>
                       <div className="flex items-center justify-between gap-4 text-[.78rem]">
@@ -145,7 +151,7 @@ export default function ThoughtOverview() {
                         <span className="text-soft">{number.format(count)}</span>
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-wash">
-                        <span className="block h-full origin-right rounded-full bg-accent transition-[width] duration-700" style={{ width: `${Math.max(9, count / maxCategory * 100)}%` }} />
+                        <span className="dw-x block h-full origin-right rounded-full bg-accent transition-[width] duration-700" style={{ ...drawDelay(staggerMs(index, 60, 360)), width: `${Math.max(9, count / maxCategory * 100)}%` }} />
                       </div>
                     </li>
                   ))}
@@ -175,10 +181,10 @@ export default function ThoughtOverview() {
                 </div>
                 <span className="rounded-full border border-hair bg-canvas px-4 py-2 text-[.72rem] text-soft">أكثر محور اتساعاً: <strong className="text-ink">{model.evolving?.category || '—'}</strong></span>
               </div>
-              <div className="relative mt-9 grid gap-5 md:grid-cols-2 before:absolute before:right-4 before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-hair md:before:left-4 md:before:right-4 md:before:top-5 md:before:h-px md:before:w-auto">
+              <div className="relative mt-9 grid gap-5 md:grid-cols-2 before:absolute before:right-4 before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-hair md:before:left-4 md:before:right-4 md:before:top-5 md:before:h-px md:before:w-auto" {...periodsDraw.props}>
                 {model.periods.map((period, index) => (
                   <div key={period.label} className="relative ms-9 rounded-2xl border border-hair bg-canvas p-5 md:ms-0 md:mt-7">
-                    <span className="absolute -right-[2.25rem] top-4 flex h-4 w-4 items-center justify-center rounded-full border border-accent/40 bg-paper md:-top-[2.2rem] md:right-4"><span className="h-1.5 w-1.5 rounded-full bg-accent" /></span>
+                    <span className="absolute -right-[2.25rem] top-4 flex h-4 w-4 items-center justify-center rounded-full border border-accent/40 bg-paper md:-top-[2.2rem] md:right-4"><span className="dw-pop h-1.5 w-1.5 rounded-full bg-accent" style={drawDelay(120 + index * 130)} /></span>
                     <span className="text-[.72rem] font-semibold text-accent">{period.label} · {period.from}–{period.to}</span>
                     <strong className="mt-2 block font-display text-xl font-semibold text-ink">{categoryLabel(period.dominant)}</strong>
                     <p className="mt-2 text-[.78rem] leading-relaxed text-soft">{arabicCountPhrase(period.count, MATERIAL_FORMS, number.format)} في هذه المرحلة.</p>

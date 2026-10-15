@@ -1,5 +1,6 @@
 import citationsJson from "../data/citations.json";
 import { Arrow } from './icons'
+import { useDrawIn } from './DrawIn'
 
 const ar = (value: number) => value.toLocaleString("en-US");
 
@@ -15,6 +16,7 @@ type CitationData = {
 const citations = citationsJson as CitationData;
 
 function Sparkline({ points }: { points: Snapshot[] }) {
+  const draw = useDrawIn("citation-line", 0.5);
   if (points.length < 2) return null;
   const width = 560;
   const height = 118;
@@ -36,7 +38,12 @@ function Sparkline({ points }: { points: Snapshot[] }) {
       className="mt-5 h-auto w-full"
       role="img"
       aria-label="تطور عدد الاستشهادات عبر الزمن"
+      {...draw.props}
     >
+      <clipPath id="citation-line-clip">
+        <rect className="dw-clip" x="-6" y="-6" width={width + 12} height={height + 12} />
+      </clipPath>
+      <g clipPath="url(#citation-line-clip)">
       <path
         d={d}
         fill="none"
@@ -62,6 +69,7 @@ function Sparkline({ points }: { points: Snapshot[] }) {
           />
         );
       })}
+      </g>
     </svg>
   );
 }

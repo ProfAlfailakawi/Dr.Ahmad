@@ -7,6 +7,7 @@ import { SocialIcon, Arrow } from './icons'
 import { VoiceFigure, voiceKindForSpeaker } from './VoiceFigure'
 import { arabicCountPhrase, AUDIO_TRIAL_FORMS } from '../lib/arabic-count.ts'
 import { loadAudioPeaks } from '../lib/audio-peaks'
+import { drawDelay, useDrawIn } from './DrawIn'
 import { dialogueVariantKey, dialogueVariantPreference, rememberDialogueVariant } from '../lib/dialogue-variant'
 
 const ar = (n: number) => String(n).replace(/[0-9]/g, (digit) => '0123456789'[+digit])
@@ -202,17 +203,22 @@ function AudioWave({ dialogue = false, size = 22 }: { dialogue?: boolean; size?:
   )
 }
 
-function MeasuredWave({ peaks, fill }: { peaks: number[]; fill: number }) {
-  const path = useMemo(() => peaks.map((peak, index) => {
-    const x = index + .5
+/* الموجة المقيسة: القمم تنبت مرةً واحدة من خطّ المنتصف بترتيب القراءة العربي (من اليمين)، ثم تستقرّ.
+   بالجمرة وحدها — الصوت هو الموضوع. الحالة النهائية هي الأصل (components/DrawIn.tsx). */
+function MeasuredWave({ peaks, fill, playKey }: { peaks: number[]; fill: number; playKey?: string }) {
+  const draw = useDrawIn(playKey, 0.5)
+  const bars = useMemo(() => peaks.map((peak, index) => {
+    /* بداية الحلقة عند اليمين، كما يملأ التقدّمُ الشريطَ من اليمين */
+    const x = peaks.length - index - .5
     const half = Math.max(2, Math.min(48, peak * .48))
-    return `M${x} ${50 - half}V${50 + half}`
-  }).join(''), [peaks])
+    return { d: `M${x} ${50 - half}V${50 + half}`, delay: Math.round((index / Math.max(1, peaks.length)) * 700) }
+  }), [peaks])
   const width = Math.max(1, peaks.length)
+  const paths = bars.map((bar, index) => <path key={index} className="dw-peak" d={bar.d} style={drawDelay(bar.delay)} />)
   return (
-    <span className="audio-measured-wave" aria-hidden="true">
-      <svg viewBox={`0 0 ${width} 100`} preserveAspectRatio="none"><path d={path} /></svg>
-      <svg className="audio-measured-wave__fill" viewBox={`0 0 ${width} 100`} preserveAspectRatio="none" style={{ clipPath: `inset(0 0 0 ${100 - Math.max(0, Math.min(100, fill))}%)` }}><path d={path} /></svg>
+    <span className="audio-measured-wave" aria-hidden="true" {...draw.props}>
+      <svg viewBox={`0 0 ${width} 100`} preserveAspectRatio="none">{paths}</svg>
+      <svg className="audio-measured-wave__fill" viewBox={`0 0 ${width} 100`} preserveAspectRatio="none" style={{ clipPath: `inset(0 0 0 ${100 - Math.max(0, Math.min(100, fill))}%)` }}>{paths}</svg>
     </span>
   )
 }
@@ -511,7 +517,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
                     className={`audio-wave-progress audio-wave-segment block h-7 overflow-hidden rounded-md transition-opacity hover:opacity-85${peaks ? ' has-measured-wave' : ''}${active && player.playing ? ' is-playing' : ''}`}
                   >
                     {peaks
-                      ? <MeasuredWave peaks={peaks.slice(Math.floor((segment.from / duration) * peaks.length), Math.max(1, Math.ceil((segment.to / duration) * peaks.length)))} fill={fill} />
+                      ? <MeasuredWave peaks={peaks.slice(Math.floor((segment.from / duration) * peaks.length), Math.max(1, Math.ceil((segment.to / duration) * peaks.length)))} fill={fill} playKey={`wave:${source?.src}:${index}`} />
                       : <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${fill}%` }} />}
                   </button>
                 )
@@ -527,7 +533,7 @@ export function AudioPlayer({ sources, title, compact = false, controlId, showCh
               className={`audio-wave-progress mt-4 block h-7 w-full overflow-hidden rounded-md${peaks ? ' has-measured-wave' : ''}${active && player.playing ? ' is-playing' : ''}`}
               aria-label="شريط تقدم الصوت"
             >
-              {peaks ? <MeasuredWave peaks={peaks} fill={percent} /> : <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${percent}%` }} />}
+              {peaks ? <MeasuredWave peaks={peaks} fill={percent} playKey={`wave:${source?.src}`} /> : <span className="audio-wave-fill block h-full transition-[width]" style={{ width: `${percent}%` }} />}
             </button>
           )}
 

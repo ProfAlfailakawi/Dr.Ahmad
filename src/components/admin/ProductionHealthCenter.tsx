@@ -13,6 +13,7 @@ import { Pagination, usePagedList } from '../Pagination'
 import { AudioSystemOverview } from './AudioSystemOverview'
 import { SystemHealthOverview } from './SystemHealthOverview'
 import { arabicCountPhrase, DAMAGED_LINK_FORMS, HEALTHY_LINK_FORMS, INTERVENTION_FORMS } from '../../lib/arabic-count.ts'
+import { useChangeFlash } from '../DrawIn'
 
 const card = 'min-w-0 max-w-full overflow-hidden rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const pill = 'min-w-0 rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.74rem] font-semibold leading-tight text-soft'
@@ -83,9 +84,12 @@ function StageRail({ active, episode }: { active: Stage; episode?: Episode }) {
         ? (active === 'needs_review' ? 'returned' : 'current')
         : 'pending',
   }))
+  /* وميضٌ واحد على الخطوة التي تقدّم إليها الإنتاج للتو — لا على الأولى ولا على كل المراحل */
+  const advanced = useChangeFlash(activeIndex)
   return (
     <DnaStepper
       steps={steps}
+      flashKey={advanced ? stages[activeIndex]?.key : null}
       size="sm"
       ariaLabel="مراحل إنتاج الحلقة"
       className={`podcast-stage-steps mt-4${active === 'generating' ? ' dna-steps-live' : ''}`}

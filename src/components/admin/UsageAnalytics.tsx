@@ -15,6 +15,8 @@ import { adminToolLabel } from './admin-navigation'
 /* الامتداد `.ts` مقصود — انظر ملاحظة استيراد المكتبة في arabic-count. */
 import { arabicCountPhrase, DAY_AFTER_PREPOSITION_FORMS, DAY_FORMS } from '../../lib/arabic-count.ts'
 import { ArrowLeft } from 'lucide-react'
+import { CountUp, drawDelay, useDrawIn } from '../DrawIn'
+import { staggerMs } from '../../lib/draw-logic.ts'
 
 /**
  * لوحة «الاستخدام الفعلي» — نصفٌ للزوار ونصفٌ لأدوات الأدمن.
@@ -33,6 +35,14 @@ type Window = { days: number; compare: boolean; spanMs: number; since: string; u
 const CARD = 'rounded-2xl border border-hair bg-canvas p-5'
 const PRESETS = [7, 30, 90] as const
 const arabicNumber = (value: number) => new Intl.NumberFormat('ar-KW').format(value)
+/** عددٌ صحيح خالص بالمنسِّق نفسه؟ وإلا يُعرض النصّ كما هو بلا عدّ (نِسَب، مدد، رموز). */
+const plainCount = (text: string) => {
+  if (!/^[\d\u0660-\u0669\u066C,.\s]+$/.test(text)) return null
+  const digits = text.replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/[^\d]/g, '')
+  if (!digits) return null
+  const n = Number(digits)
+  return Number.isSafeInteger(n) && arabicNumber(n) === text ? n : null
+}
 
 function p75(values: number[]) {
   if (!values.length) return null
@@ -46,15 +56,17 @@ const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10)
 
 function DeltaBadge({ delta }: { delta: Delta }) {
   const tone = delta.direction === 'up' ? 'text-accent' : delta.direction === 'down' ? 'text-soft' : 'text-soft'
-  return <span className={`text-[.66rem] font-semibold ${tone}`}>{formatDelta(delta)}</span>
+  return <span className={`dw-fade text-[.66rem] font-semibold ${tone}`}>{formatDelta(delta)}</span>
 }
 
 function StatCard({ label, value, delta, samples, hint }: { label: string; value: string; delta?: Delta; samples: string; hint?: string }) {
+  const draw = useDrawIn(`usage-stat:${label}`, 0.5)
+  const count = plainCount(value)
   return (
-    <div className={`${CARD} flex flex-col justify-between gap-3`}>
+    <div className={`${CARD} flex flex-col justify-between gap-3`} {...draw.props}>
       <span className="text-[.72rem] text-soft">{label}</span>
       <div>
-        <strong className="block font-display text-[1.75rem] leading-none text-ink">{value}</strong>
+        <strong className="block font-display text-[1.75rem] leading-none text-ink">{count === null ? value : <CountUp value={count} phase={draw.phase} format={arabicNumber} />}</strong>
         {delta && <span className="mt-1.5 block"><DeltaBadge delta={delta} /></span>}
       </div>
       <div className="grid gap-0.5 border-t border-hair pt-2.5 text-[.66rem] text-soft">
@@ -67,17 +79,18 @@ function StatCard({ label, value, delta, samples, hint }: { label: string; value
 
 function Pulse({ series, caption }: { series: { index: number; count: number }[]; caption: string }) {
   const peak = Math.max(1, ...series.map((item) => item.count))
+  const draw = useDrawIn(`usage-pulse:${caption}`)
   if (!series.length) return <p className="text-[.7rem] text-soft">لا نبض بعد في هذه الفترة.</p>
   return (
-    <div>
+    <div {...draw.props}>
       {/* أعمدةٌ من الأحدث إلى الأقدم — الفهرس صفر هو الآن. */}
       <div dir="ltr" className="flex h-16 items-end justify-end gap-1">
-        {[...series].reverse().map((item) => (
+        {[...series].reverse().map((item, position) => (
           <span
             key={item.index}
             title={`${arabicNumber(item.count)} حدثاً`}
-            style={{ height: `${Math.max(6, (item.count / peak) * 100)}%` }}
-            className="w-3 rounded-t-sm bg-accent/[.55]"
+            style={{ ...drawDelay(staggerMs(position, 20, 500)), height: `${Math.max(6, (item.count / peak) * 100)}%` }}
+            className="dw-y w-3 rounded-t-sm bg-accent/[.55]"
           />
         ))}
       </div>

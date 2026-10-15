@@ -48,7 +48,7 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
           aria-label="ابحث في كتاب"
           title="ابحث في كتاب"
           aria-current={bookActive ? 'page' : undefined}
-          className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[.66rem] font-semibold transition-colors ${bookActive ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
+          className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[.75rem] font-semibold transition-colors ${bookActive ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}
         >
           <SocialIcon name="Search" size={12} />
           داخل كتاب

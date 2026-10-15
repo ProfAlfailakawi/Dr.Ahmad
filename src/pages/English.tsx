@@ -329,7 +329,7 @@ export function EnglishResearch() {
                     {p.journal && <p className="mt-2 text-[.85rem] text-soft">{journalEn(p.journal)}</p>}
                     <div className="mt-3 flex flex-wrap items-center gap-4 text-[.82rem]">
                       {p.meta && <span className="text-soft/80">{p.meta}</span>}
-                      <Link to={`/research/${p.slug}`} className="font-medium text-accent transition-opacity hover:opacity-70">
+                      <Link to={`/research/${p.slug}`} className="inline-flex min-h-10 items-center font-medium text-accent transition-opacity hover:opacity-70">
                         Details (Arabic)<Arrow ltr />
                       </Link>
                     </div>

@@ -161,8 +161,8 @@ export default function Articles() {
             <details className="group relative">
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-hair bg-canvas px-4 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف الأرشيف <span aria-hidden className="transition-transform group-open:rotate-180"><SocialIcon name="ChevronDown" size={13} /></span></summary>
               <div className="absolute end-0 top-[calc(100%+.5rem)] z-20 min-w-44 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-hair bg-canvas p-2 shadow-[0_18px_50px_-30px_rgba(21,22,26,.55)]">
-                <Link to="/search" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">البحث العميق</Link>
-                <Link to="/atlas" className="block rounded-lg px-3 py-2 text-[.76rem] font-semibold text-ink hover:bg-wash hover:text-accent">سماء المقالات</Link>
+                <Link to="/search" className="block min-h-10 rounded-lg px-3 py-2.5 text-[.78rem] font-semibold text-ink hover:bg-wash hover:text-accent">البحث العميق</Link>
+                <Link to="/atlas" className="block min-h-10 rounded-lg px-3 py-2.5 text-[.78rem] font-semibold text-ink hover:bg-wash hover:text-accent">سماء المقالات</Link>
               </div>
             </details>
           </div>

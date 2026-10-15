@@ -105,10 +105,10 @@ export function BooksAtlas() {
                     type="button"
                     onClick={() => setActive(on ? '' : bridge.term)}
                     aria-pressed={on}
-                    className={`rounded-full border px-3.5 py-2 text-[.72rem] transition-colors ${on ? 'border-accent bg-accent/[.07] font-semibold text-accent' : 'border-hair bg-wash text-ink hover:border-accent/40'}`}
+                    className={`min-h-10 rounded-full border px-3.5 py-2 text-[.75rem] transition-colors ${on ? 'border-accent bg-accent/[.07] font-semibold text-accent' : 'border-hair bg-wash text-ink hover:border-accent/40'}`}
                   >
                     {bridge.term}
-                    <span className="mr-2 text-[.64rem] text-soft">{bridge.books.length}</span>
+                    <span className="mr-2 text-[.75rem] text-soft">{bridge.books.length}</span>
                   </button>
                 )
               })}

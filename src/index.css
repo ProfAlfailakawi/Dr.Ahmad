@@ -8490,6 +8490,12 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 .count-ring-text { font: 700 1.6rem 'El Messiri', serif; fill: rgb(var(--c-ink)); font-variant-numeric: tabular-nums; }
 .count-tile-title { font-size: .92rem; font-weight: 700; line-height: 1.6; color: rgb(var(--c-ink)); }
 .count-tile-note { margin-top: .15rem; font-size: .76rem; line-height: 1.6; color: rgb(var(--c-soft)); }
+.count-timeline { position: relative; margin: .75rem 0 0; padding: 0; list-style: none; }
+.count-timeline::before { content: ''; position: absolute; inset-block: .6rem; inset-inline-start: .3rem; width: 1px; background: var(--c-hair); }
+.count-timeline li { position: relative; display: flex; align-items: baseline; gap: .75rem; padding-block: .4rem; padding-inline-start: 1.3rem; }
+.count-timeline li::before { content: ''; position: absolute; inset-inline-start: 0; top: 50%; width: .62rem; height: .62rem; margin-top: -.31rem; border-radius: 50%; background: rgb(var(--c-accent)); }
+.count-timeline-year { font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; color: rgb(var(--c-ink)); }
+.count-timeline-count { font-size: .85rem; color: rgb(var(--c-soft)); }
 .count-bars { display: flex; align-items: flex-end; gap: .4rem; height: 6.5rem; margin-top: .5rem; }
 .count-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
 .count-bar i { display: block; width: 100%; max-width: 1.6rem; border-radius: 5px 5px 2px 2px; background: rgb(var(--c-accent)); }

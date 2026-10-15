@@ -12,7 +12,7 @@ import { ClarifiedIconAction } from '../components/ClarifiedIconAction'
 import { arabicCountPhrase, BOOK_PLAIN_FORMS } from '../lib/arabic-count.ts'
 import { BookTerrain } from '../components/BookTerrain'
 import { coverSrcSet } from '../lib/cover-image'
-import { CountTiles, RankedTile, RingTile, YearBarsTile } from '../components/CountTiles'
+import { CountTiles, RankedTile, RingTile, YearTimelineTile } from '../components/CountTiles'
 import { bookTiles } from '../lib/count-tiles'
 
 const bookCount = (count: number) => arabicCountPhrase(count, BOOK_PLAIN_FORMS)
@@ -54,7 +54,7 @@ export default function Publications() {
         {tiles.total > 0 && (tiles.years || tiles.pages) && (
           <CountTiles label="الكتب بالأرقام" className="mx-auto mt-12 w-full max-w-shell max-lg:order-2 lg:mb-12 lg:mt-0">
             <RingTile value={tiles.total} of={tiles.total} label="كتب منشورة" />
-            {tiles.years && <YearBarsTile title="الكتب بحسب سنة النشر" bars={tiles.years} />}
+            {tiles.years && <YearTimelineTile title="الكتب بحسب سنة النشر" bars={tiles.years} />}
             {tiles.pages && <RankedTile title="عدد الصفحات" note={tiles.pages.sum ? `المجموع ${tiles.pages.sum} صفحة` : undefined} rows={tiles.pages.top} />}
           </CountTiles>
         )}

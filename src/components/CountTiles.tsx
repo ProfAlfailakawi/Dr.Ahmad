@@ -41,6 +41,31 @@ export function YearBarsTile({ title, bars }: { title: string; bars: YearBar[] }
   )
 }
 
+const booksWord = (n: number) => (n === 1 ? 'كتاب واحد' : n === 2 ? 'كتابان' : n <= 10 ? `${fmt(n)} كتب` : `${fmt(n)} كتاباً`)
+
+/** خطّ زمني بالسنوات التي صدر فيها شيء فعلاً — بلا أعمدةٍ فارغة. سنة واحدة تصير جملة. */
+export function YearTimelineTile({ title, bars }: { title: string; bars: YearBar[] }) {
+  const rows = bars.filter((bar) => bar.count > 0).sort((a, b) => Number(a.year) - Number(b.year))
+  if (rows.length === 0) return null
+  return (
+    <div className="count-tile">
+      <p className="count-tile-title">{title}</p>
+      {rows.length === 1 ? (
+        <p className="count-tile-note">{booksWord(rows[0].count)} صدرت كلها عام {rows[0].year}.</p>
+      ) : (
+        <ol className="count-timeline" aria-label={title}>
+          {rows.map((row) => (
+            <li key={row.year}>
+              <span className="count-timeline-year">{row.year}</span>
+              <span className="count-timeline-count">{booksWord(row.count)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  )
+}
+
 export function RankedTile({ title, note, rows }: { title: string; note?: string; rows: RankedBar[] }) {
   const max = Math.max(...rows.map((row) => row.value), 1)
   return (

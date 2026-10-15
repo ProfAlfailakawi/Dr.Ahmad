@@ -4,6 +4,8 @@ import { paperMetaAr } from '../lib/paper-meta-ar'
 import { BadgeCheck, Building2, Link2, Route as RouteIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
+import { drawDelay, useDrawIn } from '../components/DrawIn'
+import { staggerMs } from '../lib/draw-logic.ts'
 import { ThoughtSystemNav } from '../components/ThoughtSystemNav'
 import ImpactMap from '../components/ImpactMap'
 import { Pagination, usePagedList } from '../components/Pagination'
@@ -122,6 +124,7 @@ export default function Impact() {
     return [...counts.entries()].sort((left, right) => right[0].localeCompare(left[0]))
   }, [chains])
   const yearPeak = Math.max(1, ...yearSummary.map(([, count]) => count))
+  const yearsDraw = useDrawIn('impact-years')
   const linkedNodes = chains.flatMap((chain) => chain.nodes).filter((node) => node.kind !== 'origin')
   const verifiedEvidence = linkedNodes.filter((node) => node.confidence === 'موثق')
   const verifiedNodes = verifiedEvidence.length
@@ -179,9 +182,9 @@ export default function Impact() {
           </div>
         </div>
         {yearSummary.length > 1 && (
-          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-2">
+          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-2" {...yearsDraw.props}>
             <span className="text-[.72rem] font-semibold text-soft">حصاد السنوات:</span>
-            {yearSummary.map(([year, count]) => (
+            {yearSummary.map(([year, count], barIndex) => (
               <button
                 key={year}
                 type="button"
@@ -189,7 +192,7 @@ export default function Impact() {
                 className={`flex min-h-11 min-w-[6.5rem] flex-col justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-start text-[.74rem] transition-colors ${yearFilter === year ? 'border-accent font-semibold text-accent' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
               >
                 <span>{year} · {arabicCountPhrase(count, JOURNEY_FORMS, number.format)}</span>
-                <span aria-hidden="true" className="block h-1.5 w-full overflow-hidden rounded-full bg-hair"><span className="block h-full rounded-full bg-accent/60" style={{ width: `${Math.max(6, Math.round((count / yearPeak) * 100))}%` }} /></span>
+                <span aria-hidden="true" className="block h-1.5 w-full overflow-hidden rounded-full bg-hair"><span className="dw-x block h-full rounded-full bg-accent/60" style={{ ...drawDelay(staggerMs(barIndex, 50, 400)), width: `${Math.max(6, Math.round((count / yearPeak) * 100))}%` }} /></span>
               </button>
             ))}
             <button

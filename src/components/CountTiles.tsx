@@ -1,4 +1,6 @@
 import type { RankedBar, YearBar } from '../lib/count-tiles'
+import { drawDelay, useCountValue, useDrawIn } from './DrawIn'
+import { staggerMs } from '../lib/draw-logic.ts'
 
 /* بلاطات عدّ هادئة فوق القوائم — عرض فقط، بألوان التوكنات نفسها. */
 
@@ -8,12 +10,27 @@ export function RingTile({ value, of, label, note }: { value: number; of: number
   const radius = 34
   const full = 2 * Math.PI * radius
   const share = of > 0 ? Math.min(1, value / of) : 0
+  /* الحلقة الكاملة (value = of) لا تُرسم؛ الحلقة الجزئية فقط تُرسم حتى حصّتها، والعدد يصل في الحالتين. */
+  const partial = share < 1
+  const draw = useDrawIn(`count-ring:${label}`, 0.5)
+  const shown = useCountValue(value, draw.phase)
   return (
-    <div className="count-tile count-tile--row" role="img" aria-label={`${label}: ${fmt(value)}${note ? `، ${note}` : ''}`}>
+    <div className="count-tile count-tile--row" role="img" aria-label={`${label}: ${fmt(value)}${note ? `، ${note}` : ''}`} {...draw.props}>
       <svg className="count-ring" viewBox="0 0 88 88" aria-hidden="true">
         <circle cx="44" cy="44" r={radius} fill="none" stroke="rgb(var(--c-ink) / .1)" strokeWidth="6" />
-        <circle cx="44" cy="44" r={radius} fill="none" stroke="rgb(var(--c-accent))" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${full * share} ${full}`} transform="rotate(-90 44 44)" />
-        <text x="44" y="51" textAnchor="middle" className="count-ring-text">{fmt(value)}</text>
+        {partial ? (
+          <circle
+            className="dw-ring"
+            cx="44" cy="44" r={radius} fill="none" stroke="rgb(var(--c-accent))" strokeWidth="6" strokeLinecap="round"
+            strokeDasharray={`${full} ${full}`}
+            strokeDashoffset={draw.phase === 'wait' ? full : full * (1 - share)}
+            style={{ opacity: draw.phase === 'wait' ? 0 : 1 }}
+            transform="rotate(-90 44 44)"
+          />
+        ) : (
+          <circle cx="44" cy="44" r={radius} fill="none" stroke="rgb(var(--c-accent))" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${full * share} ${full}`} transform="rotate(-90 44 44)" />
+        )}
+        <text x="44" y="51" textAnchor="middle" className="count-ring-text">{fmt(shown)}</text>
       </svg>
       <div>
         <p className="count-tile-title">{label}</p>
@@ -25,14 +42,15 @@ export function RingTile({ value, of, label, note }: { value: number; of: number
 
 export function YearBarsTile({ title, bars }: { title: string; bars: YearBar[] }) {
   const max = Math.max(...bars.map((bar) => bar.count), 1)
+  const draw = useDrawIn(`count-bars:${title}`)
   return (
-    <div className="count-tile">
+    <div className="count-tile" {...draw.props}>
       <p className="count-tile-title">{title}</p>
       <div className="count-bars" role="img" aria-label={title + ': ' + bars.map((bar) => `${bar.year} ${bar.count}`).join('، ')}>
-        {bars.map((bar) => (
+        {bars.map((bar, index) => (
           <div key={bar.year} className="count-bar">
-            <span className="count-bar-value">{bar.count > 0 ? fmt(bar.count) : ''}</span>
-            <i style={{ height: bar.count > 0 ? `${Math.max(8, (bar.count / max) * 60)}px` : '2px', opacity: bar.count > 0 ? 1 : .35 }} />
+            <span className="count-bar-value dw-fade" style={drawDelay(staggerMs(index, 50, 500) + 250)}>{bar.count > 0 ? fmt(bar.count) : ''}</span>
+            <i className="dw-y" style={{ ...drawDelay(staggerMs(index, 50, 500)), height: bar.count > 0 ? `${Math.max(8, (bar.count / max) * 60)}px` : '2px', opacity: bar.count > 0 ? 1 : .35 }} />
             <span className="count-bar-key">{bar.year}</span>
           </div>
         ))}
@@ -75,15 +93,16 @@ export function YearTimelineTile({ title, bars, kind = 'book' }: { title: string
 
 export function RankedTile({ title, note, rows }: { title: string; note?: string; rows: RankedBar[] }) {
   const max = Math.max(...rows.map((row) => row.value), 1)
+  const draw = useDrawIn(`count-ranked:${title}`)
   return (
-    <div className="count-tile count-tile--wide">
+    <div className="count-tile count-tile--wide" {...draw.props}>
       <p className="count-tile-title">{title}</p>
       {note && <p className="count-tile-note">{note}</p>}
       <div className="count-ranked" role="img" aria-label={`${title}: ${rows.map((row) => `${row.label} ${fmt(row.value)}`).join('، ')}`}>
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <div key={row.label} className="count-ranked-row">
             <span className="count-ranked-key">{row.label}</span>
-            <span className="count-ranked-track"><i style={{ width: `${(row.value / max) * 100}%` }} /></span>
+            <span className="count-ranked-track"><i className="dw-x" style={{ ...drawDelay(staggerMs(index, 50, 400)), width: `${(row.value / max) * 100}%` }} /></span>
             <span className="count-ranked-value">{fmt(row.value)}</span>
           </div>
         ))}

@@ -130,7 +130,7 @@ export function AdminTaskIndicator() {
       aria-live="polite"
       title={task.label || label}
     >
-      <span className={`h-2 w-2 rounded-full ${color} ${task.status === 'working' ? 'animate-pulse' : ''}`} aria-hidden />
+      <span className={`h-2 w-2 rounded-full ${color} ${task.status === 'working' ? 'animate-pulse is-calm-pulse' : ''}`} aria-hidden />
       <span>{label}</span>
     </div>
   )

@@ -620,7 +620,7 @@ export function ProductionMonitor({
           <div className="min-w-0">
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[.055] px-3 py-1.5 text-[.62rem] font-bold tracking-[.18em] text-white/75">
-                <span className={`h-2 w-2 rounded-full ${summary.score >= 80 ? 'bg-emerald-400' : summary.score >= 55 ? 'bg-amber-400' : 'bg-rose-400'} ${loading ? 'animate-pulse' : ''}`} />
+                <span className={`h-2 w-2 rounded-full ${summary.score >= 80 ? 'bg-emerald-400' : summary.score >= 55 ? 'bg-amber-400' : 'bg-rose-400'} ${loading ? 'animate-pulse is-calm-pulse' : ''}`} />
                 AUTOPILOT CONTROL
               </span>
               <span className="rounded-full border border-white/10 px-3 py-1.5 text-[.63rem] text-white/55">يتحدث تلقائياً كل 30 ثانية</span>

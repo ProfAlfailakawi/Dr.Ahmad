@@ -8,6 +8,7 @@ import { bio, doctorate, links } from '../data'
 import { useCmsContent } from '../lib/content'
 import { useAdminAuth } from '../lib/admin-auth'
 import { useCv, type CvTextItem } from '../lib/cv'
+import { CountUp, useDrawIn } from '../components/DrawIn'
 import { useTrackView } from '../lib/views'
 import { useCvLinks } from '../lib/settings'
 import { CvDownloadCards } from '../components/CvDownloadCards'
@@ -90,6 +91,8 @@ export default function CV() {
   const { isAdmin } = useAdminAuth()
   const { cv, error: cvError, saveSection } = useCv()
   const { articles, books, papers } = useCmsContent()
+  /* الأختام تصل إلى أعدادها في أقلّ من ثلثي ثانية، مرةً واحدة — «أختام هادئة لا أرقام صاخبة». */
+  const sealsDraw = useDrawIn('cv-seals', 0.6)
   const publishedWords = articles.reduce((sum, article) => sum + article.words, 0)
 
   return (
@@ -136,17 +139,17 @@ export default function CV() {
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
           <FadeUp delay={0.04}>
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
-            <div className="cv-impact-grid mb-5 grid grid-cols-2 gap-6 md:grid-cols-4">
+            <div className="cv-impact-grid mb-5 grid grid-cols-2 gap-6 md:grid-cols-4" {...sealsDraw.props}>
               {[
-                { n: ar(books.length), l: arabicCountLabel(books.length, BOOK_FORMS) },
-                { n: ar(papers.length), l: arabicCountLabel(papers.length, PAPER_FORMS) },
-                { n: ar(articles.length), l: arabicCountLabel(articles.length, ARTICLE_FORMS) },
-                { n: ar(Math.round(publishedWords / 1000)) + 'K', l: arabicCountLabel(Math.round(publishedWords / 1000), WORD_FORMS) },
+                { n: books.length, k: '', l: arabicCountLabel(books.length, BOOK_FORMS) },
+                { n: papers.length, k: '', l: arabicCountLabel(papers.length, PAPER_FORMS) },
+                { n: articles.length, k: '', l: arabicCountLabel(articles.length, ARTICLE_FORMS) },
+                { n: Math.round(publishedWords / 1000), k: 'K', l: arabicCountLabel(Math.round(publishedWords / 1000), WORD_FORMS) },
               ].map((s) => (
                 <div key={s.l} className="flex flex-col items-center text-center">
                   <span className="cv-impact-seal relative flex h-24 w-24 items-center justify-center rounded-full border border-accent/30 md:h-28 md:w-28">
                     <span className="pointer-events-none absolute inset-1.5 rounded-full border border-hair" />
-                    <span dir="ltr" className="font-display text-[clamp(1.7rem,3vw,2.3rem)] font-bold leading-none text-accent">{s.n}</span>
+                    <span dir="ltr" className="font-display text-[clamp(1.7rem,3vw,2.3rem)] font-bold leading-none text-accent"><CountUp value={s.n} phase={sealsDraw.phase} ms={560} format={(n) => ar(n) + s.k} /></span>
                   </span>
                   <span className="cv-impact-label mt-4 text-[.85rem] font-light text-soft">{s.l}</span>
                 </div>

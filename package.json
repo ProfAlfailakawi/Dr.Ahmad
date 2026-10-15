@@ -102,6 +102,7 @@
     "test:day": "node scripts/test-day-default.mjs",
     "test:atlas-compare": "node scripts/test-atlas-compare.mjs",
     "test:journey": "node scripts/test-journey-stepper.mjs",
+    "test:draw": "node scripts/test-draw-in.mjs",
     "test:journey:browser": "node scripts/test-journey-stepper-browser.mjs",
     "test:smoke": "node scripts/smoke-static.mjs",
     "test:performance": "node scripts/performance-budget.mjs",

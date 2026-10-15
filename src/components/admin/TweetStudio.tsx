@@ -566,7 +566,7 @@ export function TweetStudio() {
           >خطة الأسبوع — سبعة أيام</button>
           <button
             type="button"
-            className={`${resonanceMode ? primary : ghost}${resonanceLoaded ? '' : ' animate-pulse'}`}
+            className={`${resonanceMode ? primary : ghost}${resonanceLoaded ? '' : ' animate-pulse is-calm-pulse'}`}
             onClick={() => { setResonanceMode((current) => !current); setBatchMode(false); setWeeklyMode(false); setThread(null) }}
             disabled={!safeResonant.length}
             title={safeResonant.length ? '' : 'لم يظلّل القرّاء شيئاً صالحا لإعادة الاستخدام الآن'}

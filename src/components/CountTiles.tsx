@@ -59,6 +59,38 @@ export function YearBarsTile({ title, bars }: { title: string; bars: YearBar[] }
   )
 }
 
+const NOUNS = {
+  book: { one: 'كتاب واحد', two: 'كتابان', few: 'كتب', many: 'كتاباً' },
+  paper: { one: 'بحث واحد', two: 'بحثان', few: 'أبحاث', many: 'بحثاً' },
+}
+const countWord = (n: number, kind: 'book' | 'paper') => {
+  const w = NOUNS[kind]
+  return n === 1 ? w.one : n === 2 ? w.two : n <= 10 ? `${fmt(n)} ${w.few}` : `${fmt(n)} ${w.many}`
+}
+
+/** خطّ زمني بالسنوات التي صدر فيها شيء فعلاً — بلا أعمدةٍ فارغة. سنة واحدة تصير جملة. */
+export function YearTimelineTile({ title, bars, kind = 'book' }: { title: string; bars: YearBar[]; kind?: 'book' | 'paper' }) {
+  const rows = bars.filter((bar) => bar.count > 0).sort((a, b) => Number(a.year) - Number(b.year))
+  if (rows.length === 0) return null
+  return (
+    <div className="count-tile">
+      <p className="count-tile-title">{title}</p>
+      {rows.length === 1 ? (
+        <p className="count-tile-note">{countWord(rows[0].count, kind)} صدرت كلها عام {rows[0].year}.</p>
+      ) : (
+        <ol className="count-timeline" aria-label={title}>
+          {rows.map((row) => (
+            <li key={row.year}>
+              <span className="count-timeline-year">{row.year}</span>
+              <span className="count-timeline-count">{countWord(row.count, kind)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  )
+}
+
 export function RankedTile({ title, note, rows }: { title: string; note?: string; rows: RankedBar[] }) {
   const max = Math.max(...rows.map((row) => row.value), 1)
   const draw = useDrawIn(`count-ranked:${title}`)

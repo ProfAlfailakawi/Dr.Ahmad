@@ -9,6 +9,7 @@ import { EASE, FadeUp, Label, Magnetic, Page, Reveal, ScheduleProjectLink, Secti
 import { profile, roundDown10, upcoming, type Event as SiteEvent } from '../data'
 import { useCmsContent, useExtras } from '../lib/content'
 import { firebaseEnabled, getDb } from '../lib/firebase'
+import { paperMetaAr } from '../lib/paper-meta-ar'
 import { Newsletter } from '../components/extras'
 import { type Curio } from '../data-curated'
 import type { ArticleRecord, BookRecord, MediaRecord, PaperRecord } from '../lib/cms'
@@ -387,7 +388,7 @@ function OnThisWeek({ compact = false }: { compact?: boolean }) {
         <div className="flex min-w-0 flex-col items-start gap-3 text-accent">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[1.5px] w-7 shrink-0 bg-accent" />
-            <p className="min-w-0 whitespace-nowrap text-[clamp(.7rem,2.25vw,.74rem)] font-semibold leading-none">
+            <p className="min-w-0 whitespace-nowrap text-[clamp(.75rem,2.25vw,.78rem)] font-semibold leading-none">
               في مثل هذا الأسبوع {yearsAgo(n)}
             </p>
           </div>
@@ -779,9 +780,9 @@ function ArchiveCardCover({ item }: { item: SelectedArchiveItem }) {
     return (
       <div className={`archive-card-visual archive-editorial-cover archive-editorial-cover--${item.kind} pointer-events-none`} aria-hidden="true">
         <span className="archive-editorial-orbit" />
-        <span className="archive-editorial-kicker">{item.kind === 'paper' ? 'RESEARCH' : item.kind === 'book' ? 'BOOK' : item.kind === 'media' ? 'MEDIA' : 'ESSAY'}</span>
-        <span className="archive-editorial-mark">{item.kind === 'paper' ? 'R' : item.kind === 'book' ? 'B' : item.kind === 'media' ? 'M' : 'A'}</span>
-        <span className="archive-editorial-year">{item.year || 'ARCHIVE'}</span>
+        <span className="archive-editorial-kicker">{item.kind === 'paper' ? 'بحث' : item.kind === 'book' ? 'كتاب' : item.kind === 'media' ? 'إعلام' : 'مقال'}</span>
+        <span className="archive-editorial-mark">{item.kind === 'paper' ? 'ب' : item.kind === 'book' ? 'ك' : item.kind === 'media' ? 'إ' : 'م'}</span>
+        <span className="archive-editorial-year">{item.year || 'أرشيف'}</span>
       </div>
     )
   }
@@ -844,7 +845,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
          التحريري المرسوم تلقائياً كما كان (onError في البطاقة). */
       article && { type: 'مقال', kind: 'article', title: article.title, note: article.excerpt, to: `/articles/${article.slug}`, image: `/og/articles/${article.slug}.jpg`, year: article.iso?.slice(0, 4), article },
       book && { type: 'كتاب', kind: 'book', title: book.title, note: book.desc, to: `/publications/${book.slug}`, image: book.cover, year: '' },
-      paper && { type: 'بحث محكّم', kind: 'paper', title: paper.titleAr || paper.title, note: paper.meta, to: `/research/${paper.slug}`, image: '', year: paper.iso?.slice(0, 4) },
+      paper && { type: 'بحث محكّم', kind: 'paper', title: paper.titleAr || paper.title, note: paperMetaAr(paper.meta), to: `/research/${paper.slug}`, image: '', year: paper.iso?.slice(0, 4) },
       mediaItem && { type: 'ظهور إعلامي', kind: 'media', title: mediaItem.title, note: mediaItem.outlet, to: mediaItem.slug ? `/media/${mediaItem.slug}` : '/media', image: ytId(mediaItem.url) ? `https://i.ytimg.com/vi/${ytId(mediaItem.url)}/hqdefault.jpg` : '', year: '' },
     ].filter(Boolean) as SelectedArchiveItem[]
     // لا يثبت ترتيب الأنواع أيضاً؛ كل زيارة مدخل جديد فعلياً إلى الأرشيف.
@@ -974,7 +975,7 @@ function EditorialLayer({ articles, papers, media }: { articles: ArticleRecord[]
         <div className="mx-auto max-w-shell">
           <SectionHead label="المساهمات العلمية" title="من السؤال إلى الدليل." to="/research" cta="عرض الكل" />
           <ol className="mt-2">
-            {topPapers.map((paper, i) => <FadeUp key={paper.slug} delay={Math.min(i * 0.06, 0.24)}><li className={i ? 'border-t border-hair' : ''}><Link to={`/research/${paper.slug}`} className="group flex items-baseline gap-6 py-6"><span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70">{arNum(i + 1)}</span><span className="flex-1"><span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{paper.title}</span><span className="mt-1 block text-[.8rem] text-soft">{paper.meta}</span></span><span className="text-soft"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link></li></FadeUp>)}
+            {topPapers.map((paper, i) => <FadeUp key={paper.slug} delay={Math.min(i * 0.06, 0.24)}><li className={i ? 'border-t border-hair' : ''}><Link to={`/research/${paper.slug}`} className="group flex items-baseline gap-6 py-6"><span className="w-8 shrink-0 font-display text-[1.4rem] font-bold text-accent/70">{arNum(i + 1)}</span><span className="flex-1"><span className="block text-[1.1rem] font-medium leading-[1.7] text-ink transition-colors group-hover:text-accent">{paper.title}</span><span className="mt-1 block text-[.8rem] text-soft">{paperMetaAr(paper.meta)}</span></span><span className="text-soft"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span></Link></li></FadeUp>)}
           </ol>
         </div>
       </section>
@@ -1057,6 +1058,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
                 <span className="min-w-0">
                   <span className="block text-[.72rem] font-semibold text-accent">خرائط الفكر والأثر</span>
                   <span className="mt-1 block font-display text-[1.03rem] font-semibold leading-[1.55] text-ink md:text-[1.2rem]">مدخل واحد إلى سماء المقالات، رحلة الأثر، وتوقيعات الموقع.</span>
+                  <span className="mt-1 block text-[.8rem] leading-[1.7] text-soft">أي: خريطة تُريك كيف تتصل مقالاتي بعضها ببعض، وأين وصل أثرها.</span>
                 </span>
               </span>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hair text-accent transition-all group-hover:border-accent group-hover:-translate-x-0.5"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
@@ -1080,7 +1082,7 @@ function HomeSocialFooter() {
           <KuficMark framed className="h-9 w-[52px] text-ink opacity-90" />
           <SocialDock centered />
           <div className="home-footer-tools" aria-label="أدوات الموقع">
-            <button
+            <span className="site-footer__item"><button
               type="button"
               onClick={() => {
                 const willOpen = !newsletterOpen
@@ -1093,9 +1095,9 @@ function HomeSocialFooter() {
               className={`home-footer-tools__item is-icon-only ${newsletterOpen ? 'is-active' : ''}`}
             >
               <SocialIcon name="Mail" size={16} />
-            </button>
-            <TebyanProjectLink label="تبيان" iconOnly className="home-footer-tools__item is-icon-only" />
-            <ScheduleProjectLink label="الجدول" iconOnly className="home-footer-tools__item is-icon-only" />
+            </button><span className="site-footer__caption">النشرة</span></span>
+            <span className="site-footer__item"><TebyanProjectLink label="تبيان" iconOnly className="home-footer-tools__item is-icon-only" /><span className="site-footer__caption">تبيان</span></span>
+            <span className="site-footer__item"><ScheduleProjectLink label="الجدول" iconOnly className="home-footer-tools__item is-icon-only" /><span className="site-footer__caption">الجدول</span></span>
           </div>
         </div>
         <AnimatePresence initial={false}>

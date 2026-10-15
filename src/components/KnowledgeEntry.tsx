@@ -40,7 +40,7 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
     >
       <div className="flex items-center justify-between gap-3 px-2 pb-2.5">
         <div className="min-w-0">
-          <span className="block text-[.64rem] font-semibold text-accent">مدخل المعرفة</span>
+          <span className="block text-[.75rem] font-semibold text-accent">مدخل المعرفة</span>
           <strong className="mt-0.5 block font-display text-[.92rem] font-semibold text-ink">ابحث أو اسأل الأرشيف</strong>
         </div>
         <Link
@@ -69,7 +69,7 @@ export function KnowledgeEntry({ compact = false }: { compact?: boolean }) {
               <SocialIcon name={option.icon} size={14} />
               <strong className="text-[.76rem]">{option.title}</strong>
             </span>
-            <span title={option.note} className={`knowledge-entry-note mt-1 block truncate text-[.6rem] font-light ${option.active ? 'text-white/72' : 'text-soft'}`}>{option.note}</span>
+            <span title={option.note} className={`knowledge-entry-note mt-1 block truncate text-[.75rem] font-light ${option.active ? 'text-white/72' : 'text-soft'}`}>{option.note}</span>
           </Link>
         ))}
       </div>

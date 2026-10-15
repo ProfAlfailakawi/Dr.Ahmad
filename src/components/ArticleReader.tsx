@@ -1185,10 +1185,17 @@ async function quoteCardBlob(quote: string, article: ReaderArticle) {
   if (!context) throw new Error('Canvas unavailable')
   const dark = document.documentElement.classList.contains('dark')
   const paper = document.documentElement.classList.contains('reader-paper')
-  const background = dark ? '#111318' : paper ? '#F7F3E9' : '#FCFCFA'
-  const ink = dark ? '#EEECE6' : '#15161A'
-  const accent = dark ? '#84A9CA' : '#3E5C78'
-  const soft = dark ? '#B2B6BE' : '#7C818B'
+  // ألوان البطاقة المصدَّرة تُقرأ من توكنات الموقع (قنوات RGB) مع احتياطٍ حرفيّ.
+  const token = (name: string, fallback: string) => {
+    const channels = getComputedStyle(document.documentElement).getPropertyValue(name).trim().split(/\s+/).map(Number)
+    return channels.length === 3 && channels.every(Number.isFinite)
+      ? `#${channels.map((value) => value.toString(16).padStart(2, '0')).join('')}`
+      : fallback
+  }
+  const background = paper && !dark ? '#F7F3E9' : token('--c-canvas', dark ? '#111318' : '#FCFCFA')
+  const ink = token('--c-ink', dark ? '#EEECE6' : '#15161A')
+  const accent = token('--c-accent', dark ? '#84A9CA' : '#3E5C78')
+  const soft = token('--c-soft', dark ? '#B2B6BE' : '#7C818B')
   context.fillStyle = background
   context.fillRect(0, 0, width, height)
 

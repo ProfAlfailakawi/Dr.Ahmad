@@ -8,6 +8,7 @@ import { loadBookPassages, matchBookQuotes, searchBookPassages, type BookQuoteMa
 import { chapterUrl, searchMediaChapters, stamp } from '../lib/media-chapters'
 import { QuoteCite } from '../components/QuoteCite'
 import { conceptContextShift, resolveGlossaryConcept } from '../lib/concept-weave'
+import { paperMetaAr } from '../lib/paper-meta-ar'
 
 /**
  * سيرة مفهوم — «المعلّم الرقمي عبر عشرين سنة».
@@ -127,7 +128,7 @@ export default function ConceptLife() {
         date: year,
         kind: 'بحث محكّم',
         title: record.titleAr || paper.title,
-        note: record.abstractAr?.slice(0, 130) || paper.meta || '',
+        note: record.abstractAr?.slice(0, 130) || paperMetaAr(paper.meta) || '',
         to: `/research/${paper.slug}`,
       })
     }

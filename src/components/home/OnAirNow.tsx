@@ -118,7 +118,7 @@ export default function OnAirNow() {
           <Link
             to="/radio"
             className="onair group block overflow-hidden rounded-xl border border-hair bg-wash transition-colors hover:border-accent"
-            style={{ ['--onair-voice' as string]: spoken.f ? '#B0703A' : '#4E6E70' }}
+            style={{ ['--onair-voice' as string]: spoken.f ? 'var(--radio-fahd)' : 'var(--radio-guest)' }}
           >
             <div className="flex items-start gap-4 px-4 py-3.5 md:px-5 md:py-4">
               <span className="onair-dot mt-[7px] shrink-0" aria-hidden="true" />

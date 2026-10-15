@@ -945,7 +945,7 @@ export default function ArticleDetail() {
             )}
             <Link to={`/atlas?star=${encodeURIComponent(article.slug)}`} className="article-atlas-knot serenity-hide mt-3 inline-flex min-h-11 items-center gap-2 text-[.74rem] font-medium text-soft transition-colors hover:text-accent focus-visible:text-accent">
               <span aria-hidden className="relative h-3 w-3 shrink-0"><span className="absolute inset-[3px] rounded-full bg-accent" /><span className="absolute inset-0 rounded-full border border-accent/[.35]" /></span>
-              <span>موقعها في السماء</span>
+              <span>موقعها في السماء <span className="font-normal text-soft/90">· أين يقع هذا المقال بين أفكار الأرشيف</span></span>
             </Link>
           </FadeUp>
 

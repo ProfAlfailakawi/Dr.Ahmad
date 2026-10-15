@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Arrow } from '../components/icons'
+import { paperMetaAr } from '../lib/paper-meta-ar'
 import { BadgeCheck, Building2, Link2, Route as RouteIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
@@ -90,7 +91,7 @@ export default function Impact() {
       const nodes: ImpactNode[] = [
         {
           kind: 'origin', label: 'العمل العلمي', title: paper.titleAr || paper.title,
-          note: paper.meta || 'بحث علمي منشور.', year: paper.iso?.slice(0, 4), to: `/research/${paper.slug}`, confidence: 'موثق',
+          note: paperMetaAr(paper.meta) || 'بحث علمي منشور.', year: paper.iso?.slice(0, 4), to: `/research/${paper.slug}`, confidence: 'موثق',
         },
         ...(item.signals || []).flatMap((signal) => {
           const url = liveLink(signal.url)

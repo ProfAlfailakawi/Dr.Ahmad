@@ -12,6 +12,9 @@ html {
    ============================================================ */
 :root {
   --E: cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* أصوات «الآن على الهواء»: القيم الأصلية حرفياً (كانت مكتوبة في OnAirNow.tsx). */
+  --radio-fahd: #B0703A;
+  --radio-guest: #4E6E70;
 
   --c-canvas: 252 252 250;      /* #FCFCFA */
   --c-ink: 21 22 26;            /* #15161A */
@@ -724,23 +727,15 @@ html.dark .content-media .page-head {
   color: rgb(var(--c-accent));
 }
 
-/* المحاذاة الكاملة محصورة في متن المقال نفسه. تعميمها على كل فقرة كان
-   يمدّد الكلمات داخل الكروت على الهاتف ويصنع فراغات غير طبيعية. */
-
-/* الرصف من الطرفين يجبر المتصفح على توسيع المسافات بين الكلمات، فتنشقّ في النص
-   «أنهارٌ بيضاء» رأسية تقطع انسياب القراءة العربية — ولا كشيدة في نصّ الويب
-   تسدّها كما يسدّها الخطّاط.
-   ظننّا أولاً أن العلّة في ضيق عمود الجوال وحده: قِسنا فقرةً واحدة على الحاسوب
-   فأعطت ١٫١٩× فاطمأننا. ثم قِسنا أربعة مقالات كاملة على عمود ٥٨٣px فتبيّن أن
-   الوسيط ١٫٦٥–١٫٩٢× وأن أكثر الفقرات تتجاوز ١٫٥× — أي أن العلّة في الرصف نفسه
-   مع العربية، لا في عرض العمود.
-   فالمتن يُرصف من اليمين في كل العروض: الحافة اليسرى مسنّنة قليلاً، والمسافات
-   تبقى طبيعية والعين تنزل بلا عثرات — كما في الكتاب المطبوع. */
+/* عقد المحاذاة: متن المقال يُرصف من الطرفين (justify) على العروض الأوسع من 640px،
+   ويُرصف من جهة البدء (start) على الهاتف. السبب: في عمود الجوال الضيّق يوسّع الرصف
+   الفراغات بين الكلمات فتنشقّ «أنهارٌ بيضاء» (قِيس الوسيط ≈1.7× على الهاتف). الطباعة
+   تبقى justify. والمحاذاة محصورة في متن المقال نفسه لا في كل فقرة بالموقع. */
 @media (max-width: 640px) {
   .article-body p {
     font-size: calc(1.06rem * var(--article-scale, 1));
     line-height: var(--article-line, 2);
-    text-align: justify;
+    text-align: start;
     text-justify: inter-word;
     text-align-last: start;
     word-spacing: normal;
@@ -1250,7 +1245,7 @@ html.dark .book-detail-cover {
 .human-core__words span {
   position: absolute;
   color: rgb(var(--c-accent) / .16);
-  font-size: .7rem;
+  font-size: .75rem;
   font-weight: 600;
   /* كلماتٌ عربية: العربية متّصلة الحروف، والتباعد يفكّ وصلاتها. وهذا ما تنصّ
      عليه قاعدة الموقع نفسها `:dir(rtl){letter-spacing:0}` — وكانت تفلت منها. */
@@ -3890,9 +3885,9 @@ body.selection-active .floating-actions {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  font-size: .7rem;
+  font-size: .8rem;
   font-weight: 700;
-  letter-spacing: .16em; /* latin — ESSAY · RESEARCH */
+  letter-spacing: 0; /* عربي: التباعد يفكّ اتصال الحروف */
   color: rgb(var(--c-accent) / .72);
 }
 .archive-editorial-mark {
@@ -3909,7 +3904,7 @@ body.selection-active .floating-actions {
   right: 1rem;
   bottom: .9rem;
   font-size: .7rem;
-  letter-spacing: .08em; /* latin — أرقام السنوات · ARCHIVE */
+  letter-spacing: 0;
   color: rgb(var(--c-soft) / .75);
 }
 /* عمق الغلاف التحريري: سطور ورقٍ خافتة تتلاشى نحو الأعلى، وحرفٌ أوضح قليلاً، ودخولٌ قصير. */
@@ -4065,7 +4060,7 @@ body.selection-active .floating-actions {
   .content-articles article { padding-bottom: 2rem; }
   .content-articles .article-body,
   .content-articles .article-body p,
-   .content-articles .article-body-synced .synced-paragraph { text-align: justify; text-justify: inter-word; text-align-last: start; }
+   .content-articles .article-body-synced .synced-paragraph { text-align: start; text-justify: inter-word; text-align-last: start; }
 }
 
 /* 2026-08 final layout audit: no artificial blank screen before the footer. */
@@ -4089,11 +4084,11 @@ body.selection-active .floating-actions {
   text-align-last: start;
 }
 
-/* تأكيدٌ أخيرٌ في الملف حتى يغلب المُحدِّد الأعلى قبله: متن المقال يُرصف من
-   اليمين وحده في كل العروض. (القياس الكامل في التعليق أعلى الملف.) */
+/* تأكيدٌ أخيرٌ في الملف حتى يغلب المُحدِّد الأعلى قبله: على الهاتف (≤640px)
+   متن المقال من جهة البدء. (التعليل في تعليق العقد أعلى الملف.) */
 @media (max-width: 640px) {
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
-    text-align: justify;
+    text-align: start;
     text-justify: inter-word;
     text-align-last: start;
   }
@@ -4575,7 +4570,7 @@ html, body, #root { max-inline-size: 100%; }
 .journey--full .journey__link::after { transform: scaleY(0); transform-origin: center top; }
 .journey--full .journey__item[data-link="on"] .journey__link::after { transform: scale(1); }
 .journey__text { display: block; }
-.journey__index { display: block; font-size: .7rem; font-weight: 500; color: rgb(var(--c-soft)); }
+.journey__index { display: block; font-size: .75rem; font-weight: 500; color: rgb(var(--c-soft)); }
 .journey__title {
   display: block;
   font-family: "El Messiri", serif;
@@ -5723,9 +5718,8 @@ html.dark .content-book-detail .book-detail-cover {
    إضافة وظائف جديدة أو تغيير مسارات المحتوى. العربية فقط في إشارات الاكتشاف.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 1) متن المقالات — العربية تُرصف من جهة البدء فقط.
-   الرصف من الطرفين يوسّع فراغات الكلمات ويصنع «أنهاراً بيضاء»؛ لذلك نحرس
-   start في الحاسوب والهاتف والطباعة، مع إبقاء عرض القراءة الافتراضي 66ch. */
+/* 1) متن المقالات — justify فوق 640px، وstart على الهاتف (انظر عقد المحاذاة أعلى الملف)
+   ومع إبقاء عرض القراءة الافتراضي 66ch. */
 .content-articles .article-body,
 .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
 .content-articles .article-body-synced .synced-paragraph {
@@ -5739,7 +5733,7 @@ html.dark .content-book-detail .book-detail-cover {
   .content-articles .article-body,
   .content-articles :is(.article-body, .article-body-synced) :is(p, li, blockquote),
   .content-articles .article-body-synced .synced-paragraph {
-    text-align: justify !important;
+    text-align: start !important;
     text-justify: inter-word !important;
     text-align-last: start !important;
     word-spacing: normal;
@@ -7034,9 +7028,9 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   .media-year-group { grid-template-columns: minmax(0,1fr); gap: 0; }
   .media-year-mark { display: flex; align-items: center; gap: .6rem; padding-block: 1rem .15rem; font-size: .76rem; direction: rtl; text-align: start; }
   .media-year-mark i { position: static; flex: 1; width: auto; height: 1px; background: rgb(var(--c-ink) / .08); }
-  .media-editorial-row__link { grid-template-columns: 4.8rem minmax(0,1fr); gap: .7rem; min-height: 6.1rem; padding-inline-end: 2.3rem; }
+  .media-editorial-row__link { grid-template-columns: 4.8rem minmax(0,1fr); gap: .7rem; min-height: 6.1rem; padding-inline-end: 3rem; }
   .media-editorial-row__meta { display: none; }
-  .media-editorial-row__save { transform: translateY(-50%) scale(.88) !important; }
+  .media-editorial-row__save { transform: translateY(-50%) !important; }
 }
 
 /* الأبحاث أيضاً تتحول من بطاقات متكررة إلى سجل تحريري واضح. */
@@ -7064,6 +7058,8 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   font-weight: 700 !important;
 }
 .content-research .research-understand-link:hover { background: transparent !important; transform: translateX(-2px); }
+/* هدف اللمس ≥ 44px: الرابط نصيّ بلا إطار، فنزيد الحشو الرأسي وحده. */
+.content-research .research-understand-link { min-height: 2.75rem !important; padding-block: .7rem !important; }
 
 /* 6) «الموقع الذي يتنفس» — حركة صغيرة بطيئة، وتُطفأ عند القراءة العميقة. */
 @media (prefers-reduced-motion: no-preference) {
@@ -7882,14 +7878,14 @@ html.dark {
 .site-social-dock__panel { display: flex; min-width: 0; align-items: center; gap: .65rem; }
 .site-social-dock__socials { display: flex; align-items: center; gap: .28rem; }
 .site-social-dock__socials a {
-  display: inline-flex; width: 2.25rem; height: 2.25rem; align-items: center; justify-content: center;
+  display: inline-flex; width: 2.5rem; height: 2.5rem; align-items: center; justify-content: center;
   border-radius: 999px; color: rgb(var(--c-soft)); transition: color .2s ease, background-color .2s ease;
 }
 .site-social-dock__socials a:hover { color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .06); }
 .site-social-dock__divider { width: 1px; height: 1.25rem; background: var(--c-hair); }
 .site-social-dock__academic { display: flex; flex-wrap: wrap; align-items: center; gap: .28rem; }
 .site-social-dock__academic a {
-  display: inline-flex; inline-size: 2.25rem; block-size: 2.25rem; align-items: center; justify-content: center;
+  display: inline-flex; inline-size: 2.5rem; block-size: 2.5rem; align-items: center; justify-content: center;
   border-radius: 999px; color: rgb(var(--c-soft)); transition: color .2s ease, background-color .2s ease;
 }
 .site-social-dock__academic a:hover { color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .06); }
@@ -7899,10 +7895,15 @@ html.dark {
 .site-footer__main { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 1.25rem; }
 .site-footer__mark { display: inline-flex; align-items: center; }
 .site-footer__utility { display: inline-flex; justify-self: end; flex-wrap: wrap; align-items: center; gap: .45rem .75rem; }
+.site-footer__item { display: inline-flex; flex-direction: column; align-items: center; gap: .1rem; }
+.site-footer__item > :first-child { min-block-size: 2.5rem; display: inline-flex; align-items: center; justify-content: center; }
+.site-footer__caption { color: rgb(var(--c-soft)); font-size: .75rem; font-weight: 500; line-height: 1.4; }
+.site-social-dock__group { display: flex; flex-direction: column; align-items: center; gap: .15rem; }
+.site-social-dock__heading { color: rgb(var(--c-soft)); font-size: .75rem; font-weight: 500; line-height: 1.4; }
 .site-footer__text-link { color: rgb(var(--c-soft)); font-size: .7rem; font-weight: 550; transition: color .2s ease; }
 .site-footer__text-link:hover { color: rgb(var(--c-accent)); }
 .site-footer__icon-link {
-  display: inline-flex; inline-size: 2.3rem; block-size: 2.3rem; align-items: center; justify-content: center;
+  display: inline-flex; inline-size: 2.5rem; block-size: 2.5rem; align-items: center; justify-content: center;
   border-radius: 999px; color: rgb(var(--c-soft)); transition: color .2s ease, background-color .2s ease;
 }
 .site-footer__icon-link:hover { color: rgb(var(--c-accent)); background: rgb(var(--c-accent) / .055); }
@@ -7919,7 +7920,7 @@ html.dark {
   line-height: 1.7;
 }
 .home-footer-rights { text-align: center; margin-inline: auto; max-width: 32rem; }
-.home-footer-tools { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .35rem; }
+.home-footer-tools { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: .35rem 1rem; }
 .home-footer-tools__item {
   display: inline-flex !important; min-height: 2.25rem !important; height: 2.25rem !important; align-items: center; justify-content: center; gap: .4rem;
   border: 0 !important; border-radius: 999px; padding-inline: .72rem !important; background: transparent !important;
@@ -7947,7 +7948,7 @@ html.dark {
   /* ٧rem كما كانت: اللوحة في عرضها الأصلي (٢٢rem وسطاً) ارتفاعها ٥٫٩rem فتسع
      الصفّين والفاصل بلا قصّ. القصّ الذي رأيته كان من تمديدي للوحة عرضَ التذييل
      كلّه لا من الرقم — فرُدّ التمديد ورُدّ الرقم معه. */
-  .site-social-dock.is-open .site-social-dock__panel { max-height: 7rem; opacity: 1; transform: translateY(0); }
+  .site-social-dock.is-open .site-social-dock__panel { max-height: 11rem; opacity: 1; transform: translateY(0); }
 
   /* التذييل: القمر وزرّ التواصل أيقونتان متجاورتان في صفٍّ واحد وسطاً، واللوحة
      تحتهما بكتلتها الأصلية (٢٢rem وسطاً) لا ممدودةً عرض التذييل — التمديد هو ما
@@ -8087,7 +8088,7 @@ html.dark {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   color: rgb(var(--c-ink) / .76);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 1;
   letter-spacing: 0;
@@ -8124,7 +8125,7 @@ html.dark {
   .rail-swipe-discovery__label {
     min-block-size: 1.75rem;
     padding-inline: .56rem;
-    font-size: 11px;
+    font-size: 12px;
   }
 }
 
@@ -8509,6 +8510,12 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 .count-ring-text { font: 700 1.6rem 'El Messiri', serif; fill: rgb(var(--c-ink)); font-variant-numeric: tabular-nums; }
 .count-tile-title { font-size: .92rem; font-weight: 700; line-height: 1.6; color: rgb(var(--c-ink)); }
 .count-tile-note { margin-top: .15rem; font-size: .76rem; line-height: 1.6; color: rgb(var(--c-soft)); }
+.count-timeline { position: relative; margin: .75rem 0 0; padding: 0; list-style: none; }
+.count-timeline::before { content: ''; position: absolute; inset-block: .6rem; inset-inline-start: .3rem; width: 1px; background: var(--c-hair); }
+.count-timeline li { position: relative; display: flex; align-items: baseline; gap: .75rem; padding-block: .4rem; padding-inline-start: 1.3rem; }
+.count-timeline li::before { content: ''; position: absolute; inset-inline-start: 0; top: 50%; width: .62rem; height: .62rem; margin-top: -.31rem; border-radius: 50%; background: rgb(var(--c-accent)); }
+.count-timeline-year { font-size: .95rem; font-weight: 700; font-variant-numeric: tabular-nums; color: rgb(var(--c-ink)); }
+.count-timeline-count { font-size: .85rem; color: rgb(var(--c-soft)); }
 .count-bars { display: flex; align-items: flex-end; gap: .4rem; height: 6.5rem; margin-top: .5rem; }
 .count-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
 .count-bar i { display: block; width: 100%; max-width: 1.6rem; border-radius: 5px 5px 2px 2px; background: rgb(var(--c-accent)); }
@@ -8553,13 +8560,13 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
   .atlas-map-mobile .atlas-year-label--up { transform: translateY(-34px); }
 }
 
-/* ---------- الأزرار العائمة على الهاتف: أصغر مظهراً، وأقرب إلى الحافة ----------
+/* ---------- الأزرار العائمة على الهاتف: أصغر مظهراً (دائرة 40px) ملاصقة للحافة فلا تغطّي حواف البطاقات ----------
    منطقة اللمس تبقى 44×44 فعلية (بلا ::after، لأن ::before/::after مستعملان في الزر)،
    أما الدائرة المرسومة فقطرها 36px في الزاوية فتغطّي أقلّ ما يمكن من البطاقات
    ولا تتداخل مناطق اللمس بين الزرّين. */
 @media (max-width: 639px) {
   .floating-actions {
-    right: 4px !important;
+    right: 0 !important;
     bottom: calc(.75rem + env(safe-area-inset-bottom)) !important;
     gap: 0 !important;
   }
@@ -8572,10 +8579,19 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     border-color: transparent !important;
     box-shadow: none !important;
     background-color: transparent !important;
-    background-image: radial-gradient(circle at center, rgb(var(--c-canvas) / .94) 0 17px, var(--c-hair) 17px 18px, transparent 18.5px) !important;
+    background-image: radial-gradient(circle at center, rgb(var(--c-canvas) / .94) 0 19px, var(--c-hair) 19px 20px, transparent 20.5px) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
+    /* لا يحجب نصّ الصفوف تحته (٢٤px حاشية لا تكفي دائرة 40px): خافتٌ حتى يُلمس. */
+    opacity: .62;
+    transition: opacity .2s ease;
   }
+  .floating-actions > button:hover,
+  .floating-actions > button:focus-visible,
+  .floating-actions > button:active,
+  .floating-actions > .my-space-trigger:hover,
+  .floating-actions > .my-space-trigger:focus-visible,
+  .floating-actions > .my-space-trigger:active { opacity: 1; }
 }
 
 /* /thought: بلاطات الأرقام الأربع — أيقونة رفيعة وشريط حصّة من مجموع المواد (عرض فقط). */
@@ -8587,6 +8603,24 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 }
 .thought-stat-track { display: block; height: 4px; margin-top: .75rem; border-radius: 2px; background: rgb(var(--c-ink) / .08); overflow: hidden; }
 .thought-stat-track i { display: block; height: 100%; border-radius: 2px; background: rgb(var(--c-accent)); }
+
+/* 2026-10 — «تصفّح بالفكرة» على الهاتف: تسميات العقد كانت 12px. */
+@media (max-width: 640px) {
+  .compass-hub .dna-hubl { font-size: 13.5px; line-height: 1.4; }
+  .compass-hub .dna-hubcl { font-size: 13.5px; }
+}
+
+/* مدخل الافتتاحية الإنجليزية: أهداف لمس ≥ 44px. */
+.ent-browse, .ent-skip { min-block-size: 44px; }
+
+/* عناوين الأبحاث الإنجليزية داخل صفحة عربية: اتجاه الحروف LTR (dir=auto) لكن السطر
+   يُرصّ من اليمين كبقية الصفحة، فلا تنفصل عن عناوينها العربية يساراً. */
+.content-research .research-title-link[dir="auto"] { text-align: right; unicode-bidi: plaintext; }
+
+/* أهداف لمس ≥ 40px في التذييل: رابط اللغة/تقديم الموقع وشعار الكوفي. */
+.site-footer__text-link { display: inline-flex; align-items: center; min-block-size: 2.5rem; padding-inline: .25rem; }
+.site-footer__mark { min-block-size: 2.5rem; }
+.pwa-owner-logo { display: inline-flex; align-items: center; min-block-size: 2.5rem; }
 
 /* ═════════════════════════════════════════════════════════════════
    رسمٌ عند الظهور — الحركة تُروي ولا تُلفت

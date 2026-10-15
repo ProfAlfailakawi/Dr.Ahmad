@@ -97,9 +97,9 @@ export function EnglishHome() {
               <Link to="/en/cv" className="rounded-full border border-hair px-7 py-3 text-[.9rem] font-medium text-ink transition-colors duration-300 hover:border-accent hover:text-accent">
                 Curriculum Vitae
               </Link>
-              <span className="flex items-center gap-4 ps-2 text-soft">
+              <span className="flex items-center gap-2 ps-2 text-soft">
                 {socials.map((s) => (
-                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="-m-2 inline-flex p-2 transition-colors hover:text-accent">
+                  <a key={s.label} href={s.url} target="_blank" rel="noreferrer" aria-label={s.label} className="-m-[11px] inline-flex p-[11px] transition-colors hover:text-accent">
                     <SocialIcon name={s.label} size={18} />
                   </a>
                 ))}
@@ -146,7 +146,7 @@ export function EnglishHome() {
                 <Label>Selected research</Label>
                 <h2 className="mt-3 font-display text-[clamp(1.6rem,3.5vw,2.3rem)] font-bold leading-[1.3] text-ink">Peer-reviewed contributions</h2>
               </div>
-              <Link to="/en/research" className="text-[.9rem] font-medium text-accent transition-opacity hover:opacity-70">
+              <Link to="/en/research" className="inline-flex min-h-11 items-center text-[.9rem] font-medium text-accent transition-opacity hover:opacity-70">
                 All {papers.length} papers<Arrow ltr />
               </Link>
             </div>
@@ -175,7 +175,7 @@ export function EnglishHome() {
                 <p className="mt-4 max-w-[460px] text-[.95rem] font-light leading-[1.9] text-soft">
                   Written in Arabic — spanning a decade of thinking about how technology should serve learning, not replace it.
                 </p>
-                <Link to="/publications" className="mt-6 inline-block text-[.9rem] font-medium text-accent transition-opacity hover:opacity-70">
+                <Link to="/publications" className="mt-6 inline-flex min-h-11 items-center text-[.9rem] font-medium text-accent transition-opacity hover:opacity-70">
                   Browse the books (in Arabic)<Arrow ltr />
                 </Link>
               </div>

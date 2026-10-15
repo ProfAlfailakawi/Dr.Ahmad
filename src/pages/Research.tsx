@@ -9,7 +9,7 @@ import { Pagination, usePagedList } from '../components/Pagination'
 import { analyzeResearch, researchArchiveProjection } from '../lib/research-intelligence'
 import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-count.ts'
 import { ArrowLeft, BookOpen, CalendarDays } from 'lucide-react'
-import { CountTiles, RingTile, YearBarsTile } from '../components/CountTiles'
+import { CountTiles, RingTile, YearTimelineTile } from '../components/CountTiles'
 import { researchTiles } from '../lib/count-tiles'
 
 const ar = (n: number) => String(n).padStart(2, '0')
@@ -70,7 +70,7 @@ export default function Research() {
           {(tiles.verified || tiles.years || tiles.arabic) && (
             <CountTiles label="الأبحاث بالأرقام" className="mb-8">
               {tiles.verified && <RingTile value={tiles.verified} of={tiles.total} label="بحثاً موثَّق المصدر" note={tiles.verified < tiles.total ? `من أصل ${tiles.total}` : undefined} />}
-              {tiles.years && <YearBarsTile title="الأبحاث بحسب السنة" bars={tiles.years} />}
+              {tiles.years && <YearTimelineTile title="الأبحاث بحسب السنة" bars={tiles.years} kind="paper" />}
               {tiles.arabic && <RingTile value={tiles.arabic.ar} of={tiles.total} label="في مجلات عربية" note={`${tiles.arabic.ar} عربية، ${tiles.arabic.en} إنجليزية`} />}
             </CountTiles>
           )}

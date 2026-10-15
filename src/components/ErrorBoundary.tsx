@@ -103,16 +103,16 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
           gap: '1.25rem',
           padding: '2rem',
           textAlign: 'center',
-          // ألوانٌ صريحة لا تتبع التوكنات: صفحة العطب قد تظهر قبل تحميل الأنماط.
-          background: '#fcfcfa',
-          color: '#15161a',
+          // توكنات الموقع مع قيمٍ احتياطية: صفحة العطب قد تظهر قبل تحميل الأنماط.
+          background: 'rgb(var(--c-canvas, 252 252 250))',
+          color: 'rgb(var(--c-ink, 21 22 26))',
         }}
       >
         <span aria-hidden style={{ fontSize: '2rem', opacity: 0.5 }}>·</span>
         <h1 className="font-display" style={{ fontSize: 'clamp(1.4rem, 4vw, 2rem)', fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
           {this.state.healing ? 'نُحدّث نسخة الموقع…' : 'حدث خللٌ مؤقّت.'}
         </h1>
-        <p style={{ maxWidth: '30rem', fontSize: '.95rem', lineHeight: 1.9, color: '#5e6570', margin: 0 }}>
+        <p style={{ maxWidth: '30rem', fontSize: '.95rem', lineHeight: 1.9, color: 'rgb(var(--c-soft, 94 101 112))', margin: 0 }}>
           {this.state.healing
             ? 'وصلتك نسخةٌ قديمة من الملفات. نُفرغها الآن وتعود الصفحة وحدها بعد لحظة — لم يُفقد شيءٌ من محتواك.'
             : 'نعتذر عن هذا. أعد تحميل الصفحة وسيعود كل شيء إلى مكانه — لم يُفقد شيءٌ من محتواك.'}
@@ -124,7 +124,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
             style={{
               borderRadius: '999px',
               border: 'none',
-              background: '#3e5c78',
+              background: 'rgb(var(--c-accent, 62 92 120))',
               color: '#fff',
               padding: '.7rem 1.6rem',
               fontSize: '.9rem',
@@ -139,9 +139,9 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
             onClick={this.hardReload}
             style={{
               borderRadius: '999px',
-              border: '1px solid rgba(21, 22, 26, .18)',
+              border: '1px solid var(--c-hair, rgba(21, 22, 26, .18))',
               background: 'transparent',
-              color: '#15161a',
+              color: 'rgb(var(--c-ink, 21 22 26))',
               padding: '.7rem 1.6rem',
               fontSize: '.9rem',
               fontWeight: 600,
@@ -154,8 +154,8 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
             href="/"
             style={{
               borderRadius: '999px',
-              border: '1px solid rgba(21, 22, 26, .18)',
-              color: '#15161a',
+              border: '1px solid var(--c-hair, rgba(21, 22, 26, .18))',
+              color: 'rgb(var(--c-ink, 21 22 26))',
               padding: '.7rem 1.6rem',
               fontSize: '.9rem',
               fontWeight: 600,
@@ -174,7 +174,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
               fontSize: '.72rem',
               lineHeight: 1.7,
-              color: '#8b909a',
+              color: 'rgb(var(--c-soft, 139 144 154))',
               wordBreak: 'break-word',
             }}
           >

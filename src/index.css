@@ -7021,9 +7021,9 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   .media-year-group { grid-template-columns: minmax(0,1fr); gap: 0; }
   .media-year-mark { display: flex; align-items: center; gap: .6rem; padding-block: 1rem .15rem; font-size: .76rem; direction: rtl; text-align: start; }
   .media-year-mark i { position: static; flex: 1; width: auto; height: 1px; background: rgb(var(--c-ink) / .08); }
-  .media-editorial-row__link { grid-template-columns: 4.8rem minmax(0,1fr); gap: .7rem; min-height: 6.1rem; padding-inline-end: 2.3rem; }
+  .media-editorial-row__link { grid-template-columns: 4.8rem minmax(0,1fr); gap: .7rem; min-height: 6.1rem; padding-inline-end: 3rem; }
   .media-editorial-row__meta { display: none; }
-  .media-editorial-row__save { transform: translateY(-50%) scale(.88) !important; }
+  .media-editorial-row__save { transform: translateY(-50%) !important; }
 }
 
 /* الأبحاث أيضاً تتحول من بطاقات متكررة إلى سجل تحريري واضح. */
@@ -7051,6 +7051,8 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   font-weight: 700 !important;
 }
 .content-research .research-understand-link:hover { background: transparent !important; transform: translateX(-2px); }
+/* هدف اللمس ≥ 44px: الرابط نصيّ بلا إطار، فنزيد الحشو الرأسي وحده. */
+.content-research .research-understand-link { min-height: 2.75rem !important; padding-block: .7rem !important; }
 
 /* 6) «الموقع الذي يتنفس» — حركة صغيرة بطيئة، وتُطفأ عند القراءة العميقة. */
 @media (prefers-reduced-motion: no-preference) {
@@ -8540,13 +8542,13 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
   .atlas-map-mobile .atlas-year-label--up { transform: translateY(-34px); }
 }
 
-/* ---------- الأزرار العائمة على الهاتف: أصغر مظهراً، وأقرب إلى الحافة ----------
+/* ---------- الأزرار العائمة على الهاتف: أصغر مظهراً (دائرة 32px) ملاصقة للحافة فلا تغطّي حواف البطاقات ----------
    منطقة اللمس تبقى 44×44 فعلية (بلا ::after، لأن ::before/::after مستعملان في الزر)،
    أما الدائرة المرسومة فقطرها 36px في الزاوية فتغطّي أقلّ ما يمكن من البطاقات
    ولا تتداخل مناطق اللمس بين الزرّين. */
 @media (max-width: 639px) {
   .floating-actions {
-    right: 4px !important;
+    right: 0 !important;
     bottom: calc(.75rem + env(safe-area-inset-bottom)) !important;
     gap: 0 !important;
   }
@@ -8559,7 +8561,7 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     border-color: transparent !important;
     box-shadow: none !important;
     background-color: transparent !important;
-    background-image: radial-gradient(circle at center, rgb(var(--c-canvas) / .94) 0 17px, var(--c-hair) 17px 18px, transparent 18.5px) !important;
+    background-image: radial-gradient(circle at center, rgb(var(--c-canvas) / .94) 0 15px, var(--c-hair) 15px 16px, transparent 16.5px) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
@@ -8574,3 +8576,9 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 }
 .thought-stat-track { display: block; height: 4px; margin-top: .75rem; border-radius: 2px; background: rgb(var(--c-ink) / .08); overflow: hidden; }
 .thought-stat-track i { display: block; height: 100%; border-radius: 2px; background: rgb(var(--c-accent)); }
+
+/* 2026-10 — «تصفّح بالفكرة» على الهاتف: تسميات العقد كانت 12px. */
+@media (max-width: 640px) {
+  .compass-hub .dna-hubl { font-size: 13.5px; line-height: 1.4; }
+  .compass-hub .dna-hubcl { font-size: 13.5px; }
+}

@@ -356,7 +356,7 @@ html.dark .portrait img { filter: grayscale(1) contrast(.95) brightness(.9); }
   text-wrap: balance;
 }
 
-.signature-page :is(p, li) {
+.signature-page :is(p, li):not(:where(.truncate)) {
   text-wrap: pretty;
 }
 

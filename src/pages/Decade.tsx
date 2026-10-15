@@ -321,7 +321,7 @@ export default function Decade() {
                 predictionRegister.forEach(({ prediction }) => tally.set(String(prediction.status), (tally.get(String(prediction.status)) || 0) + 1))
                 const rows = Array.from(tally).sort((x, y) => y[1] - x[1])
                 if (rows.length < 2) return null
-                const tones = ['rgb(var(--c-accent))', 'rgb(var(--c-ember))', 'rgb(var(--c-soft))']
+                const tones = ['rgb(var(--c-accent))', 'rgb(var(--c-soft))', 'rgb(var(--c-ink) / .4)']
                 return (
                   <div className="mt-6" {...statusDraw.props} role="img" aria-label={`توزيع حالات التوقعات: ${rows.map(([label, count]) => `${label} ${number.format(count)}`).join('، ')}`}>
                     <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-wash" aria-hidden="true">

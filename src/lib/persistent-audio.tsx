@@ -339,7 +339,7 @@ export function PersistentAudioDock() {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <p className="truncate text-[.82rem] font-semibold text-ink">{audio.track.title}</p>
-            <span className="shrink-0 text-[.72rem] text-soft">{audio.track.label}</span>
+            <span className="min-w-0 max-w-[36%] shrink-0 truncate text-[.72rem] text-soft">{audio.track.label}</span>
           </div>
           <button
             type="button"

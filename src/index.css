@@ -874,13 +874,23 @@ html[data-reader-popular="off"] .reader-popular-note {
   scrollbar-width: thin;
 }
 
+/* المشغّل المثبّت يطول حين يظهر سطر الخطأ (يلتفّ على ثلاثة أسطر في الهاتف)،
+   فيجب أن يرتفع التلميح وسؤال المتابعة فوقه بما يكفي لحالة الخطأ لا لحالته الهادئة وحدها. */
+body.audio-dock-open {
+  --reader-dock-clearance: 10.6rem;
+}
+@media (min-width: 641px) {
+  body.audio-dock-open {
+    --reader-dock-clearance: 8.6rem;
+  }
+}
 body.audio-dock-open .reader-resume-prompt {
-  bottom: calc(6.5rem + env(safe-area-inset-bottom));
+  bottom: calc(var(--reader-dock-clearance) + env(safe-area-inset-bottom));
 }
 
 /* تلميح تظليل الجملة يرتفع فوق مشغّل الصوت المثبّت بدل أن يغطّي أزراره. */
 body.audio-dock-open .reader-highlight-coach {
-  bottom: calc(6.5rem + env(safe-area-inset-bottom));
+  bottom: calc(var(--reader-dock-clearance) + env(safe-area-inset-bottom));
 }
 
 .reader-selection-toolbar {

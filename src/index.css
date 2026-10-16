@@ -878,6 +878,11 @@ body.audio-dock-open .reader-resume-prompt {
   bottom: calc(6.5rem + env(safe-area-inset-bottom));
 }
 
+/* تلميح تظليل الجملة يرتفع فوق مشغّل الصوت المثبّت بدل أن يغطّي أزراره. */
+body.audio-dock-open .reader-highlight-coach {
+  bottom: calc(6.5rem + env(safe-area-inset-bottom));
+}
+
 .reader-selection-toolbar {
   max-width: calc(100vw - 20px);
   -webkit-tap-highlight-color: transparent;

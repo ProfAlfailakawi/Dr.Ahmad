@@ -14,6 +14,7 @@ import Home from './pages/Home'
 /* تقسيم الكود: الرئيسية فورية، وبقية الصفحات تُحمَّل عند زيارتها فقط —
    فأول تحميل للموقع أخف بكثير (نصوص المقالات الـ٢٧٦ك لا تنزل إلا لقارئها) */
 const PwaLaunch = lazy(() => import('./pages/PwaLaunch'))
+const Live = lazy(() => import('./pages/Live'))
 const Publications = lazy(() => import('./pages/Publications'))
 const Research = lazy(() => import('./pages/Research'))
 const Articles = lazy(() => import('./pages/Articles'))
@@ -741,6 +742,7 @@ function AnimatedRoutes() {
       <Routes location={loc} key={loc.pathname}>
         <Route path="/" element={<Home />} />
         <Route path="/launch" element={<PwaLaunch />} />
+        <Route path="/live" element={<Live />} />
         <Route path="/publications" element={<Publications />} />
         <Route path="/publications/:slug" element={<BookDetail />} />
         <Route path="/research" element={<Research />} />
@@ -797,7 +799,7 @@ function AnimatedRoutes() {
 /* المسارات المستقلّة: صفحاتٌ تملأ الشاشة بهويّتها الخاصّة ولا تحتمل قشرة
    الموقع فوقها — لوحة التحكم، شاشة الإطلاق، ملفات السيرة، والبطاقة الحيّة
    التي تُعرض على شاشةٍ في قاعة مؤتمر. */
-const STANDALONE_ROUTES = new Set(['/admin', '/launch', '/cards'])
+const STANDALONE_ROUTES = new Set(['/admin', '/launch', '/cards', '/live'])
 const isStandaloneRoute = (pathname: string) => STANDALONE_ROUTES.has(pathname) || pathname.startsWith('/cv-file/')
 
 function ConditionalNav() {

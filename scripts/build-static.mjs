@@ -422,6 +422,7 @@ const STATIC = [
      firebase.json — فالرابط المباشر يعطي 404 ولا تدخل خريطة الموقع. الصفحة
      تعمل داخل التطبيق وتموت خارجه: عطبٌ لا يُرى إلا بعد النشر. */
   { path: '/listen', title: 'مجلس الفكرة', desc: 'حلقات حوارية مسموعة من مقالات د. أحمد حسين الفيلكاوي، بصوتين ونصٍّ يسير مع الصوت.' },
+  { path: '/live', title: 'استوديو المحاضرات الحي', desc: 'بوابة خاصة لفتح استوديو المحاضرات المحلي على جهاز الدكتور أحمد.', robots: 'noindex, nofollow' },
   { path: '/radio', title: 'الإذاعة', desc: 'بثٌّ متواصل من فكر د. أحمد حسين الفيلكاوي: حلقةٌ تتلو حلقة بساعة الكويت، والجملة المنطوقة أمامك لحظةً بلحظة.' },
   { path: '/media', title: 'الظهور الإعلامي', desc: 'لقاءات تلفزيونية وإذاعية.' },
   { path: '/questions', title: 'سؤال يُقلق التعليم', desc: 'زاوية متجددة: سؤال جديد كل يومين يوقظ التفكير في التعليم، بصياغة عربية واضحة.' },
@@ -719,6 +720,25 @@ function richStaticHtml(path) {
 }
 
 function generateBodyHtml(path, lang = 'ar') {
+  if (path === '/live') {
+    return `
+      <main dir="rtl" style="min-height:100vh;display:grid;place-items:center;overflow:hidden;background:#FCFCFA;color:#15161A;padding:2rem;font-family:'Tajawal',sans-serif;">
+        <section style="width:min(680px,100%);border:1px solid rgba(62,92,120,.14);border-radius:30px;background:rgba(255,255,255,.94);padding:clamp(1.5rem,5vw,3rem);box-shadow:0 24px 80px rgba(21,22,26,.08);">
+          <a href="https://dr-alfailakawi.com" style="color:#727986;text-decoration:none;font-size:.9rem;">د. أحمد الفيلكاوي</a>
+          <div style="display:grid;place-items:center;width:56px;height:56px;margin-top:2rem;border:1px solid rgba(62,92,120,.2);border-radius:18px;background:rgba(62,92,120,.08);color:#3E5C78;font-size:1.7rem;">▣</div>
+          <p style="margin:2rem 0 0;color:#3E5C78;font-size:.75rem;font-weight:700;letter-spacing:.16em;">مساحة المحاضر الخاصة</p>
+          <h1 style="margin:.5rem 0 0;font-family:'El Messiri',serif;font-size:clamp(2.4rem,7vw,3.5rem);line-height:1.25;">استوديو المحاضرات</h1>
+          <p style="max-width:40rem;margin:1rem 0 0;color:#68717D;font-size:1rem;font-weight:300;line-height:2;">افتح الاستوديو المحلي على هذا الكمبيوتر، ثم اختر ملف المحاضرة. التحويل والعرض يجريان على جهازك.</p>
+          <a href="http://localhost:4173/#presenter" style="display:flex;min-height:56px;align-items:center;justify-content:center;margin-top:2rem;border-radius:16px;background:#3E5C78;color:#fff;padding:1rem;text-align:center;font-weight:700;text-decoration:none;">فتح الاستوديو على هذا الكمبيوتر ↗</a>
+          <div style="display:grid;gap:.75rem;margin-top:1.5rem;border-top:1px solid rgba(62,92,120,.12);padding-top:1.5rem;color:#68717D;font-size:.9rem;line-height:1.8;">
+            <p style="margin:0;">◈ الملفات تبقى على جهازك ولا تُرفع إلى الموقع.</p><p style="margin:0;">◈ لا توجد رسوم لخادم تحويل سحابي.</p>
+          </div>
+          <p style="margin:1.5rem 0 0;border-radius:12px;background:#F3F4F2;padding:.8rem 1rem;color:#68717D;font-size:.85rem;line-height:1.8;">إذا لم يفتح الاستوديو، شغّل برنامج ALFA المحلي على الكمبيوتر أولاً، ثم ارجع إلى هذه الصفحة واضغط الزر. يحتاج البرنامج المحلي أن يبقى مفتوحاً أثناء التحويل والعرض.</p>
+          <p style="margin:1rem 0 0;text-align:center;color:#8A9099;font-size:.75rem;">هذا رابط غير مفهرس بمحركات البحث، لكنه ليس محمياً بكلمة مرور؛ شاركه مع نفسك فقط.</p>
+        </section>
+      </main>`
+  }
+
   if (path === '/admin') {
     return `
       <main style="min-height:100vh;display:grid;place-items:center;background:#FCFCFA;padding:2rem;" dir="rtl">

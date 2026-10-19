@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { ArrowUpRight, HardDrive, MonitorPlay, ShieldCheck } from 'lucide-react'
 import { useSeo } from '../components/seo'
 
@@ -6,6 +7,12 @@ import { useSeo } from '../components/seo'
 const LOCAL_STUDIO = ['http:', '', 'localhost:4173', '#presenter'].join('/')
 
 export default function Live() {
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('openLocal') === '1') {
+      window.location.assign(LOCAL_STUDIO)
+    }
+  }, [])
+
   useSeo({
     title: 'استوديو المحاضرات الحي',
     description: 'بوابة خاصة لفتح استوديو المحاضرات المحلي على جهاز الدكتور أحمد.',
@@ -27,7 +34,7 @@ export default function Live() {
           افتح الاستوديو المحلي على هذا الكمبيوتر، ثم اختر ملف المحاضرة. التحويل والعرض يجريان على جهازك.
         </p>
 
-        <a href={LOCAL_STUDIO} className="mt-9 inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-accent px-6 py-4 text-center font-semibold text-canvas transition hover:bg-accent-deep focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2">
+        <a href="/live?openLocal=1" onClick={(event) => { event.preventDefault(); window.location.assign(LOCAL_STUDIO) }} className="mt-9 inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-accent px-6 py-4 text-center font-semibold text-canvas transition hover:bg-accent-deep focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2">
           فتح الاستوديو على هذا الكمبيوتر <ArrowUpRight aria-hidden size={18} />
         </a>
 

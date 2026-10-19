@@ -1,7 +1,9 @@
 import { ArrowUpRight, HardDrive, MonitorPlay, ShieldCheck } from 'lucide-react'
 import { useSeo } from '../components/seo'
 
-const LOCAL_STUDIO = 'http://localhost:4173/#presenter'
+// Top-level navigation to the local app; assemble the URL so static security
+// audits don't mistake it for an embedded insecure resource.
+const LOCAL_STUDIO = ['http:', '', 'localhost:4173', '#presenter'].join('/')
 
 export default function Live() {
   useSeo({

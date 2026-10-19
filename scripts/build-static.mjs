@@ -729,7 +729,7 @@ function generateBodyHtml(path, lang = 'ar') {
           <p style="margin:2rem 0 0;color:#3E5C78;font-size:.75rem;font-weight:700;letter-spacing:.16em;">مساحة المحاضر الخاصة</p>
           <h1 style="margin:.5rem 0 0;font-family:'El Messiri',serif;font-size:clamp(2.4rem,7vw,3.5rem);line-height:1.25;">استوديو المحاضرات</h1>
           <p style="max-width:40rem;margin:1rem 0 0;color:#68717D;font-size:1rem;font-weight:300;line-height:2;">افتح الاستوديو المحلي على هذا الكمبيوتر، ثم اختر ملف المحاضرة. التحويل والعرض يجريان على جهازك.</p>
-          <a href="http&#58;//localhost:4173/#presenter" style="display:flex;min-height:56px;align-items:center;justify-content:center;margin-top:2rem;border-radius:16px;background:#3E5C78;color:#fff;padding:1rem;text-align:center;font-weight:700;text-decoration:none;">فتح الاستوديو على هذا الكمبيوتر ↗</a>
+          <a href="/live?openLocal=1" style="display:flex;min-height:56px;align-items:center;justify-content:center;margin-top:2rem;border-radius:16px;background:#3E5C78;color:#fff;padding:1rem;text-align:center;font-weight:700;text-decoration:none;">فتح الاستوديو على هذا الكمبيوتر ↗</a>
           <div style="display:grid;gap:.75rem;margin-top:1.5rem;border-top:1px solid rgba(62,92,120,.12);padding-top:1.5rem;color:#68717D;font-size:.9rem;line-height:1.8;">
             <p style="margin:0;">◈ الملفات تبقى على جهازك ولا تُرفع إلى الموقع.</p><p style="margin:0;">◈ لا توجد رسوم لخادم تحويل سحابي.</p>
           </div>

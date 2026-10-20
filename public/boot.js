@@ -54,6 +54,18 @@
   var html = document.documentElement;
   html.classList.add('js');
 
+  // A service-worker/build update can reload during startup. Keep that reload
+  // from replaying the opening, while ordinary visits still get one opening.
+  var skipSplash = false;
+  try {
+    var navigation = performance.getEntriesByType('navigation')[0];
+    var lastSplashAt = Number(sessionStorage.getItem('boot:splash-at') || 0);
+    skipSplash = !!navigation && navigation.type === 'reload' &&
+      lastSplashAt > 0 && Date.now() - lastSplashAt < 15000;
+    if (!skipSplash) sessionStorage.setItem('boot:splash-at', String(Date.now()));
+  } catch (error) { /* Storage is optional; the normal opening still works. */ }
+  if (skipSplash) html.classList.add('skip-boot-splash');
+
   /* ---------- تسليم الافتتاحية إلى React ----------
      العلامة الكوفية مرسومةٌ في index.html نفسه فتظهر مع أوّل بكسل. حين
      يُركّب React يضع `data-app-ready` على <html>، فنُلاشيها 300ms ثم نزيلها:
@@ -64,7 +76,14 @@
      الإقلاع (20s) التي تكشف الصفحة الثابتة — كما يخفيها نزعُ الصنف `js`
      هناك وحده، فهي شبكتا أمانٍ متعاقبتان لا متعارضتان. */
   var splashRemoved = false;
-  var splashShownAt = Date.now();
+  // The head script runs before the splash is parsed. Start its visible hold
+  // once the document is ready, so slow assets cannot consume the whole hold.
+  var splashShownAt = null;
+  document.addEventListener('DOMContentLoaded', function () {
+    splashShownAt = Date.now();
+    if (skipSplash) dismissBootSplash(true);
+    else if (html.hasAttribute('data-app-ready')) dismissBootSplash(false);
+  }, { once: true });
   /* حدٌّ أدنى للبقاء على الشاشة. الكشف خليةً خليةً ينتهي عند ‎880ms تقريباً،
      وكان التسليم يجري لحظة ظهور `data-app-ready` بلا انتظار: على كاشٍ دافئ
      يُركَّب React خلال ‎300ms فتُنتزع العلامة وهي ثلثُ مرسومة — فلا يرى
@@ -79,7 +98,7 @@
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     } catch (error) { /* بلا matchMedia: يُؤخَذ الحدّ الكامل */ }
     var floor = reduced ? SPLASH_MIN_REDUCED_MS : SPLASH_MIN_MS;
-    return Math.max(0, floor - (Date.now() - splashShownAt));
+    return Math.max(0, floor - (Date.now() - (splashShownAt || Date.now())));
   }
   function removeBootSplash(immediate) {
     var splash = document.getElementById('boot-splash');
@@ -90,6 +109,7 @@
   }
   function dismissBootSplash(immediate) {
     if (splashRemoved) return;
+    if (!immediate && splashShownAt === null) return;
     if (!document.getElementById('boot-splash')) return;
     splashRemoved = true;
     /* `immediate` هو شبكة الأمان (12s أو تطبيقٌ جاهزٌ سلفاً): تُنفَّذ بلا مهلة. */

@@ -227,7 +227,7 @@
     "guard:kuwaiti-pronunciation": "node scripts/guard-kuwaiti-pronunciation.mjs",
     "worlds:self-test": "node scripts/test-worlds-complete.mjs",
     "worlds:visual:self-test": "node scripts/test-worlds-visual-matrix.mjs",
-    "verify:pwa": "node scripts/verify-pwa.mjs"
+    "verify:pwa": "node scripts/verify-pwa.mjs && node scripts/test-boot-splash.mjs"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "5.3.0",

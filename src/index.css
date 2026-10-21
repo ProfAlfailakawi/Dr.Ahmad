@@ -8726,3 +8726,20 @@ html.site-silent [data-draw] *, html.site-silent [data-draw]::before { transitio
 .search-palette-shortcut { min-block-size: 2.5rem; }
 .home-footer-tools__item.is-icon-only { inline-size: 2.5rem !important; min-inline-size: 2.5rem !important; min-height: 2.5rem !important; height: 2.5rem !important; }
 .site-footer__project { min-width: 2.5rem; }
+
+
+/* A quiet editorial shelf for the professor's published books. */
+.home-editorial-shelf .complete-book-frame {
+  border-color: var(--c-hair);
+  background: var(--c-canvas);
+  transition: border-color 220ms var(--E), transform 220ms var(--E);
+}
+.home-editorial-shelf a:focus-visible .complete-book-frame {
+  border-color: rgb(var(--c-accent) / .42);
+  transform: translateY(-3px);
+}
+.home-editorial-shelf .complete-book-image { transition: transform 420ms var(--E); }
+.home-editorial-shelf a:focus-visible .complete-book-image { transform: scale(1.025); }
+@media (prefers-reduced-motion: reduce) {
+  .home-editorial-shelf .complete-book-frame, .home-editorial-shelf .complete-book-image { transition: none; }
+}

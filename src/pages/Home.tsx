@@ -904,7 +904,7 @@ function ProfileAndBooksLayer({ books }: { books: BookRecord[] }) {
           </FadeUp>
         </div>
       </section>
-      <section className="border-t border-hair bg-wash py-12 md:py-[70px]">
+      <section className="home-editorial-shelf border-t border-hair bg-wash py-12 md:py-[70px]">
         <div className="mx-auto max-w-shell px-6 md:px-11">
           <SectionHead label="المؤلفات" title={`${arabicCountPhrase(books.length, BOOK_PLAIN_FORMS)}.`} to="/publications" />
         </div>

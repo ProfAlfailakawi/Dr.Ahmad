@@ -1,0 +1,71 @@
+/* ═══════════════════════════════════════════════════════════════════
+   تسامي الواجهة — «الورقة المُركَّبة»
+   طبقةٌ تقديمية فقط، فوق DESIGN.md لا ضدّه: الرموز الدلالية وحدها،
+   لا لونَ حرفياً ولا تدرّجاً ولا ظلاً ملوّناً، ومنحنى --E وحده.
+   الفكرة: الصفحة ورقةٌ من مخطوطٍ علميّ — الصورة مُركَّبة بإطارٍ (باسبارتو)
+   وحدٍّ شعريّ، والعناوين تبدأ بمسطرةٍ فيها عُقدةُ حِبر، والبيانات
+   الوصفية تتّسع وتتنفّس. لا يلمس منطقاً ولا معرّفاتٍ ولا بيانات.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ١) مسطرة العنوان: أطول قليلاً وبيانها الوصفي أهدأ ──────────────────
+   (لمعة الخطّ الموجودة في index.css تبقى كما هي.) */
+.signature-label { gap: .7rem; }
+.signature-label > span:first-child { width: 2.25rem; }
+.signature-label > span:last-child { letter-spacing: 0; font-size: .84rem; }
+
+/* ── ٢) العناوين الكبرى: توازنٌ في الأسطر ومنعٌ للأرملة ──────────────── */
+main h2.font-display,
+main h1.font-display { text-wrap: balance; }
+main p { text-wrap: pretty; }
+
+/* ── ٣) الصورة الرئيسية «مُركَّبة»: هامشٌ ورقيّ + حدٌّ شعريّ ─────────── */
+.human-core__portrait-media {
+  box-shadow:
+    0 0 0 7px rgb(var(--c-canvas)),
+    0 0 0 8px var(--c-hair);
+}
+@media (min-width: 768px) {
+  .human-core__portrait-media {
+    box-shadow:
+      0 0 0 10px rgb(var(--c-canvas)),
+      0 0 0 11px var(--c-hair),
+      var(--shadow-soft);
+  }
+}
+
+/* ── ٤) سطر الصفة: يلتفّ على الهاتف بدل أن يصغر حتى لا يُقرأ ─────────── */
+@media (max-width: 767px) {
+  .human-core__tagline {
+    white-space: normal !important;
+    font-size: .82rem !important;
+    line-height: 1.7;
+    letter-spacing: 0 !important;
+    text-wrap: balance;
+  }
+}
+
+/* ── ٥) البطاقات الروابط: ارتفاعٌ بالحدّ أولاً ثم الظلّ ──────────────── */
+a.group.rounded-2xl.border,
+a.group.rounded-3xl.border {
+  transition: border-color .35s var(--E), background-color .35s var(--E), transform .35s var(--E);
+}
+@media (hover: hover) {
+  a.group.rounded-2xl.border:hover,
+  a.group.rounded-3xl.border:hover {
+    border-color: rgb(var(--c-accent) / .45);
+    transform: translateY(-2px);
+  }
+}
+
+/* ── ٦) التركيز بالكيبورد: حلقةٌ مزدوجة تُرى على أيّ أرضية ───────────── */
+:focus-visible {
+  outline: 2px solid rgb(var(--c-accent));
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgb(var(--c-canvas));
+}
+
+/* ── ٧) الحركة الاختيارية ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  a.group.rounded-2xl.border,
+  a.group.rounded-3xl.border { transition: none; transform: none !important; }
+}

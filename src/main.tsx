@@ -12,6 +12,7 @@ import { installDemoApi } from './demo/api-mock'
 import './index.css'
 import './components/dna/dna.css'
 import './components/dna/dna-theme.css'
+import './components/elevation.css'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
    حزمةً تغيّر اسمها فتغيب المتون (صفحة «قيد الإضافة» الزائفة). فشلُ التحميل

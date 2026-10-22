@@ -47,3 +47,44 @@ main h4.font-display { text-wrap: balance; }
 /* الأرقام في البيانات الوصفية متساوية العرض فتصطفّ بين الصفوف. */
 .majlis-row button span.text-soft,
 .page-head-scene__sub { font-variant-numeric: tabular-nums; }
+
+/* ── ٣) قائمة المجلس وسطح المشغّل: الجمرة لما يُسمع ───────────────────
+   الصف الذي يُسمع الآن يحمل علامة جمرةٍ على حافّته (لا لوناً جديداً)،
+   والتمرير يمنح الصفّ سطحاً هادئاً. منطق التشغيل لم يُمسّ. */
+.majlis-row > button {
+  border-radius: .75rem;
+  transition: background-color .35s var(--E), box-shadow .35s var(--E), color .3s var(--E);
+}
+.majlis-row > button[aria-current="true"] {
+  box-shadow: inset -3px 0 0 rgb(var(--c-ember));
+  background: rgb(var(--c-wash) / .55);
+}
+.majlis-row.is-open > button[aria-current="true"] { border-radius: 1rem 1rem 0 0; }
+@media (hover: hover) {
+  .majlis-row:not(.is-open) > button:hover { background: rgb(var(--c-wash) / .7); }
+}
+/* بطاقة «افتح المجلس»: حدٌّ جمريّ خافت وأعمدة الموجة تتنفّس عند التمرير فقط. */
+.content-listen button.w-full.items-center.rounded-xl {
+  min-block-size: 4.5rem;
+  border-color: rgb(var(--c-ember) / .28);
+  transition: border-color .35s var(--E), background-color .35s var(--E), transform .35s var(--E);
+}
+.content-listen button.w-full.items-center.rounded-xl svg line {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .5s var(--E);
+}
+@media (hover: hover) {
+  .content-listen button.w-full.items-center.rounded-xl:hover {
+    border-color: rgb(var(--c-ember) / .6);
+    background-color: rgb(var(--c-wash));
+  }
+  .content-listen button.w-full.items-center.rounded-xl:hover svg line:nth-child(odd) { transform: scaleY(1.28); }
+  .content-listen button.w-full.items-center.rounded-xl:hover svg line:nth-child(even) { transform: scaleY(.78); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .majlis-row > button,
+  .content-listen button.w-full.items-center.rounded-xl,
+  .content-listen button.w-full.items-center.rounded-xl svg line { transition: none; }
+  .content-listen button.w-full.items-center.rounded-xl:hover svg line { transform: none !important; }
+}

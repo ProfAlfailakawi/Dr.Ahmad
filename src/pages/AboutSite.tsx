@@ -41,11 +41,11 @@ export default function AboutSite() {
             </FadeUp>
             <ul className="mt-8 grid gap-6 md:grid-cols-2 md:gap-x-12">
               {aboutSite.distinct.map((t, i) => (
-                <FadeUp key={t} delay={i * 0.05}>
-                  <li className="relative ps-10 text-[1rem] font-light leading-[1.95] text-ink">
+                <FadeUp as="li" key={t} delay={i * 0.05}>
+                  <div className="relative ps-10 text-[1rem] font-light leading-[1.95] text-ink">
                     <span aria-hidden className="absolute right-0 top-[.45em] grid h-6 w-6 place-items-center rounded-full border border-hair bg-wash text-[.72rem] font-semibold tabular-nums text-accent">{i + 1}</span>
                     {t}
-                  </li>
+                  </div>
                 </FadeUp>
               ))}
             </ul>
@@ -56,7 +56,7 @@ export default function AboutSite() {
             <FadeUp>
               <SectionTag icon={Users}>لمن هذا الموقع؟</SectionTag>
             </FadeUp>
-            <div className="mobile-card-rail mt-8 grid gap-5 sm:grid-cols-2">
+            <div tabIndex={0} className="mobile-card-rail mt-8 grid gap-5 sm:grid-cols-2">
               {aboutSite.audience.map((t, i) => (
                 <FadeUp key={t} delay={i * 0.06}>
                   <div className="h-full rounded-2xl border border-hair border-r-2 border-r-accent bg-wash p-7 font-display text-[clamp(1.1rem,2.2vw,1.4rem)] font-medium leading-[1.7] text-ink">

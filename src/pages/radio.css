@@ -22,7 +22,7 @@
   --radio-voice: var(--radio-fahd);
   --radio-bg: #EAE4D7;
   --radio-fg: #191510;
-  --radio-soft: #7C7264;
+  --radio-soft: #5F5648;
   --radio-hair: #D3CABA;
   --radio-pane: #F3EFE6;
 }
@@ -162,7 +162,7 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
 .radio-variant.is-active {
   border-color: color-mix(in srgb, var(--radio-voice) 56%, transparent);
   background: color-mix(in srgb, var(--radio-voice) 9%, transparent);
-  color: var(--radio-voice);
+  color: color-mix(in srgb, var(--radio-voice) 55%, var(--radio-fg)); /* تباين ≥٤.٥:١ للنص الصغير */
 }
 
 /* الجملة — بطلة الصفحة */

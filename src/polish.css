@@ -86,3 +86,33 @@ main h3 { text-wrap: balance; }
   a.spatial-card:hover,
   a.group.rounded-xl.border:hover { translate: none; }
 }
+
+/* ══ الجولة الثالثة — إتاحة وطباعة (بلا حركة جديدة) ══════════════════════ */
+
+/* رابط «تخطَّ إلى المحتوى»: كان نصه أبيض فوق لون التمييز الفاتح ليلاً (≈2.5:1).
+   النص الآن بلون سطح الصفحة فيعاكس لون التمييز في الوضعين (>٤.٥:١). */
+.skip-link {
+  color: rgb(var(--c-canvas));
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* الطباعة وحفظ PDF: لا يُطبع محتوى ما زال بانتظار دخول الشاشة (opacity:0). */
+@media print {
+  .site-fade-up,
+  .site-reveal > * {
+    opacity: 1 !important;
+    transform: none !important;
+    translate: none !important;
+  }
+}
+
+/* ── تباين النصوص الصغيرة: أرضية لشفافية الألوان الثانوية ────────────────
+   كلاسات text-soft/40…/80 وtext-accent/50…/80 كانت تُنزل نصاً بحجم ١٠–١٣px
+   إلى ≈٣:١. نرفع الشفافية إلى أرضية تُبقي ≥٤.٥:١ في الوضعين؛ الألوان نفسها،
+   والتسلسل البصري (soft أخفّ من ink) باقٍ. لا يمسّ حالات hover/focus. */
+.text-soft\/40, .text-soft\/50, .text-soft\/60, .text-soft\/70, .text-soft\/75, .text-soft\/80,
+.text-soft\/\[\.45\], .text-soft\/\[\.55\], .text-soft\/\[\.65\] { color: rgb(var(--c-soft) / .92); }
+.text-accent\/50, .text-accent\/60, .text-accent\/70, .text-accent\/80 { color: rgb(var(--c-accent) / .88); }
+.journey__note { opacity: .92; }

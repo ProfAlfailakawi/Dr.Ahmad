@@ -490,13 +490,13 @@ export default function Decade() {
                 </FadeUp>
                 <ol className="mt-8 border-r border-hair ps-6 pe-6 md:ps-9 md:pe-9">
                   {document.turns.map((turn, index) => (
-                    <FadeUp key={`${turn.title}-${turn.year}`} delay={index * 0.06}>
-                      <li className="relative pb-9 last:pb-0">
+                    <FadeUp as="li" key={`${turn.title}-${turn.year}`} delay={index * 0.06}>
+                      <div className="relative pb-9 last:pb-0">
                         <span className="absolute -right-[29px] top-2 h-2.5 w-2.5 rounded-full border-2 border-canvas bg-accent md:-right-[41px]" />
                         <time className="text-[.75rem] font-semibold text-accent">{turn.year}</time>
                         <h3 className="mt-1 font-display text-[1.18rem] font-semibold text-ink">{turn.title}</h3>
                         <p className="mt-2 text-[.88rem] font-light leading-[1.9] text-soft">{turn.description}</p>
-                      </li>
+                      </div>
                     </FadeUp>
                   ))}
                 </ol>
@@ -513,9 +513,9 @@ export default function Decade() {
               <ol className="mt-10 divide-y divide-hair border-y border-hair">
                 {/* السنوات ذات المقالات فقط — لا نعرض سنوات فارغة */}
                 {document.chapters.filter((chapter) => chapter.articles.length > 0).map((chapter, index) => (
-                  <FadeUp key={chapter.year} delay={Math.min(index * 0.025, 0.18)}>
+                  <FadeUp as="li" key={chapter.year} delay={Math.min(index * 0.025, 0.18)}>
                     {/* رابط سنة (مقترح معتمد): #y-2023 يقود مباشرة إلى سطر السنة */}
-                    <li id={`y-${chapter.year}`} className="grid scroll-mt-28 gap-3 py-6 sm:grid-cols-[90px_1fr] sm:gap-7">
+                    <div id={`y-${chapter.year}`} className="grid scroll-mt-28 gap-3 py-6 sm:grid-cols-[90px_1fr] sm:gap-7">
                       <a href={`#y-${chapter.year}`} className="font-display text-[1.35rem] font-semibold text-accent transition-colors hover:text-accent-deep" title="رابط مباشر لهذه السنة">
                         <time>{chapter.year}</time>
                       </a>
@@ -527,7 +527,7 @@ export default function Decade() {
                           </Link>
                         )}
                       </div>
-                    </li>
+                    </div>
                   </FadeUp>
                 ))}
               </ol>

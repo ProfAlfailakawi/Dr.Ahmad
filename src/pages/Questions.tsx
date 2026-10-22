@@ -199,7 +199,7 @@ export default function Questions() {
               )}
             </div>
           </FadeUp>
-          <div id="questions-list" className="mobile-card-rail scroll-mt-28 grid gap-5">
+          <div id="questions-list" tabIndex={0} className="mobile-card-rail scroll-mt-28 grid gap-5">
             {paged.pageItems.map((question, index) => (
               <FadeUp key={question.key} delay={Math.min(index * 0.04, 0.3)}>
                 <article className="rounded-2xl border border-hair p-6">

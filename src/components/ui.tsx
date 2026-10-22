@@ -70,7 +70,9 @@ export function Reveal({ children, delay = 0, className = '' }: { children: Reac
 }
 
 /* ---------- Fade up ---------- */
-export function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+export function FadeUp({ children, delay = 0, className = '', as = 'div' }: { children: React.ReactNode; delay?: number; className?: string; as?: 'div' | 'li' }) {
+  /* as="li": الغلاف نفسه هو عنصر القائمة، فلا يقع div بين ul وli (بنية قائمة صحيحة لقارئ الشاشة). */
+  const Tag = (as === 'li' ? motion.li : motion.div) as typeof motion.div
   const reduce = useReducedMotion()
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { once: true, amount: 0.12 })
@@ -90,7 +92,7 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
   const show = reduce || inView || safety
 
   return (
-    <motion.div
+    <Tag
       ref={ref}
       className={`site-fade-up ${className}`.trim()}
       initial={reduce ? false : { opacity: 0, y: 11 }}
@@ -98,7 +100,7 @@ export function FadeUp({ children, delay = 0, className = '' }: { children: Reac
       transition={{ duration: 0.42, ease: EASE, delay: Math.min(delay, 0.12) }}
     >
       {children}
-    </motion.div>
+    </Tag>
   )
 }
 

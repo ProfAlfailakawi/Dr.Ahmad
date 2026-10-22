@@ -97,9 +97,9 @@ function QuestionRow({ episode, playing, expanded, kuwaitiReady, onOpen }: {
             {episode.question || episode.title}
           </span>
           <span className="mt-1 block truncate text-[.72rem] text-soft" title={episode.question ? episode.title : undefined}>
-            {episode.question ? <>{episode.title}<span className="mx-1.5 opacity-45">·</span></> : null}
+            {episode.question ? <>{episode.title}<span aria-hidden="true" className="mx-1.5 opacity-60">·</span></> : null}
             {clock(episode.durationSec)}
-            {episode.durationSec ? <span className="mx-1.5 opacity-45">·</span> : null}
+            {episode.durationSec ? <span aria-hidden="true" className="mx-1.5 opacity-60">·</span> : null}
             {episode.iso.slice(0, 4)}
           </span>
         </span>

@@ -1210,7 +1210,7 @@ export default function Atlas() {
           {mobileSky && filtersBlock}
 
           <FadeUp delay={0.14}>
-            <div className="mobile-card-rail mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
+            <div tabIndex={0} className="mobile-card-rail mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
               <p><span className="font-medium text-ink">الحجم</span> — كلّما كبرت النجمة، طال المقال.</p>
               <p><span className="font-medium text-ink">المسار</span> — خط متصل يروي قبل المقال وبعده داخل الموضوع نفسه.</p>
               <p><span className="font-medium text-ink">الكوكبة</span> — خط متقطع لصلةٍ فكرية، وهالة رقيقة للمقالات الصوتية.</p>

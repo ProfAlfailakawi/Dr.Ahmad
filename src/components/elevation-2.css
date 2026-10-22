@@ -1,0 +1,23 @@
+/* ═══════════════════════════════════════════════════════════════════
+   تسامي الواجهة — الجولة الثانية «ورقةٌ تُقرأ وتُسمع»
+   بإذنٍ صريح من الدكتور (DESIGN.md §٧: لا تغيير بلا طلب). طبقةٌ تقديمية
+   فقط بعد elevation.css: رموزٌ دلالية، لا لونٌ حرفي، لا تدرّج، لا ظلٌّ
+   ملوّن، منحنى --E وحده. لا نصّ ولا محتوى ولا معرّفات ولا منطق.
+   كلّ خطوةٍ في إيداعٍ مستقلّ لتكون نقطة رجوع.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ١) أهداف اللمس ≥ 44px (chips «استمع» كانت 34px) ──────────────── */
+.content-listen .listen-filter-tabs button,
+.content-listen .listen-cat-row > button {
+  min-block-size: 44px;
+  padding-inline: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.content-listen .listen-filter-tabs [role="group"][aria-label] > button {
+  min-block-size: 44px;
+}
+.content-listen .listen-filter-tabs [role="group"][aria-label^="لهجة"] { padding: .2rem; }
+.content-listen section a.rounded-full { min-block-size: 44px; }
+.editorial-tab { min-block-size: 44px; }

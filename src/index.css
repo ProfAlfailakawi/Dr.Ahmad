@@ -7824,13 +7824,16 @@ html.dark {
 }
 .article-share-actions::-webkit-scrollbar { display: none; }
 .article-share-actions > div { flex-wrap: nowrap !important; flex: 0 0 auto; }
+/* غلاف زرّ الاستشهاد (span) كان ينكمش إلى ~19px فيطفو زرّه فوق زرّ الطباعة على 375–390px. */
+.article-share-actions > * { flex-shrink: 0; }
 /* على 320px تتجاوز السبع أدوات عرض الصف فيُقصّ أولها؛ تلتفّ هنا متوازنة بدل القصّ. */
 @media (max-width: 340px) {
   .article-share-actions { flex-wrap: wrap !important; overflow: visible !important; justify-content: center !important; }
   .article-share-actions > div { flex-wrap: wrap !important; justify-content: center; }
 }
 @media (max-width: 520px) {
-  .article-share-actions { justify-content: flex-start !important; }
+  .article-share-actions { justify-content: flex-start !important; gap: .25rem !important; }
+  .article-share-actions > div { gap: .25rem; }
   .article-share-actions .article-tool-icon,
   .article-share-actions > div > a,
   .article-share-actions > div > button {

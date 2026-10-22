@@ -869,7 +869,7 @@ export default function Search() {
                         <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-hair bg-canvas text-accent" aria-label={voiceKindForSpeaker(hit.speaker) === 'woman' ? 'المتحدثة' : 'المتحدث'}><VoiceFigure kind={voiceKindForSpeaker(hit.speaker)} size={12} /></span>
                         <span className="opacity-45">·</span>
                         <span className="truncate">{hit.title}</span>
-                        <span className="mx-1.5 opacity-45">·</span>
+                        <span aria-hidden="true" className="mx-1.5 opacity-60">·</span>
                         {Math.floor(hit.startSec / 60)}:{String(Math.floor(hit.startSec % 60)).padStart(2, '0')}
                       </span>
                     </span>

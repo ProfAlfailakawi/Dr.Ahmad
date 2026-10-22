@@ -88,3 +88,23 @@ main h4.font-display { text-wrap: balance; }
   .content-listen button.w-full.items-center.rounded-xl svg line { transition: none; }
   .content-listen button.w-full.items-center.rounded-xl:hover svg line { transform: none !important; }
 }
+
+/* ── ٤) بطاقات القوائم (مقالات/كتب/موسوعة): إيقاعٌ وإشارة قراءة ─────────
+   الحدّ أولاً ثم خطٌّ علويّ بلون القراءة (accent) يظهر عند التمرير/التركيز. */
+a.group.rounded-2xl.border,
+a.group.rounded-3xl.border {
+  transition: border-color .35s var(--E), background-color .35s var(--E), transform .35s var(--E), box-shadow .35s var(--E);
+}
+@media (hover: hover) {
+  a.group.rounded-2xl.border:hover,
+  a.group.rounded-3xl.border:hover { box-shadow: inset 0 2px 0 rgb(var(--c-accent) / .55); }
+}
+a.group.rounded-2xl.border:focus-visible,
+a.group.rounded-3xl.border:focus-visible { box-shadow: inset 0 2px 0 rgb(var(--c-accent) / .55), 0 0 0 5px rgb(var(--c-canvas)); }
+/* عناوين البطاقات: أسطر متوازنة وارتفاع سطرٍ أرحب للحرف العربي. */
+a.group.rounded-3xl.border h3,
+a.group.rounded-2xl.border h3 { line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) {
+  a.group.rounded-2xl.border,
+  a.group.rounded-3xl.border { transition: none; }
+}

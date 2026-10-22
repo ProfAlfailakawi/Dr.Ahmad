@@ -1,9 +1,16 @@
 import { useEffect } from 'react'
+import { Laptop, MessageCircle, Presentation } from 'lucide-react'
 import { useLocation } from 'react-router'
 import { FadeUp, Label, Page, Reveal } from '../components/ui'
 import { place } from '../data'
 import { ContactForm } from '../components/ContactForm'
 import { useSeo } from '../components/seo'
+
+const SERVICES = [
+  { icon: MessageCircle, label: 'استشارات في تكنولوجيا التعليم والذكاء الاصطناعي' },
+  { icon: Presentation, label: 'محاضرات وورش عمل' },
+  { icon: Laptop, label: 'مشاريع تحوّل رقمي للمؤسسات التعليمية' },
+]
 
 export default function Contact() {
   const location = useLocation()
@@ -29,9 +36,15 @@ export default function Contact() {
             <h1 className="font-display text-[clamp(2.6rem,8vw,5.2rem)] font-bold leading-[1.25] text-ink">
               <Reveal>لنعمل معاً.</Reveal>
             </h1>
-            <p className="mx-auto mt-6 max-w-[520px] text-[1.12rem] font-light leading-[1.9] text-ink/80">
-              استشارات في تكنولوجيا التعليم والذكاء الاصطناعي، محاضرات وورش عمل، ومشاريع تحوّل رقمي في المؤسسات التعليمية.
-            </p>
+            {/* ثلاث خدمات كرموز موجزة بدل فقرة — العرض فقط */}
+            <ul className="mx-auto mt-8 flex w-fit max-w-full flex-col items-start gap-4 text-start text-ink/80 sm:w-auto sm:max-w-[760px] sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
+              {SERVICES.map(({ icon: Icon, label }) => (
+                <li key={label} className="flex items-center gap-3 text-[1rem] font-light">
+                  <span aria-hidden className="grid h-11 w-11 place-items-center rounded-full border border-hair bg-wash text-accent"><Icon size={20} strokeWidth={1.6} /></span>
+                  {label}
+                </li>
+              ))}
+            </ul>
 
             <div className="mt-10">
               <a href="#booking-form" className="inline-flex min-h-11 items-center rounded-full bg-accent px-8 py-3 font-semibold text-canvas transition-colors hover:bg-accent-deep">

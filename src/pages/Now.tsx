@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Arrow } from '../components/icons'
+import { Lightbulb } from 'lucide-react'
 import { Link } from 'react-router'
 import { FadeUp, Page } from '../components/ui'
 import { fetchPublishedExtras } from '../lib/firebase'
@@ -71,6 +72,7 @@ export default function Now() {
             )) : (
               <FadeUp>
                 <div className="rounded-2xl border border-hair bg-wash p-8 text-center text-soft">
+                  <span aria-hidden className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-full border border-hair bg-canvas text-accent"><Lightbulb size={20} strokeWidth={1.6} /></span>
                   ستظهر هنا آخر ثلاث أفكار يضيفها الدكتور من لوحة التحكم.
                 </div>
               </FadeUp>

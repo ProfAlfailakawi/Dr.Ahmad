@@ -44,7 +44,8 @@ ok((storage.match(/function isAdmin\(\)[\s\S]*?\n\s*}/) || [''])[0].includes('re
 const csp = firebase.hosting.headers.flatMap((entry) => entry.headers || []).find((entry) => entry.key === 'Content-Security-Policy')?.value || ''
 ok(csp.includes("script-src 'self'") && !csp.match(/script-src[^;]*'unsafe-inline'/), 'CSP يمنع inline JavaScript')
 ok(csp.includes("script-src-attr 'none'") && csp.includes("object-src 'none'"), 'CSP يشدد event handlers والأجسام القابلة للتنفيذ')
-ok((csp.match(/connect-src([^;]*)/)?.[1] || '').split(/\s+/).includes('https://orbitq8.web.app'), 'CSP connect-src يسمح بـ https://orbitq8.web.app لمستشعر ORBIT')
+const ORBIT_SENSOR_ORIGIN = 'https://orbitq8.web.app'
+ok((csp.match(/connect-src([^;]*)/)?.[1] || '').split(/\s+/).some((source) => source === ORBIT_SENSOR_ORIGIN), 'CSP connect-src يسمح بأصل ORBIT لمستشعر الأخطاء وحده')
 ok(index.includes('<script src="/boot.js"></script>') && index.includes('<link href="/boot.css" rel="stylesheet" />'), 'إقلاع الصفحة نُقل إلى أصول خارجية متوافقة مع CSP')
 ok(boot.includes('serviceWorker') && boot.includes('location.replace'), 'ملف الإقلاع يحتفظ بالتحويل الرسمي وService Worker')
 

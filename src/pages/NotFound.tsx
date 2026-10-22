@@ -5,18 +5,18 @@ import { EASE, FadeUp, Page, Reveal } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { useCmsContent } from '../lib/content'
 import { SocialIcon } from '../components/icons'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BookOpen, FlaskConical, GraduationCap, Library, type LucideIcon } from 'lucide-react'
 
 export default function NotFound() {
   const { articles, books, papers } = useCmsContent()
   useSeo({ title: 'الصفحة غير موجودة', description: 'الصفحة المطلوبة غير موجودة.' })
   const nav = useNavigate()
   const [q, setQ] = useState('')
-  const links = [
-    { to: '/articles', label: 'المقالات الفكرية', n: String(articles.length) },
-    { to: '/publications', label: 'الكتب المنشورة', n: String(books.length) },
-    { to: '/research', label: 'المساهمات العلمية', n: String(papers.length) },
-    { to: '/cv', label: 'السيرة الأكاديمية' },
+  const links: { to: string; label: string; n?: string; icon: LucideIcon }[] = [
+    { to: '/articles', icon: BookOpen, label: 'المقالات الفكرية', n: String(articles.length) },
+    { to: '/publications', icon: Library, label: 'الكتب المنشورة', n: String(books.length) },
+    { to: '/research', icon: FlaskConical, label: 'المساهمات العلمية', n: String(papers.length) },
+    { to: '/cv', icon: GraduationCap, label: 'السيرة الأكاديمية' },
   ]
 
   const hits = q.trim().length > 1
@@ -84,7 +84,10 @@ export default function NotFound() {
               {links.map((l) => (
                 <li key={l.to} className="border-b border-hair">
                   <Link to={l.to} className="group flex items-center justify-between py-4 transition-[padding] duration-300 hover:pe-2">
-                    <span className="font-display text-[1.15rem] font-medium text-ink transition-colors group-hover:text-accent">{l.label}</span>
+                    <span className="flex items-center gap-3.5">
+                      <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-hair bg-wash text-accent"><l.icon size={17} strokeWidth={1.6} /></span>
+                      <span className="font-display text-[1.15rem] font-medium text-ink transition-colors group-hover:text-accent">{l.label}</span>
+                    </span>
                     <span className="flex items-center gap-4">
                       {l.n && <span className="text-[.82rem] text-soft">{l.n}</span>}
                       <span className="text-accent opacity-0 transition-opacity group-hover:opacity-100"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>

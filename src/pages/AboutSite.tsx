@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import type { ReactNode } from 'react'
 import { Compass, Gem, Target, Users, type LucideIcon } from 'lucide-react'
-import { FadeUp, Page, PageHead, Reveal } from '../components/ui'
+import { FadeUp, Page, PageHead } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { aboutSite } from '../data'
 
@@ -42,8 +42,8 @@ export default function AboutSite() {
             <ul className="mt-8 grid gap-6 md:grid-cols-2 md:gap-x-12">
               {aboutSite.distinct.map((t, i) => (
                 <FadeUp key={t} delay={i * 0.05}>
-                  <li className="relative ps-7 text-[1rem] font-light leading-[1.95] text-ink">
-                    <span className="absolute right-0 top-[.62em] h-2 w-2 rotate-45 bg-accent" />
+                  <li className="relative ps-10 text-[1rem] font-light leading-[1.95] text-ink">
+                    <span aria-hidden className="absolute right-0 top-[.45em] grid h-6 w-6 place-items-center rounded-full border border-hair bg-wash text-[.72rem] font-semibold tabular-nums text-accent">{i + 1}</span>
                     {t}
                   </li>
                 </FadeUp>
@@ -83,10 +83,7 @@ export default function AboutSite() {
 
           <FadeUp>
             <div className="border-t border-hair pt-14 text-center">
-              <h2 className="mx-auto max-w-[640px] font-display text-[clamp(1.5rem,3.6vw,2.4rem)] font-semibold leading-[1.55] text-ink">
-                <Reveal>{aboutSite.hero}</Reveal>
-              </h2>
-              <Link to="/contact" className="mt-9 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
+              <Link to="/contact" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                 للاستشارة أو التعاون
               </Link>
             </div>

@@ -21,3 +21,29 @@
 .content-listen .listen-filter-tabs [role="group"][aria-label^="لهجة"] { padding: .2rem; }
 .content-listen section a.rounded-full { min-block-size: 44px; }
 .editorial-tab { min-block-size: 44px; }
+
+/* ── ٢) تراتبية الطباعة: الصفة في الواجهة تُقرأ، والعنوان يتماسك ─────── */
+/* سطر الصفة تحت الاسم كان ‎.95rem بوزن 300 ولون باهت؛ يكبر قليلاً ويثبت. */
+@media (min-width: 768px) {
+  .human-core__tagline {
+    font-size: 1.04rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+    color: color-mix(in srgb, rgb(var(--c-soft)) 72%, rgb(var(--c-ink)) 28%);
+  }
+}
+@media (max-width: 767px) {
+  .human-core__tagline { font-weight: 400 !important; }
+}
+/* مقدّمة رأس الصفحة: سطرٌ أقصر وأريح، بلا أرملة. */
+.page-head-scene__sub {
+  max-inline-size: 36rem;
+  line-height: 1.95;
+  text-wrap: pretty;
+}
+/* عناوين البطاقات والصفوف: توازن الأسطر. */
+main h3.font-display,
+main h4.font-display { text-wrap: balance; }
+/* الأرقام في البيانات الوصفية متساوية العرض فتصطفّ بين الصفوف. */
+.majlis-row button span.text-soft,
+.page-head-scene__sub { font-variant-numeric: tabular-nums; }

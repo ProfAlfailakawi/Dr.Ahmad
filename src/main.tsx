@@ -13,6 +13,8 @@ import './index.css'
 import './components/dna/dna.css'
 import './components/dna/dna-theme.css'
 import './components/elevation.css'
+import './polish.css'
+import { installPolishReveal } from './lib/polish-reveal'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
    حزمةً تغيّر اسمها فتغيب المتون (صفحة «قيد الإضافة» الزائفة). فشلُ التحميل
@@ -33,6 +35,9 @@ watchResourceFailures()
 
 /* تسامحُ إزالة العقد مع ما يعدّله المتصفح أو إضافاته خارج React. */
 installDomResilience()
+
+/* ظهورٌ هادئ للبطاقات (مرةً واحدة، يتعطّل بتقليل الحركة). */
+installPolishReveal()
 
 /* التحديث الذاتي الصامت: بصمة الإصدار ومنارتها ثم التحديث والتصعيد عند اللزوم.
    شفاء الحزم اليتيمة له مساره أعلاه، فلا يُركَّب مرتين. */

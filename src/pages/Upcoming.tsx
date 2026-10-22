@@ -69,10 +69,11 @@ export default function Upcoming() {
             <ul id="upcoming-events-list" className="grid gap-3">
               {paged.pageItems.map((e, i) => (
                 <FadeUp
+                  as="li"
                   key={e.iso + e.title}
                   delay={Math.min(i * 0.05, 0.25)}
                 >
-                  <li className="group grid gap-3 rounded-xl border border-hair bg-canvas p-4 transition-colors hover:border-accent sm:grid-cols-[9rem_1fr_auto] sm:items-center sm:gap-5 sm:p-5">
+                  <div className="group grid gap-3 rounded-xl border border-hair bg-canvas p-4 transition-colors hover:border-accent sm:grid-cols-[9rem_1fr_auto] sm:items-center sm:gap-5 sm:p-5">
                     <div className="border-b border-hair pb-3 sm:border-b-0 sm:border-l sm:pb-0 sm:pl-5">
                       <time dateTime={e.iso} className="block font-display text-[1rem] font-semibold text-accent">{e.date}</time>
                       {e.time && <span className="mt-0.5 block text-[.76rem] text-soft">{e.time}</span>}
@@ -122,7 +123,7 @@ export default function Upcoming() {
                         <SocialIcon name="Download" size={17} />
                       </button>
                     </div>
-                  </li>
+                  </div>
                 </FadeUp>
               ))}
             </ul>

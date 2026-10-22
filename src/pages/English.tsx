@@ -150,7 +150,7 @@ export function EnglishHome() {
                 All {papers.length} papers<Arrow ltr />
               </Link>
             </div>
-            <ul className="mobile-card-rail mt-10 grid gap-8 md:grid-cols-3" style={{ direction: 'ltr' }}>
+            <ul tabIndex={0} className="mobile-card-rail mt-10 grid gap-8 md:grid-cols-3" style={{ direction: 'ltr' }}>
               {papers.slice(0, 3).map((p) => (
                 <li key={p.slug} className="border-l-2 border-hair pl-5 transition-colors hover:border-accent">
                   <p className="text-[1rem] font-medium leading-[1.6] text-ink">{paperTitlesEn[p.slug] || p.slug}</p>
@@ -250,7 +250,7 @@ export function EnglishCV() {
           </Section>
 
           <Section title="Advisory & consulting">
-            <ul className="mobile-card-rail grid gap-6 md:grid-cols-2" style={{ direction: 'ltr' }}>
+            <ul tabIndex={0} className="mobile-card-rail grid gap-6 md:grid-cols-2" style={{ direction: 'ltr' }}>
               {advisoryEn.map((a) => (
                 <li key={a.org}>
                   <span className="block text-[1rem] font-medium text-ink">{a.org}</span>
@@ -319,8 +319,8 @@ export function EnglishResearch() {
           </FadeUp>
           <ul id="english-research-list">
             {paged.pageItems.map((p, i) => (
-              <FadeUp key={p.slug}>
-                <li className="group flex gap-6 border-b border-hair py-8">
+              <FadeUp as="li" key={p.slug}>
+                <div className="group flex gap-6 border-b border-hair py-8">
                   <span className="w-9 shrink-0 pt-1 font-display text-[1.05rem] font-bold text-accent/50 transition-colors group-hover:text-accent">
                     {String((paged.page - 1) * 12 + i + 1).padStart(2, '0')}
                   </span>
@@ -334,7 +334,7 @@ export function EnglishResearch() {
                       </Link>
                     </div>
                   </div>
-                </li>
+                </div>
               </FadeUp>
             ))}
           </ul>

@@ -1,0 +1,110 @@
+/* ═══════════════════════════════════════════════════════════════════
+   تسامي الواجهة — الجولة الثانية «ورقةٌ تُقرأ وتُسمع»
+   بإذنٍ صريح من الدكتور (DESIGN.md §٧: لا تغيير بلا طلب). طبقةٌ تقديمية
+   فقط بعد elevation.css: رموزٌ دلالية، لا لونٌ حرفي، لا تدرّج، لا ظلٌّ
+   ملوّن، منحنى --E وحده. لا نصّ ولا محتوى ولا معرّفات ولا منطق.
+   كلّ خطوةٍ في إيداعٍ مستقلّ لتكون نقطة رجوع.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ١) أهداف اللمس ≥ 44px (chips «استمع» كانت 34px) ──────────────── */
+.content-listen .listen-filter-tabs button,
+.content-listen .listen-cat-row > button {
+  min-block-size: 44px;
+  padding-inline: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.content-listen .listen-filter-tabs [role="group"][aria-label] > button {
+  min-block-size: 44px;
+}
+.content-listen .listen-filter-tabs [role="group"][aria-label^="لهجة"] { padding: .2rem; }
+.content-listen section a.rounded-full { min-block-size: 44px; }
+.editorial-tab { min-block-size: 44px; }
+
+/* ── ٢) تراتبية الطباعة: الصفة في الواجهة تُقرأ، والعنوان يتماسك ─────── */
+/* سطر الصفة تحت الاسم كان ‎.95rem بوزن 300 ولون باهت؛ يكبر قليلاً ويثبت. */
+@media (min-width: 768px) {
+  .human-core__tagline {
+    font-size: 1.04rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+    color: color-mix(in srgb, rgb(var(--c-soft)) 72%, rgb(var(--c-ink)) 28%);
+  }
+}
+@media (max-width: 767px) {
+  .human-core__tagline { font-weight: 400 !important; }
+}
+/* مقدّمة رأس الصفحة: سطرٌ أقصر وأريح، بلا أرملة. */
+.page-head-scene__sub {
+  max-inline-size: 36rem;
+  line-height: 1.95;
+  text-wrap: pretty;
+}
+/* عناوين البطاقات والصفوف: توازن الأسطر. */
+main h3.font-display,
+main h4.font-display { text-wrap: balance; }
+/* الأرقام في البيانات الوصفية متساوية العرض فتصطفّ بين الصفوف. */
+.majlis-row button span.text-soft,
+.page-head-scene__sub { font-variant-numeric: tabular-nums; }
+
+/* ── ٣) قائمة المجلس وسطح المشغّل: الجمرة لما يُسمع ───────────────────
+   الصف الذي يُسمع الآن يحمل علامة جمرةٍ على حافّته (لا لوناً جديداً)،
+   والتمرير يمنح الصفّ سطحاً هادئاً. منطق التشغيل لم يُمسّ. */
+.majlis-row > button {
+  border-radius: .75rem;
+  transition: background-color .35s var(--E), box-shadow .35s var(--E), color .3s var(--E);
+}
+.majlis-row > button[aria-current="true"] {
+  box-shadow: inset -3px 0 0 rgb(var(--c-ember));
+  background: rgb(var(--c-wash) / .55);
+}
+.majlis-row.is-open > button[aria-current="true"] { border-radius: 1rem 1rem 0 0; }
+@media (hover: hover) {
+  .majlis-row:not(.is-open) > button:hover { background: rgb(var(--c-wash) / .7); }
+}
+/* بطاقة «افتح المجلس»: حدٌّ جمريّ خافت وأعمدة الموجة تتنفّس عند التمرير فقط. */
+.content-listen button.w-full.items-center.rounded-xl {
+  min-block-size: 4.5rem;
+  border-color: rgb(var(--c-ember) / .28);
+  transition: border-color .35s var(--E), background-color .35s var(--E), transform .35s var(--E);
+}
+.content-listen button.w-full.items-center.rounded-xl svg line {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .5s var(--E);
+}
+@media (hover: hover) {
+  .content-listen button.w-full.items-center.rounded-xl:hover {
+    border-color: rgb(var(--c-ember) / .6);
+    background-color: rgb(var(--c-wash));
+  }
+  .content-listen button.w-full.items-center.rounded-xl:hover svg line:nth-child(odd) { transform: scaleY(1.28); }
+  .content-listen button.w-full.items-center.rounded-xl:hover svg line:nth-child(even) { transform: scaleY(.78); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .majlis-row > button,
+  .content-listen button.w-full.items-center.rounded-xl,
+  .content-listen button.w-full.items-center.rounded-xl svg line { transition: none; }
+  .content-listen button.w-full.items-center.rounded-xl:hover svg line { transform: none !important; }
+}
+
+/* ── ٤) بطاقات القوائم (مقالات/كتب/موسوعة): إيقاعٌ وإشارة قراءة ─────────
+   الحدّ أولاً ثم خطٌّ علويّ بلون القراءة (accent) يظهر عند التمرير/التركيز. */
+a.group.rounded-2xl.border,
+a.group.rounded-3xl.border {
+  transition: border-color .35s var(--E), background-color .35s var(--E), transform .35s var(--E), box-shadow .35s var(--E);
+}
+@media (hover: hover) {
+  a.group.rounded-2xl.border:hover,
+  a.group.rounded-3xl.border:hover { box-shadow: inset 0 2px 0 rgb(var(--c-accent) / .55); }
+}
+a.group.rounded-2xl.border:focus-visible,
+a.group.rounded-3xl.border:focus-visible { box-shadow: inset 0 2px 0 rgb(var(--c-accent) / .55), 0 0 0 5px rgb(var(--c-canvas)); }
+/* عناوين البطاقات: أسطر متوازنة وارتفاع سطرٍ أرحب للحرف العربي. */
+a.group.rounded-3xl.border h3,
+a.group.rounded-2xl.border h3 { line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) {
+  a.group.rounded-2xl.border,
+  a.group.rounded-3xl.border { transition: none; }
+}

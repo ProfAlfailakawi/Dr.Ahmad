@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════════════════════════════
+   طبقة الصقل والحركة الهادئة — الجولة الثانية
+   تُحمَّل أخيراً (بعد elevation.css) وتُضيف ولا تُعيد تعريف شيء.
+   قواعدها: تحريك transform/opacity فقط (عبر الخصائص المنفردة
+   translate/scale كي لا تدهس transform القائم)، مدّة ١٢٠–٢٦٠ms،
+   مرّةً واحدة، بلا حلقات. الحالة النهائية = التصميم الساكن، وكل
+   الحركات بملء backwards فقط: انعدام الحركة يعني عنصراً مرئياً.
+   لا حركة على متن القراءة الطويل ولا الحقول ولا الجداول.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --m-ease: var(--E, cubic-bezier(.2, .7, .2, 1));
+  --m-fast: 120ms;
+  --m-base: 180ms;
+  --m-slow: 260ms;
+  --m-step: 40ms;
+}
+
+/* ── ١) ضغطةٌ لمسية: الزرّ ينكمش قليلاً ثم يعود ──────────────────────── */
+button:not(:disabled):not([aria-disabled='true']):active,
+[role='button']:not([aria-disabled='true']):active,
+a.rounded-full:active,
+a[class*='rounded-full'][class*='border']:active {
+  scale: .98;
+  transition: scale var(--m-fast) var(--m-ease);
+}
+
+/* ── ٢) رفعةٌ خفيفة للبطاقات الروابط (فوق ما في elevation.css) ──────── */
+@media (hover: hover) {
+  a.spatial-card:hover,
+  a.group.rounded-xl.border:hover {
+    translate: 0 -1px;
+  }
+  a.spatial-card,
+  a.group.rounded-xl.border {
+    transition-property: border-color, background-color, transform, translate;
+    transition-duration: .35s, .35s, .35s, var(--m-base);
+    transition-timing-function: var(--m-ease);
+  }
+}
+
+/* ── ٣) الطيّ والبسط: محتوى التفاصيل يطفو برفق (ليس متن مقال) ───────── */
+details[open] > :not(summary) {
+  animation: polish-fade-rise var(--m-base) var(--m-ease) backwards;
+}
+article details[open] > :not(summary),
+.article-body details[open] > :not(summary) { animation: none; }
+
+/* ── ٤) النوافذ: دخولٌ بالتلاشي والارتفاع القصير ─────────────────────── */
+dialog[open],
+[role='dialog'] {
+  animation: polish-fade var(--m-base) var(--m-ease) backwards;
+}
+dialog[open] { animation-name: polish-fade-rise; }
+
+/* ── ٥) ظهور البطاقات والصفوف مرةً واحدة (يضيف الصنف polish-in المساعدُ
+   src/lib/polish-reveal.ts عند دخولها الشاشة). لا حالة إخفاء: من لم يمسّه
+   المساعد يبقى مرئياً كاملاً. ───────────────────────────────────────── */
+.polish-in {
+  animation: polish-fade-rise var(--m-slow) var(--m-ease) backwards;
+  animation-delay: calc(var(--polish-n, 0) * var(--m-step));
+}
+
+@keyframes polish-fade-rise {
+  from { opacity: 0; translate: 0 8px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+@keyframes polish-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── ٦) لمسات طباعية هادئة ──────────────────────────────────────────── */
+time { font-variant-numeric: tabular-nums; }
+main h3 { text-wrap: balance; }
+
+/* ── ٧) تقليل الحركة: كل شيء ظاهر وساكن ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .polish-in,
+  details[open] > :not(summary),
+  dialog[open],
+  [role='dialog'] { animation: none !important; }
+  button:active,
+  [role='button']:active,
+  a:active { scale: none; transition: none; }
+  a.spatial-card:hover,
+  a.group.rounded-xl.border:hover { translate: none; }
+}

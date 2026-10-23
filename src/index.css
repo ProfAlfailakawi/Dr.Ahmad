@@ -8554,6 +8554,20 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 .count-ranked-track { height: 6px; border-radius: 3px; background: rgb(var(--c-ink) / .1); overflow: hidden; }
 .count-ranked-track i { display: block; height: 100%; border-radius: 3px; background: rgb(var(--c-accent)); }
 .count-ranked-value { font-weight: 700; font-variant-numeric: tabular-nums; text-align: end; }
+/* الهاتف: الحلقتان جنباً إلى جنب في صفٍّ واحد، والسنوات شرائح مرصوصة تحتهما بدل عمودٍ طويل. */
+@media (max-width: 899.98px) {
+  .count-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+  .count-tile { padding: .9rem .75rem; }
+  .count-tile--row { flex-direction: column; justify-content: flex-start; gap: .55rem; text-align: center; }
+  .count-tile--row:only-child { grid-column: 1 / -1; }
+  .count-tile--row .count-ring { width: 4.6rem; height: 4.6rem; }
+  .count-tile--row .count-tile-title { font-size: .84rem; line-height: 1.55; }
+  .count-tile:not(.count-tile--row) { grid-column: 1 / -1; order: 3; padding-inline: 1rem; }
+  .count-timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr)); gap: .45rem; margin-top: .7rem; }
+  .count-timeline::before, .count-timeline li::before { display: none; }
+  .count-timeline li { flex-direction: column; align-items: center; gap: .1rem; padding: .5rem .3rem; border: 1px solid var(--c-hair); border-radius: .7rem; background: rgb(var(--c-ink) / .03); text-align: center; }
+  .count-timeline-count { font-size: .78rem; line-height: 1.5; }
+}
 @media (min-width: 900px) {
   .count-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; }
 }

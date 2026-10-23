@@ -8559,7 +8559,8 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
   .count-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
   .count-tile { padding: .9rem .75rem; }
   .count-tile--row { flex-direction: column; justify-content: flex-start; gap: .55rem; text-align: center; }
-  .count-tile--row:only-child { grid-column: 1 / -1; }
+  /* حلقةٌ وحيدة (الكتب): تمتدّ بعرض الصف وتعود أفقيةً بدل نصف صفٍّ وفراغ. */
+  .count-tiles:not(:has(.count-tile--row ~ .count-tile--row)) .count-tile--row { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; gap: 1rem; text-align: start; }
   .count-tile--row .count-ring { width: 4.6rem; height: 4.6rem; }
   .count-tile--row .count-tile-title { font-size: .84rem; line-height: 1.55; }
   .count-tile:not(.count-tile--row) { grid-column: 1 / -1; order: 3; padding-inline: 1rem; }

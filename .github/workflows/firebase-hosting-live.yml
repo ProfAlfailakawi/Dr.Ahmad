@@ -1,8 +1,6 @@
 name: نشر الموقع على Firebase Hosting
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
   # التزام GitHub الذي يصنعه Workflow الصوت لا يطلق حدث push جديداً لأسباب
   # أمنية في GitHub. لذلك كان R2 وmain يتقدمان بينما يبقى الموقع عند 56.

@@ -3,7 +3,7 @@ name: معايرة مجلس التحرير — 7 و30 يوماً
 on:
   schedule:
     # يومياً 05:10 UTC = 08:10 صباح الكويت. القياس يومي لا لحظي.
-    - cron: '10 5 * * *'
+    - cron: '10 5 * * 0'
   workflow_dispatch:
 
 concurrency:

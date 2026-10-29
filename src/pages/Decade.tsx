@@ -240,7 +240,7 @@ export default function Decade() {
             { key: 'journey' as const, label: 'رحلة الكتابة' },
             { key: 'predictions' as const, label: 'التنبؤات والمراجعات' },
           ].map((item) => (
-            <button key={item.key} type="button" onClick={() => updateQuery(idea, item.key)} className={`relative shrink-0 py-4 text-[.8rem] font-semibold transition-colors ${mode === item.key ? 'text-ink' : 'text-soft hover:text-accent'}`}>
+            <button key={item.key} type="button" aria-pressed={mode === item.key} onClick={() => updateQuery(idea, item.key)} className={`relative shrink-0 py-4 text-[.8rem] font-semibold transition-colors ${mode === item.key ? 'text-ink' : 'text-soft hover:text-accent'}`}>
               {item.label}
               {mode === item.key && <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-accent" />}
             </button>
@@ -263,6 +263,8 @@ export default function Decade() {
             <input
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
+              aria-label={mode === 'predictions' ? 'صفِّ التنبؤات بفكرة' : 'تتبّع رحلة فكرة في العقد'}
+              enterKeyHint="search"
               placeholder={mode === 'predictions' ? 'صفِّ التنبؤات بفكرة — الشهادة، الذكاء الاصطناعي…' : 'اكتب فكرةً — الامتحان، الهوية، الذكاء الاصطناعي…'}
               className="min-w-[16rem] flex-1 rounded-full border border-hair bg-canvas px-5 py-2.5 text-[.88rem] text-ink outline-none focus:border-accent"
             />

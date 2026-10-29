@@ -1,5 +1,8 @@
 // Shared 3D helpers for every living page: easing, Arabic labels, materials, particles.
 import * as THREE from 'three';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
 // Page image is 838 x 1024 px; width is 1 unit, so height is:
 export const PAGE_H = 1024 / 838;
@@ -170,4 +173,79 @@ export function sweepBand() {
     m.material.opacity = p <= 0 || p >= 1 ? 0 : Math.sin(p * Math.PI);
   };
   return m;
+}
+
+// ---------------------------------------------------------------- Pencil & light
+// The signature look: every object is first drawn by a pencil (ink outlines that grow),
+// then filled with paper; colour appears only as light flowing through it.
+export const PAPER = 0xf7f2e7, INK = 0x2b2620;
+const lineMats = new Set();
+// Fat lines need the canvas size in CSS pixels; the core calls this every frame.
+export function syncLines(w, h) { lineMats.forEach((m) => m.resolution.set(w, h)); }
+
+let toonRamp;
+function toonGradient() {
+  if (toonRamp) return toonRamp;
+  toonRamp = new THREE.DataTexture(new Uint8Array([150, 150, 150, 255, 206, 206, 206, 255, 255, 255, 255, 255]), 3, 1);
+  toonRamp.minFilter = toonRamp.magFilter = THREE.NearestFilter;
+  toonRamp.needsUpdate = true;
+  return toonRamp;
+}
+export const paperMat = (color = PAPER) => new THREE.MeshToonMaterial({ color, gradientMap: toonGradient() });
+
+export function sketch(geometry, { color = PAPER, ink = INK, width = 1.7, angle = 30, material = null, inkOpacity = 0.92 } = {}) {
+  const g = new THREE.Group();
+  const fillMat = material || paperMat(color);
+  Object.assign(fillMat, { transparent: true, opacity: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const fill = new THREE.Mesh(geometry, fillMat);
+  fill.castShadow = fill.receiveShadow = true;
+  const lineGeo = new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(geometry, angle));
+  const lineMat = new LineMaterial({ color: ink, linewidth: width, transparent: true, opacity: inkOpacity });
+  lineMats.add(lineMat);
+  const lines = new LineSegments2(lineGeo, lineMat);
+  const total = lineGeo.attributes.instanceStart.count;
+  g.add(fill, lines);
+  let last = -1;
+  g.userData = {
+    fill, lines, fillMat, lineMat,
+    // p: 0..1 — the pencil draws the outline first, then the paper fills in.
+    reveal(p) {
+      if (Math.abs(p - last) < 0.002) return; last = p;
+      lineGeo.instanceCount = Math.floor(total * clamp01(p / 0.62));
+      const f = clamp01((p - 0.42) / 0.58);
+      fillMat.opacity = f; fillMat.transparent = f < 0.999; fillMat.depthWrite = f > 0.5;
+      fill.visible = f > 0.001; lines.visible = p > 0.001;
+    },
+  };
+  g.userData.reveal(0);
+  return g;
+}
+
+// A glass tube carrying moving light. `fill(p)` grows the light along the tube.
+export function lightTube(curve, { radius = 0.007, color = 0x45c6ff, speed = 0.5, glass = true } = {}) {
+  const grp = new THREE.Group();
+  const c = document.createElement('canvas'); c.width = 128; c.height = 4;
+  const g = c.getContext('2d');
+  const grd = g.createLinearGradient(0, 0, 128, 0);
+  grd.addColorStop(0, 'rgba(255,255,255,.25)'); grd.addColorStop(0.5, 'rgba(255,255,255,1)'); grd.addColorStop(1, 'rgba(255,255,255,.25)');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 4);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.set(Math.max(1, curve.getLength() / 0.05), 1);
+  const coreGeo = new THREE.TubeGeometry(curve, 120, radius * 0.6, 10);
+  const core = new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial({ color, map: tex, transparent: true, opacity: 0.95, toneMapped: false, depthWrite: false }));
+  core.renderOrder = 3;
+  grp.add(core);
+  if (glass) {
+    const shell = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, radius, 14), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.08, metalness: 0, transparent: true, opacity: 0.24, depthWrite: false }));
+    shell.renderOrder = 4;
+    grp.add(shell);
+  }
+  const indexCount = coreGeo.index.count;
+  grp.userData = {
+    core, tex, speed,
+    fill(p) { coreGeo.setDrawRange(0, Math.floor((indexCount / 6) * clamp01(p)) * 6); },
+    update(dt) { tex.offset.x -= dt * grp.userData.speed * 2.2; },
+  };
+  return grp;
 }

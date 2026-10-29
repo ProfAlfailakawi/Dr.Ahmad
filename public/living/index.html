@@ -169,6 +169,27 @@
   #stampFx .lbl { font-weight: 800; font-size: 18px; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
   @keyframes stamp { 0% { opacity: 0; transform: scale(1.6) rotate(-14deg); } 18% { opacity: 1; transform: scale(.95) rotate(-6deg); } 26% { transform: scale(1.02) rotate(-6deg); } 80% { opacity: 1; transform: scale(1) rotate(-6deg); } 100% { opacity: 0; transform: scale(.9) rotate(-6deg); } }
 
+
+  /* mute, slider, certificate */
+  #mute { flex: none; }
+  #slider { position: absolute; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 21; width: min(calc(100% - 32px), 420px);
+    display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-radius: 18px; background: rgba(31,27,22,.84); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #fff; font-weight: 800; --v: 0%; }
+  #slider input { flex: 1; -webkit-appearance: none; appearance: none; height: 8px; border-radius: 99px; background: linear-gradient(to left, #e0453c var(--v), rgba(255,255,255,.22) var(--v)); outline: none; direction: rtl; }
+  #slider input::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fbe7ad, #b88b33); box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+  #slider input::-moz-range-thumb { width: 28px; height: 28px; border: 0; border-radius: 50%; background: #d4ad55; }
+  .link { background: none; color: var(--gold-deep); font-weight: 800; text-decoration: underline; text-underline-offset: 4px; padding: 0 6px; }
+  .btn-dark { background: var(--ink); color: #fff; }
+  #cert { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(12,10,8,.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .35s; }
+  #cert.on { opacity: 1; pointer-events: auto; }
+  .cert-card { position: relative; width: min(100%, 560px); max-height: calc(100% - 20px); overflow: auto; background: var(--paper); border-radius: 26px; padding: 30px 24px 24px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .cert-card .x { position: absolute; top: 14px; left: 14px; width: 34px; height: 34px; border-radius: 50%; background: #efe6d4; color: var(--ink); }
+  .cert-card h4 { font-family: 'Reem Kufi', Tajawal, sans-serif; font-size: 26px; margin: 4px 0 8px; }
+  .cert-card p { color: #4b4339; line-height: 1.9; margin: 0 0 16px; font-size: 15px; }
+  .cert-card input { width: 100%; font: inherit; font-size: 20px; font-weight: 800; text-align: center; padding: 14px; border-radius: 16px; border: 2px solid #e2d6bd; background: #fffdf8; margin-bottom: 14px; color: var(--ink); }
+  .cert-card input:focus { outline: none; border-color: var(--gold); }
+  .cert-card img { width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(60,40,10,.25); margin-bottom: 16px; }
+  .cert-card .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 </style>
 <script type="importmap">
@@ -193,7 +214,7 @@
   </header>
   <section class="section">
     <h2>الصفحات الحيّة</h2>
-    <p class="sub">ست صفحات من الفصل الأول، وكل صفحة تجربة من نوع مختلف. المس أي بطاقة لتشاهدها بدون كتاب.</p>
+    <p class="sub">تسع صفحات من الباب الأول، ولكل صفحة تجربة من نوع مختلف. المس أي بطاقة لتشاهدها بدون كتاب.</p>
     <div class="progress" id="progress"></div>
     <div class="grid" id="grid"></div>
     <div class="how">
@@ -202,7 +223,7 @@
       <div><b>٣. المس واكتشف</b>كل صفحة تكملها تمنحك ختماً ذهبياً يُحفظ في جوالك.</div>
     </div>
   </section>
-  <footer>نموذج أولي للموسوعة الحيّة</footer>
+  <footer>الموسوعة الحيّة · موسوعة تكنولوجيا التعليم · مجانية، بلا تطبيق ولا تسجيل</footer>
 </main>
 
 <div id="exp" class="ar">
@@ -213,12 +234,14 @@
     <button class="round" id="back" aria-label="رجوع"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <div id="chip" class="hidden"><div class="ic"></div><div class="tx"><small></small><span></span></div></div>
     <div class="spacer"></div>
+    <button class="round" id="mute" aria-label="كتم الصوت"></button>
   </div>
   <div id="hud" class="hidden"></div>
   <div id="caption" class="hidden"></div>
   <div id="toast"></div>
   <div id="sheet"><div class="accent"></div><button class="x" aria-label="إغلاق">✕</button><span class="tag"></span><h3></h3><p></p></div>
   <div id="choices"></div>
+  <div id="slider" class="hidden"><span></span><input type="range" min="0" max="100" step="1" aria-label="التشويش"></div>
   <div class="bar hidden" id="bar">
     <button class="nav hidden" id="navPrev" aria-label="الصفحة السابقة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button id="behindBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2h5c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3Z"/></svg>خلف الكواليس</button>
@@ -243,8 +266,24 @@
     </div>
   </div></div>
 </div>
+<div id="cert">
+  <div class="cert-card">
+    <button class="x" id="certClose" aria-label="إغلاق">✕</button>
+    <div class="step1">
+      <div class="seal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#14110d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/></svg></div>
+      <h4>شهادتك جاهزة</h4>
+      <p>اكتب اسمك كما تحب أن يظهر على الشهادة. تُصنع الشهادة داخل جوالك، ولا يُرسَل اسمك إلى أي مكان.</p>
+      <input id="certName" maxlength="40" placeholder="اسمك" autocomplete="name">
+      <button class="btn btn-gold" id="certMake">أنشئ الشهادة</button>
+    </div>
+    <div class="step2 hidden">
+      <img alt="شهادة الموسوعة الحيّة">
+      <div class="row"><button class="btn btn-gold" id="certSave">احفظ الصورة</button><button class="btn btn-dark" id="certShare">شارك</button></div>
+    </div>
+  </div>
+</div>
 <div id="stampFx"><div class="big"><div class="disc">✦</div><div class="lbl" id="stampLbl"></div></div></div>
 
-<script type="module" src="/living/app.js?v=4"></script>
+<script type="module" src="/living/app.js?v=5"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ name: Archive 2036 scale guard
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 2 * * 1'
+    - cron: '17 2 1 * *'
   pull_request:
     branches: [main]
   push:

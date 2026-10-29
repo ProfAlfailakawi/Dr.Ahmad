@@ -156,7 +156,7 @@ export default function Research() {
           <FadeUp delay={0.15}>
             <div className="mt-16 border-t border-hair pt-9">
               <span className="text-[.76rem] font-semibold text-soft">أطروحة الدكتوراه</span>
-              <h2 className="measure mt-4 text-[1.1rem] font-medium leading-[1.75] text-ink">{doctorate.title}</h2>
+              <h2 lang={isEnglishText(doctorate.title) ? 'en' : undefined} className="measure mt-4 text-[1.1rem] font-medium leading-[1.75] text-ink">{doctorate.title}</h2>
               <p className="measure mt-4 text-[.92rem] text-soft">{doctorate.university}</p>
               <p className="measure mt-1 text-[.92rem] text-soft">{doctorate.note}</p>
             </div>

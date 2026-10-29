@@ -24,7 +24,8 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys()
-    await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
+    // للموسوعة الحيّة (/living) عاملها وذاكرتها الخاصة للعمل دون اتصال؛ لا نحذفها هنا.
+    await Promise.all(keys.filter((key) => key !== CACHE && !key.startsWith('living-')).map((key) => caches.delete(key)))
     if (self.registration.navigationPreload) {
       try { await self.registration.navigationPreload.enable() } catch { /* غير مدعوم */ }
     }

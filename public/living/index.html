@@ -190,6 +190,52 @@
   .cert-card img { width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(60,40,10,.25); margin-bottom: 16px; }
   .cert-card .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
+
+  /* map, pack pill, photo, lecture, remote, test */
+  .btn-line { background: transparent; color: var(--gold-2); border: 1px solid rgba(243,220,162,.4); }
+  #packPill { position: absolute; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 11; pointer-events: auto; display: flex; align-items: center; gap: 8px;
+    padding: 9px 16px; border-radius: 999px; color: #fff; font-weight: 800; font-size: 14px; background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(243,220,162,.35); }
+  #packPill svg { width: 16px; height: 16px; }
+  #map { position: fixed; inset: 0; z-index: 46; overflow-y: auto; background: radial-gradient(120% 70% at 50% 0%, #2a2219, #0d0b08 70%); color: #fff; opacity: 0; pointer-events: none; transition: opacity .35s; }
+  #map.on { opacity: 1; pointer-events: auto; }
+  #map header { position: sticky; top: 0; z-index: 2; padding: calc(16px + env(safe-area-inset-top)) 16px 14px; background: linear-gradient(#0d0b08f0, #0d0b08c0 70%, transparent); text-align: center; }
+  #map h2 { font-family: 'Reem Kufi', Tajawal, sans-serif; color: var(--gold-2); margin: 0; font-size: 28px; }
+  #map header p { margin: 4px 0 0; opacity: .75; }
+  #map .close { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 14px; }
+  #mapBody { max-width: 760px; margin: 0 auto; padding: 4px 16px 60px; }
+  .door { margin: 18px 0; padding: 18px; border-radius: 22px; background: rgba(255,255,255,.04); border: 1px solid rgba(243,220,162,.14); }
+  .door h3 { margin: 0 0 4px; font-family: 'Reem Kufi', Tajawal, sans-serif; color: var(--gold-2); font-size: 20px; }
+  .door .meta { opacity: .7; font-size: 13.5px; margin-bottom: 10px; }
+  .chap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px dashed rgba(243,220,162,.12); }
+  .chap b { flex: 1 1 100%; font-size: 14.5px; font-weight: 700; opacity: .9; }
+  .star { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: transparent; border: 1px solid rgba(243,220,162,.35); }
+  .star.found { background: linear-gradient(135deg, #f3d686, #b98d36); color: #14110d; border-color: transparent; box-shadow: 0 0 18px rgba(243,214,134,.35); }
+  .star.soon { opacity: .35; border-style: dashed; }
+  .door .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  #photoBtn { flex: none; }
+  #lecture { position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 70px; z-index: 25; width: 230px; padding: 14px; border-radius: 20px; text-align: center; color: #fff;
+    background: rgba(20,17,13,.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(243,220,162,.3); }
+  #lecture img { width: 150px; height: 150px; background: #fff; border-radius: 12px; padding: 6px; }
+  #lecture .code { font-size: 26px; font-weight: 800; letter-spacing: 3px; color: var(--gold-2); direction: ltr; }
+  #lecture small { display: block; opacity: .75; line-height: 1.6; }
+  #remote { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; gap: 14px; padding: calc(20px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom)); color: #fff;
+    background: radial-gradient(120% 80% at 50% 0%, #3a2f22, #0d0b08 70%); overflow-y: auto; }
+  #remote h2 { margin: 0; text-align: center; font-family: 'Reem Kufi', Tajawal, sans-serif; color: var(--gold-2); }
+  #remote .now { text-align: center; padding: 14px; border-radius: 18px; background: rgba(255,255,255,.06); font-weight: 800; line-height: 1.6; }
+  #remote .nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #remote button { font: inherit; font-weight: 800; font-size: 17px; padding: 16px; border-radius: 18px; color: #fff; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); }
+  #remote button.gold { background: linear-gradient(135deg, #f3d686, #b98d36); color: #14110d; border: 0; }
+  #remote label { display: flex; align-items: center; gap: 12px; font-weight: 800; }
+  #remote input[type=range] { flex: 1; }
+  #remote label.off { opacity: .35; }
+  #remoteChoices { display: grid; gap: 8px; }
+  #testPanel { position: absolute; right: 12px; bottom: calc(130px + env(safe-area-inset-bottom)); z-index: 24; width: min(260px, calc(100% - 24px)); max-height: 40vh; overflow: auto; padding: 12px 14px; border-radius: 16px;
+    background: rgba(20,17,13,.86); color: #fff; font-size: 13px; line-height: 1.7; border: 1px solid rgba(243,220,162,.3); }
+  #testPanel b { color: var(--gold-2); }
+  #testPanel button { margin-top: 8px; width: 100%; }
+  #share { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 16px; background: rgba(12,10,8,.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .3s; }
+  #share.on { opacity: 1; pointer-events: auto; }
+
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 </style>
 <script type="importmap">
@@ -209,6 +255,7 @@
     <p>افتح كتابك على إحدى الصفحات الحيّة، ووجّه الكاميرا نحوها، وشاهد الورق يصحو بين يديك.</p>
     <div class="cta">
       <button class="btn btn-gold" id="openAR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.2"/></svg>افتح الكاميرا</button>
+      <button class="btn btn-ghost" id="openMap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.2 4.6 5 .7-3.6 3.5.9 5L12 14.5 7.5 16.8l.9-5L4.8 8.3l5-.7L12 3Z"/></svg>خريطة الموسوعة</button>
       <button class="btn btn-ghost" id="openShow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m12 12 8-4.5M12 12v9M12 12 4 7.5"/></svg>شاهد بدون كاميرا</button>
     </div>
   </header>
@@ -230,10 +277,14 @@
   <div id="arStage"></div>
   <div id="showStage"></div>
   <div id="scan" class="hidden"><div class="frame"><i></i><i></i><i></i><i></i><b></b></div><div id="scanHint">وجّه الكاميرا نحو إحدى الصفحات الحيّة</div></div>
+  <button id="packPill" class="hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.2 4.6 5 .7-3.6 3.5.9 5L12 14.5 7.5 16.8l.9-5L4.8 8.3l5-.7L12 3Z"/></svg><span></span></button>
+  <div id="testPanel" class="hidden"></div>
+  <div id="lecture" class="hidden"></div>
   <div class="top">
     <button class="round" id="back" aria-label="رجوع"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <div id="chip" class="hidden"><div class="ic"></div><div class="tx"><small></small><span></span></div></div>
     <div class="spacer"></div>
+    <button class="round hidden" id="photoBtn" aria-label="صورة تذكارية"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4V8Z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button class="round" id="mute" aria-label="كتم الصوت"></button>
   </div>
   <div id="hud" class="hidden"></div>
@@ -282,8 +333,21 @@
     </div>
   </div>
 </div>
+<div id="map">
+  <header><button class="round close" id="mapClose" aria-label="إغلاق">✕</button><h2>خريطة الموسوعة</h2><p id="mapProgress"></p></header>
+  <div id="mapBody"></div>
+</div>
+<div id="share">
+  <div class="cert-card">
+    <button class="x" id="shareClose" aria-label="إغلاق">✕</button>
+    <h4 id="shareTitle"></h4>
+    <img id="shareImg" alt="">
+    <div class="row"><button class="btn btn-gold" id="shareSave">احفظ الصورة</button><button class="btn btn-dark" id="shareSend">شارك</button></div>
+  </div>
+</div>
+<div id="remote" class="hidden"></div>
 <div id="stampFx"><div class="big"><div class="disc">✦</div><div class="lbl" id="stampLbl"></div></div></div>
 
-<script type="module" src="/living/app.js?v=5"></script>
+<script type="module" src="/living/app.js?v=6"></script>
 </body>
 </html>

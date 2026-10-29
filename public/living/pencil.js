@@ -6,14 +6,14 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import {
   P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, label, sprite, glow, glowTexture, goldMat, mat, glossy,
   shadowed, sketch, lightTube, textCanvas,
-} from './kit.js?v=5';
+} from './kit.js?v=6';
 
 const TAU = Math.PI * 2;
 const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
 const css = (c) => '#' + c.toString(16).padStart(6, '0');
 
 // Pencil outline that also works on round shapes: a slightly larger ink shell seen from inside.
-function inked(geometry, opts = {}) {
+export function inked(geometry, opts = {}) {
   const s = sketch(geometry, opts);
   const hull = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide, transparent: true, opacity: 0, depthWrite: false }));
   hull.scale.setScalar(opts.hullScale || 1.05);
@@ -25,7 +25,7 @@ function inked(geometry, opts = {}) {
 }
 
 // A soft frame laid on the printed page, used to light up printed boxes and cells.
-function frameTex(color) {
+export function frameTex(color) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 160;
   const g = c.getContext('2d');
   g.shadowColor = color; g.shadowBlur = 18; g.strokeStyle = color; g.lineWidth = 11;
@@ -33,14 +33,14 @@ function frameTex(color) {
   g.fillStyle = color + '33'; g.fill(); g.stroke();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-function printFrame(u, v, w, h, color) {
+export function printFrame(u, v, w, h, color) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: frameTex(color), transparent: true, depthWrite: false, toneMapped: false, opacity: 0 }));
   m.rotation.x = -Math.PI / 2; m.position.copy(P(u, v, 0.004)); m.scale.set(w, h * PAGE_H, 1);
   m.renderOrder = 2;
   return m;
 }
 
-function smudge(color = 0x3b3b3b, size = 0.03) {
+export function smudge(color = 0x3b3b3b, size = 0.03) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color, transparent: true, opacity: 0, depthWrite: false }));
   s.scale.setScalar(size);
   return s;
@@ -552,11 +552,11 @@ export function buildSecret(ctx) {
   });
   const title = sprite(open ? 'الصفحة السرّية' : 'صفحة سرّية', 0.3, { size: 50, width: 640, title: true, bg: 'rgba(31,27,22,.9)', color: '#f3dca2' });
   title.position.copy(center).add(new THREE.Vector3(0, 0.2, 0)); g.add(title);
-  const hint = sprite(open ? 'فتحتَها! اقترب…' : `اكتشف كل الصفحات الحيّة لتفتحها · ${toAr(done)} من ${toAr(total)}`, 0.42, { size: 38, width: 900, weight: 800, border: '#d4ad55' });
+  const hint = sprite(open ? 'فتحتَها! اقترب…' : `أكمل صفحات بابٍ كامل لتفتحها · ${toAr(done)} من ${toAr(total)}`, 0.42, { size: 38, width: 900, weight: 800, border: '#d4ad55' });
   hint.position.copy(center).add(new THREE.Vector3(0, 0.035, 0.2)); g.add(hint);
   ctx.tap(lockBody, () => ctx.ui.card(open
     ? { tag: 'الصفحة السرّية', title: 'رسالة لك', body: 'هذه الصفحة لا تفتح إلا لمن أيقظ صفحات الموسوعة كلها.', color: 0xc0242b }
-    : { tag: 'صفحة سرّية', title: 'ما زالت مقفلة', body: 'كل صفحة حيّة تكملها تمنحك ختماً ذهبياً. حين تجمعها كلها، عُد إلى هذه الصفحة…', color: 0xd4ad55 }));
+    : { tag: 'صفحة سرّية', title: 'ما زالت مقفلة', body: 'كل صفحة حيّة تكملها تمنحك ختماً ذهبياً. حين تكمل باباً كاملاً، عُد إلى هذه الصفحة…', color: 0xd4ad55 }));
 
   let paper = null, letterCanvas = null, letterTex = null, typed = -1, flower = null;
   const LETTER_LEN = LETTER.reduce((n, l) => n + [...l].length + 1, 0);

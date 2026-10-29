@@ -11,6 +11,7 @@ import { arabicCountPhrase, PAPER_FORMS, RESULT_FORMS } from '../lib/arabic-coun
 import { ArrowLeft, BookOpen, CalendarDays } from 'lucide-react'
 import { CountTiles, RingTile, YearTimelineTile } from '../components/CountTiles'
 import { researchTiles } from '../lib/count-tiles'
+import { englishTextProps, isEnglishText } from '../lib/english-text'
 
 const ar = (n: number) => String(n).padStart(2, '0')
 const paperCount = (count: number) => arabicCountPhrase(count, PAPER_FORMS)
@@ -130,11 +131,11 @@ export default function Research() {
                       <span className="pt-1 font-display text-[.86rem] font-bold text-accent sm:self-start">{ar((paged.page - 1) * 12 + i + 1)}</span>
                       <div className="min-w-0">
                         {type && <div className="mb-3 flex flex-wrap gap-2"><span className={badge}>{type}</span></div>}
-                        <Link to={`/research/${p.slug}`} viewTransition dir="auto" style={{ viewTransitionName: sharedViewName('paper-title', p.slug) }} className="research-title-link measure block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
+                        <Link to={`/research/${p.slug}`} viewTransition dir="auto" lang={isEnglishText(p.title) ? 'en' : undefined} style={{ viewTransitionName: sharedViewName('paper-title', p.slug) }} className="research-title-link measure block text-[1.12rem] font-bold leading-[1.65] text-ink transition-colors hover:text-accent">{p.title}</Link>
                         {p.titleAr && p.titleAr !== p.title && <p dir="rtl" className="measure mt-1 text-[.92rem] font-light leading-[1.8] text-soft">{p.titleAr}</p>}
                         {(journal || year) && (
                           <p className="mt-3 flex flex-wrap gap-2 text-[.8rem] text-soft">
-                            {journal && <span dir="auto" className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-hair bg-wash px-3 py-1"><BookOpen aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{journal}</span>}
+                            {journal && <span dir="auto" {...englishTextProps(journal)} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-hair bg-wash px-3 py-1"><BookOpen aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{journal}</span>}
                             {year && <span className="inline-flex items-center gap-1.5 rounded-full border border-hair bg-wash px-3 py-1 font-semibold text-accent"><CalendarDays aria-hidden="true" size={13} strokeWidth={1.6} className="shrink-0" />{year}</span>}
                           </p>
                         )}

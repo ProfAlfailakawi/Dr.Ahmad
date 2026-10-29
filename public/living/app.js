@@ -1,15 +1,21 @@
-// The living encyclopedia: a camera (AR) mode, a no-camera showcase and a small gallery,
-// all sharing the same page experiences.
+// The living encyclopedia: camera (AR) mode, a no-camera showcase, the book map, lecture mode
+// with a phone remote, a field-test mode and a few keepsakes (stamps, certificates, photos).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, toAr } from './experiences.js?v=5';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=5';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=5';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=6';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=6';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=6';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
+// Arabic counting: one page, two pages, 3–10 pages, 11 pages and up.
+const livePages = (n) => n === 1 ? 'صفحة حيّة واحدة' : n === 2 ? 'صفحتين حيّتين' : n <= 10 ? `${toAr(n)} صفحات حيّة` : `${toAr(n)} صفحة حيّة`;
+const params = new URLSearchParams(location.search);
+const TEST = params.has('test');
+const PEERJS = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/+esm';
+const QRCODE = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm';
 
 const TYPES = {
   infographic: { c: '#b5202f', svg: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' },
@@ -21,18 +27,47 @@ const TYPES = {
   timeline: { c: '#2f6fa8', svg: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M8 3l4 3 4-3M17 10v4"/>' },
   ladder: { c: '#3f8f45', svg: '<path d="M12 3 4 20h16L12 3Z"/><path d="M7.5 13h9M9.5 9h5M6 17h12"/>' },
   lab: { c: '#c2457a', svg: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>' },
+  portal: { c: '#3b57d6', svg: '<path d="m12 2 8.5 5v10L12 22l-8.5-5V7L12 2Z"/><path d="m12 7 4.3 2.5v5L12 17l-4.3-2.5v-5L12 7Z"/>' },
+  exploded: { c: '#d8322f', svg: '<rect x="8" y="3" width="9" height="15" rx="2"/><path d="M5 6v15h9"/>' },
+  assemble: { c: '#7a4fd0', svg: '<path d="M9 4h6M7 9h10M5 14h14M3 19h18"/>' },
+  balance: { c: '#1f9d7a', svg: '<path d="M12 3v18M7 21h10M4 7h16M4 7l-2.5 6h5L4 7ZM20 7l-2.5 6h5L20 7Z"/>' },
+  roleplay: { c: '#e0861f', svg: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6M13 20c.3-3 1.6-5 3-5 2 0 4 2 4 5"/>' },
+  branching: { c: '#c99a3b', svg: '<path d="M12 21v-7M12 14 6 8M12 14l6-6M12 14V5"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="4" r="2"/>' },
   welcome: { c: '#a9832f', svg: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/>' },
   secret: { c: '#8b1d2c', svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' },
 };
 const icon = (type) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${TYPES[type].svg}</svg>`;
+
+// The book's structure (page numbers here only group pages on the map; recognition never uses them).
+const DOORS = {
+  1: { t: 'الباب الأول', s: 'مفهوم تكنولوجيا التعليم' },
+  2: { t: 'الباب الثاني', s: 'مستحدثات تكنولوجيا التعليم' },
+  3: { t: 'الباب الثالث', s: 'نماذج مستحدثات تكنولوجيا التعليم' },
+  4: { t: 'الباب الرابع', s: 'المعلم والتكنولوجيا' },
+};
+const CHAPTERS = [
+  [1, 36, 'المفاهيم الأساسية في تكنولوجيا التعليم'], [1, 82, 'نظرة تاريخية في تكنولوجيا التعليم'], [1, 126, 'التعليم ونظرية الاتصال التعليمي'], [1, 152, 'التصميم التعليمي'], [1, 194, 'نظريات التعلم ونماذجه'],
+  [2, 242, 'المستحدثات التكنولوجية'], [2, 260, 'الإنترنت في التعليم'], [2, 294, 'الحاسوب التعليمي'], [2, 310, 'استراتيجيات التعليم بمساعدة الحاسب الآلي'], [2, 332, 'التعليم الإلكتروني والتعليم عن بُعد'],
+  [3, 364, 'نماذج التعليم الإلكتروني والتعليم عن بُعد'], [3, 388, 'العالم الافتراضي'], [3, 412, 'تكنولوجيا الوسائل التعليمية'], [3, 458, 'برمجيات الحاسب الآلي التطبيقية'], [3, 486, 'نماذج الشبكة العنكبوتية في التعليم'], [3, 528, 'الأجهزة الذكية في التعليم'],
+  [4, 554, 'القرن الحادي والعشرون والتعليم'], [4, 570, 'مستويات بلوم وتكنولوجيا التعليم'], [4, 580, 'الفجوة الرقمية'], [4, 596, 'من التعلم التقليدي إلى التعلم التفاعلي'], [4, 614, 'التكنولوجيا كأداة للتغيير'],
+];
+const pageNum = (x) => parseInt(x.page.slice(1), 10);
+const chapterOf = (x) => CHAPTERS.filter(([d, start]) => d === x.door && pageNum(x) >= start).pop();
 
 // ------------------------------------------------------------ stamps (kept on the device only)
 const STAMP_KEY = 'living-encyclopedia:stamps';
 function readStamps() { try { return new Set(JSON.parse(localStorage.getItem(STAMP_KEY) || '[]')); } catch { return new Set(); } }
 function writeStamps(s) { try { localStorage.setItem(STAMP_KEY, JSON.stringify([...s])); } catch { /* private mode */ } }
 let stamps = readStamps();
-const foundCount = () => PAGES.filter((x) => stamps.has(x.id)).length;
-const allFound = () => foundCount() === PAGES.length;
+const doorPages = (d) => PAGES.filter((x) => x.door === d);
+const foundOf = (list) => list.filter((x) => stamps.has(x.id)).length;
+const doorDone = (d) => doorPages(d).length > 0 && foundOf(doorPages(d)) === doorPages(d).length;
+const LIVE_DOORS = [...new Set(PAGES.map((x) => x.door))].sort();
+// The secret page opens when any one door is complete; it reports the door closest to completion.
+function secretProgress() {
+  const best = LIVE_DOORS.map((d) => ({ done: foundOf(doorPages(d)), total: doorPages(d).length })).sort((a, b) => b.done / b.total - a.done / a.total)[0];
+  return { done: best.done, total: best.total };
+}
 
 // ------------------------------------------------------------ home
 function renderHome() {
@@ -42,17 +77,44 @@ function renderHome() {
       <div class="meta">
         <span class="badge" style="background:${TYPES[x.type].c}">${icon(x.type)}${x.typeLabel}</span>
         <h3>${x.title}</h3>
-        <span class="page">صفحة ${x.pageNo} في الطبعة الحالية</span>
+        <span class="page">${DOORS[x.door].t} · ${chapterOf(x)[2]}</span>
       </div>
       ${stamps.has(x.id) ? '<span class="stamp" title="اكتشفتها">✦</span>' : ''}
     </button>`).join('');
-  const n = foundCount();
-  $('progress').innerHTML = !n ? '' : allFound()
-    ? `✦ اكتشفت الصفحات كلها <button class="link" id="certLink">احصل على شهادتك</button>`
-    : `✦ اكتشفت ${toAr(n)} من ${toAr(PAGES.length)} صفحات`;
-  $('certLink')?.addEventListener('click', () => openCertificate());
-  $('grid').querySelectorAll('.card').forEach((b) => (b.onclick = () => startShowcase(+b.dataset.i)));
+  const n = foundOf(PAGES);
+  const done = LIVE_DOORS.filter(doorDone);
+  $('progress').innerHTML = !n ? '' : `✦ اكتشفت ${toAr(n)} من ${toAr(PAGES.length)} صفحة` + done.map((d) => ` · <button class="link" data-cert="${d}">شهادة ${DOORS[d].t}</button>`).join('');
+  $('progress').querySelectorAll('[data-cert]').forEach((b) => (b.onclick = () => openCertificate(+b.dataset.cert)));
+  $('grid').querySelectorAll('.card').forEach((b) => (b.onclick = () => startShowcase(EXPERIENCES.indexOf(PAGES[+b.dataset.i]))));
+  document.querySelector('.section .sub').textContent = `${toAr(PAGES.length)} صفحة حيّة حتى الآن، ولكل صفحة تجربة. المس أي بطاقة لتشاهدها بدون كتاب.`;
 }
+
+// ------------------------------------------------------------ the book map
+function renderMap() {
+  $('mapProgress').textContent = `اكتشفت ${toAr(foundOf(PAGES))} من ${toAr(PAGES.length)} صفحة حيّة`;
+  $('mapBody').innerHTML = Object.entries(DOORS).map(([d, door]) => {
+    d = +d;
+    const chapters = CHAPTERS.filter(([cd]) => cd === d).map(([, start, title]) => {
+      const pages = PAGES.filter((x) => x.door === d && chapterOf(x)?.[1] === start);
+      const stars = pages.length
+        ? pages.map((x) => `<button class="star ${stamps.has(x.id) ? 'found' : ''}" data-open="${x.id}">✦ ${x.title}</button>`).join('')
+        : '<span class="star soon">قريباً</span>';
+      return `<div class="chap"><b>${title}</b>${stars}</div>`;
+    }).join('');
+    const pack = PACKS.find((p) => p.ids.some((id) => EXPERIENCES.find((x) => x.id === id)?.door === d));
+    const buttons = [
+      pack ? `<button class="btn btn-gold" data-pack="${pack.id}">افتح الكاميرا على هذا الباب</button>` : '',
+      doorDone(d) ? `<button class="btn btn-line" data-cert="${d}">شهادة الباب</button>` : '',
+    ].join('');
+    const count = doorPages(d).length;
+    return `<section class="door"><h3>${door.t}</h3><div class="meta">${door.s} · ${count ? `${toAr(foundOf(doorPages(d)))} من ${livePages(count)}` : 'صفحاته الحيّة قادمة'}</div>${chapters}<div class="row">${buttons}</div></section>`;
+  }).join('');
+  $('mapBody').querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => { closeMap(); startShowcase(EXPERIENCES.findIndex((x) => x.id === b.dataset.open)); }));
+  $('mapBody').querySelectorAll('[data-pack]').forEach((b) => (b.onclick = () => { closeMap(); switchPack(b.dataset.pack); }));
+  $('mapBody').querySelectorAll('[data-cert]').forEach((b) => (b.onclick = () => openCertificate(+b.dataset.cert)));
+}
+function openMap() { renderMap(); $('map').classList.add('on'); sfx.tap(); }
+function closeMap() { $('map').classList.remove('on'); }
 
 // ------------------------------------------------------------ overlay UI shared by all experiences
 let toastTimer, captionTimer;
@@ -84,6 +146,7 @@ const ui = {
       b.onclick = (ev) => { ev.stopPropagation(); sfx.tap(); o.onPick(); };
       box.appendChild(b);
     });
+    lecture.sendState();
   },
   slider({ label, value = 0, onInput }) {
     const box = $('slider');
@@ -104,16 +167,17 @@ const ui = {
     current.stamped = true;
     const first = !stamps.has(exp.id);
     stamps.add(exp.id); writeStamps(stamps);
-    $('stampLbl').textContent = first ? `اكتشفت هذه الصفحة · ${toAr(foundCount())} من ${toAr(PAGES.length)}` : 'أكملت هذه الصفحة مرة أخرى';
+    const pages = doorPages(exp.door);
+    $('stampLbl').textContent = first ? `اكتشفت هذه الصفحة · ${toAr(foundOf(pages))} من ${toAr(pages.length)} في ${DOORS[exp.door].t}` : 'أكملت هذه الصفحة مرة أخرى';
     const fx = $('stampFx'); fx.classList.remove('on'); void fx.offsetWidth; fx.classList.add('on');
     sfx.stamp();
     navigator.vibrate?.([20, 40, 30]);
-    if (first && allFound()) setTimeout(() => {
-      ui.toast('أيقظت الصفحات كلها! صفحةٌ سرّية فُتحت لك…');
-      ui.choices([{ label: '✦ احصل على شهادتك', primary: true, onPick: () => openCertificate() }]);
+    if (first && doorDone(exp.door)) setTimeout(() => {
+      ui.toast(`أكملت ${DOORS[exp.door].t}! والصفحة السرّية فُتحت لك…`);
+      ui.choices([{ label: '✦ احصل على شهادتك', primary: true, onPick: () => openCertificate(exp.door) }]);
     }, 2700);
   },
-  certificate() { openCertificate(); },
+  certificate() { openCertificate(LIVE_DOORS.find(doorDone) || 1); },
   reset() {
     this.hideCard(); this.hud(''); this.choices([]); this.hideSlider();
     $('caption').classList.add('hidden'); $('caption').textContent = '';
@@ -140,7 +204,7 @@ function lights(stage, ar) {
   }
 }
 
-const pageInfo = () => PAGES.map((x) => ({ ...x, typeColor: TYPES[x.type].c, typeColorHex: parseInt(TYPES[x.type].c.slice(1), 16) }));
+const pageInfo = () => doorPages(1).map((x) => ({ ...x, typeColor: TYPES[x.type].c, typeColorHex: parseInt(TYPES[x.type].c.slice(1), 16) }));
 
 function startExperience(index, root, camera, mode) {
   stopExperience();
@@ -159,7 +223,7 @@ function startExperience(index, root, camera, mode) {
   const ctx = {
     stage, fx, mode, camera, ui, sfx, asset,
     tap: (obj, fn) => taps.push([obj, fn]),
-    progress: () => ({ done: foundCount(), total: PAGES.length }),
+    progress: () => (exp.id === 'secret' ? secretProgress() : { done: foundOf(PAGES), total: PAGES.length }),
     pages: pageInfo,
     isFound: (id) => stamps.has(id),
   };
@@ -170,12 +234,13 @@ function startExperience(index, root, camera, mode) {
   $('chip').classList.remove('hidden');
   $('chip').querySelector('.ic').style.background = ty.c;
   $('chip').querySelector('.ic').innerHTML = icon(exp.type);
-  $('chip').querySelector('small').textContent = exp.kind === 'page' ? `${exp.typeLabel} · صفحة ${exp.pageNo}` : exp.typeLabel;
+  $('chip').querySelector('small').textContent = exp.kind === 'page' ? `${exp.typeLabel} · ${DOORS[exp.door].t}` : exp.typeLabel;
   $('chip').querySelector('span').textContent = exp.title;
   $('bar').classList.toggle('hidden', !exp.video && !exp.behind && mode !== 'show');
   $('videoBtn').classList.toggle('hidden', !exp.video);
   $('behindBtn').classList.toggle('hidden', !exp.behind);
   sfx.wake();
+  lecture.sendState();
   return current;
 }
 
@@ -299,6 +364,14 @@ function frame(camera) {
   const d = 1.8 * Math.max(1, 0.85 / camera.aspect);
   camera.position.set(0, d * 0.8, d * 0.66);
 }
+// A page with a hole (the portal) needs the printed page cut open in the no-camera view.
+function pageHole(hole) {
+  const W = 512, H = Math.round(512 * PAGE_H), c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = '#000'; g.beginPath();
+  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const x = hole.u * W + Math.cos(a) * hole.r * W, y = hole.v * H + Math.sin(a) * hole.r * W; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.closePath(); g.fill();
+  return new THREE.CanvasTexture(c);
+}
 // `which` is an index into EXPERIENCES.
 async function startShowcase(which) {
   await enterExp('show');
@@ -347,28 +420,41 @@ async function startShowcase(which) {
       controls.update(); tick(dt);
       renderer.render(scene, camera);
     });
-    show = { renderer, scene, camera, controls, book, pageMat, pageTex, resize, active: true };
+    show = { renderer, scene, camera, controls, book, block, cover, pageMat, pageTex, resize, active: true };
   }
   show.active = true;
   activeCanvas = show.renderer.domElement;
   show.resize();
-  show.pageMat.map = show.pageTex[which]; show.pageMat.needsUpdate = true;
+  const exp = EXPERIENCES[which];
+  show.pageMat.map = show.pageTex[which];
+  show.pageMat.alphaMap = exp.hole ? pageHole(exp.hole) : null;
+  show.pageMat.alphaTest = exp.hole ? 0.5 : 0;
+  show.block.visible = show.cover.visible = !exp.hole;
+  show.pageMat.needsUpdate = true;
   startExperience(which, show.book, show.camera, 'show');
   show.resize();
   $('navPrev').classList.remove('hidden'); $('navNext').classList.remove('hidden');
   $('bar').classList.remove('hidden');
 }
-const pageIndex = (i) => EXPERIENCES.indexOf(PAGES[i]);
 
-// ------------------------------------------------------------ AR (camera)
+// ------------------------------------------------------------ AR (camera), one recognition pack at a time
+const PACK_KEY = 'living-encyclopedia:pack';
+let packId = (() => { const q = params.get('pack'); if (PACKS.some((p) => p.id === q)) return q; try { return localStorage.getItem(PACK_KEY) || 'door1'; } catch { return 'door1'; } })();
+if (!PACKS.some((p) => p.id === packId)) packId = 'door1';
 let ar = null;
-async function startAR() {
+
+const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
+
+async function startAR(id = packId) {
+  packId = id;
+  try { localStorage.setItem(PACK_KEY, id); } catch { /* private mode */ }
+  const pack = PACKS.find((p) => p.id === id);
   await enterExp('ar');
-  $('loading').classList.remove('hidden'); $('loadingText').textContent = 'نجهّز الكاميرا والصفحات الحيّة…';
+  $('loading').classList.remove('hidden'); $('loadingText').textContent = `نجهّز الكاميرا و${pack.title}…`;
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset('./targets.mind?v=5'), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=6`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;
@@ -376,7 +462,9 @@ async function startAR() {
     environment(renderer, scene);
     scene.add(new THREE.HemisphereLight(0xfff4e0, 0x5a4a3a, 0.7));
     activeCanvas = renderer.domElement;
-    const anchors = EXPERIENCES.map((exp, i) => {
+    const anchors = pack.ids.map((expId, i) => {
+      const index = EXPERIENCES.findIndex((x) => x.id === expId);
+      const exp = EXPERIENCES[index];
       const a = mind.addAnchor(i);
       // Page space inside the anchor: when only part of the page is the target, scale and shift
       // so experiences keep using whole-page coordinates.
@@ -388,13 +476,15 @@ async function startAR() {
       }
       a.onTargetFound = () => {
         $('scan').classList.add('hidden');
-        if (current && current.index === i && current.root === page) { current.found = true; showOverlays(true); sfx.wake(); }
-        else { startExperience(i, page, camera, 'ar'); }
+        if (test) testFound(exp);
+        if (current && current.index === index && current.root === page) { current.found = true; showOverlays(true); sfx.wake(); }
+        else { startExperience(index, page, camera, 'ar'); }
         navigator.vibrate?.(25);
       };
       a.onTargetLost = () => {
-        if (current && current.index === i) { current.found = false; showOverlays(false); }
+        if (current && current.index === index) { current.found = false; showOverlays(false); }
         $('scan').classList.remove('hidden');
+        if (test) test.since = performance.now();
       };
       return a;
     });
@@ -406,26 +496,100 @@ async function startAR() {
       const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
       tick(dt);
       renderer.render(scene, camera);
+      if (test) testFrame(now);
     });
     ar = { mind, anchors };
     [100, 600, 1500].forEach((ms) => setTimeout(() => dispatchEvent(new Event('resize')), ms));
     $('loading').classList.add('hidden');
     $('scan').classList.remove('hidden');
+    $('packPill').classList.remove('hidden'); $('packPill').querySelector('span').textContent = `${pack.title} ▾`;
+    $('photoBtn').classList.remove('hidden');
+    if (test) { test.since = performance.now(); renderTest(); }
   } catch (err) {
     console.error(err);
     $('loadingText').innerHTML = 'تعذّر فتح الكاميرا.<br><small style="opacity:.7">اسمح للمتصفح باستخدامها ثم أعد المحاولة، أو شاهد الصفحات بدون كاميرا.</small>';
     setTimeout(() => { leaveExp(); }, 2200);
   }
 }
+function stopAR() {
+  if (!ar) return;
+  try { ar.mind.renderer.setAnimationLoop(null); ar.mind.stop(); } catch { /* already stopped */ }
+  $('arStage').innerHTML = ''; ar = null;
+}
+function switchPack(id) { stopExperience(); stopAR(); startAR(id); }
 
 function showOverlays(on) {
   ['hud', 'choices', 'caption', 'chip', 'bar', 'slider'].forEach((id) => { $(id).style.opacity = on ? '' : '0'; $(id).style.pointerEvents = on ? '' : 'none'; });
   if (!on) ui.hideCard();
 }
 
-// ------------------------------------------------------------ certificate (drawn on the device, nothing is uploaded)
-const SEAL_NAMES = { infographic: 'إنفوجرافيك', model: 'مجسّم', hotspots: 'صورة تفاعلية', ladder: 'سلّم', lab: 'مختبر' };
-function drawCertificate(name) {
+// ------------------------------------------------------------ field-test mode (?test): how fast each page is recognised
+function testFound(exp) {
+  test.rows.push({ title: exp.title, secs: (performance.now() - test.since) / 1000 });
+  renderTest();
+}
+function testFrame(now) {
+  test.frames += 1;
+  if (now - test.fpsAt > 2000) { test.fps = Math.round((test.frames * 1000) / (now - test.fpsAt || 1)); test.frames = 0; test.fpsAt = now; renderTest(); }
+}
+function deviceName() {
+  const ua = navigator.userAgent;
+  return /iPhone/.test(ua) ? 'آيفون' : /iPad/.test(ua) ? 'آيباد' : /Android/.test(ua) ? (ua.match(/Android [\d.]+; ([^;)]+)/)?.[1] || 'أندرويد') : 'جهاز آخر';
+}
+function renderTest() {
+  const p = $('testPanel'); p.classList.remove('hidden');
+  const rows = test.rows.slice(-8).map((r) => `${r.title}: <b>${toAr(r.secs.toFixed(1))} ث</b>`).join('<br>');
+  p.innerHTML = `<b>وضع التجربة</b> · ${deviceName()} · ${toAr(test.fps)} إطار/ث<br>${rows || 'وجّه الكاميرا إلى صفحة حيّة…'}<button class="btn btn-gold" id="testShot">صورة النتيجة</button>`;
+  $('testShot').onclick = () => {
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1350; const g = c.getContext('2d');
+    g.fillStyle = '#14110d'; g.fillRect(0, 0, 1080, 1350);
+    g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#f3dca2'; g.font = '700 64px "Reem Kufi", Tajawal'; g.fillText('نتيجة تجربة الموسوعة الحيّة', 540, 130);
+    g.fillStyle = '#fff'; g.font = '500 36px Tajawal'; g.fillText(`${deviceName()} · ${toAr(test.fps)} إطاراً في الثانية · ${new Date().toLocaleString('ar')}`, 540, 200);
+    g.textAlign = 'right'; g.font = '700 38px Tajawal';
+    test.rows.slice(-18).forEach((r, i) => { g.fillStyle = r.secs < 2 ? '#7cd992' : r.secs < 5 ? '#f3d686' : '#ff8a80'; g.fillText(`${r.title} — ${toAr(r.secs.toFixed(1))} ثانية`, 1000, 300 + i * 56); });
+    showShare(c, 'نتيجة التجربة', 'نتيجة-تجربة-الموسوعة-الحية.png');
+  };
+}
+
+// ------------------------------------------------------------ souvenir photo: camera image + the living page, framed
+function capturePhoto() {
+  if (!ar) return;
+  const stageEl = $('arStage'), r = stageEl.getBoundingClientRect();
+  const scale = Math.min(2, 1440 / r.width), W = Math.round(r.width * scale), H = Math.round(r.height * scale);
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  const video = stageEl.querySelector('video');
+  if (video) { const vr = video.getBoundingClientRect(); g.drawImage(video, (vr.left - r.left) * scale, (vr.top - r.top) * scale, vr.width * scale, vr.height * scale); }
+  const gl = ar.mind.renderer; gl.render(ar.mind.scene, ar.mind.camera);
+  const cr = gl.domElement.getBoundingClientRect();
+  g.drawImage(gl.domElement, (cr.left - r.left) * scale, (cr.top - r.top) * scale, cr.width * scale, cr.height * scale);
+  const gold = g.createLinearGradient(0, 0, W, H); gold.addColorStop(0, '#b88b33'); gold.addColorStop(0.5, '#f3d686'); gold.addColorStop(1, '#a9832f');
+  g.strokeStyle = gold; g.lineWidth = W * 0.022; g.strokeRect(W * 0.011, W * 0.011, W - W * 0.022, H - W * 0.022);
+  const band = H * 0.12; g.fillStyle = 'rgba(20,17,13,.82)'; g.fillRect(W * 0.022, H - band - W * 0.022, W - W * 0.044, band);
+  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#f3dca2'; g.font = `700 ${Math.round(band * 0.34)}px "Reem Kufi", Tajawal`;
+  g.fillText('الموسوعة الحيّة', W / 2, H - band * 0.55 - W * 0.022);
+  g.fillStyle = '#fff'; g.font = `500 ${Math.round(band * 0.2)}px Tajawal`;
+  g.fillText(`${current?.exp.title || 'موسوعة تكنولوجيا التعليم'} · dr-alfailakawi.com/living`, W / 2, H - band * 0.2 - W * 0.022);
+  sfx.stamp();
+  showShare(c, 'صورتك مع الصفحة الحيّة', 'الموسوعة-الحية.png');
+}
+
+function showShare(canvas, title, filename) {
+  $('shareTitle').textContent = title;
+  $('shareImg').src = canvas.toDataURL('image/png');
+  $('share').classList.add('on');
+  canvas.toBlob((blob) => {
+    const file = new File([blob], filename, { type: 'image/png' });
+    $('shareSave').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+    $('shareSend').classList.toggle('hidden', !navigator.canShare?.({ files: [file] }));
+    $('shareSend').onclick = () => navigator.share({ files: [file], title }).catch(() => {});
+  }, 'image/png');
+}
+$('shareClose').onclick = () => $('share').classList.remove('on');
+
+// ------------------------------------------------------------ certificate per door (drawn on the device, nothing is uploaded)
+const SEAL_NAMES = { infographic: 'إنفوجرافيك', model: 'مجسّم', hotspots: 'صورة تفاعلية', ladder: 'سلّم', lab: 'مختبر', portal: 'بوابة', exploded: 'فكّك', assemble: 'الهرم', balance: 'الميزان', roleplay: 'تمثيل', branching: 'قرار' };
+let certDoor = 1;
+function drawCertificate(name, door) {
   const W = 2000, H = 1414, c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d');
   const bg = g.createRadialGradient(W / 2, H * 0.4, 100, W / 2, H / 2, W * 0.75);
@@ -437,7 +601,6 @@ function drawCertificate(name) {
   g.lineWidth = 3; g.strokeRect(84, 84, W - 168, H - 168);
   g.fillStyle = '#b88b33'; g.font = '700 46px Tajawal, sans-serif'; g.textAlign = 'center';
   [[110, 120], [W - 110, 120], [110, H - 100], [W - 110, H - 100]].forEach(([x, y]) => g.fillText('✦', x, y));
-  // Medallion
   g.save(); g.translate(W / 2, 205);
   const med = g.createRadialGradient(-20, -20, 10, 0, 0, 92); med.addColorStop(0, '#fbe7ad'); med.addColorStop(1, '#a9832f');
   g.fillStyle = med; g.beginPath(); g.arc(0, 0, 88, 0, Math.PI * 2); g.fill();
@@ -446,36 +609,37 @@ function drawCertificate(name) {
   g.restore();
   g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
   g.fillStyle = '#1f1b16'; g.font = '700 112px "Reem Kufi", Tajawal, sans-serif'; g.fillText('شهادة إتمام', W / 2, 410);
-  g.fillStyle = '#8a6a1f'; g.font = '700 44px Tajawal, sans-serif'; g.fillText('الموسوعة الحيّة · الباب الأول: مفهوم تكنولوجيا التعليم', W / 2, 490);
+  g.fillStyle = '#8a6a1f'; g.font = '700 44px Tajawal, sans-serif'; g.fillText(`الموسوعة الحيّة · ${DOORS[door].t}: ${DOORS[door].s}`, W / 2, 490);
   g.fillStyle = '#6f655a'; g.font = '500 40px Tajawal, sans-serif'; g.fillText('تُمنح هذه الشهادة إلى', W / 2, 600);
   const ink = g.createLinearGradient(W / 2 - 500, 0, W / 2 + 500, 0); ink.addColorStop(0, '#8a6a1f'); ink.addColorStop(0.5, '#c79a3a'); ink.addColorStop(1, '#8a6a1f');
   g.fillStyle = ink; g.font = '700 124px "Reem Kufi", Tajawal, sans-serif'; g.fillText(name, W / 2, 750);
   g.strokeStyle = gold; g.lineWidth = 4; g.beginPath(); g.moveTo(W / 2 - 520, 800); g.lineTo(W / 2 + 520, 800); g.stroke();
   g.fillStyle = '#3c352d'; g.font = '500 42px Tajawal, sans-serif';
-  g.fillText('تقديراً لإيقاظ صفحات الباب الأول الحيّة جميعها، وعيش نظرياتها تجربةً لا قراءة.', W / 2, 880);
-  // One seal per living page
-  const n = PAGES.length, gap = 170, x0 = W / 2 + ((n - 1) * gap) / 2;
-  PAGES.forEach((x, i) => {
+  g.fillText(`تقديراً لإيقاظ صفحات ${DOORS[door].t} الحيّة جميعها، وعيش نظرياتها تجربةً لا قراءة.`, W / 2, 880);
+  const pages = doorPages(door), n = pages.length, gap = Math.min(170, 1500 / Math.max(1, n)), x0 = W / 2 + ((n - 1) * gap) / 2;
+  pages.forEach((x, i) => {
     const cx = x0 - i * gap, cy = 1010;
     g.fillStyle = TYPES[x.type].c; g.beginPath(); g.arc(cx, cy, 46, 0, Math.PI * 2); g.fill();
     g.strokeStyle = '#f3d686'; g.lineWidth = 6; g.stroke();
     g.fillStyle = '#ffffff'; g.font = '800 40px Tajawal, sans-serif'; g.fillText('✦', cx, cy + 14);
     g.fillStyle = '#4b4339'; g.font = '700 23px Tajawal, sans-serif'; g.fillText(SEAL_NAMES[x.type] || x.typeLabel, cx, cy + 92);
   });
-  const date = new Date().toLocaleDateString('ar', { year: 'numeric', month: 'long', day: 'numeric' });
   g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#1f1b16'; g.font = '700 34px Tajawal, sans-serif';
   g.fillText('موسوعة تكنولوجيا التعليم — د. أحمد حسين الفيلكاوي · د. عبدالعزيز دخيل العنزي', W / 2, H - 200);
+  const date = new Date().toLocaleDateString('ar', { year: 'numeric', month: 'long', day: 'numeric' });
   g.fillStyle = '#6f655a'; g.font = '500 30px Tajawal, sans-serif';
   g.textAlign = 'right'; g.fillText(date, W - 150, H - 130);
   g.textAlign = 'left'; g.direction = 'ltr'; g.fillText('dr-alfailakawi.com/living', 150, H - 130);
   return c;
 }
 
-function openCertificate() {
+function openCertificate(door = 1) {
+  certDoor = door;
   const box = $('cert');
   box.classList.add('on');
   box.querySelector('.step1').classList.remove('hidden');
   box.querySelector('.step2').classList.add('hidden');
+  box.querySelector('h4').textContent = `شهادة ${DOORS[door].t} جاهزة`;
   const input = $('certName');
   try { input.value = localStorage.getItem('living-encyclopedia:name') || ''; } catch { /* private mode */ }
   setTimeout(() => input.focus(), 300);
@@ -485,7 +649,7 @@ $('certMake').onclick = async () => {
   if (!name) { $('certName').focus(); return; }
   try { localStorage.setItem('living-encyclopedia:name', name); } catch { /* private mode */ }
   await fontsReady();
-  const c = drawCertificate(name);
+  const c = drawCertificate(name, certDoor);
   const box = $('cert');
   box.querySelector('img').src = c.toDataURL('image/png');
   box.querySelector('.step1').classList.add('hidden');
@@ -501,6 +665,85 @@ $('certMake').onclick = async () => {
 };
 $('certClose').onclick = () => $('cert').classList.remove('on');
 
+// ------------------------------------------------------------ lecture mode: the projector shows the page, the lecturer's phone drives it
+const lecture = {
+  conn: null,
+  sendState() {
+    if (!this.conn?.open || !current) return;
+    this.conn.send({ type: 'state', title: current.exp.title, label: current.exp.typeLabel, chapter: current.exp.kind === 'page' ? chapterOf(current.exp)[2] : '', free: !!current.exp.free, choices: [...$('choices').querySelectorAll('button')].map((b) => b.textContent) });
+  },
+  async start() {
+    await startShowcase(EXPERIENCES.indexOf(PAGES[0]));
+    const box = $('lecture'); box.classList.remove('hidden');
+    box.innerHTML = '<small>نجهّز وضع المحاضرة…</small>';
+    try {
+      const code = String(Math.floor(1000 + Math.random() * 9000));
+      const Peer = (await import(PEERJS)).Peer;
+      const QR = await import(QRCODE); const toDataURL = (QR.default || QR).toDataURL;
+      const remoteUrl = `${location.origin}${location.pathname}?remote=${code}`;
+      const peer = new Peer(`dr-living-${code}`);
+      const qr = await toDataURL(remoteUrl, { margin: 1, width: 300 });
+      box.innerHTML = `<b>وضع المحاضرة</b><img src="${qr}" alt=""><div class="code">${code}</div><small>امسح الرمز بجوالك لتتحكم في العرض</small>`;
+      peer.on('connection', (conn) => {
+        this.conn = conn;
+        conn.on('open', () => { box.innerHTML = '<b>✦ جوال المحاضر متصل</b>'; setTimeout(() => box.classList.add('hidden'), 2500); this.sendState(); });
+        conn.on('data', (m) => this.onRemote(m));
+        conn.on('close', () => { box.classList.remove('hidden'); box.innerHTML = `<b>انقطع الاتصال</b><img src="${qr}" alt=""><div class="code">${code}</div>`; });
+      });
+      peer.on('error', () => { box.innerHTML = '<small>تعذّر وضع المحاضرة الآن؛ استخدم الأسهم في الأسفل.</small>'; });
+    } catch { box.innerHTML = '<small>تعذّر وضع المحاضرة الآن؛ استخدم الأسهم في الأسفل.</small>'; }
+  },
+  onRemote(m) {
+    if (m.type === 'next') step(1);
+    if (m.type === 'prev') step(-1);
+    if (!current) return;
+    if (m.type === 'yaw') { current.yaw = m.v; current.yawV = 0; }
+    if (m.type === 'zoom') current.zoom = m.v;
+    if (m.type === 'choice') $('choices').querySelectorAll('button')[m.k]?.click();
+    if (m.type === 'behind') $('behindBtn').click();
+    if (m.type === 'reset') { current.yaw = 0; current.zoom = 1; }
+  },
+};
+
+async function startRemote(code) {
+  $('home').classList.add('hidden'); $('exp').classList.add('hidden');
+  const r = $('remote'); r.classList.remove('hidden');
+  r.innerHTML = '<h2>جهاز التحكّم</h2><div class="now" id="rNow">نتصل بالعرض…</div>';
+  try {
+    const Peer = (await import(PEERJS)).Peer;
+    const peer = new Peer();
+    peer.on('open', () => {
+      const conn = peer.connect(`dr-living-${code}`, { reliable: true });
+      const send = (m) => conn.open && conn.send(m);
+      conn.on('open', () => {
+        r.innerHTML = `<h2>جهاز التحكّم</h2><div class="now" id="rNow">متصل ✦</div>
+          <div class="nav"><button id="rPrev">السابقة</button><button class="gold" id="rNext">التالية</button></div>
+          <label id="rYawRow">تدوير<input type="range" id="rYaw" min="-314" max="314" value="0"></label>
+          <label id="rZoomRow">تكبير<input type="range" id="rZoom" min="60" max="180" value="100"></label>
+          <div id="remoteChoices"></div>
+          <div class="nav"><button id="rBehind">خلف الكواليس</button><button id="rReset">إعادة الوضع</button></div>`;
+        $('rPrev').onclick = () => send({ type: 'prev' }); $('rNext').onclick = () => send({ type: 'next' });
+        $('rYaw').oninput = (e) => send({ type: 'yaw', v: e.target.value / 100 });
+        $('rZoom').oninput = (e) => send({ type: 'zoom', v: e.target.value / 100 });
+        $('rBehind').onclick = () => send({ type: 'behind' });
+        $('rReset').onclick = () => { $('rYaw').value = 0; $('rZoom').value = 100; send({ type: 'reset' }); };
+      });
+      conn.on('data', (m) => {
+        if (m.type !== 'state' || !$('remoteChoices')) return;
+        $('rNow').innerHTML = `${m.label}${m.chapter ? ` · ${m.chapter}` : ''}<br>${m.title}`;
+        $('rYaw').value = 0; $('rZoom').value = 100;
+        // Pages printed flat stay flat on the projector too, so their sliders rest.
+        $('rYaw').disabled = $('rZoom').disabled = !m.free;
+        $('rYawRow').classList.toggle('off', !m.free); $('rZoomRow').classList.toggle('off', !m.free);
+        $('remoteChoices').innerHTML = m.choices.map((c, k) => `<button data-k="${k}">${c}</button>`).join('');
+        $('remoteChoices').querySelectorAll('button').forEach((b) => (b.onclick = () => send({ type: 'choice', k: +b.dataset.k })));
+      });
+      conn.on('close', () => ($('rNow').textContent = 'انقطع الاتصال؛ امسح الرمز من جديد.'));
+    });
+    peer.on('error', () => ($('rNow').textContent = 'تعذّر الاتصال؛ تأكد من الرمز وامسحه من جديد.'));
+  } catch { $('rNow').textContent = 'تعذّر الاتصال الآن.'; }
+}
+
 // ------------------------------------------------------------ navigation
 async function enterExp(mode) {
   await fontsReady();
@@ -511,13 +754,16 @@ async function enterExp(mode) {
   $('showStage').classList.toggle('hidden', mode !== 'show');
   $('navPrev').classList.add('hidden'); $('navNext').classList.add('hidden');
   $('chip').classList.add('hidden'); $('bar').classList.add('hidden');
+  $('packPill').classList.add('hidden'); $('photoBtn').classList.add('hidden');
+  // The camera overlay belongs to camera mode only (direct #show= and ?lecture links start here).
+  if (mode !== 'ar') { stopAR(); $('loading').classList.add('hidden'); }
   showOverlays(true);
 }
 function leaveExp() {
   stopExperience(); ui.reset();
-  if (ar) { try { ar.mind.renderer.setAnimationLoop(null); ar.mind.stop(); } catch { /* already stopped */ } $('arStage').innerHTML = ''; ar = null; }
+  stopAR();
   if (show) show.active = false;
-  $('scan').classList.add('hidden'); $('loading').classList.add('hidden');
+  $('scan').classList.add('hidden'); $('loading').classList.add('hidden'); $('testPanel').classList.add('hidden');
   $('exp').classList.add('hidden'); $('home').classList.remove('hidden');
   renderHome();
 }
@@ -535,12 +781,16 @@ renderMute();
 addEventListener('pointerdown', unlockAudio, { capture: true });
 
 $('back').onclick = leaveExp;
-$('openAR').onclick = startAR;
-$('openShow').onclick = () => startShowcase(pageIndex(0));
+$('openAR').onclick = () => startAR();
+$('openShow').onclick = () => startShowcase(EXPERIENCES.indexOf(PAGES[0]));
+$('openMap').onclick = openMap;
+$('mapClose').onclick = closeMap;
+$('packPill').onclick = openMap;
+$('photoBtn').onclick = capturePhoto;
 const step = (d) => {
   if (!current || !show?.active) return;
   const i = Math.max(0, PAGES.indexOf(current.exp));
-  startShowcase(pageIndex((i + d + PAGES.length) % PAGES.length));
+  startShowcase(EXPERIENCES.indexOf(PAGES[(i + d + PAGES.length) % PAGES.length]));
 };
 $('navNext').onclick = () => step(1);
 $('navPrev').onclick = () => step(-1);
@@ -555,9 +805,17 @@ $('behindBtn').onclick = () => {
 $('bhClose').onclick = () => $('behind').classList.remove('on', 'flipped');
 $('behind').onclick = (e) => { if (e.target === $('behind')) $('behind').classList.remove('on', 'flipped'); };
 
-// Opening the link goes straight to the camera. `?home` opens the gallery;
-// `#show=3` opens a living page without camera, `#show=secret` any page by its id.
+// Offline: a small service worker keeps the app, the libraries and the recognition files on the phone.
+if ('serviceWorker' in navigator && !params.has('nosw')) {
+  const scope = new URL('.', import.meta.url).pathname.replace(/(.)\/$/, '$1');
+  navigator.serviceWorker.register(asset('./sw.js'), { scope }).catch(() => { /* still works online */ });
+}
+
+// Opening the link goes straight to the camera. `?home` opens the gallery; `?lecture` the projector view;
+// `?remote=1234` the lecturer's phone remote; `#show=3` or `#show=<id>` a page without camera.
 const m = location.hash.match(/show=([\w-]+)/);
-if (m) startShowcase(/^\d+$/.test(m[1]) ? pageIndex(+m[1]) : Math.max(0, EXPERIENCES.findIndex((x) => x.id === m[1])));
-else if (new URLSearchParams(location.search).has('home')) leaveExp();
+if (params.get('remote')) startRemote(params.get('remote'));
+else if (params.has('lecture')) lecture.start();
+else if (m) startShowcase(/^\d+$/.test(m[1]) ? EXPERIENCES.indexOf(PAGES[+m[1]]) : Math.max(0, EXPERIENCES.findIndex((x) => x.id === m[1])));
+else if (params.has('home')) leaveExp();
 else startAR();

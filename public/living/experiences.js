@@ -1,11 +1,13 @@
-// The six living pages. Each one is tied to its page design, never to a page number;
-// `pageNo` is only shown to readers of the current edition.
+// The living pages. Each one is tied to its page design, never to a page number;
+// `pageNo` only tells maintainers where the page sits in the reference copy. Readers never see it,
+// because the numbers change between editions.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
-} from './kit.js?v=5';
-import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=5';
+} from './kit.js?v=6';
+import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=6';
+import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=6';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -763,57 +765,96 @@ export const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩
 // kind 'page' = a living page that earns a stamp; 'special' = the welcome page and the secret page.
 export const EXPERIENCES = [
   {
-    id: 'teacher-roles', kind: 'page', page: 'p51', pageNo: '٥١', title: 'أدوار المعلم في عصر التكنولوجيا', type: 'infographic', typeLabel: 'إنفوجرافيك حيّ',
+    id: 'teacher-roles', kind: 'page', door: 1, pack: 'door1', page: 'p51', pageNo: '٥١', title: 'أدوار المعلم في عصر التكنولوجيا', type: 'infographic', typeLabel: 'إنفوجرافيك حيّ',
     video: 'HHowUzMcWEQ', center: [0.5, 0.69], free: true, build: buildInfographic,
     behind: { principle: 'مبدأ التجزئة (ريتشارد ماير)', body: 'لم نعرض الأدوار الستة دفعة واحدة؛ ارتفعت درجةً درجة، وأنت تكشف كل دور بلمستك. تقسيم المعلومة إلى قطع يخفّف العبء على الذاكرة العاملة، فيثبت الترتيب في ذهنك.' },
   },
   {
-    id: 'e-learning-class', kind: 'page', page: 'p49', pageNo: '٤٩', title: 'الفصل الإلكتروني: مراحل التدريب التكنولوجي', type: 'model', typeLabel: 'مجسّم ثلاثي الأبعاد',
+    id: 'e-learning-class', kind: 'page', door: 1, pack: 'door1', page: 'p49', pageNo: '٤٩', title: 'الفصل الإلكتروني: مراحل التدريب التكنولوجي', type: 'model', typeLabel: 'مجسّم ثلاثي الأبعاد',
     video: 'IYwFwcVajqQ', center: [0.54, 0.715], free: true, build: buildModel,
     behind: { principle: 'مخروط الخبرة (إدجار ديل)', body: 'النموذج المجسّم أقرب إلى الخبرة الحقيقية من الصورة المسطّحة. حين تدور حول الفصل وتلمس أجزاءه، يصبح المفهوم المجرّد شيئاً تراه وتلمسه.' },
   },
   {
-    id: 'technology-tree', kind: 'page', page: 'p45', pageNo: '٤٥', title: 'شجرة التكنولوجيا: ثلاثة معانٍ', type: 'hotspots', typeLabel: 'صورة تفاعلية',
+    id: 'technology-tree', kind: 'page', door: 1, pack: 'door1', page: 'p45', pageNo: '٤٥', title: 'شجرة التكنولوجيا: ثلاثة معانٍ', type: 'hotspots', typeLabel: 'صورة تفاعلية',
     video: 'IYwFwcVajqQ', center: [0.42, 0.7], free: false, build: buildHotspots,
     behind: { principle: 'الاكتشاف الموجّه (جيروم برونر)', body: 'لم نعطك التعريفات الثلاثة جاهزة؛ تركناك تكتشفها بنفسك من داخل الصورة. المعنى الذي تصل إليه بنفسك يبقى في الذاكرة أطول من المعنى الذي يُلقى عليك.' },
   },
   {
-    id: 'instructional-design', kind: 'page', page: 'p54', pageNo: '٥٤', title: 'تصميم التدريس: من فكرة المصمّم إلى عقل المتعلّم', type: 'animation', typeLabel: 'أنيميشن',
+    id: 'instructional-design', kind: 'page', door: 1, pack: 'door1', page: 'p54', pageNo: '٥٤', title: 'تصميم التدريس: من فكرة المصمّم إلى عقل المتعلّم', type: 'animation', typeLabel: 'أنيميشن',
     video: 'NSTqBgSMi_g', center: [0.72, 0.22], free: true, crop: [0.5, 0.03, 0.98, 0.5], build: buildAnimation,
     behind: { principle: 'مبدأ التزامن (ماير) والترميز الثنائي (بايفيو)', body: 'الكلمة تظهر في اللحظة نفسها التي يدور فيها الترس الذي تصفه. حين تصل الصورة والكلمة معاً، يبني عقلك تمثيلين للفكرة نفسها فتترسّخ.' },
   },
   {
-    id: 'planning-darts', kind: 'page', page: 'p55', pageNo: '٥٥', title: 'أصب الهدف: فوائد تخطيط التدريس', type: 'game', typeLabel: 'لعبة',
+    id: 'planning-darts', kind: 'page', door: 1, pack: 'door1', page: 'p55', pageNo: '٥٥', title: 'أصب الهدف: فوائد تخطيط التدريس', type: 'game', typeLabel: 'لعبة',
     video: 'NSTqBgSMi_g', center: [0.55, 0.75], free: true, crop: [0.12, 0.64, 0.52, 0.95], build: buildGame,
     behind: { principle: 'التلعيب والتعزيز الفوري (سكنر)', body: 'وقت ونقاط وتحدٍّ، وكل رمية تعطيك نتيجتها في الحال. التغذية الراجعة الفورية تحوّل الحفظ إلى قرارات سريعة تكرّرها بمتعة.' },
   },
   {
-    id: 'teaching-vs-instruction', kind: 'page', page: 'p41', pageNo: '٤١', title: 'تنبّأ ثم شاهد: التعليم أم التدريس؟', type: 'quiz', typeLabel: 'أسئلة',
+    id: 'teaching-vs-instruction', kind: 'page', door: 1, pack: 'door1', page: 'p41', pageNo: '٤١', title: 'تنبّأ ثم شاهد: التعليم أم التدريس؟', type: 'quiz', typeLabel: 'أسئلة',
     video: 'HHowUzMcWEQ', center: [0.5, 0.62], free: false, build: buildQuiz,
     behind: { principle: 'تنبّأ ثم شاهد (البنائية) والتعلّم بالاسترجاع', body: 'حين تلتزم بإجابة قبل أن ترى الحقيقة، يقارن عقلك توقّعه بالواقع ويعيد بناء الفكرة. ثم أضأنا لك الخانة نفسها في الجدول المطبوع ليتصل الجديد بما في الكتاب.' },
   },
   {
-    id: 'channels-of-time', kind: 'page', page: 'p66', pageNo: '٦٦', title: 'قنوات الزمن: رحلة الوسائل التعليمية', type: 'timeline', typeLabel: 'آلة الزمن',
+    id: 'channels-of-time', kind: 'page', door: 1, pack: 'door1', page: 'p66', pageNo: '٦٦', title: 'قنوات الزمن: رحلة الوسائل التعليمية', type: 'timeline', typeLabel: 'آلة الزمن',
     video: 'gPzhwiIN__8', center: [0.635, 0.36], free: true, crop: [0.34, 0.02, 0.955, 0.58], build: buildTimeTV,
     behind: { principle: 'التنظيم المتقدّم والسرد (أوزوبل)', body: 'وضعنا كل وسيلة على خطّ زمني واحد قبل تفاصيلها؛ فحين يرى عقلك الإطار الكبير أولاً، يجد لكل معلومة جديدة مكاناً تتعلّق به.' },
   },
   {
-    id: 'dale-cone', kind: 'page', page: 'p147', pageNo: '١٤٧', title: 'مخروط الخبرة: من الواقع إلى التجريد', type: 'ladder', typeLabel: 'سلّم تفاعلي',
+    id: 'dale-cone', kind: 'page', door: 1, pack: 'door1', page: 'p147', pageNo: '١٤٧', title: 'مخروط الخبرة: من الواقع إلى التجريد', type: 'ladder', typeLabel: 'سلّم تفاعلي',
     video: 'Ro4IM9cWn0s', center: [0.542, 0.5], free: true, crop: [0.14, 0.245, 0.84, 0.7], build: buildCone,
     behind: { principle: 'من المحسوس إلى المجرد (برونر وديل)', body: 'بدأت رحلتك من قاعدة المخروط، من الخبرة الواقعية، ثم صعدت نحو الرموز. هكذا يُبنى الفهم: تمثيل عملي، ثم صوري، ثم رمزي.' },
   },
   {
-    id: 'communication-lab', kind: 'page', page: 'p151', pageNo: '١٥١', title: 'مختبر الاتصال: الرسالة والتشويش', type: 'lab', typeLabel: 'مختبر تفاعلي',
+    id: 'communication-lab', kind: 'page', door: 1, pack: 'door1', page: 'p151', pageNo: '١٥١', title: 'مختبر الاتصال: الرسالة والتشويش', type: 'lab', typeLabel: 'مختبر تفاعلي',
     video: 'GHKPjqQZRnA', center: [0.54, 0.27], free: false, crop: [0.11, 0.09, 0.88, 0.42], build: buildLab,
     behind: { principle: 'التعلّم بالمحاكاة والتجريب', body: 'لم نخبرك بأثر التشويش؛ أعطيناك مقبضه. حين تغيّر متغيّراً واحداً وترى نتيجته فوراً، تكتشف العلاقة بنفسك كما يكتشفها العالِم في مختبره.' },
   },
   {
-    id: 'welcome', kind: 'special', page: 'intro', pageNo: '', title: 'مرحباً بك في الموسوعة الحيّة', type: 'welcome', typeLabel: 'صفحة الترحيب',
+    id: 'virtual-portal', kind: 'page', door: 3, pack: 'door34', page: 'p395', pageNo: '٣٩٥', title: 'بوابة العالم الافتراضي', type: 'portal', typeLabel: 'بوابة',
+    video: 'hc9KfKNPIRQ', center: [0.256, 0.585], free: false, hole: PORTAL_HOLE, crop: [0.02, 0.36, 0.5, 0.82], build: buildPortal,
+    behind: { principle: 'الانغماس والحضور (Presence)', body: 'حين يشعر المتعلّم أنه «داخل» البيئة لا أمامها، يرتفع انتباهه ودافعيته. لذلك فتحنا لك نافذة في الورق نفسه بدل صورة تنظر إليها.' },
+  },
+  {
+    id: 'mobile-exploded', kind: 'page', door: 3, pack: 'door34', page: 'p541', pageNo: '٥٤١', title: 'فكّك الجوال: التعلّم المتنقل', type: 'exploded', typeLabel: 'فكّك الجهاز',
+    video: 'JMlobDkhuPY', center: [0.275, 0.62], free: true, crop: [0.04, 0.38, 0.5, 0.82], build: buildPhone,
+    behind: { principle: 'المنظر المفكَّك وتقليل العبء المعرفي', body: 'رؤية الجهاز طبقةً طبقة، وكل طبقة مربوطة بوظيفتها، أسهل على الذاكرة العاملة من رؤية الكل مرة واحدة؛ فتفهم العلاقة بين الجزء والوظيفة.' },
+  },
+  {
+    id: 'bloom-pyramid', kind: 'page', door: 4, pack: 'door34', page: 'p573', pageNo: '٥٧٣', title: 'ركّب هرم بلوم', type: 'assemble', typeLabel: 'ركّب الهرم',
+    video: 'WTh25DM1ZCI', center: [0.33, 0.6], free: true, crop: [0.04, 0.08, 0.64, 0.68], build: buildBloom,
+    behind: { principle: 'التسلسل الهرمي للتعلّم (روبرت جانييه)', body: 'لم يُقبل منك مستوى قبل الذي تحته، كما ينصّ الكتاب: على المتعلّم أن يصل إلى أهداف المستوى الأدنى قبل أن يبني عليها المستوى الأعلى.' },
+  },
+  {
+    id: 'digital-divide-balance', kind: 'page', door: 4, pack: 'door34', page: 'p587', pageNo: '٥٨٧', title: 'ميزان الفجوة الرقمية', type: 'balance', typeLabel: 'الميزان',
+    video: 'S0GvFyJOQ5g', center: [0.56, 0.62], free: true, crop: [0.14, 0.34, 0.86, 0.68], build: buildBalance,
+    behind: { principle: 'التفكير المنظومي', body: 'رأيت الأرقام المطبوعة وزناً تحمله يدك، ثم رأيت أن عاملاً واحداً لا يكفي. التفكير المنظومي يعلّمك أن المشكلات الكبيرة تتوازن بعوامل متعددة معاً.' },
+  },
+  {
+    id: 'interactive-classroom', kind: 'page', door: 4, pack: 'door34', page: 'p599', pageNo: '٥٩٩', title: 'من فصل تقليدي إلى فصل تفاعلي', type: 'roleplay', typeLabel: 'مشهد تمثيلي',
+    video: 'DzdyVn3kS50', center: [0.31, 0.3], free: true, crop: [0.02, 0.02, 0.6, 0.5], build: buildRoleplay,
+    behind: { principle: 'التعلّم الاجتماعي ولعب الأدوار (ألبرت باندورا)', body: 'تقمّصت دور المعلّم ورأيت أثر قراراتك على طلابك. حين نمارس الدور ونرى نتائجه، تنتقل المعرفة من «أعرف» إلى «أستطيع».' },
+  },
+  {
+    id: 'tech-teacher-branch', kind: 'page', door: 4, pack: 'door34', page: 'p617', pageNo: '٦١٧', title: 'طريق المعلّم التكنولوجي', type: 'branching', typeLabel: 'قرار متفرّع',
+    video: 'dJidLUqALTY', center: [0.27, 0.5], free: true, crop: [0.0, 0.28, 0.56, 0.8], build: buildBranch,
+    behind: { principle: 'التعلّم التجريبي (ديفيد كولب)', body: 'جرّبت قراراً، ثم رأيت نتيجته، ثم تأمّلتها، ثم وصلت إلى المفهوم في النهاية. هذه دورة كولب: تجربة فتأمّل فمفهوم فتطبيق.' },
+  },
+  {
+    id: 'welcome', kind: 'special', pack: 'all', page: 'intro', pageNo: '', title: 'مرحباً بك في الموسوعة الحيّة', type: 'welcome', typeLabel: 'صفحة الترحيب',
     center: [0.5, 0.5], free: false, build: buildWelcome,
   },
   {
-    id: 'secret', kind: 'special', page: 'p8', pageNo: '', title: 'الصفحة السرّية', type: 'secret', typeLabel: 'صفحة سرّية',
+    id: 'secret', kind: 'special', pack: 'all', page: 'p8', pageNo: '', title: 'الصفحة السرّية', type: 'secret', typeLabel: 'صفحة سرّية',
     center: [0.5, 0.5], free: false, crop: [0.19, 0.24, 0.81, 0.76], build: buildSecret,
   },
 ];
 export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
+
+// Recognition packs: each opens with its own small recognition file so speed stays the same as the
+// book grows. `ids` follows the order of the images inside that pack's file.
+export const PACKS = [
+  { id: 'door1', title: 'الباب الأول', sub: 'مفهوم تكنولوجيا التعليم', file: './targets-door1.mind',
+    ids: ['teacher-roles', 'e-learning-class', 'technology-tree', 'instructional-design', 'planning-darts', 'teaching-vs-instruction', 'channels-of-time', 'dale-cone', 'communication-lab', 'welcome', 'secret'] },
+  { id: 'door34', title: 'البابان الثالث والرابع', sub: 'المستحدثات والمعلّم والتكنولوجيا', file: './targets-door34.mind',
+    ids: ['virtual-portal', 'mobile-exploded', 'bloom-pyramid', 'digital-divide-balance', 'interactive-classroom', 'tech-teacher-branch', 'welcome', 'secret'] },
+];

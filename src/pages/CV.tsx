@@ -13,7 +13,7 @@ import { useTrackView } from '../lib/views'
 import { useCvLinks } from '../lib/settings'
 import { CvDownloadCards } from '../components/CvDownloadCards'
 import { arabicCountLabel, ARTICLE_FORMS, BOOK_FORMS, PAPER_FORMS, WORD_FORMS } from '../lib/arabic-count.ts'
-import { englishTextProps } from '../lib/english-text'
+import { englishTextProps, isEnglishText } from '../lib/english-text'
 
 const ar = (n: number) => String(n)
 // محفوظ للمستقبل من دون عرضه حالياً؛ إعادة تفعيله لا تحتاج استرجاع أي كود.
@@ -244,7 +244,7 @@ export default function CV() {
                     <section>
                       <h3 className="font-display text-[1.05rem] font-semibold text-ink">أطروحة الدكتوراه</h3>
                       <div className="mt-3.5 rounded-2xl border border-hair bg-wash p-5">
-                        <p dir="auto" className="text-[.92rem] font-medium leading-[1.75] text-ink">{doctorate.title}</p>
+                        <p dir="auto" lang={isEnglishText(doctorate.title) ? 'en' : undefined} className="text-[.92rem] font-medium leading-[1.75] text-ink">{doctorate.title}</p>
                         <p className="mt-2.5 text-[.85rem] text-soft">{doctorate.university}</p>
                       </div>
                     </section>

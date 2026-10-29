@@ -223,7 +223,7 @@ check('الأزرار العائمة لا تغطي آخر محتوى على ال
 // مسار الصوت يمشي على v7/v6 وهو ما يفرضه test-site-polish-2026.mjs أيضاً. منعُ v7 هنا
 // كان يخلق تناقضاً لا مخرج منه: البوابة تحمرّ على v6 والبناء يحمرّ على v7 فلا نشرَ أبداً.
 check('إصدارات GitHub Actions في مسارات النشر قابلة للحل', autoSiteWorkflow.includes('actions/checkout@v6') && autoSiteWorkflow.includes('actions/setup-node@v6') && autoAudioWorkflow.includes('actions/checkout@v7') && autoAudioWorkflow.includes('actions/setup-node@v7') && autoAudioWorkflow.includes('actions/cache/restore@v6') && autoAudioWorkflow.includes('actions/cache/save@v6'))
-check('النشر التلقائي لديه محاولة تعافٍ مجدولة ولا يلغي التشغيل السابق', autoSiteWorkflow.includes("cron: '55 4,9,14,19 * * *'") && autoSiteWorkflow.includes('cancel-in-progress: false') && autoSiteWorkflow.includes('with retry'))
+check('النشر التلقائي لديه محاولة تعافٍ مجدولة ولا يلغي التشغيل السابق', autoSiteWorkflow.includes("cron: '55 4 * * *'") && autoSiteWorkflow.includes('cancel-in-progress: false') && autoSiteWorkflow.includes('with retry'))
 
 console.log('\nالصور والأيقونات')
 check('بطاقة النشر مدخلها أيقونة فقط', quoteImage.includes('SocialIcon name="Image"') && !/>\s*بطاقة للنشر\s*</u.test(quoteImage))

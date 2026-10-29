@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
-} from './kit.js?v=4';
+} from './kit.js?v=5';
+import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=5';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -758,35 +759,61 @@ function buildQuiz(ctx) {
 // ---------------------------------------------------------------- catalogue
 export const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
 
+// Order matters: it is the order of the images in targets.mind (the recognition file).
+// kind 'page' = a living page that earns a stamp; 'special' = the welcome page and the secret page.
 export const EXPERIENCES = [
   {
-    id: 'teacher-roles', page: 'p51', pageNo: '٥١', title: 'أدوار المعلم في عصر التكنولوجيا', type: 'infographic', typeLabel: 'إنفوجرافيك حيّ',
+    id: 'teacher-roles', kind: 'page', page: 'p51', pageNo: '٥١', title: 'أدوار المعلم في عصر التكنولوجيا', type: 'infographic', typeLabel: 'إنفوجرافيك حيّ',
     video: 'HHowUzMcWEQ', center: [0.5, 0.69], free: true, build: buildInfographic,
     behind: { principle: 'مبدأ التجزئة (ريتشارد ماير)', body: 'لم نعرض الأدوار الستة دفعة واحدة؛ ارتفعت درجةً درجة، وأنت تكشف كل دور بلمستك. تقسيم المعلومة إلى قطع يخفّف العبء على الذاكرة العاملة، فيثبت الترتيب في ذهنك.' },
   },
   {
-    id: 'e-learning-class', page: 'p49', pageNo: '٤٩', title: 'الفصل الإلكتروني: مراحل التدريب التكنولوجي', type: 'model', typeLabel: 'مجسّم ثلاثي الأبعاد',
+    id: 'e-learning-class', kind: 'page', page: 'p49', pageNo: '٤٩', title: 'الفصل الإلكتروني: مراحل التدريب التكنولوجي', type: 'model', typeLabel: 'مجسّم ثلاثي الأبعاد',
     video: 'IYwFwcVajqQ', center: [0.54, 0.715], free: true, build: buildModel,
     behind: { principle: 'مخروط الخبرة (إدجار ديل)', body: 'النموذج المجسّم أقرب إلى الخبرة الحقيقية من الصورة المسطّحة. حين تدور حول الفصل وتلمس أجزاءه، يصبح المفهوم المجرّد شيئاً تراه وتلمسه.' },
   },
   {
-    id: 'technology-tree', page: 'p45', pageNo: '٤٥', title: 'شجرة التكنولوجيا: ثلاثة معانٍ', type: 'hotspots', typeLabel: 'صورة تفاعلية',
+    id: 'technology-tree', kind: 'page', page: 'p45', pageNo: '٤٥', title: 'شجرة التكنولوجيا: ثلاثة معانٍ', type: 'hotspots', typeLabel: 'صورة تفاعلية',
     video: 'IYwFwcVajqQ', center: [0.42, 0.7], free: false, build: buildHotspots,
     behind: { principle: 'الاكتشاف الموجّه (جيروم برونر)', body: 'لم نعطك التعريفات الثلاثة جاهزة؛ تركناك تكتشفها بنفسك من داخل الصورة. المعنى الذي تصل إليه بنفسك يبقى في الذاكرة أطول من المعنى الذي يُلقى عليك.' },
   },
   {
-    id: 'instructional-design', page: 'p54', pageNo: '٥٤', title: 'تصميم التدريس: من فكرة المصمّم إلى عقل المتعلّم', type: 'animation', typeLabel: 'أنيميشن',
+    id: 'instructional-design', kind: 'page', page: 'p54', pageNo: '٥٤', title: 'تصميم التدريس: من فكرة المصمّم إلى عقل المتعلّم', type: 'animation', typeLabel: 'أنيميشن',
     video: 'NSTqBgSMi_g', center: [0.72, 0.22], free: true, crop: [0.5, 0.03, 0.98, 0.5], build: buildAnimation,
     behind: { principle: 'مبدأ التزامن (ماير) والترميز الثنائي (بايفيو)', body: 'الكلمة تظهر في اللحظة نفسها التي يدور فيها الترس الذي تصفه. حين تصل الصورة والكلمة معاً، يبني عقلك تمثيلين للفكرة نفسها فتترسّخ.' },
   },
   {
-    id: 'planning-darts', page: 'p55', pageNo: '٥٥', title: 'أصب الهدف: فوائد تخطيط التدريس', type: 'game', typeLabel: 'لعبة',
+    id: 'planning-darts', kind: 'page', page: 'p55', pageNo: '٥٥', title: 'أصب الهدف: فوائد تخطيط التدريس', type: 'game', typeLabel: 'لعبة',
     video: 'NSTqBgSMi_g', center: [0.55, 0.75], free: true, crop: [0.12, 0.64, 0.52, 0.95], build: buildGame,
     behind: { principle: 'التلعيب والتعزيز الفوري (سكنر)', body: 'وقت ونقاط وتحدٍّ، وكل رمية تعطيك نتيجتها في الحال. التغذية الراجعة الفورية تحوّل الحفظ إلى قرارات سريعة تكرّرها بمتعة.' },
   },
   {
-    id: 'teaching-vs-instruction', page: 'p41', pageNo: '٤١', title: 'تنبّأ ثم شاهد: التعليم أم التدريس؟', type: 'quiz', typeLabel: 'أسئلة',
+    id: 'teaching-vs-instruction', kind: 'page', page: 'p41', pageNo: '٤١', title: 'تنبّأ ثم شاهد: التعليم أم التدريس؟', type: 'quiz', typeLabel: 'أسئلة',
     video: 'HHowUzMcWEQ', center: [0.5, 0.62], free: false, build: buildQuiz,
     behind: { principle: 'تنبّأ ثم شاهد (البنائية) والتعلّم بالاسترجاع', body: 'حين تلتزم بإجابة قبل أن ترى الحقيقة، يقارن عقلك توقّعه بالواقع ويعيد بناء الفكرة. ثم أضأنا لك الخانة نفسها في الجدول المطبوع ليتصل الجديد بما في الكتاب.' },
   },
+  {
+    id: 'channels-of-time', kind: 'page', page: 'p66', pageNo: '٦٦', title: 'قنوات الزمن: رحلة الوسائل التعليمية', type: 'timeline', typeLabel: 'آلة الزمن',
+    video: 'gPzhwiIN__8', center: [0.635, 0.36], free: true, crop: [0.34, 0.02, 0.955, 0.58], build: buildTimeTV,
+    behind: { principle: 'التنظيم المتقدّم والسرد (أوزوبل)', body: 'وضعنا كل وسيلة على خطّ زمني واحد قبل تفاصيلها؛ فحين يرى عقلك الإطار الكبير أولاً، يجد لكل معلومة جديدة مكاناً تتعلّق به.' },
+  },
+  {
+    id: 'dale-cone', kind: 'page', page: 'p147', pageNo: '١٤٧', title: 'مخروط الخبرة: من الواقع إلى التجريد', type: 'ladder', typeLabel: 'سلّم تفاعلي',
+    video: 'Ro4IM9cWn0s', center: [0.542, 0.5], free: true, crop: [0.14, 0.245, 0.84, 0.7], build: buildCone,
+    behind: { principle: 'من المحسوس إلى المجرد (برونر وديل)', body: 'بدأت رحلتك من قاعدة المخروط، من الخبرة الواقعية، ثم صعدت نحو الرموز. هكذا يُبنى الفهم: تمثيل عملي، ثم صوري، ثم رمزي.' },
+  },
+  {
+    id: 'communication-lab', kind: 'page', page: 'p151', pageNo: '١٥١', title: 'مختبر الاتصال: الرسالة والتشويش', type: 'lab', typeLabel: 'مختبر تفاعلي',
+    video: 'GHKPjqQZRnA', center: [0.54, 0.27], free: false, crop: [0.11, 0.09, 0.88, 0.42], build: buildLab,
+    behind: { principle: 'التعلّم بالمحاكاة والتجريب', body: 'لم نخبرك بأثر التشويش؛ أعطيناك مقبضه. حين تغيّر متغيّراً واحداً وترى نتيجته فوراً، تكتشف العلاقة بنفسك كما يكتشفها العالِم في مختبره.' },
+  },
+  {
+    id: 'welcome', kind: 'special', page: 'intro', pageNo: '', title: 'مرحباً بك في الموسوعة الحيّة', type: 'welcome', typeLabel: 'صفحة الترحيب',
+    center: [0.5, 0.5], free: false, build: buildWelcome,
+  },
+  {
+    id: 'secret', kind: 'special', page: 'p8', pageNo: '', title: 'الصفحة السرّية', type: 'secret', typeLabel: 'صفحة سرّية',
+    center: [0.5, 0.5], free: false, crop: [0.19, 0.24, 0.81, 0.76], build: buildSecret,
+  },
 ];
+export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');

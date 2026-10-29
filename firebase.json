@@ -423,7 +423,7 @@
         ]
       },
       {
-        "source": "/live{,/**}",
+        "source": "/living{,/**}",
         "headers": [
           {
             "key": "Permissions-Policy",

@@ -103,7 +103,7 @@ const PERSON = {
   sameAs: [
     'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en',
     'https://www.researchgate.net/profile/Ahmad-Alfailakawi',
-    'https://www.linkedin.com/in/dr-ahmad-alfailakawi',
+    'https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5',
     'https://x.com/drahmadkw',
     'https://www.instagram.com/drahmadkw/',
     'https://www.facebook.com/d.ahmd.alfylkawy',

@@ -321,7 +321,7 @@ export const essays = [
 
 
 export const socials = [
-  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/dr-ahmad-alfailakawi' },
+  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/prof-ahmad-alfailakawi-5922251a5' },
   { label: 'X', url: 'https://x.com/drahmadkw' },
   { label: 'Instagram', url: 'https://www.instagram.com/drahmadkw/' },
   { label: 'Facebook', url: 'https://www.facebook.com/d.ahmd.alfylkawy' },

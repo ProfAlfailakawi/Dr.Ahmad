@@ -13,6 +13,7 @@ import { useTrackView } from '../lib/views'
 import { useCvLinks } from '../lib/settings'
 import { CvDownloadCards } from '../components/CvDownloadCards'
 import { arabicCountLabel, ARTICLE_FORMS, BOOK_FORMS, PAPER_FORMS, WORD_FORMS } from '../lib/arabic-count.ts'
+import { englishTextProps } from '../lib/english-text'
 
 const ar = (n: number) => String(n)
 // محفوظ للمستقبل من دون عرضه حالياً؛ إعادة تفعيله لا تحتاج استرجاع أي كود.
@@ -264,11 +265,11 @@ export default function CV() {
                             <div className="flex items-start gap-3">
                               <span className="mt-0.5 flex h-7 min-w-7 items-center justify-center rounded-full border border-accent/30 text-[.7rem] font-semibold text-accent">{index + 1}</span>
                               <div className="min-w-0">
-                                <h4 dir="auto" className="text-[.9rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{paper.title}</h4>
+                                <h4 dir="auto" {...englishTextProps(paper.title)} className="text-[.9rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">{paper.title}</h4>
                                 {paper.titleAr && paper.titleAr !== paper.title && (
                                   <p className="mt-1 text-[.78rem] font-light leading-[1.6] text-soft">{paper.titleAr}</p>
                                 )}
-                                <p dir="auto" className="mt-2 text-[.74rem] leading-[1.55] text-soft/[.85]">{paper.journal}</p>
+                                <p dir="auto" {...englishTextProps(paper.journal)} className="mt-2 text-[.74rem] leading-[1.55] text-soft/[.85]">{paper.journal}</p>
                               </div>
                             </div>
                           </a>

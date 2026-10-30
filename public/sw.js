@@ -6,6 +6,44 @@ const RETIRED_NAVIGATION_PATHS = new Set(['/mylib'])
 /* الأصول المبصومة بهاش في اسمها: assets/Name-a1B2c3D4.js وما شابه. */
 const HASHED = /\/assets\/.+[-.][A-Za-z0-9_]{8,}\.[a-z0-9]+$/i
 
+/* «نُحدّث الموقع» بدل صفحة Google الإنجليزية.
+   أثناء النشر قد تجيب واجهةُ Google الأمامية عن فتح صفحةٍ بـ 500/502/503/504 لم
+   يكتبها الموقع. الصفحةُ البديلة (/updating.html ومنطقُها /updating.js) تُحفظ هنا
+   عند التثبيت، وتُقدَّم للتنقّل وحده — لا لـ/api ولا لغير GET ولا لجوابٍ ناجح —
+   حين يعود ذلك الجواب أو ينقطع الطلبُ والجهازُ متّصل. لا يُحفظ جوابُ 5xx أبداً. */
+const UPDATING_PAGE = '/updating.html'
+const UPDATING_SCRIPT = '/updating.js'
+const isUpdatingStatus = (status) => status === 500 || status === 502 || status === 503 || status === 504
+
+async function storeUpdatingPage() {
+  const cache = await caches.open(CACHE)
+  const [page, script] = await Promise.all([
+    fetch(UPDATING_PAGE, { cache: 'no-store' }),
+    fetch(UPDATING_SCRIPT, { cache: 'no-store' }),
+  ])
+  if (!page.ok || !(page.headers.get('content-type') || '').includes('text/html') || !script.ok) return
+  await cache.put(UPDATING_SCRIPT, script)
+  await cache.put(UPDATING_PAGE, page)
+}
+
+/* مسحها شفاءُ الحزم مع كل الذاكرة؟ تُعاد بعد أول تنقّلٍ ناجح، ولا يُنتظر ذلك. */
+function refillUpdatingPage() {
+  return caches.open(CACHE)
+    .then((cache) => cache.match(UPDATING_PAGE))
+    .then((hit) => (hit ? undefined : storeUpdatingPage()))
+    .catch(() => undefined)
+}
+
+async function updatingResponse() {
+  const page = await caches.open(CACHE).then((cache) => cache.match(UPDATING_PAGE)).catch(() => undefined)
+  if (!page) return null
+  return new Response(await page.text(), {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'retry-after': '5' },
+  })
+}
+
 function retiredPageResponse() {
   return new Response(
     '<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><title>صفحة غير متاحة</title><main style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#16202a;background:#faf9f6"><section style="max-width:520px;text-align:center"><h1 style="font-size:28px;margin:0 0 12px">هذه الصفحة لم تعد متاحة.</h1><p style="margin:0;color:#667085;line-height:1.8">تم إيقاف هذا المسار من الموقع الحالي. يمكنك العودة إلى الصفحة الرئيسية.</p><p style="margin-top:20px"><a href="/" style="color:#365a7a;text-decoration:none">العودة للرئيسية</a></p></section></main></html>',
@@ -17,6 +55,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
       .then((c) => c.addAll(CORE).catch(() => c.addAll(CORE.filter((url) => url !== '/offline.html'))))
+      .then(() => storeUpdatingPage().catch(() => undefined))
       .then(() => self.skipWaiting())
   )
 })
@@ -118,10 +157,12 @@ self.addEventListener('fetch', (e) => {
   // الرئيسية أو بيانات الملف الشخصي عند فتح /admin بعد تحديثات النشر.
   if (request.mode === 'navigate' && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
     e.respondWith(
-      fetch(request, { cache: 'no-store' }).catch(() => new Response(
-        '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>لوحة التحكم</title><main dir="rtl" style="min-height:100vh;display:grid;place-items:center;font-family:sans-serif"><p>تعذّر فتح لوحة التحكم دون اتصال.</p></main>',
-        { status: 503, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
-      )),
+      fetch(request, { cache: 'no-store' })
+        .then(async (response) => (isUpdatingStatus(response.status) && await updatingResponse()) || response)
+        .catch(async () => (self.navigator?.onLine !== false && await updatingResponse()) || new Response(
+          '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>لوحة التحكم</title><main dir="rtl" style="min-height:100vh;display:grid;place-items:center;font-family:sans-serif"><p>تعذّر فتح لوحة التحكم دون اتصال.</p></main>',
+          { status: 503, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
+        )),
     )
     return
   }
@@ -138,12 +179,18 @@ self.addEventListener('fetch', (e) => {
         /* طلبات التنقل (HTML) دائماً من الشبكة وبـ no-store: الغلاف المخزّن يسمّي
            حزماً حذفتها النشرة التالية. الكاش احتياطٌ لانقطاع الاتصال لا غير. */
         const response = preload || await fetch(request, { cache: 'no-store' })
+        // 5xx هنا هو المنصّة تتبدّل أثناء النشر: صفحة التحديث تنتظر ثم تعيد فتح الرابط نفسه.
+        if (isUpdatingStatus(response?.status)) return await updatingResponse() || response
         if (response?.status === 200 && !response.redirected) {
           await cache.put(request, response.clone())
+          void refillUpdatingPage()
         }
         return response
       } catch {
+        // القراءة دون إنترنت أولاً: الصفحة المطلوبة نفسها إن حُفظت. وإلا فالجهاز
+        // يقول إنه متّصل والطلب انقطع — لحظة النشر نفسها — فصفحة التحديث.
         return await cache.match(request)
+          || (self.navigator?.onLine !== false ? await updatingResponse() : null)
           || await cache.match('/index.html')
           || await cache.match('/')
           || await caches.match('/offline.html')
@@ -163,13 +210,22 @@ self.addEventListener('fetch', (e) => {
 
   /* الأصول المبصومة بهاش في اسمها وحدها تُقدَّم من الذاكرة مباشرة: اسمها يتغيّر مع
      بايتاتها فالنسخة القديمة مستحيلة بالبناء. */
+  /* منطق صفحة التحديث من الذاكرة أولاً: تُفتح الصفحة والشبكة تجيب 5xx. */
+  if (pathname === UPDATING_SCRIPT) {
+    e.respondWith(caches.match(request).then((cached) => cached || fetch(request)))
+    return
+  }
+
   if (HASHED.test(pathname)) {
     e.respondWith(caches.match(request).then((cached) => cached || fetch(request).then(storeIfFresh)))
     return
   }
 
   // ما عداها: الشبكة أولاً، والذاكرة احتياطاً عند انقطاع الاتصال.
+  // وخطٌّ أو أيقونةٌ طُلبت أثناء النشر فجاءت 5xx: النسخة المحفوظة أفضل.
   e.respondWith(
-    fetch(request).then(storeIfFresh).catch(() => caches.match(request).then((cached) => cached || Response.error()))
+    fetch(request)
+      .then((r) => (isUpdatingStatus(r.status) ? caches.match(request).then((cached) => cached || r) : storeIfFresh(r)))
+      .catch(() => caches.match(request).then((cached) => cached || Response.error()))
   )
 })

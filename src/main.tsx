@@ -4,6 +4,7 @@ import '@fontsource-variable/alexandria'
 import App from './App'
 import ErrorBoundary, { healStaleBundles, isStaleBundleError } from './components/ErrorBoundary'
 import { installAppUpdate } from './lib/app-update'
+import { installUpdatingNotice } from './lib/updating-notice'
 import { installDomResilience } from './lib/dom-resilience'
 import { hasMissingAppChunk, watchResourceFailures } from './lib/load-failures'
 import { startWebVitalsMonitoring } from './lib/web-vitals'
@@ -30,6 +31,10 @@ function healOnce() {
 
 /* وضع العرض التوضيحي: ردود /api/* تجريبية بلا خادم (يُفعَّل بـ VITE_DEMO_MODE=1 فقط). */
 if (DEMO_MODE) installDemoApi()
+
+/* أثناء نشر الخادم تجيب المنصّة /api بصفحة HTML (5xx): شريطٌ هادئ «نُحدّث الموقع»
+   حتى يعود. مراقبةٌ فقط — لا يتغيّر جوابٌ ولا سلوك شاشة. */
+installUpdatingNotice()
 
 /* التقاط أعطال تحميل الملفات مبكراً: يبدأ قبل العرض ليشمل حزم البداية. */
 watchResourceFailures()

@@ -7,7 +7,7 @@ import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
 } from './kit.js?v=6';
 import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=6';
-import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=6';
+import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=7';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -820,9 +820,9 @@ export const EXPERIENCES = [
     behind: { principle: 'المنظر المفكَّك وتقليل العبء المعرفي', body: 'رؤية الجهاز طبقةً طبقة، وكل طبقة مربوطة بوظيفتها، أسهل على الذاكرة العاملة من رؤية الكل مرة واحدة؛ فتفهم العلاقة بين الجزء والوظيفة.' },
   },
   {
-    id: 'bloom-pyramid', kind: 'page', door: 4, pack: 'door34', page: 'p573', pageNo: '٥٧٣', title: 'ركّب هرم بلوم', type: 'assemble', typeLabel: 'ركّب الهرم',
+    id: 'bloom-pyramid', kind: 'page', door: 4, pack: 'door34', page: 'p573', pageNo: '٥٧٣', title: 'هرم بلوم: ركّبه أو شاهده يرتفع', type: 'assemble', typeLabel: 'تركيب ومشهد ثلاثي الأبعاد',
     video: 'WTh25DM1ZCI', center: [0.33, 0.6], free: true, crop: [0.04, 0.08, 0.64, 0.68], build: buildBloom,
-    behind: { principle: 'التسلسل الهرمي للتعلّم (روبرت جانييه)', body: 'لم يُقبل منك مستوى قبل الذي تحته، كما ينصّ الكتاب: على المتعلّم أن يصل إلى أهداف المستوى الأدنى قبل أن يبني عليها المستوى الأعلى.' },
+    behind: { principle: 'التسلسل الهرمي للتعلّم', body: 'يرتفع المجسّم فوق الصفحة ليجعل المستويات الستة مرئية، ثم يمكنك تركيبها بيدك من القاعدة إلى القمة. تظهر أسماء المستويات وفق التصنيف المعروض في الكتاب، مع شرح منفصل لمراجعة أندرسون.' },
   },
   {
     id: 'digital-divide-balance', kind: 'page', door: 4, pack: 'door34', page: 'p587', pageNo: '٥٨٧', title: 'ميزان الفجوة الرقمية', type: 'balance', typeLabel: 'الميزان',

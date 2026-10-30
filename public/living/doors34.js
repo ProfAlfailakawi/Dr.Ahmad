@@ -209,8 +209,58 @@ const BLOOM = [
   { n: 'التقييم', d: 'أعلى المستويات: الحكم على قيمة المادة في ضوء معايير محددة.', c: 0xb5202f },
 ];
 
+// A second, cinematic reading of the same printed page. It shares the existing
+// image target and stamp with the hands-on pyramid, so no duplicate target is needed.
+function bloomCinematic(ctx) {
+  const group = new THREE.Group(); group.position.copy(P(0.33, 0.76)); group.visible = false; ctx.stage.add(group);
+  const gold = new THREE.MeshStandardMaterial({ color: 0xf3cb78, metalness: 0.75, roughness: 0.23, emissive: 0x76511a, emissiveIntensity: 0.16 });
+  const base = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.22, 0.012, 48), gold)); base.position.y = 0.008; group.add(base);
+  const rings = [], tiers = [], labels = [], stars = [];
+  BLOOM.forEach((b, i) => {
+    const radius = 0.18 - i * 0.019;
+    const material = new THREE.MeshPhysicalMaterial({ color: b.c, metalness: 0.32, roughness: 0.23, clearcoat: 1,
+      emissive: b.c, emissiveIntensity: 0.15, transparent: true, opacity: 0.96 });
+    const tier = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(radius - 0.017, radius, 0.052, 6), material));
+    tier.position.y = 0.043 + i * 0.054; tier.rotation.y = Math.PI / 6; group.add(tier); tiers.push(tier);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius - 0.012, 0.0025, 6, 6), gold);
+    ring.rotation.x = Math.PI / 2; ring.rotation.z = Math.PI / 6; ring.position.y = 0.069 + i * 0.054; group.add(ring); rings.push(ring);
+    const tag = sprite(b.n, 0.115, { size: 48, width: 340, weight: 800, bg: 'rgba(20,27,34,.9)', color: '#fff3d7', border: css(b.c) });
+    tag.position.set(-radius - 0.065, tier.position.y, 0.015); group.add(tag); labels.push(tag);
+    ctx.tap(tier, () => ctx.ui.card({ tag: `المستوى ${toAr(i + 1)} من ٦`, title: b.n, body: b.d, color: b.c }));
+    ctx.tap(tag, () => ctx.ui.card({ tag: `المستوى ${toAr(i + 1)} من ٦`, title: b.n, body: b.d, color: b.c }));
+  });
+  const crown = new THREE.Mesh(new THREE.OctahedronGeometry(0.037),
+    new THREE.MeshPhysicalMaterial({ color: 0xffe4a4, metalness: 0.4, roughness: 0.12, emissive: 0xffbd55, emissiveIntensity: 0.65 }));
+  crown.position.y = 0.4; group.add(crown);
+  for (let i = 0; i < 40; i++) {
+    const a = i * 2.399, r = 0.17 + (i % 6) * 0.012;
+    const star = new THREE.Mesh(new THREE.SphereGeometry(0.0018 + (i % 3) * 0.0008, 6, 6),
+      new THREE.MeshBasicMaterial({ color: i % 3 ? 0xffd991 : 0xffffff, transparent: true, opacity: 0.7 }));
+    star.position.set(Math.cos(a) * r, 0.025 + (i % 12) * 0.03, Math.sin(a) * r); group.add(star); stars.push(star);
+  }
+  const light = new THREE.PointLight(0xffd184, 1.8, 0.9); light.position.set(-0.1, 0.42, 0.16); group.add(light);
+  let began = 0, focus = 0;
+  return {
+    group,
+    start(t) { began = t; group.visible = true; ctx.ui.hud('هرم بلوم يرتفع من الصفحة — المس أي مستوى'); },
+    stop() { group.visible = false; },
+    next() { focus = (focus + 1) % BLOOM.length; const b = BLOOM[focus]; ctx.ui.card({ tag: `المستوى ${toAr(focus + 1)} من ٦`, title: b.n, body: b.d, color: b.c }); },
+    update(t, e) {
+      if (!group.visible) return;
+      tiers.forEach((tier, i) => {
+        const k = ease((t - began - i * 0.22) / 0.65) * e;
+        tier.scale.set(k, k, k); tier.material.emissiveIntensity = i === focus ? 0.42 : 0.13;
+        rings[i].scale.setScalar(k); setSprite(labels[i], 0.115, k);
+      });
+      const k = ease((t - began - 1.3) / 0.6) * e; crown.scale.setScalar(k); crown.rotation.y = t * 0.55;
+      stars.forEach((star, i) => { star.position.y = 0.025 + (i % 12) * 0.03 + Math.sin(t * 1.8 + i) * 0.005; star.material.opacity = (0.4 + 0.3 * Math.sin(t * 2 + i)) * e; });
+    },
+  };
+}
+
 export function buildBloom(ctx) {
   const g = new THREE.Group(); g.position.copy(P(0.33, 0.76)); ctx.stage.add(g);
+  const cinematic = bloomCinematic(ctx);
   const TH = 0.034;
   const tiers = BLOOM.map((b, k) => {
     const w = 0.3 - k * 0.042;
@@ -238,11 +288,20 @@ export function buildBloom(ctx) {
     if (next === 6) { finishedAt = now; ctx.fx.burst(new THREE.Vector3(0, TH * 6 + 0.04, 0).add(g.position), 0xffd27a, 46, 0.55, 0.04); ctx.ui.done(); }
   }
   ctx.ui.hud('ابنِ هرم بلوم: المس المستويات من الأدنى إلى الأعلى');
-  ctx.ui.choices([{ label: 'مراجعة أندرسون ٢٠٠١', onPick: () => ctx.ui.card({ tag: 'تطوير التصنيف', title: 'من الأسماء إلى الأفعال', body: 'عدّلت لورين أندرسون وزملاؤها التصنيف ليلائم طلبة القرن الحادي والعشرين: صارت المستويات أفعالاً، ووُضع الإبداع في القمة.', color: 0xb5202f }) }]);
+  const assemblyChoices = () => ctx.ui.choices([
+    { label: '✦ شاهد الهرم ينبض', primary: true, onPick: () => { g.visible = false; cinematic.start(now); ctx.ui.choices([
+      { label: 'المستوى التالي', onPick: cinematic.next },
+      { label: '↶ ركّب الهرم', primary: true, onPick: () => { cinematic.stop(); g.visible = true; ctx.ui.hud(next < 6 ? `بنيت ${toAr(next)} من ٦ — ما التالي؟` : 'اكتمل هرم بلوم!'); assemblyChoices(); } },
+    ]); } },
+    { label: 'مراجعة أندرسون ٢٠٠١', onPick: () => ctx.ui.card({ tag: 'تطوير التصنيف', title: 'من الأسماء إلى الأفعال', body: 'عدّلت لورين أندرسون وزملاؤها التصنيف ليلائم طلبة القرن الحادي والعشرين: صارت المستويات أفعالاً، ووُضع الإبداع في القمة.', color: 0xb5202f }) },
+  ]);
+  assemblyChoices();
 
   return {
     update(t, dt, e) {
       now = t;
+      cinematic.update(t, e);
+      if (!g.visible) return;
       tiers.forEach((tr) => {
         tr.block.userData.reveal(stag(t, 0.2 + tr.k * 0.12, 0.9, clamp01) * e);
         tr.shake = Math.max(0, tr.shake - dt * 2);

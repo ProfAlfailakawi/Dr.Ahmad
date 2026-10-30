@@ -1,5 +1,5 @@
 /*
- * منطق صفحة «نُحدّث الموقع» (public/updating.html).
+ * منطق صفحة «الموقع قيد التحديث» (public/updating.html).
  *
  * ملفٌّ خارجي لأن سياسة CSP في الموقع تمنع السكربت المضمّن. يُحمَّل في <head>
  * بلا defer: يضع سمة الليل قبل أول رسمٍ إن اختارها الزائر بنفسه (theme-choice،
@@ -46,20 +46,30 @@
     else location.reload();
   }
 
+  var HEADLINE = 'نُجدّد الموقع، ونعود بعد قليل';
   function describe() {
     if (navigator.onLine === false) {
-      title.textContent = 'لا اتصال بالإنترنت الآن';
-      lead.textContent = 'سنعود تلقائياً حين يعود الاتصال';
+      title.textContent = 'انقطع الاتصال بالإنترنت';
+      lead.textContent = 'ما كنت تقرؤه باقٍ في موضعه؛ ستعود الصفحة وحدها حين يعود الاتصال.';
       note.textContent = '';
     } else if (stuck()) {
-      title.textContent = 'نُحدّث الموقع الآن ✨';
-      lead.textContent = 'يستغرق ذلك وقتاً أطول من المعتاد';
-      note.textContent = 'سنحاول مرّةً كل نصف دقيقة، ويمكنك المحاولة الآن.';
+      title.textContent = HEADLINE;
+      lead.textContent = 'يطول التجديد هذه المرّة أكثر من عادته، وما كنت تقرؤه باقٍ في موضعه.';
+      note.textContent = 'سنعيد المحاولة كل نصف دقيقة، ولك أن تفتح الصفحة الآن.';
     } else {
-      title.textContent = 'نُحدّث الموقع الآن ✨';
-      lead.textContent = 'لحظاتٍ ونعود';
-      note.textContent = 'ستُفتح الصفحة التي طلبتها تلقائياً حين نعود.';
+      title.textContent = HEADLINE;
+      lead.textContent = 'يُجدَّد الموقع في هذه الدقائق؛ عُد بعد قليل تجد ما كنت تقرؤه في موضعه.';
+      note.textContent = 'ستعود هذه الصفحة وحدها حين يكتمل التجديد.';
     }
+  }
+
+  /* سطر العدد: تاريخ اليوم بتوقيت الكويت. */
+  function dateIssue() {
+    var slot = document.getElementById('issue-date');
+    if (!slot) return;
+    try {
+      slot.textContent = new Intl.DateTimeFormat('ar-KW-u-nu-latn', { dateStyle: 'long', timeZone: 'Asia/Kuwait' }).format(new Date());
+    } catch (error) { /* يبقى «اليوم» */ }
   }
 
   function wait() {
@@ -92,6 +102,7 @@
     lead = document.getElementById('lead');
     note = document.getElementById('note');
     if (!title || !lead || !note) return;
+    dateIssue();
     var retry = document.getElementById('retry');
     if (retry) retry.addEventListener('click', reopen);
     window.addEventListener('online', function () { describe(); ask(); });

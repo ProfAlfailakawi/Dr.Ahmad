@@ -95,7 +95,7 @@ const deploying = (status) => withPage(async () => {
 })
 const isUpdatingPage = async (response) =>
   Boolean(response) && response.status === 503 && response.headers.get('cache-control') === 'no-store'
-  && /text\/html/.test(response.headers.get('content-type') || '') && (await response.clone().text()).includes('نُحدّث الموقع الآن')
+  && /text\/html/.test(response.headers.get('content-type') || '') && (await response.clone().text()).includes('نُجدّد الموقع، ونعود بعد قليل')
 
 /* ══ U1 ══ */
 for (const status of [500, 502, 503, 504]) {
@@ -189,11 +189,12 @@ for (const status of [500, 502, 503, 504]) {
   ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(PAGE) && PAGE.includes('<script src="/updating.js"></script>'), 'U4 بلا سكربتٍ مضمّن (CSP): منطقُها في /updating.js')
   ok(!/https?:\/\//.test(PAGE.replace(/<!--[\s\S]*?-->/g, '')) && !/https?:\/\//.test(SCRIPT), 'U4 بلا أيّ طلبٍ خارجي')
   ok(!/prefers-color-scheme/.test(PAGE) && /html\.dark\{/.test(PAGE) && SCRIPT.includes("localStorage.getItem('theme-choice') === 'dark'"), 'U4 النهار أصلٌ والليل باختيار الزائر وحده')
-  ok(PAGE.includes('نُحدّث الموقع الآن ✨') && PAGE.includes('لحظاتٍ ونعود') && PAGE.includes('أعد المحاولة الآن') && !/البرنامج/.test(PAGE + SCRIPT), 'U4 النصّ بلفظ «الموقع» قصيراً')
-  ok(SCRIPT.includes("'لا اتصال بالإنترنت الآن'"), 'U4 ودون اتصالٍ تقول ذلك')
-  ok(/<title>نُحدّث الموقع · د\. أحمد الفيلكاوي<\/title>/.test(PAGE), 'U4 العنوان باسم الموقع')
+  ok(PAGE.includes('نُجدّد الموقع، ونعود بعد قليل') && PAGE.includes('تجد ما كنت تقرؤه في موضعه') && PAGE.includes('ستعود هذه الصفحة وحدها') && PAGE.includes('افتح الصفحة الآن') && !/البرنامج|✨/.test(PAGE + SCRIPT), 'U4 النصّ بلفظ «الموقع» قصيراً: يُجدَّد، ويعود وحده، ويُفتح الآن')
+  ok(SCRIPT.includes("'انقطع الاتصال بالإنترنت'") && SCRIPT.includes('سنعيد المحاولة كل نصف دقيقة'), 'U4 ودون اتصالٍ تقول ذلك، وإن طال التجديد قالت ذلك')
+  ok(/<title>الموقع قيد التحديث · د\. أحمد الفيلكاوي<\/title>/.test(PAGE), 'U4 العنوان باسم الموقع')
   ok(PAGE.includes('viewBox="0 0 25 15"') && PAGE.includes('<rect x="0" y="0" width="25" height="1"/>'), 'U4 العلامة الكوفية من logo.svg نفسه')
   ok(/prefers-reduced-motion:reduce/.test(PAGE), 'U4 وتسكن الحركة لمن طلب ذلك')
+  ok(/id="note" role="status" aria-live="polite"/.test(PAGE) && PAGE.includes('id="retry"') && PAGE.includes('id="issue-date"'), 'U4 السطر المتغيّر معلَنٌ لقارئ الشاشة، وزرّ المحاولة وسطر العدد قائمان')
   ok(SCRIPT.includes("HEALTH = '/api/version'") && /FIRST = 3000, CEILING = 15000, PATIENT = 30000/.test(SCRIPT) && /recent\(\)\.length >= 3/.test(SCRIPT), 'U4 تسأل /api/version كل ٣ ثوانٍ وتتباطأ، ولا تدور في حلقة')
   ok(/location\.replace\('\/'\)/.test(SCRIPT) && /location\.reload\(\)/.test(SCRIPT), 'U4 تعيد فتح الرابط نفسه، وباسمها المباشر تعود إلى الرئيسية')
 }
@@ -203,7 +204,7 @@ for (const status of [500, 502, 503, 504]) {
   const source = read('src/lib/updating-notice.ts')
   const main = read('src/main.tsx')
   ok(main.includes('installUpdatingNotice()'), 'U5 الشريط مركَّب عند الإقلاع')
-  ok(source.includes("'نُحدّث الموقع الآن ✨ لحظاتٍ ونعود.'") && source.includes("HEALTH_URL = '/api/version'"), 'U5 الشريط بلفظ الموقع ويسأل /api/version')
+  ok(source.includes("'يُجدَّد الموقع الآن؛ تعود الصفحة وحدها بعد قليل.'") && source.includes("HEALTH_URL = '/api/version'"), 'U5 الشريط بلفظ الموقع ويسأل /api/version')
   ok(/UPDATING_STATUSES\.has\(status\) && !String\(contentType \|\| ''\)\.includes\('application\/json'\)/.test(source), 'U5 يُعرف جوابُ المنصّة: 5xx بغير JSON')
   ok(/url\.origin === window\.location\.origin && url\.pathname\.startsWith\('\/api\/'\)/.test(source) && /return response\n/.test(source), 'U5 يراقب /api على الأصل نفسه فقط ولا يبدّل الجواب')
 }

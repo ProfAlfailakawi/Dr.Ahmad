@@ -1,9 +1,10 @@
 /*
- * «نُحدّث الموقع» داخل الصفحة.
+ * «الموقع قيد التحديث» داخل الصفحة.
  *
  * أثناء نشر خادم dr-api على Cloud Run تجيب واجهةُ Google الأمامية طلباتِ /api
  * بصفحة HTML إنجليزية (500/502/503/504) لم يكتبها الخادم — هو يجيب /api بـJSON.
- * هنا يُعرف ذلك الجواب فيظهر شريطٌ هادئ واحد أسفل الصفحة، ويسأل /api/version
+ * هنا يُعرف ذلك الجواب فيظهر أسفل الصفحة سطرٌ واحد كقصاصة تصحيح: حوافّ
+ * مطبعيّة حادّة وشعرةُ حبرٍ في أعلاه، لا كبسولةٌ عائمة، ويسأل /api/version
  * كل ثلاث ثوانٍ (ويتباطأ إلى خمس عشرة) حتى يعود الخادم فيختفي ويُطلق
  * SERVER_BACK_EVENT على window.
  *
@@ -12,7 +13,7 @@
 
 const UPDATING_STATUSES = new Set([500, 502, 503, 504])
 
-export const UPDATING_MESSAGE = 'نُحدّث الموقع الآن ✨ لحظاتٍ ونعود.'
+export const UPDATING_MESSAGE = 'يُجدَّد الموقع الآن؛ تعود الصفحة وحدها بعد قليل.'
 /** يُطلق على window حين يعود الخادم. */
 export const SERVER_BACK_EVENT = 'alfailakawi:server-back'
 const HEALTH_URL = '/api/version'
@@ -34,10 +35,11 @@ export function showUpdatingNotice(probe: () => Promise<boolean>): void {
   bar.dir = 'rtl'
   bar.textContent = UPDATING_MESSAGE
   bar.style.cssText = [
-    'position:fixed', 'inset-inline:0', 'bottom:max(18px,env(safe-area-inset-bottom))', 'margin:0 auto', 'width:max-content', 'max-width:calc(100vw - 32px)',
-    'z-index:2147483000', 'padding:11px 18px', 'border-radius:12px', 'font-family:inherit', 'font-size:14px', 'font-weight:500', 'line-height:1.6',
-    'background:rgb(var(--c-wash,244 245 243))', 'color:rgb(var(--c-ink,21 22 26))', 'border:1px solid var(--c-hair,rgba(21,22,26,.09))',
-    'box-shadow:0 12px 28px -18px rgba(21,22,26,.35)', 'text-align:center', 'pointer-events:none',
+    'position:fixed', 'inset-inline:16px', 'bottom:max(16px,env(safe-area-inset-bottom))', 'margin:0 auto', 'width:auto', 'max-width:560px',
+    'z-index:2147483000', 'padding:10px 16px 11px', 'border-radius:2px', 'font-family:inherit', 'font-size:14px', 'font-weight:500', 'line-height:1.6',
+    'background:rgb(var(--c-canvas,252 252 250))', 'color:rgb(var(--c-ink,21 22 26))',
+    'border:1px solid var(--c-hair,rgba(21,22,26,.09))', 'border-top:2px solid rgb(var(--c-ink,21 22 26))',
+    'box-shadow:0 10px 24px -20px rgba(21,22,26,.45)', 'text-align:start', 'pointer-events:none',
   ].join(';')
   document.body.appendChild(bar)
   notice = bar

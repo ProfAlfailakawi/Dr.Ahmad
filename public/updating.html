@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  صفحة «نُحدّث الموقع».
+  صفحة «الموقع قيد التحديث» — صفحةٌ من عددٍ يُنضَّد.
 
   أثناء النشر قد تجيب واجهةُ Google الأمامية عن فتح صفحةٍ بصفحة خطأٍ إنجليزية
   (500/502/503/504) لم يكتبها الموقع. عاملُ الخدمة (public/sw.js) يحفظ هذه الصفحة
@@ -17,81 +17,97 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#FCFCFA">
-<title>نُحدّث الموقع · د. أحمد الفيلكاوي</title>
+<title>الموقع قيد التحديث · د. أحمد الفيلكاوي</title>
 <script src="/updating.js"></script>
 <style>
 @font-face{font-family:"El Messiri";font-weight:400 700;font-display:swap;src:url("/fonts/elmessiri-K2F0fZBRmr9vQ1pHEey6MoiAAgDwbWu1jw.woff2") format("woff2")}
 @font-face{font-family:"Tajawal";font-weight:400;font-display:swap;src:url("/fonts/tajawal-Iura6YBj_oCad4k1nzSBC5xLhLFw4Q.woff2") format("woff2")}
 @font-face{font-family:"Tajawal";font-weight:500;font-display:swap;src:url("/fonts/tajawal-Iurf6YBj_oCad4k1l8KiHrRpiZtK6GwN9w.woff2") format("woff2")}
 :root{
-  --bg:#FCFCFA;--ink:#15161A;--muted:#5E6570;--line:rgba(21,22,26,.09);
-  --accent:#3E5C78;--glow:rgba(62,92,120,.10);--ember:#8F5A28;
-  --button:#F4F5F3;--shadow:rgba(21,22,26,.18);
+  --paper:#FCFCFA;--ink:#15161A;--muted:#5E6570;--rule:#15161A;--hair:rgba(21,22,26,.12);
+  --slug:rgba(21,22,26,.075);--accent:#3E5C78;--ember:#8F5A28;--wash:#F4F5F3;
+  --serif:"Noto Naskh Arabic","Amiri","Geeza Pro","Traditional Arabic","Times New Roman",serif;
   color-scheme:light;
 }
 html.dark{
-  --bg:#111215;--ink:#ECEAE4;--muted:#B5B8BE;--line:rgba(234,234,231,.11);
-  --accent:#84A9CA;--glow:rgba(132,169,202,.14);--ember:#D6B78F;
-  --button:#171A1F;--shadow:rgba(0,0,0,.55);
+  --paper:#0F1115;--ink:#ECEAE4;--muted:#B5B8BE;--rule:#ECEAE4;--hair:rgba(234,234,231,.14);
+  --slug:rgba(234,234,231,.07);--accent:#84A9CA;--ember:#D6B78F;--wash:#171A1F;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{min-height:100%}
 body{
-  margin:0;min-height:100%;display:grid;place-items:center;
-  padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
-  background:radial-gradient(circle at 50% 40%,var(--glow),transparent 46%),var(--bg);
-  color:var(--ink);
+  margin:0;background:var(--paper);color:var(--ink);
   font-family:"Tajawal",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Arabic",Tahoma,sans-serif;
-  font-synthesis:none;-webkit-font-smoothing:antialiased;text-align:center;
+  font-synthesis:none;-webkit-font-smoothing:antialiased;
+  padding:max(28px,env(safe-area-inset-top)) 20px max(28px,env(safe-area-inset-bottom));
 }
-main{display:grid;justify-items:center;gap:0;max-width:420px;width:100%}
-.stage{position:relative;width:132px;height:132px;display:grid;place-items:center;margin-bottom:30px}
-.halo{position:absolute;inset:0;width:100%;height:100%;animation:turn 3.6s linear infinite}
-.halo circle{fill:none;stroke-width:2;stroke-linecap:round}
-.halo .track{stroke:var(--line)}
-.halo .arc{stroke:var(--accent);stroke-dasharray:96 400;opacity:.85}
-.mark{width:80px;height:48px;display:block;color:var(--ink);filter:drop-shadow(0 14px 24px var(--shadow));animation:breathe 2.4s cubic-bezier(.45,0,.25,1) infinite}
-.spark{position:absolute;fill:var(--ember);animation:twinkle 2.4s ease-in-out infinite}
-.spark.one{width:20px;height:20px;top:6px;inset-inline-start:8px}
-.spark.two{width:12px;height:12px;bottom:14px;inset-inline-end:6px;fill:var(--accent);animation-delay:1.2s}
-h1{margin:0;font-family:"El Messiri",serif;font-size:clamp(22px,5.6vw,27px);font-weight:600;line-height:1.5}
-.lead{margin:6px 0 0;font-size:16px;line-height:1.7;color:var(--muted)}
-.pulse{width:132px;height:2px;margin:26px 0 28px;border-radius:99px;background:var(--line);overflow:hidden}
-.pulse i{display:block;width:36%;height:100%;border-radius:inherit;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 1.5s ease-in-out infinite}
+.sheet{max-width:600px;margin:0 auto;padding-top:clamp(0px,6vh,56px)}
+
+/* الترويسة: العلامة واسم الموقع، ثم سطران مطبعيّان وسطر العدد */
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding-bottom:12px}
+.mark{width:58px;height:35px;display:block;color:var(--ink)}
+.name{font-family:"El Messiri",serif;font-size:15px;font-weight:600;letter-spacing:.01em;line-height:1.3;text-align:end}
+.name small{display:block;font-family:"Tajawal",sans-serif;font-size:11.5px;font-weight:400;color:var(--muted);letter-spacing:0}
+.rules{border-top:3px solid var(--rule);height:7px;border-bottom:1px solid var(--rule)}
+.issue{display:flex;justify-content:space-between;gap:12px;padding:8px 0 9px;border-bottom:1px solid var(--hair);font-size:12px;color:var(--muted);line-height:1.5}
+.issue b{font-weight:500;color:var(--ink)}
+
+/* المادّة */
+.kicker{margin:38px 0 0;font-size:12.5px;font-weight:500;color:var(--ember);display:flex;align-items:center;gap:10px}
+.kicker::after{content:"";flex:0 0 36px;height:1px;background:currentColor;opacity:.6}
+h1{margin:10px 0 0;font-family:"El Messiri",serif;font-weight:700;font-size:clamp(34px,9.4vw,52px);line-height:1.22;letter-spacing:-.005em}
+.lead{margin:18px 0 0;max-width:30em;font-family:var(--serif);font-size:18px;line-height:1.85;color:var(--ink)}
+
+/* خطّ المطبعة: شعرةٌ يمرّ عليها الحبر ببطء */
+.press{position:relative;height:1px;margin:30px 0 0;background:var(--hair);overflow:hidden}
+.press i{position:absolute;inset-block:0;inset-inline-start:0;width:28%;background:var(--ink);opacity:.7;animation:press 7s cubic-bezier(.45,0,.3,1) infinite alternate}
+
+/* الأعمدة قيد التنضيد: سطورٌ رماديّة لم يُصبّ فيها الحرف بعد */
+.galley{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+.galley span{display:block;height:7px;margin-bottom:11px;background:var(--slug);border-radius:1px}
+.galley span:nth-child(3n){width:86%}
+.galley span:nth-child(5n){width:62%}
+.galley .col+.col{border-inline-start:1px solid var(--hair);padding-inline-start:22px}
+
+.foot{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:18px;padding-top:16px;border-top:1px solid var(--hair)}
 button{
-  min-height:44px;padding:0 22px;border-radius:12px;cursor:pointer;
-  border:1px solid var(--line);background:var(--button);color:var(--ink);
+  min-height:44px;padding:0 20px;border-radius:2px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--paper);color:var(--ink);
   font:inherit;font-size:14px;font-weight:500;
-  transition:border-color .2s ease,transform .2s ease;
+  transition:background-color .2s ease,color .2s ease;
 }
-button:hover{border-color:var(--accent)}
-button:active{transform:scale(.98)}
+button:hover{background:var(--ink);color:var(--paper)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.note{min-height:20px;margin:14px 0 0;font-size:12.5px;line-height:1.6;color:var(--muted)}
-@keyframes turn{to{transform:rotate(360deg)}}
-@keyframes breathe{0%,100%{opacity:1;transform:none}50%{opacity:.72;transform:scale(.97)}}
-@keyframes twinkle{0%,100%{opacity:.25;transform:scale(.7) rotate(0)}50%{opacity:1;transform:scale(1) rotate(20deg)}}
-@keyframes scan{0%{transform:translateX(130%)}100%{transform:translateX(-360%)}}
-@media (prefers-reduced-motion:reduce){
-  .halo,.mark,.spark,.pulse i{animation:none}
-  .spark{opacity:.8}
-}
+.note{flex:1 1 200px;margin:0;min-height:20px;font-size:13px;line-height:1.7;color:var(--muted)}
+@keyframes press{from{transform:translateX(0)}to{transform:translateX(-257%)}}
+@media (max-width:420px){.galley{gap:16px}.galley .col+.col{padding-inline-start:16px}}
+@media (prefers-reduced-motion:reduce){.press i{animation:none;opacity:.35}}
 </style>
 </head>
 <body>
-<main>
-  <div class="stage" aria-hidden="true">
-    <svg class="halo" viewBox="0 0 132 132" focusable="false"><circle class="track" cx="66" cy="66" r="63"/><circle class="arc" cx="66" cy="66" r="63"/></svg>
-    <svg class="mark" viewBox="0 0 25 15" focusable="false" shape-rendering="crispEdges"><g fill="currentColor"><rect x="0" y="0" width="25" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="3" height="1"/><rect x="6" y="2" width="13" height="1"/><rect x="20" y="2" width="1" height="1"/><rect x="22" y="2" width="1" height="1"/><rect x="24" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="20" y="3" width="1" height="1"/><rect x="22" y="3" width="1" height="1"/><rect x="24" y="3" width="1" height="1"/><rect x="0" y="4" width="3" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="4" height="1"/><rect x="11" y="4" width="3" height="1"/><rect x="15" y="4" width="4" height="1"/><rect x="20" y="4" width="1" height="1"/><rect x="22" y="4" width="1" height="1"/><rect x="24" y="4" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="13" y="5" width="1" height="1"/><rect x="18" y="5" width="1" height="1"/><rect x="20" y="5" width="1" height="1"/><rect x="22" y="5" width="1" height="1"/><rect x="24" y="5" width="1" height="1"/><rect x="0" y="6" width="3" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="6" y="6" width="13" height="1"/><rect x="20" y="6" width="1" height="1"/><rect x="22" y="6" width="1" height="1"/><rect x="24" y="6" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="22" y="7" width="1" height="1"/><rect x="24" y="7" width="1" height="1"/><rect x="0" y="8" width="3" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="6" y="8" width="7" height="1"/><rect x="14" y="8" width="1" height="1"/><rect x="16" y="8" width="3" height="1"/><rect x="20" y="8" width="1" height="1"/><rect x="22" y="8" width="1" height="1"/><rect x="24" y="8" width="1" height="1"/><rect x="0" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="14" y="9" width="1" height="1"/><rect x="16" y="9" width="1" height="1"/><rect x="22" y="9" width="1" height="1"/><rect x="24" y="9" width="1" height="1"/><rect x="0" y="10" width="3" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="6" y="10" width="7" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="10" width="3" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="10" width="1" height="1"/><rect x="2" y="11" width="1" height="1"/><rect x="4" y="11" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="11" width="1" height="1"/><rect x="16" y="11" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="20" y="11" width="1" height="1"/><rect x="22" y="11" width="1" height="1"/><rect x="24" y="11" width="1" height="1"/><rect x="0" y="12" width="3" height="1"/><rect x="4" y="12" width="19" height="1"/><rect x="24" y="12" width="1" height="1"/><rect x="24" y="13" width="1" height="1"/><rect x="0" y="14" width="14" height="1"/><rect x="15" y="14" width="1" height="1"/><rect x="17" y="14" width="1" height="1"/><rect x="19" y="14" width="6" height="1"/></g></svg>
-    <svg class="spark one" viewBox="0 0 24 24" focusable="false"><path d="M12 0c.7 6.4 5.6 11.3 12 12-6.4.7-11.3 5.6-12 12-.7-6.4-5.6-11.3-12-12C6.4 11.3 11.3 6.4 12 0z"/></svg>
-    <svg class="spark two" viewBox="0 0 24 24" focusable="false"><path d="M12 0c.7 6.4 5.6 11.3 12 12-6.4.7-11.3 5.6-12 12-.7-6.4-5.6-11.3-12-12C6.4 11.3 11.3 6.4 12 0z"/></svg>
+<main class="sheet">
+  <header class="masthead">
+    <svg class="mark" viewBox="0 0 25 15" focusable="false" aria-hidden="true" shape-rendering="crispEdges"><g fill="currentColor"><rect x="0" y="0" width="25" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="3" height="1"/><rect x="6" y="2" width="13" height="1"/><rect x="20" y="2" width="1" height="1"/><rect x="22" y="2" width="1" height="1"/><rect x="24" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="20" y="3" width="1" height="1"/><rect x="22" y="3" width="1" height="1"/><rect x="24" y="3" width="1" height="1"/><rect x="0" y="4" width="3" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="4" height="1"/><rect x="11" y="4" width="3" height="1"/><rect x="15" y="4" width="4" height="1"/><rect x="20" y="4" width="1" height="1"/><rect x="22" y="4" width="1" height="1"/><rect x="24" y="4" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="13" y="5" width="1" height="1"/><rect x="18" y="5" width="1" height="1"/><rect x="20" y="5" width="1" height="1"/><rect x="22" y="5" width="1" height="1"/><rect x="24" y="5" width="1" height="1"/><rect x="0" y="6" width="3" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="6" y="6" width="13" height="1"/><rect x="20" y="6" width="1" height="1"/><rect x="22" y="6" width="1" height="1"/><rect x="24" y="6" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="22" y="7" width="1" height="1"/><rect x="24" y="7" width="1" height="1"/><rect x="0" y="8" width="3" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="6" y="8" width="7" height="1"/><rect x="14" y="8" width="1" height="1"/><rect x="16" y="8" width="3" height="1"/><rect x="20" y="8" width="1" height="1"/><rect x="22" y="8" width="1" height="1"/><rect x="24" y="8" width="1" height="1"/><rect x="0" y="9" width="1" height="1"/><rect x="2" y="9" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="14" y="9" width="1" height="1"/><rect x="16" y="9" width="1" height="1"/><rect x="22" y="9" width="1" height="1"/><rect x="24" y="9" width="1" height="1"/><rect x="0" y="10" width="3" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="6" y="10" width="7" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="10" width="3" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="10" width="1" height="1"/><rect x="2" y="11" width="1" height="1"/><rect x="4" y="11" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="11" width="1" height="1"/><rect x="16" y="11" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="20" y="11" width="1" height="1"/><rect x="22" y="11" width="1" height="1"/><rect x="24" y="11" width="1" height="1"/><rect x="0" y="12" width="3" height="1"/><rect x="4" y="12" width="19" height="1"/><rect x="24" y="12" width="1" height="1"/><rect x="24" y="13" width="1" height="1"/><rect x="0" y="14" width="14" height="1"/><rect x="15" y="14" width="1" height="1"/><rect x="17" y="14" width="1" height="1"/><rect x="19" y="14" width="6" height="1"/></g></svg>
+    <p class="name">د. أحمد الفيلكاوي<small>مقالات · كتب · حلقات</small></p>
+  </header>
+  <div class="rules" aria-hidden="true"></div>
+  <p class="issue"><span><b>العدد قيد التنضيد</b></span><span id="issue-date">اليوم</span></p>
+
+  <p class="kicker">تحت الطبع</p>
+  <h1 id="title">نُجدّد الموقع، ونعود بعد قليل</h1>
+  <p class="lead" id="lead">يُجدَّد الموقع في هذه الدقائق؛ عُد بعد قليل تجد ما كنت تقرؤه في موضعه.</p>
+
+  <div class="press" aria-hidden="true"><i></i></div>
+  <div class="galley" aria-hidden="true">
+    <div class="col"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="col"><span></span><span></span><span></span><span></span><span></span></div>
   </div>
-  <h1 id="title">نُحدّث الموقع الآن ✨</h1>
-  <p class="lead" id="lead">لحظاتٍ ونعود</p>
-  <div class="pulse" aria-hidden="true"><i></i></div>
-  <button type="button" id="retry">أعد المحاولة الآن</button>
-  <p class="note" id="note" role="status" aria-live="polite">ستُفتح الصفحة التي طلبتها تلقائياً حين نعود.</p>
+
+  <div class="foot">
+    <button type="button" id="retry">افتح الصفحة الآن</button>
+    <p class="note" id="note" role="status" aria-live="polite">ستعود هذه الصفحة وحدها حين يكتمل التجديد.</p>
+  </div>
 </main>
 </body>
 </html>

@@ -10,32 +10,31 @@ const orb=(r,m)=>new THREE.Mesh(new THREE.SphereGeometry(r,16,12),m);
 function scene(ctx,title,color,makeProps){
  const g=new THREE.Group();g.position.copy(P(.5,.52));ctx.stage.add(g);
  const base=box(.65,.018,.36,material(0x243449));base.position.y=.02;g.add(base);
- const heading=label(title,.34);heading.position.set(0,.42,-.12);g.add(heading);
- const nodes=[-.2,0,.2].map((x,i)=>{const m=material(color,.12);const n=orb(.026,m);n.position.set(x,.29,.13);g.add(n);return n;});
- const visual=makeProps(g,color);return {g,heading,nodes,visual};
+ const heading=label(title,.34);heading.position.set(0,.5,-.12);g.add(heading);
+ const visual=makeProps(g,color);return {g,heading,visual};
 }
 function decisionGame(ctx,config){
- const {g,heading,nodes,visual}=scene(ctx,config.title,config.color,config.props);
- let round=-1,score=0,chosen=false,now=0;
- const scoreText=()=>`${score} من ${config.rounds.length}`;
- function show(i){round=i;chosen=false;const r=config.rounds[i];ctx.ui.hud(`${config.role} · المهمة ${i+1} من ${config.rounds.length} · النقاط ${scoreText()}`);
-  ctx.ui.card({tag:`${config.role} · المهمة ${i+1}`,title:r.question,body:r.situation,color:config.color});
-  const options=Math.random()<.5?r.options:[...r.options].reverse();
-  ctx.ui.choices(options.map((o)=>({label:o.label,onPick:()=>pick(o)})));
- }
- function pick(o){if(chosen)return;chosen=true;score+=o.points;ctx.sfx[o.points?'good':'bad']();
-  if(visual.choose)visual.choose(round,o.points,score);
-  ctx.ui.hud(`${o.points?'قرار مدروس':'نتيجة تحتاج مراجعة'} · النقاط ${scoreText()}`);
-  ctx.ui.card({tag:o.points?'أثر القرار':'راجع الأثر',title:o.result,body:o.impact,color:o.points?0x77cba5:0xe18a85});
-  ctx.ui.choices([{label:round===config.rounds.length-1?'اعرض تقييمك':'انتقل للمهمة التالية',primary:true,onPick:()=>round===config.rounds.length-1?finish():show(round+1)}]);
- }
- function finish(){const passed=score>=config.pass;ctx.ui.hud(`${config.role} · النتيجة ${scoreText()}`);
-  ctx.ui.card({tag:'تقرير الأداء',title:passed?config.successTitle:'أعد اختبار قراراتك',body:passed?config.success:`حصلت على ${scoreText()}. راجع أثر كل قرار، ثم أعد المهمة لتصل إلى ${config.pass} نقاط على الأقل.`,color:passed?0x77cba5:0xe18a85});
-  if(passed)ctx.ui.done();ctx.ui.choices([{label:'↻ أعد اللعب',primary:true,onPick:reset}]);
- }
- function reset(){round=-1;score=0;chosen=false;if(visual.reset)visual.reset();ctx.ui.hideCard();ctx.ui.hud(config.intro);ctx.ui.choices([{label:config.start,primary:true,onPick:()=>show(0)}]);}
- reset();nodes.forEach((n,i)=>ctx.tap(n,()=>{if(round>=0&&!chosen){const r=config.rounds[round];ctx.ui.card({tag:`${config.role} · المهمة ${round+1}`,title:r.question,body:r.situation,color:config.color});}}));
- return {update(t,dt,e){now=t;const k=ease((t-.1)/1.05)*e;g.scale.setScalar(Math.max(.001,k));nodes.forEach((n,i)=>{n.material.emissiveIntensity=i<round?.48:i===round?.32:.1;n.position.y=.29+Math.sin(t*2+i)*.009;});if(visual.update)visual.update(t,dt,e,round,score);tagScale(heading,.34,k);}};
+ const {g,heading,visual}=scene(ctx,config.title,config.color,config.props);
+ const targets=[-1,1].map((side,i)=>{
+  const group=new THREE.Group();group.position.set(side*.19,.315,.21);g.add(group);
+  const disc=new THREE.Mesh(new THREE.SphereGeometry(.065,24,16),material(i?0x78cbd6:0xe8bd6d,.35));group.add(disc);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.077,.007,8,36),material(0xffe2a0,.3));rim.position.z=.005;group.add(rim);
+  const text=label('',.28);text.position.set(0,.11,.035);group.add(text);
+  const hit=new THREE.Mesh(new THREE.PlaneGeometry(.3,.23),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));hit.position.set(0,.075,.055);group.add(hit);
+  ctx.tap(hit,()=>fire(i));ctx.tap(disc,()=>fire(i));ctx.tap(text,()=>fire(i));
+  return {group,disc,text,hit,side};
+ });
+ const shots=[];let state='idle',round=-1,score=0,hits=0,timeLeft=60,lastSecond=60,now=0,feedbackUntil=0,activeOptions=[];
+ const points=()=>`${score} نقطة · ${hits}/${config.rounds.length}`;
+ function hud(){ctx.ui.hud(`⏱ ${Math.ceil(timeLeft)} · ★ ${points()}`);}
+ function setTarget(target,option){target.group.remove(target.text);target.text=label(option.label,.28);target.text.position.set(0,.11,.035);target.group.add(target.text);ctx.tap(target.text,()=>fire(targets.indexOf(target)));target.group.visible=true;target.disc.scale.setScalar(1);target.disc.material.emissiveIntensity=.35;}
+ function show(i){round=i;state='play';heading.visible=false;const r=config.rounds[i];activeOptions=Math.random()<.5?r.options:[...r.options].reverse();targets.forEach((target,n)=>setTarget(target,activeOptions[n]));ctx.ui.hideCard();ctx.ui.choices([]);ctx.ui.caption(`${r.question} — ${r.situation}`);hud();}
+ function fire(i){if(state!=='play')return;state='flight';const target=targets[i];const projectile=orb(.026,material(config.color,.75));projectile.position.set(0,.08,.42);g.add(projectile);shots.push({mesh:projectile,from:projectile.position.clone(),to:target.group.position.clone().add(new THREE.Vector3(0,0,.05)),start:now,target,option:activeOptions[i]});ctx.sfx.tap();}
+ function land(shot){const {target,option}=shot;score=Math.max(0,score+(option.points?10:-5));if(option.points)hits++;ctx.sfx[option.points?'good':'bad']();const impact=ctx.stage.worldToLocal(target.group.getWorldPosition(new THREE.Vector3()));ctx.fx.burst(impact,option.points?0x77cba5:0xe18a85,option.points?32:18,.34,.024);target.disc.material.emissiveIntensity=option.points?.95:.04;target.disc.scale.setScalar(option.points?1.45:.65);if(visual.choose)visual.choose(round,option.points,score);targets[1-targets.indexOf(target)].group.visible=false;ctx.ui.card({tag:option.points?'✓ أصبت القرار':'✗ راجع القرار',title:option.result,body:option.impact,color:option.points?0x77cba5:0xe18a85});hud();state='feedback';feedbackUntil=now+5;}
+ function finish(timedOut=false){state='over';targets.forEach(x=>x.group.visible=false);const passed=hits===config.rounds.length&&!timedOut;ctx.ui.hud(`★ ${points()} · انتهت الجولة`);ctx.ui.card({tag:'نتيجة الجولة',title:passed?config.successTitle:timedOut?'انتهى الوقت':'أعد المحاولة لتحسّن نتيجتك',body:passed?config.success:`أصبت ${hits} من ${config.rounds.length}. المس الأهداف داخل المشهد وجرب قرارات أخرى.`,color:passed?0x77cba5:0xe18a85});if(passed)ctx.ui.done();ctx.ui.choices([{label:'↻ العب مرة ثانية',primary:true,onPick:reset}]);}
+ function reset(){state='idle';round=-1;score=0;hits=0;timeLeft=60;lastSecond=60;heading.visible=true;shots.forEach(x=>g.remove(x.mesh));shots.length=0;targets.forEach(x=>x.group.visible=false);if(visual.reset)visual.reset();ctx.ui.hideCard();ctx.ui.hud(config.intro);ctx.ui.caption('المس الهدف داخل المجسم · لديك ٦٠ ثانية');ctx.ui.choices([{label:'🎯 ابدأ اللعب',primary:true,onPick:()=>show(0)}]);}
+ reset();
+ return {update(t,dt,e){now=t;const k=ease((t-.1)/1.05)*e;g.scale.setScalar(Math.max(.001,k));if(state==='play'){timeLeft=Math.max(0,timeLeft-dt);if(Math.ceil(timeLeft)!==lastSecond){lastSecond=Math.ceil(timeLeft);hud();}}if(state==='play'&&timeLeft===0)finish(true);for(let i=shots.length-1;i>=0;i--){const s=shots[i],p=Math.min(1,(now-s.start)/.42);s.mesh.position.copy(s.from).lerp(s.to,ease(p));s.mesh.position.y+=Math.sin(Math.PI*p)*.11;s.mesh.scale.setScalar(1+p*.5);if(p>=1){g.remove(s.mesh);shots.splice(i,1);land(s);}}if(state==='feedback'&&now>=feedbackUntil){if(round===config.rounds.length-1)finish();else show(round+1);}targets.forEach((x,i)=>{if(state==='play'){x.group.position.y=.315+Math.sin(t*3+i*2)*.016;x.group.rotation.z=Math.sin(t*2+i*2)*.06;}});if(visual.update)visual.update(t,dt,e,round,score);tagScale(heading,.34,k);}};
 }
 
 export function buildSmartGoalGame(ctx){

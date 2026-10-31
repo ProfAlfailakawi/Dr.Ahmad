@@ -9,7 +9,7 @@ import {
 import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=6';
 import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=7';
 import { buildSynchronous } from './doors2.js?v=8';
-import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-next.js?v=10';
+import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-next.js?v=11';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;

@@ -34,7 +34,8 @@ export function buildSafeSimulation(ctx) {
   }
   const title = tag('مختبر الخطأ الآمن', 0.36); title.position.set(0, 0.38, -0.1); world.add(title);
   const indicator = tag('المحاكاة: تعلّم بلا مخاطرة', 0.32, '#9feaff'); indicator.position.set(0, 0.305, 0.1); world.add(indicator);
-  let mode = 'idle', start = 0, now = 0, crosswind = false, corrected = false;
+  let mode = 'idle', start = 0, now = 0, crosswind = false, corrected = false, safeLanding = false;
+  const from = new THREE.Vector3();
   function chooseWeather(value) {
     crosswind = value; mode = 'flight'; start = now; ctx.sfx.good();
     ctx.ui.hud(value ? 'رياح جانبية تدفع الطائرة عن المسار' : 'الجو هادئ والمدرج أمامك');
@@ -42,8 +43,8 @@ export function buildSafeSimulation(ctx) {
     ctx.ui.choices([{ label: 'صحّح المسار', primary: true, onPick: () => finish(true) }, { label: 'استمر كما أنت', onPick: () => finish(false) }]);
   }
   function finish(choice) {
-    corrected = choice; mode = 'result'; start = now;
-    const safe = !crosswind || choice;
+    corrected = choice; from.copy(plane.position); mode = 'result'; start = now;
+    const safe = !crosswind || choice; safeLanding = safe;
     ctx.sfx.good();
     ctx.ui.hud(safe ? 'هبوط آمن — تعلّمت من التجربة' : 'ابتعدت عن المدرج — جرّب قراراً آخر');
     ctx.ui.card({ tag: 'نتيجة المحاكاة', title: safe ? 'هبوط آمن' : 'خطأ آمن يكشف السبب', body: safe ? 'غيّرت قرارك وفق ظروف الموقف، فاقتربت الطائرة من المدرج. هكذا يتعلم المتدرب بالممارسة.' : 'الرياح الجانبية تحتاج إلى تصحيح. في المحاكاة ترى نتيجة الخطأ ثم تعيد المحاولة بلا خطر أو تكلفة واقعية.', color: safe ? 0x6bd5a3 : 0xe7b454 });
@@ -61,7 +62,8 @@ export function buildSafeSimulation(ctx) {
     now = t; const rise = ease((t - 0.1) / 1.05) * e; world.scale.setScalar(Math.max(0.001, rise));
     const f = ease((t - start) / 1.4);
     const moving = mode !== 'idle';
-    plane.position.set(moving ? -0.18 + 0.31 * f : -0.18 + Math.sin(t * 0.7) * 0.012, mode === 'result' ? 0.115 - 0.09 * f : 0.17 + Math.sin(t * 2) * 0.008, crosswind && moving ? 0.08 * f * (mode === 'result' && corrected ? 1 - f : 1) : 0);
+    if (mode === 'result') plane.position.lerpVectors(from, new THREE.Vector3(0.13, safeLanding ? 0.048 : 0.035, safeLanding ? 0 : 0.13), f);
+    else plane.position.set(moving ? -0.18 + 0.31 * f : -0.18 + Math.sin(t * 0.7) * 0.012, 0.17 + Math.sin(t * 2) * 0.008, crosswind && moving ? 0.08 * f : 0);
     plane.rotation.x = crosswind && moving ? Math.sin(t * 4) * 0.08 : 0;
     plane.rotation.z = crosswind && moving ? -0.08 * (1 - (corrected && mode === 'result' ? f : 0)) : 0;
     wind.visible = crosswind; wind.position.x = (t * 0.16) % 0.2;

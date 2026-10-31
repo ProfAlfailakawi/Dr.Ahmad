@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=8';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=10';
 import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=6';
 import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=6';
 
@@ -34,6 +34,9 @@ const TYPES = {
   roleplay: { c: '#e0861f', svg: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6M13 20c.3-3 1.6-5 3-5 2 0 4 2 4 5"/>' },
   branching: { c: '#c99a3b', svg: '<path d="M12 21v-7M12 14 6 8M12 14l6-6M12 14V5"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="4" r="2"/>' },
   synchrony: { c: '#43b7d4', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M2 12h2M20 12h2"/>' },
+  simulation: { c: '#3ba9c4', svg: '<path d="M3 18h18M4 13l8-9 8 9M12 4v14M7 15h10"/>' },
+  depth: { c: '#a264c5', svg: '<circle cx="7" cy="12" r="4"/><circle cx="17" cy="12" r="4"/><path d="M11 12h2"/>' },
+  bag: { c: '#cf6091', svg: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
   welcome: { c: '#a9832f', svg: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/>' },
   secret: { c: '#8b1d2c', svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' },
 };
@@ -102,9 +105,9 @@ function renderMap() {
         : '<span class="star soon">قريباً</span>';
       return `<div class="chap"><b>${title}</b>${stars}</div>`;
     }).join('');
-    const pack = PACKS.find((p) => p.ids.some((id) => EXPERIENCES.find((x) => x.id === id)?.door === d));
+    const packs = PACKS.filter((p) => p.ids.some((id) => EXPERIENCES.find((x) => x.id === id)?.door === d));
     const buttons = [
-      pack ? `<button class="btn btn-gold" data-pack="${pack.id}">افتح الكاميرا على هذا الباب</button>` : '',
+      ...packs.map((pack) => `<button class="btn btn-gold" data-pack="${pack.id}">كاميرا ${pack.title}</button>`),
       doorDone(d) ? `<button class="btn btn-line" data-cert="${d}">شهادة الباب</button>` : '',
     ].join('');
     const count = doorPages(d).length;
@@ -153,6 +156,7 @@ const ui = {
     const box = $('slider');
     box.querySelector('span').textContent = label;
     const input = box.querySelector('input');
+    input.setAttribute('aria-label', label);
     input.value = Math.round(value * 100);
     input.oninput = () => { box.style.setProperty('--v', input.value + '%'); onInput(input.value / 100); };
     box.style.setProperty('--v', input.value + '%');
@@ -455,7 +459,7 @@ async function startAR(id = packId) {
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=6`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=10`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;

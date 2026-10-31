@@ -79,11 +79,11 @@ export function buildSynchronous(ctx) {
       ctx.ui.hud('تباعد المكان… واتحد الوقت');
       ctx.ui.card({ tag: 'التعليم الإلكتروني المتزامن', title: 'حصة واحدة في الوقت نفسه',
         body: 'يلتقي المعلم والطلبة مباشرة عبر الشبكة، رغم تباعد المكان. هذا هو شرط التزامن الذي تصفه الصفحة.', color: 0x43c5e8 });
-      ctx.ui.choices([{ label: 'أرسل سؤالًا', primary: true, onPick: step }]);
+      ctx.ui.choices([{ label: 'أرسل سؤالاً', primary: true, onPick: step }]);
     } else if (phase === 2) {
       ctx.ui.hud('السؤال يعبر بين الفصلين الآن');
-      ctx.ui.card({ tag: 'نقاش مباشر', title: 'الطلاب يسمعون السؤال معًا',
-        body: 'تتيح الحصة المتزامنة نقاشًا مباشرًا بين المعلم والطلبة أو بين الطلبة أنفسهم.', color: 0xe8bd65 });
+      ctx.ui.card({ tag: 'نقاش مباشر', title: 'الطلاب يسمعون السؤال معاً',
+        body: 'تتيح الحصة المتزامنة نقاشاً مباشراً بين المعلم والطلبة أو بين الطلبة أنفسهم.', color: 0xe8bd65 });
       ctx.ui.choices([{ label: 'شاهد الرد الفوري', primary: true, onPick: step }]);
     } else {
       ctx.ui.hud('وصلت التغذية الراجعة في اللحظة نفسها');
@@ -91,7 +91,7 @@ export function buildSynchronous(ctx) {
         body: 'تذكر الصفحة التغذية الراجعة الفورية ميزةً للتعلم المتزامن، مع حاجته إلى أجهزة حديثة واتصال جيد.', color: 0x43c5e8 });
       ctx.fx.burst(new THREE.Vector3(0, 0.2, 0).add(scene.position), 0x9ae8f8, 44, 0.5, 0.05);
       ctx.ui.done();
-      ctx.ui.choices([{ label: '↻ عش اللحظة مجددًا', onPick: () => { phase = 0; phaseAt = now; ctx.ui.hud('فصلان متباعدان — المس لتبدأ الحصة'); ctx.ui.choices([{ label: '✦ ابدأ الحصة', primary: true, onPick: step }]); } }]);
+      ctx.ui.choices([{ label: '↻ عش اللحظة مجدداً', onPick: () => { phase = 0; phaseAt = now; ctx.ui.hud('فصلان متباعدان — المس لتبدأ الحصة'); ctx.ui.choices([{ label: '✦ ابدأ الحصة', primary: true, onPick: step }]); } }]);
     }
   };
   ctx.ui.hud('فصلان متباعدان — المس لتبدأ الحصة');

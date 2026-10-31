@@ -13,7 +13,7 @@ import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-ne
 import { buildLivingNetwork, buildLessonFactory, buildWebEvolution, buildStoryboardDirector, buildFoldingBook } from './doors-future.js?v=13';
 import { buildAccessibleWorld, buildArcsReactor, buildSearchDetective, buildComputerElevator, buildFlippedClass } from './doors-wave-a.js?v=14';
 import { buildHologramLab, buildArMirror, buildMediaOrchestra, buildBalloonNetwork, buildSchoollessCity } from './doors-wave-b.js?v=14';
-import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=16';
+import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=17';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;

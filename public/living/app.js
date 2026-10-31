@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=16';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=17';
 import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=6';
 import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=6';
 
@@ -475,7 +475,7 @@ async function startAR(id = packId) {
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=16`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=17`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;

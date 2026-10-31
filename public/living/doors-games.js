@@ -20,7 +20,8 @@ function decisionGame(ctx,config){
  const scoreText=()=>`${score} من ${config.rounds.length}`;
  function show(i){round=i;chosen=false;const r=config.rounds[i];ctx.ui.hud(`${config.role} · المهمة ${i+1} من ${config.rounds.length} · النقاط ${scoreText()}`);
   ctx.ui.card({tag:`${config.role} · المهمة ${i+1}`,title:r.question,body:r.situation,color:config.color});
-  ctx.ui.choices(r.options.map((o,j)=>({label:o.label,primary:j===0,onPick:()=>pick(o)})));
+  const options=Math.random()<.5?r.options:[...r.options].reverse();
+  ctx.ui.choices(options.map((o)=>({label:o.label,onPick:()=>pick(o)})));
  }
  function pick(o){if(chosen)return;chosen=true;score+=o.points;ctx.sfx[o.points?'good':'bad']();
   if(visual.choose)visual.choose(round,o.points,score);

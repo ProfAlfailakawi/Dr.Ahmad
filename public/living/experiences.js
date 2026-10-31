@@ -8,6 +8,7 @@ import {
 } from './kit.js?v=6';
 import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=6';
 import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=7';
+import { buildSynchronous } from './doors2.js?v=8';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -810,6 +811,11 @@ export const EXPERIENCES = [
     behind: { principle: 'التعلّم بالمحاكاة والتجريب', body: 'لم نخبرك بأثر التشويش؛ أعطيناك مقبضه. حين تغيّر متغيّراً واحداً وترى نتيجته فوراً، تكتشف العلاقة بنفسك كما يكتشفها العالِم في مختبره.' },
   },
   {
+    id: 'synchronous-class', kind: 'page', door: 2, pack: 'door2', page: 'p341', pageNo: '٣٤١', title: 'اللحظة المشتركة: التعليم الإلكتروني المتزامن', type: 'synchrony', typeLabel: 'فصلان في لحظة واحدة',
+    center: [0.45, 0.47], free: true, crop: [0.1003, 0.160, 0.9503, 0.840], build: buildSynchronous,
+    behind: { principle: 'التزامن والتغذية الراجعة الفورية', body: 'جمعت التجربة المعلم والطلبة في الوقت نفسه رغم بُعد المكان. تمرّ الرسالة ويعود الرد فورًا، فتظهر ميزة النقاش المباشر والتغذية الراجعة التي تصفها الصفحة.' },
+  },
+  {
     id: 'virtual-portal', kind: 'page', door: 3, pack: 'door34', page: 'p395', pageNo: '٣٩٥', title: 'بوابة العالم الافتراضي', type: 'portal', typeLabel: 'بوابة',
     video: 'hc9KfKNPIRQ', center: [0.256, 0.585], free: false, hole: PORTAL_HOLE, crop: [0.02, 0.36, 0.5, 0.82], build: buildPortal,
     behind: { principle: 'الانغماس والحضور (Presence)', body: 'حين يشعر المتعلّم أنه «داخل» البيئة لا أمامها، يرتفع انتباهه ودافعيته. لذلك فتحنا لك نافذة في الورق نفسه بدل صورة تنظر إليها.' },
@@ -855,6 +861,8 @@ export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 export const PACKS = [
   { id: 'door1', title: 'الباب الأول', sub: 'مفهوم تكنولوجيا التعليم', file: './targets-door1.mind',
     ids: ['teacher-roles', 'e-learning-class', 'technology-tree', 'instructional-design', 'planning-darts', 'teaching-vs-instruction', 'channels-of-time', 'dale-cone', 'communication-lab', 'welcome', 'secret'] },
+  { id: 'door2', title: 'الباب الثاني', sub: 'مستحدثات تكنولوجيا التعليم', file: './targets-door2.mind',
+    ids: ['synchronous-class'] },
   { id: 'door34', title: 'البابان الثالث والرابع', sub: 'المستحدثات والمعلّم والتكنولوجيا', file: './targets-door34.mind',
     ids: ['virtual-portal', 'mobile-exploded', 'bloom-pyramid', 'digital-divide-balance', 'interactive-classroom', 'tech-teacher-branch', 'welcome', 'secret'] },
 ];

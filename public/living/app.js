@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=13';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=14';
 import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=6';
 import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=6';
 
@@ -42,6 +42,16 @@ const TYPES = {
   web: { c: '#9253ad', svg: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-4 4-4 14 0 18m0-18c4 4 4 14 0 18"/>' },
   director: { c: '#d27b37', svg: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 7 5 3h17l-3 4M7 3l3 4m4-4 3 4M9 11l6 3-6 3v-6Z"/>' },
   folding: { c: '#6aa557', svg: '<path d="M3 5h6l3 3 3-3h6v14h-6l-3 3-3-3H3V5Z"/><path d="M12 8v14"/>' },
+  accessible: { c: '#55bba8', svg: '<circle cx="12" cy="12" r="9"/><path d="M4 10h16m-8 0v10M8 20l4-5 4 5"/>' },
+  reactor: { c: '#d4994b', svg: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="3" r="2"/><circle cx="21" cy="12" r="2"/><circle cx="12" cy="21" r="2"/><circle cx="3" cy="12" r="2"/>' },
+  detective: { c: '#3e9ba9', svg: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M8 10h4"/>' },
+  elevator: { c: '#687fb6', svg: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 6v12m-4-8 4-4 4 4m-8 5 4 4 4-4"/>' },
+  flipped: { c: '#4cb8bd', svg: '<path d="M4 9h16M4 15h16m-4-9 4 3-4 3M8 12l-4 3 4 3"/>' },
+  hologram: { c: '#8b75cb', svg: '<path d="m12 2 9 16H3L12 2Zm0 4v13M7 13h10"/>' },
+  mirror: { c: '#47a6d2', svg: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h3m4 0h3M7 16h3m4 0h3M12 10v4"/>' },
+  orchestra: { c: '#cd709c', svg: '<path d="M5 5v14M10 8v11M15 3v16M20 10v9M3 19h19"/>' },
+  balloon: { c: '#5bb3c9', svg: '<path d="M12 3c-5 0-7 4-7 8 0 4 3 6 7 8 4-2 7-4 7-8 0-4-2-8-7-8Zm-2 16 2 3 2-3"/>' },
+  city: { c: '#699c79', svg: '<path d="M2 21V9l5-3 5 3v12M12 21V5l5-3 5 3v16M4 14h2m11-3h2M2 21h20"/>' },
   welcome: { c: '#a9832f', svg: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/>' },
   secret: { c: '#8b1d2c', svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' },
 };
@@ -464,7 +474,7 @@ async function startAR(id = packId) {
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=13`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=14`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;

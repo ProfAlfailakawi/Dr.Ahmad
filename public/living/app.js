@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=11';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=13';
 import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=6';
 import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=6';
 
@@ -37,6 +37,11 @@ const TYPES = {
   simulation: { c: '#3ba9c4', svg: '<path d="M3 18h18M4 13l8-9 8 9M12 4v14M7 15h10"/>' },
   depth: { c: '#a264c5', svg: '<circle cx="7" cy="12" r="4"/><circle cx="17" cy="12" r="4"/><path d="M11 12h2"/>' },
   bag: { c: '#cf6091', svg: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
+  network: { c: '#25a9c8', svg: '<circle cx="4" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="12" cy="19" r="2"/><path d="m6 11 4-5m4 0 4 5m0 2-4 5m-4 0-4-5"/>' },
+  factory: { c: '#b98a36', svg: '<path d="M3 20V9l6 3V8l6 4V4h6v16H3Z"/><path d="M7 17h2m4 0h2m3 0h2"/>' },
+  web: { c: '#9253ad', svg: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-4 4-4 14 0 18m0-18c4 4 4 14 0 18"/>' },
+  director: { c: '#d27b37', svg: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 7 5 3h17l-3 4M7 3l3 4m4-4 3 4M9 11l6 3-6 3v-6Z"/>' },
+  folding: { c: '#6aa557', svg: '<path d="M3 5h6l3 3 3-3h6v14h-6l-3 3-3-3H3V5Z"/><path d="M12 8v14"/>' },
   welcome: { c: '#a9832f', svg: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/>' },
   secret: { c: '#8b1d2c', svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' },
 };
@@ -459,7 +464,7 @@ async function startAR(id = packId) {
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=11`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=13`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;

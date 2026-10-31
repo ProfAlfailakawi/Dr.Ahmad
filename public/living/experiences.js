@@ -10,6 +10,7 @@ import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './p
 import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=7';
 import { buildSynchronous } from './doors2.js?v=8';
 import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-next.js?v=11';
+import { buildLivingNetwork, buildLessonFactory, buildWebEvolution, buildStoryboardDirector, buildFoldingBook } from './doors-future.js?v=13';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -812,6 +813,16 @@ export const EXPERIENCES = [
     behind: { principle: 'التعلّم بالمحاكاة والتجريب', body: 'لم نخبرك بأثر التشويش؛ أعطيناك مقبضه. حين تغيّر متغيّراً واحداً وترى نتيجته فوراً، تكتشف العلاقة بنفسك كما يكتشفها العالِم في مختبره.' },
   },
   {
+    id: 'living-network', kind: 'page', door: 2, pack: 'door2future', page: 'p273', pageNo: '٢٧٣', title: 'الشبكة التي تشفي نفسها', type: 'network', typeLabel: 'شبكة حيّة',
+    center: [0.49, 0.55], free: true, crop: [0.0375, 0.1303, 0.9559, 0.8199], build: buildLivingNetwork,
+    behind: { principle: 'التعلم بالمحاكاة السببية', body: 'تنتقل رسالة بين أجهزة شبكة محلية ثم إلى نطاق أوسع. عندما ينقطع المسار، تعيد توجيهها بنفسك فترى أثر نوع الشبكة وطريق الاتصال.' },
+  },
+  {
+    id: 'lesson-factory', kind: 'page', door: 2, pack: 'door2future', page: 'p321', pageNo: '٣٢١', title: 'مصنع الدرس: نموذج الجزار', type: 'factory', typeLabel: 'آلة تصميم الدرس',
+    center: [0.5, 0.48], free: true, crop: [0.0750, 0.0460, 0.9372, 0.8889], build: buildLessonFactory,
+    behind: { principle: 'التصميم التعليمي مع التغذية الراجعة', body: 'تتحول مراحل نموذج الجزار المطبوعة إلى آلة تختبر فيها خصائص المتعلم والوسيلة، ثم يعود التقويم إلى التصميم كي تعدل الدرس.' },
+  },
+  {
     id: 'safe-simulation', kind: 'page', door: 2, pack: 'door2', page: 'p328', pageNo: '٣٢٨', title: 'مختبر الخطأ الآمن: محاكاة الطيران', type: 'simulation', typeLabel: 'محاكاة بقراراتك',
     center: [0.52, 0.64], free: true, crop: [0.0797, 0.1502, 0.9194, 0.8199], build: buildSafeSimulation,
     behind: { principle: 'التعلم بالمحاكاة والتجربة الآمنة', body: 'تسمح المحاكاة بتجربة قرار يصعب اختباره في الواقع. تغيّر الرياح ومسار الطائرة، وتكشف النتيجة أثر القرار، ثم تعيد المحاولة بلا عواقب حقيقية.' },
@@ -820,6 +831,11 @@ export const EXPERIENCES = [
     id: 'synchronous-class', kind: 'page', door: 2, pack: 'door2', page: 'p341', pageNo: '٣٤١', title: 'اللحظة المشتركة: التعليم الإلكتروني المتزامن', type: 'synchrony', typeLabel: 'فصلان في لحظة واحدة',
     center: [0.45, 0.47], free: true, crop: [0.1003, 0.160, 0.9503, 0.840], build: buildSynchronous,
     behind: { principle: 'التزامن والتغذية الراجعة الفورية', body: 'جمعت التجربة المعلم والطلبة في الوقت نفسه رغم بُعد المكان. تمرّ الرسالة ويعود الرد فوراً، فتظهر ميزة النقاش المباشر والتغذية الراجعة التي تصفها الصفحة.' },
+  },
+  {
+    id: 'web-evolution', kind: 'page', door: 3, pack: 'door3future', page: 'p380', pageNo: '٣٨٠', title: 'ولادة الويب: من القراءة إلى المعنى', type: 'web', typeLabel: 'تحول تفاعلي',
+    center: [0.49, 0.48], free: true, crop: [0.0984, 0.0153, 0.9138, 0.7280], build: buildWebEvolution,
+    behind: { principle: 'المقارنة البنيوية والتعلم بالمشاركة', body: 'يتحول جدول الويب ١٫٠ و٢٫٠ إلى تجربة تحرك المحتوى من القراءة إلى المشاركة، ثم تربط الكلمات بمعانيها كما تصف الصفحة الويب الدلالي.' },
   },
   {
     id: 'eyes-make-depth', kind: 'page', door: 3, pack: 'door3new', page: 'p390', pageNo: '٣٩٠', title: 'عينان تصنعان العمق', type: 'depth', typeLabel: 'مختبر الرؤية',
@@ -835,6 +851,11 @@ export const EXPERIENCES = [
     id: 'learning-bag', kind: 'page', door: 3, pack: 'door3new', page: 'p449', pageNo: '٤٤٩', title: 'حقيبتي التعليمية: مسار يتشكل لي', type: 'bag', typeLabel: 'حقيبة شخصية',
     center: [0.43, 0.54], free: true, crop: [0.0703, 0.1801, 0.9306, 0.7900], build: buildLearningBag,
     behind: { principle: 'تفريد التعلم والتعلم الذاتي', body: 'الحقيبة في الكتاب نظام للتعلم الذاتي يراعي الفروق الفردية. تختار هدفك فتظهر وسائل وأنشطة وتقويم، ليصبح ترتيب الرحلة مرتبطا بما تحتاجه.' },
+  },
+  {
+    id: 'storyboard-director', kind: 'page', door: 3, pack: 'door3future', page: 'p477', pageNo: '٤٧٧', title: 'أنت المخرج: الستوري بورد يصحو', type: 'director', typeLabel: 'إخراج مشهد',
+    center: [0.47, 0.5], free: true, crop: [0.0703, 0.0996, 0.9325, 0.8276], build: buildStoryboardDirector,
+    behind: { principle: 'السرد البصري والتتابع', body: 'تختار حجم اللقطة وترتيب الإطارات، ثم ترى كيف تتحول لوحة التخطيط إلى عرض متحرك. تشير الصفحة إلى أن اتجاه الكاميرا والتكبير وترتيب اللقطات جزء من الستوري بورد.' },
   },
   {
     id: 'mobile-exploded', kind: 'page', door: 3, pack: 'door34', page: 'p541', pageNo: '٥٤١', title: 'فكّك الجوال: التعلّم المتنقل', type: 'exploded', typeLabel: 'فكّك الجهاز',
@@ -855,6 +876,11 @@ export const EXPERIENCES = [
     id: 'interactive-classroom', kind: 'page', door: 4, pack: 'door34', page: 'p599', pageNo: '٥٩٩', title: 'من فصل تقليدي إلى فصل تفاعلي', type: 'roleplay', typeLabel: 'مشهد تمثيلي',
     video: 'DzdyVn3kS50', center: [0.31, 0.3], free: true, crop: [0.02, 0.02, 0.6, 0.5], build: buildRoleplay,
     behind: { principle: 'التعلّم الاجتماعي ولعب الأدوار (ألبرت باندورا)', body: 'تقمّصت دور المعلّم ورأيت أثر قراراتك على طلابك. حين نمارس الدور ونرى نتائجه، تنتقل المعرفة من «أعرف» إلى «أستطيع».' },
+  },
+  {
+    id: 'folding-book', kind: 'page', door: 4, pack: 'door4future', page: 'p609', pageNo: '٦٠٩', title: 'الكتاب الذي يطوي نفسه', type: 'folding', typeLabel: 'كتاب مرن',
+    center: [0.52, 0.55], free: true, crop: [0.1593, 0.0153, 0.8529, 0.9119], build: buildFoldingBook,
+    behind: { principle: 'التصور المكاني بالتجريب', body: 'تحتوي الصفحة تصوراً لكتاب إلكتروني قابل للطي. تحرك مفاصل الكتاب لتفهم كيف يجتمع شكل القراءة الواسع مع حجم صغير للحمل.' },
   },
   {
     id: 'tech-teacher-branch', kind: 'page', door: 4, pack: 'door34', page: 'p617', pageNo: '٦١٧', title: 'طريق المعلّم التكنولوجي', type: 'branching', typeLabel: 'قرار متفرّع',
@@ -879,8 +905,14 @@ export const PACKS = [
     ids: ['teacher-roles', 'e-learning-class', 'technology-tree', 'instructional-design', 'planning-darts', 'teaching-vs-instruction', 'channels-of-time', 'dale-cone', 'communication-lab', 'welcome', 'secret'] },
   { id: 'door2', title: 'الباب الثاني', sub: 'مستحدثات تكنولوجيا التعليم', file: './targets-door2.mind',
     ids: ['synchronous-class', 'safe-simulation'] },
+  { id: 'door2future', title: 'الباب الثاني · الشبكات والتصميم', sub: 'الشبكات ونموذج الجزار', file: './targets-door2future.mind',
+    ids: ['living-network', 'lesson-factory'] },
   { id: 'door3new', title: 'الباب الثالث · صفحات جديدة', sub: 'العمق والحقيبة التعليمية', file: './targets-door3new.mind',
     ids: ['eyes-make-depth', 'learning-bag'] },
+  { id: 'door3future', title: 'الباب الثالث · الويب والإخراج', sub: 'أجيال الويب والستوري بورد', file: './targets-door3future.mind',
+    ids: ['web-evolution', 'storyboard-director'] },
+  { id: 'door4future', title: 'الباب الرابع · الكتاب المرن', sub: 'الكتاب الإلكتروني القابل للطي', file: './targets-door4future.mind',
+    ids: ['folding-book'] },
   { id: 'door34', title: 'البابان الثالث والرابع', sub: 'المستحدثات والمعلّم والتكنولوجيا', file: './targets-door34.mind',
     ids: ['virtual-portal', 'mobile-exploded', 'bloom-pyramid', 'digital-divide-balance', 'interactive-classroom', 'tech-teacher-branch', 'welcome', 'secret'] },
 ];

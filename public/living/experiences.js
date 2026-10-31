@@ -13,6 +13,7 @@ import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-ne
 import { buildLivingNetwork, buildLessonFactory, buildWebEvolution, buildStoryboardDirector, buildFoldingBook } from './doors-future.js?v=13';
 import { buildAccessibleWorld, buildArcsReactor, buildSearchDetective, buildComputerElevator, buildFlippedClass } from './doors-wave-a.js?v=14';
 import { buildHologramLab, buildArMirror, buildMediaOrchestra, buildBalloonNetwork, buildSchoollessCity } from './doors-wave-b.js?v=14';
+import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=16';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -825,6 +826,16 @@ export const EXPERIENCES = [
     behind: { principle: 'الانتباه والصلة والثقة والرضا', body: 'تجعل عناصر نموذج كيلر الأربعة مصادر طاقة للتعلم، وتختبر كيف يعمل كل عنصر مع البقية.' },
   },
   {
+    id: 'smart-goal-game', kind: 'page', door: 1, pack: 'games-foundations', page: 'p205', pageNo: '٢٠٥', title: 'مختبر الأهداف الذكية', type: 'unigame', typeLabel: 'لعبة صياغة أهداف',
+    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildSmartGoalGame,
+    behind: { principle: 'ممارسة صياغة هدف قابل للتقويم', body: 'تتخذ قرارات لصياغة هدف جامعي محدد وقابل للقياس ومرتبط بزمن وموارد واقعية.' },
+  },
+  {
+    id: 'adoption-game', kind: 'page', door: 2, pack: 'games-foundations', page: 'p256', pageNo: '٢٥٦', title: 'غرفة قرار التحول التقني', type: 'unigame', typeLabel: 'لعبة تخطيط جامعي',
+    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildAdoptionGame,
+    behind: { principle: 'تخطيط تبني المستحدثات', body: 'تعالج ثلاث حالات من معوقات التدريب والبنية والتمويل التي تذكرها الصفحة.' },
+  },
+  {
     id: 'living-network', kind: 'page', door: 2, pack: 'door2future', page: 'p273', pageNo: '٢٧٣', title: 'الشبكة التي تشفي نفسها', type: 'network', typeLabel: 'شبكة حيّة',
     center: [0.49, 0.55], free: true, crop: [0.0375, 0.1303, 0.9559, 0.8199], build: buildLivingNetwork,
     behind: { principle: 'التعلم بالمحاكاة السببية', body: 'تنتقل رسالة بين أجهزة شبكة محلية ثم إلى نطاق أوسع. عندما ينقطع المسار، تعيد توجيهها بنفسك فترى أثر نوع الشبكة وطريق الاتصال.' },
@@ -863,6 +874,11 @@ export const EXPERIENCES = [
     id: 'web-evolution', kind: 'page', door: 3, pack: 'door3future', page: 'p380', pageNo: '٣٨٠', title: 'ولادة الويب: من القراءة إلى المعنى', type: 'web', typeLabel: 'تحول تفاعلي',
     center: [0.49, 0.48], free: true, crop: [0.0984, 0.0153, 0.9138, 0.7280], build: buildWebEvolution,
     behind: { principle: 'المقارنة البنيوية والتعلم بالمشاركة', body: 'يتحول جدول الويب ١٫٠ و٢٫٠ إلى تجربة تحرك المحتوى من القراءة إلى المشاركة، ثم تربط الكلمات بمعانيها كما تصف الصفحة الويب الدلالي.' },
+  },
+  {
+    id: 'ebook-audit-game', kind: 'page', door: 3, pack: 'games-foundations', page: 'p386', pageNo: '٣٨٦', title: 'محكمة جودة الكتاب الإلكتروني', type: 'unigame', typeLabel: 'لعبة مراجعة جودة',
+    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildEbookAuditGame,
+    behind: { principle: 'تقييم متعدد المعايير', body: 'تفحص الإبحار والتقويم وقابلية القراءة وفق معايير تصميم الكتب الإلكترونية في الصفحة.' },
   },
   {
     id: 'eyes-make-depth', kind: 'page', door: 3, pack: 'door3new', page: 'p390', pageNo: '٣٩٠', title: 'عينان تصنعان العمق', type: 'depth', typeLabel: 'مختبر الرؤية',
@@ -935,6 +951,16 @@ export const EXPERIENCES = [
     behind: { principle: 'التعلّم التجريبي (ديفيد كولب)', body: 'جرّبت قراراً، ثم رأيت نتيجته، ثم تأمّلتها، ثم وصلت إلى المفهوم في النهاية. هذه دورة كولب: تجربة فتأمّل فمفهوم فتطبيق.' },
   },
   {
+    id: 'byod-policy-game', kind: 'page', door: 4, pack: 'games-policy', page: 'p621', pageNo: '٦٢١', title: 'مجلس سياسة الأجهزة الشخصية', type: 'unigame', typeLabel: 'لعبة سياسات',
+    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildByodPolicyGame,
+    behind: { principle: 'موازنة الوصول والاستخدام', body: 'تتخذ قرارات جامعية حول الأجهزة الشخصية والبدائل والبنية وتنظيم النشاط.' },
+  },
+  {
+    id: 'tech-balance-game', kind: 'page', door: 4, pack: 'games-policy', page: 'p624', pageNo: '٦٢٤', title: 'غرفة التوازن التقني', type: 'unigame', typeLabel: 'لعبة قرارات',
+    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildTechBalanceGame,
+    behind: { principle: 'التقويم المتزن لاستخدام التقنية', body: 'تواجه حالات بين الخوف والإفراط وتختار تدخلاً تعليمياً مبنياً على الحاجة والأثر.' },
+  },
+  {
     id: 'schoolless-city', kind: 'page', door: 4, pack: 'doorwave5', page: 'p628', pageNo: '٦٢٨', title: 'مدينة تتعلم بلا جدران', type: 'city', typeLabel: 'مدينة تعليمية',
     center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildSchoollessCity,
     behind: { principle: 'التعلم الشبكي وإتاحة الفرص', body: 'تعيد توزيع التعلم على البيت والمكتبة والمجتمع، ثم تصل متعلماً بقي خارج الشبكة.' },
@@ -953,6 +979,8 @@ export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 // Recognition packs: each opens with its own small recognition file so speed stays the same as the
 // book grows. `ids` follows the order of the images inside that pack's file.
 export const PACKS = [
+  { id: 'games-foundations', title: 'ألعاب جامعية · التصميم والتقنية', sub: 'الأهداف والتحول وجودة الكتب', file: './targets-games-foundations.mind', ids: ['smart-goal-game', 'adoption-game', 'ebook-audit-game'] },
+  { id: 'games-policy', title: 'ألعاب جامعية · السياسات والتوازن', sub: 'الأجهزة الشخصية والاستخدام المتزن', file: './targets-games-policy.mind', ids: ['byod-policy-game', 'tech-balance-game'] },
   { id: 'doorwave1', title: 'الباب الأول · الوصول والدافعية', sub: 'التكنولوجيا المساندة ونموذج كيلر', file: './targets-doorwave1.mind', ids: ['accessible-world', 'arcs-reactor'] },
   { id: 'doorwave2', title: 'الباب الثاني · البحث والحاسوب', sub: 'البحث وأجيال الحاسب', file: './targets-doorwave2.mind', ids: ['search-detective', 'computer-elevator'] },
   { id: 'doorwave3', title: 'الباب الثالث · الصف والضوء', sub: 'الفصل المقلوب والهولوجرام', file: './targets-doorwave3.mind', ids: ['flipped-class', 'hologram-lab'] },

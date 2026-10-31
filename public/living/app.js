@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=14';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=16';
 import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=6';
 import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=6';
 
@@ -52,6 +52,7 @@ const TYPES = {
   orchestra: { c: '#cd709c', svg: '<path d="M5 5v14M10 8v11M15 3v16M20 10v9M3 19h19"/>' },
   balloon: { c: '#5bb3c9', svg: '<path d="M12 3c-5 0-7 4-7 8 0 4 3 6 7 8 4-2 7-4 7-8 0-4-2-8-7-8Zm-2 16 2 3 2-3"/>' },
   city: { c: '#699c79', svg: '<path d="M2 21V9l5-3 5 3v12M12 21V5l5-3 5 3v16M4 14h2m11-3h2M2 21h20"/>' },
+  unigame: { c: '#7b64b0', svg: '<path d="M4 8h16v11H4V8Zm3-4h10v4H7V4Zm2 8h6m-3-3v6M7 19v2m10-2v2"/>' },
   welcome: { c: '#a9832f', svg: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/>' },
   secret: { c: '#8b1d2c', svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' },
 };
@@ -474,7 +475,7 @@ async function startAR(id = packId) {
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=14`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=16`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;

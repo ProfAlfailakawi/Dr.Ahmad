@@ -1,6 +1,6 @@
 // Five university games, each with its own scene mechanic.
 import * as THREE from 'three';
-import { world, updateWorld, card, m, box, ball, text, line } from './doors-ten-a.js?v=21';
+import { world, updateWorld, card, m, box, ball, text, line } from './doors-ten-a.js?v=25';
 
 export function buildSmartGoalGame(ctx){
  const {g,heading}=world(ctx,'مختبر الأهداف الذكية',0x26394c),gold=m(0xeac36d,.3),green=m(0x88d2a1,.3),red=m(0xe78687,.3);

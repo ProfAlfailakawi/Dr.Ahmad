@@ -1,6 +1,6 @@
 // Ten new page-bound university experiences, part two.
 import * as THREE from 'three';
-import { world, updateWorld, card, m, box, ball, text, line } from './doors-ten-a.js?v=21';
+import { world, updateWorld, card, m, box, ball, text, line } from './doors-ten-a.js?v=25';
 
 export function buildArLayers(ctx){
  const {g,heading}=world(ctx,'مختبر ظهور الطبقات',0x23374d),cyan=m(0x6bd6e2,.3),gold=m(0xeac570,.3),red=m(0xe58189,.2);

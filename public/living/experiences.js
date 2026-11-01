@@ -13,9 +13,11 @@ import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-ne
 import { buildLivingNetwork, buildLessonFactory, buildWebEvolution, buildStoryboardDirector, buildFoldingBook } from './doors-future.js?v=13';
 import { buildAccessibleWorld, buildArcsReactor, buildSearchDetective, buildComputerElevator, buildFlippedClass } from './doors-wave-a.js?v=14';
 import { buildHologramLab, buildArMirror, buildMediaOrchestra, buildBalloonNetwork, buildSchoollessCity } from './doors-wave-b.js?v=14';
-import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=21';
-import { buildProgrammedCorridor, buildDesignMachine, buildEvidenceLab, buildCloudCourse, buildBlendMixer } from './doors-ten-a.js?v=21';
-import { buildArLayers, buildGameForge, buildThinkingBoard, buildBranchingVideo, buildOpenResourceMuseum } from './doors-ten-b.js?v=21';
+import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=25';
+import { buildProgrammedCorridor, buildDesignMachine, buildEvidenceLab, buildCloudCourse, buildBlendMixer } from './doors-ten-a.js?v=25';
+import { buildArLayers, buildGameForge, buildThinkingBoard, buildBranchingVideo, buildOpenResourceMuseum } from './doors-ten-b.js?v=25';
+import { buildConcreteToAbstract, buildAccessBridge, buildBlueprintClass, buildGoalBeacon, buildInnovationWave } from './doors-anim-a.js?v=25';
+import { buildSafeReactor, buildFilmIllusion, buildRadioWave, buildWikiConstellation, buildMobileOrbit } from './doors-anim-b.js?v=25';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -808,6 +810,11 @@ export const EXPERIENCES = [
     behind: { principle: 'التعليم المبرمج', body: 'تتغير خطوات التعلم وفق استجابة الطالب، ويقوده الخطأ إلى شرح وتصحيح قبل المتابعة كما تصف الصفحة.' },
   },
   {
+    id: 'concrete-to-abstract', kind: 'page', door: 1, pack: 'anim1', page: 'p78', pageNo: '٧٨', title: 'من الصورة إلى الخبرة', type: 'animation', typeLabel: 'رحلة حسية',
+    center: [0.5, 0.52], free: true, build: buildConcreteToAbstract,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تتحول الصورة الثابتة إلى مجسم ثم مفهوم، في حركة توضح دور الوسائل في الانتقال من المحسوس إلى المجرد.' },
+  },
+  {
     id: 'channels-of-time', kind: 'page', door: 1, pack: 'door1', page: 'p66', pageNo: '٦٦', title: 'قنوات الزمن: رحلة الوسائل التعليمية', type: 'timeline', typeLabel: 'آلة الزمن',
     video: 'gPzhwiIN__8', center: [0.635, 0.36], free: true, crop: [0.34, 0.02, 0.955, 0.58], build: buildTimeTV,
     behind: { principle: 'التنظيم المتقدّم والسرد (أوزوبل)', body: 'وضعنا كل وسيلة على خطّ زمني واحد قبل تفاصيلها؛ فحين يرى عقلك الإطار الكبير أولاً، يجد لكل معلومة جديدة مكاناً تتعلّق به.' },
@@ -823,6 +830,11 @@ export const EXPERIENCES = [
     behind: { principle: 'من المحسوس إلى المجرد (برونر وديل)', body: 'بدأت رحلتك من قاعدة المخروط، من الخبرة الواقعية، ثم صعدت نحو الرموز. هكذا يُبنى الفهم: تمثيل عملي، ثم صوري، ثم رمزي.' },
   },
   {
+    id: 'access-bridge', kind: 'page', door: 1, pack: 'anim1', page: 'p112', pageNo: '١١٢', title: 'الجسر الذي يصل إلى الجميع', type: 'animation', typeLabel: 'تحول معماري',
+    center: [0.5, 0.52], free: true, build: buildAccessBridge,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يتحول درج مغلق إلى جسر يعبره ثلاثة متعلمين، ليظهر أثر إتاحة المواد التعليمية.' },
+  },
+  {
     id: 'communication-lab', kind: 'page', door: 1, pack: 'door1', page: 'p151', pageNo: '١٥١', title: 'مختبر الاتصال: الرسالة والتشويش', type: 'lab', typeLabel: 'مختبر تفاعلي',
     video: 'GHKPjqQZRnA', center: [0.54, 0.27], free: false, crop: [0.11, 0.09, 0.88, 0.42], build: buildLab,
     behind: { principle: 'التعلّم بالمحاكاة والتجريب', body: 'لم نخبرك بأثر التشويش؛ أعطيناك مقبضه. حين تغيّر متغيّراً واحداً وترى نتيجته فوراً، تكتشف العلاقة بنفسك كما يكتشفها العالِم في مختبره.' },
@@ -831,6 +843,11 @@ export const EXPERIENCES = [
     id: 'design-machine', kind: 'page', door: 1, pack: 'next-lab1', page: 'p164', pageNo: '١٦٤', title: 'آلة بناء المقرر', type: 'factory', typeLabel: 'آلة تصميم',
     center: [0.5, 0.52], free: true, build: buildDesignMachine,
     behind: { principle: 'التصميم التعليمي المتكرر', body: 'ترتب المراحل الخمس ثم تعود إلى مرحلة سابقة وفق التغذية الراجعة؛ تؤكد الصفحة أن التصميم عملية مستمرة.' },
+  },
+  {
+    id: 'blueprint-class', kind: 'page', door: 1, pack: 'anim2', page: 'p180', pageNo: '١٨٠', title: 'المخطط يصير درساً', type: 'animation', typeLabel: 'بناء متحرك',
+    center: [0.5, 0.52], free: true, build: buildBlueprintClass,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يرتفع التصميم من شبكة خطوط إلى قاعة، ثم تعود إشارة التقويم إلى المخطط.' },
   },
   {
     id: 'arcs-reactor', kind: 'page', door: 1, pack: 'doorwave1', page: 'p186', pageNo: '١٨٦', title: 'مفاعل الدافعية: نموذج ARCS', type: 'reactor', typeLabel: 'مفاعل الدافعية',
@@ -843,9 +860,19 @@ export const EXPERIENCES = [
     behind: { principle: 'ممارسة صياغة هدف قابل للتقويم', body: 'تتخذ قرارات لصياغة هدف جامعي محدد وقابل للقياس ومرتبط بزمن وموارد واقعية.' },
   },
   {
+    id: 'goal-beacon', kind: 'page', door: 1, pack: 'anim2', page: 'p212', pageNo: '٢١٢', title: 'منارة الهدف', type: 'animation', typeLabel: 'أنميشن ضوئي',
+    center: [0.5, 0.52], free: true, build: buildGoalBeacon,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تظهر الخطوات للمتعلم عندما يعرف هدف الدرس، وتتبعثر عندما يختفي.' },
+  },
+  {
     id: 'evidence-lab', kind: 'page', door: 1, pack: 'next-lab2', page: 'p230', pageNo: '٢٣٠', title: 'مختبر كشف الوهم', type: 'lab', typeLabel: 'ميزان الدليل',
     center: [0.5, 0.52], free: true, build: buildEvidenceLab,
     behind: { principle: 'نقد أنماط التعلم', body: 'تزن ادعاء مطابقة التدريس لنمط ثابت مقابل الانتقادات العلمية التي تذكرها الصفحة.' },
+  },
+  {
+    id: 'innovation-wave', kind: 'page', door: 2, pack: 'anim3', page: 'p244', pageNo: '٢٤٤', title: 'موجة التغيير', type: 'animation', typeLabel: 'انتشار حي',
+    center: [0.5, 0.52], free: true, build: buildInnovationWave,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تنتقل فكرة مستحدث تقني من تجربة مصغرة إلى شبكة من الممارسين؛ العائق يبطئ الموجة.' },
   },
   {
     id: 'adoption-game', kind: 'page', door: 2, pack: 'games-foundations', page: 'p256', pageNo: '٢٥٦', title: 'غرفة قرار التحول التقني', type: 'unigame', typeLabel: 'لعبة تخطيط جامعي',
@@ -876,6 +903,11 @@ export const EXPERIENCES = [
     id: 'safe-simulation', kind: 'page', door: 2, pack: 'door2', page: 'p328', pageNo: '٣٢٨', title: 'مختبر الخطأ الآمن: محاكاة الطيران', type: 'simulation', typeLabel: 'محاكاة بقراراتك',
     center: [0.52, 0.64], free: true, crop: [0.0797, 0.1502, 0.9194, 0.8199], build: buildSafeSimulation,
     behind: { principle: 'التعلم بالمحاكاة والتجربة الآمنة', body: 'تسمح المحاكاة بتجربة قرار يصعب اختباره في الواقع. تغيّر الرياح ومسار الطائرة، وتكشف النتيجة أثر القرار، ثم تعيد المحاولة بلا عواقب حقيقية.' },
+  },
+  {
+    id: 'safe-reactor', kind: 'page', door: 2, pack: 'anim3', page: 'p329', pageNo: '٣٢٩', title: 'داخل المحاكاة الآمنة', type: 'animation', typeLabel: 'محاكاة متحركة',
+    center: [0.5, 0.52], free: true, build: buildSafeReactor,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يتغير متغير واحد في نموذج رمزي، ثم تعيد الزمن لتقارن السبب بالنتيجة دون خطر واقعي.' },
   },
   {
     id: 'synchronous-class', kind: 'page', door: 2, pack: 'door2', page: 'p341', pageNo: '٣٤١', title: 'اللحظة المشتركة: التعليم الإلكتروني المتزامن', type: 'synchrony', typeLabel: 'فصلان في لحظة واحدة',
@@ -933,6 +965,16 @@ export const EXPERIENCES = [
     behind: { principle: 'العلامة وتمييز الصورة والموقع', body: 'تقارن طرق تثبيت الطبقة الرقمية المذكورة في صفحة أنواع الواقع المعزز.' },
   },
   {
+    id: 'film-illusion', kind: 'page', door: 3, pack: 'anim4', page: 'p420', pageNo: '٤٢٠', title: 'حين تتحرك الصورة الثابتة', type: 'animation', typeLabel: 'شريط سينمائي',
+    center: [0.5, 0.52], free: true, build: buildFilmIllusion,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يتسارع شريط من الصور المنفصلة حتى ترى الحركة، كما تناقش الصفحة الأفلام التعليمية.' },
+  },
+  {
+    id: 'radio-wave', kind: 'page', door: 3, pack: 'anim4', page: 'p424', pageNo: '٤٢٤', title: 'الصوت يعبر الصفحة', type: 'animation', typeLabel: 'موجة صوتية',
+    center: [0.5, 0.52], free: true, build: buildRadioWave,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تنطلق موجة من مصدر واحد وتصل إلى مستقبلات متباعدة لتجسد الراديو التعليمي.' },
+  },
+  {
     id: 'game-forge', kind: 'page', door: 3, pack: 'next-lab4', page: 'p434', pageNo: '٤٣٤', title: 'اصنع اللعبة ثم اكسرها', type: 'game', typeLabel: 'ورشة ألعاب',
     center: [0.5, 0.52], free: true, build: buildGameForge,
     behind: { principle: 'عناصر اللعبة التعليمية', body: 'تركيب الهدف والقواعد والتغذية الراجعة والتحدي يغير سلوك اللعبة عند تشغيلها.' },
@@ -966,6 +1008,16 @@ export const EXPERIENCES = [
     id: 'balloon-network', kind: 'page', door: 3, pack: 'doorwave5', page: 'p510', pageNo: '٥١٠', title: 'بالونات تحمل الإنترنت', type: 'balloon', typeLabel: 'شبكة جوية',
     center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildBalloonNetwork,
     behind: { principle: 'الوصول بالتقنية إلى المناطق النائية', body: 'توجه المناطيد وتوصل الإشارة إلى مدرسة بعيدة في محاكاة لفكرة مشروع لوون التاريخي المذكور في الصفحة.' },
+  },
+  {
+    id: 'wiki-constellation', kind: 'page', door: 3, pack: 'anim5', page: 'p520', pageNo: '٥٢٠', title: 'المعرفة التي يكتبها الجميع', type: 'animation', typeLabel: 'كوكبة صفحات',
+    center: [0.5, 0.52], free: true, build: buildWikiConstellation,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تنمو صفحات الويكي بإضافة وتصحيح، ويظهر أثر تاريخ التعديل على الشبكة.' },
+  },
+  {
+    id: 'mobile-orbit', kind: 'page', door: 3, pack: 'anim5', page: 'p530', pageNo: '٥٣٠', title: 'المعرفة ترافق الطالب', type: 'animation', typeLabel: 'مدار متحرك',
+    center: [0.5, 0.52], free: true, build: buildMobileOrbit,
+    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'ينتقل مورد تعليمي واحد مع الطالب بين البيت والجامعة والطريق عبر جهاز ذكي.' },
   },
   {
     id: 'mobile-exploded', kind: 'page', door: 3, pack: 'door34', page: 'p541', pageNo: '٥٤١', title: 'فكّك الجوال: التعلّم المتنقل', type: 'exploded', typeLabel: 'فكّك الجهاز',
@@ -1031,6 +1083,11 @@ export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 // Recognition packs: each opens with its own small recognition file so speed stays the same as the
 // book grows. `ids` follows the order of the images inside that pack's file.
 export const PACKS = [
+  { id: 'anim1', title: 'الحس والإتاحة', sub: 'من الخبرة إلى الوصول', file: './targets-anim1.mind', ids: ['concrete-to-abstract', 'access-bridge'] },
+  { id: 'anim2', title: 'المخطط والهدف', sub: 'تصميم حي ومنارة التعلم', file: './targets-anim2.mind', ids: ['blueprint-class', 'goal-beacon'] },
+  { id: 'anim3', title: 'الانتشار والمحاكاة', sub: 'موجة التغيير والخطأ الآمن', file: './targets-anim3.mind', ids: ['innovation-wave', 'safe-reactor'] },
+  { id: 'anim4', title: 'الفيلم والراديو', sub: 'حركة الصورة وانتقال الصوت', file: './targets-anim4.mind', ids: ['film-illusion', 'radio-wave'] },
+  { id: 'anim5', title: 'الويكي والتعلم المتنقل', sub: 'صفحات مشتركة وجهاز ذكي', file: './targets-anim5.mind', ids: ['wiki-constellation', 'mobile-orbit'] },
   { id: 'next-lab1', title: 'الممر وآلة المقرر', sub: 'التعليم المبرمج والتصميم', file: './targets-next-lab1.mind', ids: ['programmed-corridor', 'design-machine'] },
   { id: 'next-lab2', title: 'الدليل والسحابة', sub: 'نقد الأنماط والاتصال', file: './targets-next-lab2.mind', ids: ['evidence-lab', 'cloud-course'] },
   { id: 'next-lab3', title: 'المزج وطبقات الواقع', sub: 'التعليم المخلوط والواقع المعزز', file: './targets-next-lab3.mind', ids: ['blend-mixer', 'ar-layers'] },

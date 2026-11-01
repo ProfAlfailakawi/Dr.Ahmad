@@ -1,118 +1,51 @@
-// Five university-level decision games grounded in the printed encyclopedia pages.
+// Five university games, each with its own scene mechanic.
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, sprite, shadowed } from './kit.js?v=6';
-const material=(color,glow=.12)=>new THREE.MeshStandardMaterial({color,roughness:.38,metalness:.2,emissive:color,emissiveIntensity:glow});
-const box=(w,h,d,m)=>shadowed(new THREE.Mesh(new RoundedBoxGeometry(w,h,d,3,Math.min(.012,w/6,h/6,d/3)),m));
-const label=(text,width=.22)=>sprite(text,width,{size:46,width:560,weight:800,color:'#fff8e9',bg:'rgba(20,28,43,.94)'});
-const tagScale=(s,w,k)=>s.scale.set(Math.max(.001,w*k),Math.max(.001,w*s.userData.aspect*k),1);
-const orb=(r,m)=>new THREE.Mesh(new THREE.SphereGeometry(r,16,12),m);
-function scene(ctx,title,color,makeProps){
- const g=new THREE.Group();g.position.copy(P(.5,.52));ctx.stage.add(g);
- const base=box(.65,.018,.36,material(0x243449));base.position.y=.02;g.add(base);
- const heading=label(title,.34);heading.position.set(0,.5,-.12);g.add(heading);
- const visual=makeProps(g,color);return {g,heading,visual};
-}
-function decisionGame(ctx,config){
- const {g,heading,visual}=scene(ctx,config.title,config.color,config.props);
- const targets=[-1,1].map((side,i)=>{
-  const group=new THREE.Group();group.position.set(side*.19,.315,.21);g.add(group);
-  const disc=new THREE.Mesh(new THREE.SphereGeometry(.065,24,16),material(i?0x78cbd6:0xe8bd6d,.35));group.add(disc);
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(.077,.007,8,36),material(0xffe2a0,.3));rim.position.z=.005;group.add(rim);
-  const text=label('',.28);text.position.set(0,.11,.035);group.add(text);
-  const hit=new THREE.Mesh(new THREE.PlaneGeometry(.3,.23),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));hit.position.set(0,.075,.055);group.add(hit);
-  ctx.tap(hit,()=>fire(i));ctx.tap(disc,()=>fire(i));ctx.tap(text,()=>fire(i));
-  return {group,disc,text,hit,side};
- });
- const shots=[];let state='idle',round=-1,score=0,hits=0,timeLeft=60,lastSecond=60,now=0,feedbackUntil=0,activeOptions=[];
- const points=()=>`${score} نقطة · ${hits}/${config.rounds.length}`;
- function hud(){ctx.ui.hud(`⏱ ${Math.ceil(timeLeft)} · ★ ${points()}`);}
- function setTarget(target,option){target.group.remove(target.text);target.text=label(option.label,.28);target.text.position.set(0,.11,.035);target.group.add(target.text);ctx.tap(target.text,()=>fire(targets.indexOf(target)));target.group.visible=true;target.disc.scale.setScalar(1);target.disc.material.emissiveIntensity=.35;}
- function show(i){round=i;state='play';heading.visible=false;const r=config.rounds[i];activeOptions=Math.random()<.5?r.options:[...r.options].reverse();targets.forEach((target,n)=>setTarget(target,activeOptions[n]));ctx.ui.hideCard();ctx.ui.choices([]);ctx.ui.caption(`${r.question} — ${r.situation}`);hud();}
- function fire(i){if(state!=='play')return;state='flight';const target=targets[i];const projectile=orb(.026,material(config.color,.75));projectile.position.set(0,.08,.42);g.add(projectile);shots.push({mesh:projectile,from:projectile.position.clone(),to:target.group.position.clone().add(new THREE.Vector3(0,0,.05)),start:now,target,option:activeOptions[i]});ctx.sfx.tap();}
- function land(shot){const {target,option}=shot;score=Math.max(0,score+(option.points?10:-5));if(option.points)hits++;ctx.sfx[option.points?'good':'bad']();const impact=ctx.stage.worldToLocal(target.group.getWorldPosition(new THREE.Vector3()));ctx.fx.burst(impact,option.points?0x77cba5:0xe18a85,option.points?32:18,.34,.024);target.disc.material.emissiveIntensity=option.points?.95:.04;target.disc.scale.setScalar(option.points?1.45:.65);if(visual.choose)visual.choose(round,option.points,score);targets[1-targets.indexOf(target)].group.visible=false;ctx.ui.card({tag:option.points?'✓ أصبت القرار':'✗ راجع القرار',title:option.result,body:option.impact,color:option.points?0x77cba5:0xe18a85});hud();state='feedback';feedbackUntil=now+5;}
- function finish(timedOut=false){state='over';targets.forEach(x=>x.group.visible=false);const passed=hits===config.rounds.length&&!timedOut;ctx.ui.hud(`★ ${points()} · انتهت الجولة`);ctx.ui.card({tag:'نتيجة الجولة',title:passed?config.successTitle:timedOut?'انتهى الوقت':'أعد المحاولة لتحسّن نتيجتك',body:passed?config.success:`أصبت ${hits} من ${config.rounds.length}. المس الأهداف داخل المشهد وجرب قرارات أخرى.`,color:passed?0x77cba5:0xe18a85});if(passed)ctx.ui.done();ctx.ui.choices([{label:'↻ العب مرة ثانية',primary:true,onPick:reset}]);}
- function reset(){state='idle';round=-1;score=0;hits=0;timeLeft=60;lastSecond=60;heading.visible=true;shots.forEach(x=>g.remove(x.mesh));shots.length=0;targets.forEach(x=>x.group.visible=false);if(visual.reset)visual.reset();ctx.ui.hideCard();ctx.ui.hud(config.intro);ctx.ui.caption('المس الهدف داخل المجسم · لديك ٦٠ ثانية');ctx.ui.choices([{label:'🎯 ابدأ اللعب',primary:true,onPick:()=>show(0)}]);}
- reset();
- return {update(t,dt,e){now=t;const k=ease((t-.1)/1.05)*e;g.scale.setScalar(Math.max(.001,k));if(state==='play'){timeLeft=Math.max(0,timeLeft-dt);if(Math.ceil(timeLeft)!==lastSecond){lastSecond=Math.ceil(timeLeft);hud();}}if(state==='play'&&timeLeft===0)finish(true);for(let i=shots.length-1;i>=0;i--){const s=shots[i],p=Math.min(1,(now-s.start)/.42);s.mesh.position.copy(s.from).lerp(s.to,ease(p));s.mesh.position.y+=Math.sin(Math.PI*p)*.11;s.mesh.scale.setScalar(1+p*.5);if(p>=1){g.remove(s.mesh);shots.splice(i,1);land(s);}}if(state==='feedback'&&now>=feedbackUntil){if(round===config.rounds.length-1)finish();else show(round+1);}targets.forEach((x,i)=>{if(state==='play'){x.group.position.y=.315+Math.sin(t*3+i*2)*.016;x.group.rotation.z=Math.sin(t*2+i*2)*.06;}});if(visual.update)visual.update(t,dt,e,round,score);tagScale(heading,.34,k);}};
-}
+import { world, updateWorld, card, m, box, ball, text, line } from './doors-ten-a.js?v=21';
 
 export function buildSmartGoalGame(ctx){
- return decisionGame(ctx,{title:'مختبر الأهداف الذكية',role:'مصمم مقرر جامعي',color:0x54c7d2,intro:'حوّل هدفاً عاماً إلى هدف يمكن تدريسه وقياسه',start:'✦ افتح ملف المقرر',pass:3,successTitle:'هدف يصلح للتنفيذ',success:'جمعت التحديد والقياس والواقعية والزمن في قراراتك. الصفحة تعرض خصائص SMART بوصفها أداة لفحص الهدف قبل التدريس.',
- props(g){const rings=[.13,.095,.06].map((r,i)=>{const x=new THREE.Mesh(new THREE.TorusGeometry(r,.009,8,40),material([0x5bd1dc,0xe7b95d,0x96d39b][i],.25));x.position.set(0,.18,.01+i*.005);g.add(x);return x;});const dart=orb(.028,material(0xecc36d,.4));dart.position.set(-.24,.11,.02);g.add(dart);const caption=label('SMART',.18);caption.position.set(0,.34,.02);g.add(caption);return {choose(i,points){dart.position.x=-.24+(i+1)*.12;dart.position.y=.11+points*.06;},reset(){dart.position.set(-.24,.11,.02);},update(t,dt,e){rings.forEach((r,i)=>r.rotation.z=t*(i%2?-.35:.35));tagScale(caption,.18,ease((t-.1)/1)*e);}};},
- rounds:[
- {question:'هدف المقرر: «يفهم الطلاب الوسائط»',situation:'لديك محاضرة لطلبة التربية. اختر صياغة يمكن أن تلاحظ فيها أداء الطالب.',options:[
- {label:'يقارن الطالب وسيطين وفق معيارين',points:1,result:'صار الأداء قابلاً للملاحظة',impact:'المقارنة ومعيارا الحكم يحددان ما سيفعله الطالب وكيف يمكن تقويمه.'},
- {label:'يتعرف الطالب جيداً على الوسائط',points:0,result:'بقي الفعل غامضاً',impact:'«يتعرف جيداً» لا يبين أداء قابلاً للقياس أو معياراً للحكم.'}]},
- {question:'موعد تحقيق الهدف',situation:'الفعل واضح الآن، لكن فريق التدريس يريد أن يعرف متى يفحصه.',options:[
- {label:'بنهاية ورشة اليوم',points:1,result:'أضفت زمناً محدداً',impact:'أصبح للتقويم نقطة زمنية، وهو أحد عناصر الهدف الذكي في الصفحة.'},
- {label:'في وقت مناسب لاحقاً',points:0,result:'الزمن ما زال مفتوحاً',impact:'العبارة لا تحدد موعداً عملياً لمراجعة تحقيق الهدف.'}]},
- {question:'هدف طموح تحت قيود حقيقية',situation:'الورشة مدتها ساعة وأجهزتها محدودة. اختر اتفاقاً واقعياً مع المجموعة.',options:[
- {label:'نجرب وسيطين متاحين ونراجع النتيجة',points:1,result:'وازنته مع الموارد',impact:'تحديد الموارد ومراجعتها مع المشاركين يجعل الهدف أقرب إلى الواقعية والاتفاق.'},
- {label:'ننتج منصة كاملة خلال الساعة',points:0,result:'الهدف أكبر من الوقت',impact:'الطموح وحده لا يكفي إذا كانت الموارد والزمن لا يسمحان بالتنفيذ.'}]}
- ]});
+ const {g,heading}=world(ctx,'مختبر الأهداف الذكية',0x26394c),gold=m(0xeac36d,.3),green=m(0x88d2a1,.3),red=m(0xe78687,.3);
+ const core=ball(.055,gold);core.position.set(0,.32,0);g.add(core);const rings=[.09,.13,.17,.21].map((r,i)=>{const x=new THREE.Mesh(new THREE.TorusGeometry(r,.006,8,40),m([0x6dd5df,0xeac36d,0x9bd38e,0xe58aa7][i],.2));x.rotation.x=Math.PI/2;x.position.set(0,.27,0);g.add(x);return x;});
+ const words=['يقارن وسيطين','يفهم جيداً','وفق معيارين','بشكل ممتاز','بنهاية الورشة','لاحقاً','بموارد متاحة','بمنصة كاملة'];
+ const tokens=words.map((name,i)=>{const col=i%2?red:green,b=box(.14,.055,.065,col),x=(i%4-1.5)*.155,z=i<4?-.13:.12;b.position.set(x,.09,z);g.add(b);const l=text(name,.14);l.position.set(x,.18,z);g.add(l);ctx.tap(b,()=>toggle(i));ctx.tap(l,()=>toggle(i));return {b,l,i};});let chosen=new Set(),won=false;
+ function toggle(i){if(won)return;chosen.has(i)?chosen.delete(i):chosen.add(i);tokens[i].b.position.y=chosen.has(i)?.15:.09;tokens[i].b.material.emissiveIntensity=chosen.has(i)?.8:.2;ctx.sfx.tap();ctx.ui.hud(`اخترت ${chosen.size} من ٤ قطع`);ctx.ui.caption('اجمع الفعل القابل للملاحظة، المعيار، الزمن، والموارد الواقعية');}
+ function test(){const good=[0,2,4,6].every(x=>chosen.has(x))&&chosen.size===4;ctx.sfx[good?'good':'bad']();if(good){won=true;rings.forEach(x=>x.material.emissiveIntensity=.8);ctx.fx.burst(g.position.clone().add(core.position),0xeac36d,38,.38,.025);ctx.ui.done();}card(ctx,'اختبار هدف SMART',good?'هدف صالح للتقويم':'أعد تركيب الهدف',good?'«يقارن الطالب وسيطين وفق معيارين بنهاية الورشة وبموارد متاحة». جمعت التحديد والقياس والزمن والواقعية.':'هناك جزء غامض أو غير واقعي. المس القطع لتغييرها، ثم اختبر الهدف ثانية.',good?0x88d2a1:0xe78687);ctx.ui.choices([{label:good?'↻ ابن هدفاً آخر':'حاول مجدداً',onPick:()=>{if(good)reset();else ctx.ui.hideCard();}}]);}
+ function reset(){chosen=new Set();won=false;tokens.forEach(x=>{x.b.position.y=.09;x.b.material.emissiveIntensity=.2;});rings.forEach(x=>x.material.emissiveIntensity=.2);ctx.ui.hideCard();ctx.ui.hud('المس أربع قطع لتبني هدفاً تعليمياً');ctx.ui.caption('بعض القطع جذابة في صياغتها لكنها لا تصلح للقياس');ctx.ui.choices([{label:'اختبر الهدف المركب',primary:true,onPick:test}]);}reset();ctx.tap(core,test);
+ return updateWorld(g,heading,t=>{core.rotation.y=t*.6;rings.forEach((x,i)=>x.rotation.z=t*(i%2?-.18:.18));});
 }
 
 export function buildAdoptionGame(ctx){
- return decisionGame(ctx,{title:'غرفة قرار التحول التقني',role:'لجنة جامعية',color:0xe6b86d,intro:'ثلاثة قرارات لإنقاذ مشروع تعليمي محدود الموارد',start:'✦ افتح ملف التحول',pass:3,successTitle:'خطة تبن مدروسة',success:'عالجت التدريب والبنية والتخطيط قبل توسيع المشروع. تعرض الصفحة هذه المعوقات بوصفها أسباباً تحد من أثر المستحدثات.',
- props(g){const towers=[-.18,0,.18].map((x,i)=>{const b=box(.12,.1+i*.035,.11,material([0x78cbd6,0xe6b86d,0x91ce9e][i],.18));b.position.set(x,.1+i*.018,0);g.add(b);const t=label(['تدريب','بنية','خطة'][i],.12);t.position.set(x,.25,0);g.add(t);return {b,t};});const coins=[-.12,0,.12].map(x=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(.027,.027,.01,16),material(0xf0d381,.4));c.rotation.x=Math.PI/2;c.position.set(x,.31,.08);g.add(c);return c;});return {choose(i,points,score){coins[i].material.emissiveIntensity=points?.65:.05;towers[i].b.material.emissiveIntensity=points?.45:.08;},reset(){coins.forEach(c=>c.material.emissiveIntensity=.4);towers.forEach(x=>x.b.material.emissiveIntensity=.18);},update(t,dt,e){coins.forEach((c,i)=>c.rotation.z=t*.8+i);towers.forEach(x=>tagScale(x.t,.12,ease((t-.1)/1)*e));}};},
- rounds:[
- {question:'أساتذة يرفضون المنصة الجديدة',situation:'خصصت الجامعة ميزانية صغيرة. ماذا تفعل قبل شراء أدوات إضافية؟',options:[
- {label:'ورشة قصيرة وتجربة بإشراف الأساتذة',points:1,result:'خففت مقاومة التغيير',impact:'الصفحة تذكر عدم القناعة وقلة التدريب ضمن معوقات التوظيف.'},
- {label:'أفرض المنصة فوراً على الجميع',points:0,result:'المقاومة ازدادت',impact:'الإلزام بلا إعداد لا يعالج نقص المهارة أو القناعة.'}]},
- {question:'قاعة بلا اتصال ثابت',situation:'أول تجربة فشلت لأن البنية لم تكن جاهزة. ماذا تقدم للجنة؟',options:[
- {label:'أصلح الاتصال وأجرب في قاعة واحدة',points:1,result:'اختبرت البنية قبل التوسع',impact:'تذكر الصفحة نقص الأجهزة والاتصال وتجهيز القاعات ضمن العوائق المادية.'},
- {label:'أشتري اشتراكات جديدة أولاً',points:0,result:'المشكلة الأساسية بقيت',impact:'اشتراك إضافي لا يصلح قاعة لا تملك اتصالاً مستقراً.'}]},
- {question:'التمويل لا يغطي جميع الكليات',situation:'تبقى موارد محدودة. اختر طريقة إطلاق المشروع.',options:[
- {label:'تجربة محددة مع مؤشرات ثم توسع',points:1,result:'صار التوسع قابلاً للمراجعة',impact:'التخطيط والتجريب يساعدان على مواجهة قلة التمويل والتغير السريع للتقنيات.'},
- {label:'تعميم شامل من اليوم الأول',points:0,result:'تجاوزت قدرة المشروع',impact:'التمويل والتدريب والبنية لا تكفي لتعميم غير مخطط له.'}]}
- ]});
+ const {g,heading}=world(ctx,'غرفة قرار التحول التقني',0x243b4d),colors=[0x6ccddd,0xe8c374,0x8bd2a0],names=['تدريب','بنية','تخطيط'];
+ const pillars=names.map((name,i)=>{const b=box(.14,.1,.13,m(colors[i],.25));b.position.set((i-1)*.2,.11,0);g.add(b);const l=text(name,.14);l.position.set((i-1)*.2,.26,0);g.add(l);ctx.tap(b,()=>invest(i));ctx.tap(l,()=>invest(i));return {b,l};});const coins=Array.from({length:6},(_,i)=>{const c=ball(.018,m(0xf5dc8c,.45));c.position.set(-.23+i*.09,.055,.15);g.add(c);return c;});const project=box(.15,.13,.1,m(0xe58188,.15));project.position.set(0,.19,-.16);g.add(project);let budget=6,spent=[0,0,0],won=false;
+ function invest(i){if(won||budget===0){ctx.ui.toast('انتهت الموارد؛ اختبر الخطة أو أعد توزيعها');return;}budget--;spent[i]++;coins[budget].visible=false;pillars[i].b.scale.y=1+spent[i]*.25;ctx.sfx.tap();ctx.ui.hud(`متبقّي ${budget} من ٦ موارد`);ctx.ui.caption(`${names[i]}: ${spent[i]} · وزّع الموارد قبل إطلاق المشروع`);}
+ function launch(){const good=spent[0]>=2&&spent[1]>=2&&spent[2]>=1;ctx.sfx[good?'good':'bad']();project.material=m(good?0x8bd2a0:0xe58188,good?.8:.12);project.scale.y=good?1.5:.7;card(ctx,'تجربة إطلاق المشروع',good?'اشتغل المشروع في القاعة':'تعطل المشروع',good?'عالجت التدريب والبنية والتخطيط قبل التوسع، وهي جوانب معوقات التوظيف الواردة في الصفحة.':`التدريب ${spent[0]}، البنية ${spent[1]}، التخطيط ${spent[2]}. يحتاج الإطلاق إلى اثنين للتدريب، واثنين للبنية، وواحد للتخطيط على الأقل.`,good?0x8bd2a0:0xe58188);if(good){won=true;ctx.ui.done();ctx.fx.burst(g.position.clone().add(project.position),0x8bd2a0,30,.3,.023);}ctx.ui.choices([{label:'↻ أعد توزيع الموارد',onPick:reset}]);}
+ function reset(){budget=6;spent=[0,0,0];won=false;coins.forEach(x=>x.visible=true);pillars.forEach(x=>x.b.scale.y=1);project.scale.y=1;project.material=m(0xe58188,.15);ctx.ui.hideCard();ctx.ui.hud('لديك ٦ موارد؛ المس المجالات لتوزيعها');ctx.ui.caption('هل تشتري الأدوات أم تجهز الناس والبنية والخطة؟');ctx.ui.choices([{label:'🚀 أطلق المشروع',primary:true,onPick:launch}]);}reset();ctx.tap(project,launch);
+ return updateWorld(g,heading,t=>{project.position.y=.19+Math.sin(t*2)*.008;coins.forEach((x,i)=>x.rotation.y=t+i);});
 }
 
 export function buildEbookAuditGame(ctx){
- return decisionGame(ctx,{title:'محكمة جودة الكتاب الإلكتروني',role:'مراجع جودة',color:0x9a79d5,intro:'افحص نموذج كتاب قبل إطلاقه لطلبة الجامعة',start:'✦ ابدأ المراجعة',pass:3,successTitle:'الكتاب اجتاز المراجعة',success:'راجعت الإبحار والتقويم وسهولة الاستخدام، وهي من المواصفات والمعايير المذكورة في صفحة الكتاب.',
- props(g){const cover=box(.3,.025,.27,material(0x55457b));cover.position.set(0,.07,0);g.add(cover);const pages=[-.08,0,.08].map((x,i)=>{const p=box(.095,.17,.012,material([0xb89ae1,0xd8c8f0,0xf0e8fa][i],.12));p.position.set(x,.17,.015);p.rotation.y=(i-1)*.25;g.add(p);return p;});const marks=[-.12,0,.12].map(x=>{const m=orb(.015,material(0xe9bd72,.25));m.position.set(x,.29,.05);g.add(m);return m;});return {choose(i,points){marks[i].material.color.setHex(points?0x74cfa5:0xe88688);pages[i].rotation.y=points?(i-1)*.4:.8;},reset(){marks.forEach(m=>m.material.color.setHex(0xe9bd72));pages.forEach((p,i)=>p.rotation.y=(i-1)*.25);},update(t,dt,e){pages.forEach((p,i)=>p.position.y=.17+Math.sin(t*2+i)*.004);}};},
- rounds:[
- {question:'الطالب لا يجد الفصل التالي',situation:'الكتاب يحتوي مواد جيدة لكن الانتقال بين الأبواب مربك.',options:[
- {label:'أضيف فهرساً ومسار رجوع واضحاً',points:1,result:'أصلحت الإبحار',impact:'تذكر الصفحة أساليب الإبحار وواجهة التفاعل ضمن مواصفات تصميم الكتاب الإلكتروني.'},
- {label:'أضيف مؤثر حركة للغلاف',points:0,result:'العائق بقي',impact:'تحسين الغلاف لا يعالج صعوبة الوصول إلى المحتوى.'}]},
- {question:'أنشطة بلا تغذية راجعة',situation:'يحل الطالب المهمة، ولا يعرف سبب صحة قراره أو خطئه.',options:[
- {label:'أعرض تفسيراً بعد كل قرار',points:1,result:'صار التقويم أداة تعلم',impact:'تذكر الصفحة التقويم والتغذية الراجعة ضمن معايير التصميم التعليمي.'},
- {label:'أكتفي بإظهار الدرجة النهائية',points:0,result:'ضاعت فرصة التعلم',impact:'الدرجة وحدها لا تفسر الخطأ أو توجه المحاولة التالية.'}]},
- {question:'نص صغير على شاشة هاتف',situation:'اختبر الكتاب طالب يستخدم شاشة صغيرة مدة طويلة.',options:[
- {label:'أجعل الخط مقروءاً والتباين واضحاً',points:1,result:'تحسنت سهولة الاستخدام',impact:'النص واللون وتماسك العرض من المعايير الفنية ومعايير سهولة الاستخدام في الصفحة.'},
- {label:'أزيد عدد الصور بلا تغيير النص',points:0,result:'المشكلة البصرية مستمرة',impact:'صور أكثر لا تعالج حجم الخط أو وضوح النص.'}]}
- ]});
+ const {g,heading}=world(ctx,'محكمة جودة الكتاب الإلكتروني',0x2c3150),purple=m(0x9d84d3,.3),red=m(0xe4828e,.3),green=m(0x88d2a1,.3);
+ const cover=box(.38,.035,.3,purple);cover.position.set(0,.07,0);g.add(cover);const sheets=[-.16,0,.16].map((x,i)=>{const p=box(.16,.16,.012,m(0xe6dcf2,.2));p.position.set(x,.18,0);g.add(p);const label=text(['إبحار','تقويم','قراءة'][i],.13);label.position.set(x,.29,0);g.add(label);ctx.tap(p,()=>open(i));ctx.tap(label,()=>open(i));return {p,label};});const flaws=[-1,0,1].map((_,i)=>{const f=ball(.027,red);f.position.set((i-1)*.16,.22,.065);g.add(f);ctx.tap(f,()=>repair(i));return f;});let current=-1,fixed=[false,false,false];
+ function open(i){current=i;sheets.forEach((x,j)=>x.p.rotation.y=j===i?-.45:0);ctx.sfx.tap();ctx.ui.hud(`تفتيش صفحة ${i+1} من ٣`);ctx.ui.caption(['الطالب لا يجد طريق العودة؛ المس العطل الأحمر','الطالب لا يعرف سبب خطئه؛ المس العطل الأحمر','الخط صغير على الهاتف؛ المس العطل الأحمر'][i]);}
+ function repair(i){if(current!==i){ctx.ui.toast('افتح هذه الصفحة أولاً');return;}if(fixed[i])return;fixed[i]=true;flaws[i].material=green;sheets[i].p.material=green;ctx.sfx.good();ctx.fx.burst(g.position.clone().add(flaws[i].position),0x88d2a1,18,.24,.016);ctx.ui.hud(`أصلحت ${fixed.filter(Boolean).length} من ٣ عيوب`);ctx.ui.caption(['صار للكتاب فهرس ومسار رجوع واضح','صارت التغذية الراجعة تشرح سبب الإجابة','صار النص مقروءاً والتباين واضحاً'][i]);if(fixed.every(Boolean)){card(ctx,'تقرير جودة الكتاب','اجتاز الكتاب المراجعة','أصلحت الإبحار والتقويم وقابلية القراءة؛ وهي من معايير إنتاج الكتاب الإلكتروني المذكورة في الصفحة.',0x88d2a1);ctx.ui.done();ctx.ui.choices([{label:'↻ افتح ملف مراجعة جديد',onPick:reset}]);}}
+ function reset(){current=-1;fixed=[false,false,false];sheets.forEach(x=>{x.p.rotation.y=0;x.p.material=m(0xe6dcf2,.2);});flaws.forEach(x=>x.material=red);ctx.ui.hideCard();ctx.ui.hud('افتح كل صفحة وابحث عن عيبها');ctx.ui.caption('ثلاث صفحات، ثلاثة عيوب قابلة للإصلاح');ctx.ui.choices([]);}reset();
+ return updateWorld(g,heading,t=>{flaws.forEach((x,i)=>{x.visible=current===i&&!fixed[i];x.scale.setScalar(1+Math.sin(t*5+i)*.12);});});
 }
 
 export function buildByodPolicyGame(ctx){
- return decisionGame(ctx,{title:'مجلس سياسة الأجهزة الشخصية',role:'مجلس كلية',color:0x5ac7ca,intro:'اسمح بالأجهزة من دون أن تجعلها شرطاً للإقصاء',start:'✦ افتح جلسة المجلس',pass:3,successTitle:'سياسة أكثر إنصافاً',success:'وظفت الأجهزة الشخصية للتعلم مع بديل متاح ودعم واضح. الصفحة تصف BYOD واختلاف المواقف حول تطبيقه.',
- props(g){const devices=[[-.18,.09,.065],[0,.12,.085],[.18,.08,.06]].map(([x,h,w],i)=>{const d=box(w,h,.015,material([0x58bcd3,0x8ed1a1,0xe8bd6d][i],.18));d.position.set(x,.16,.03);g.add(d);const screen=box(w*.75,h*.65,.003,material(0xc4f0e4,.25));screen.position.set(x,.16,.04);g.add(screen);return d;});const wifi=new THREE.Mesh(new THREE.TorusGeometry(.07,.007,8,30,Math.PI),material(0x84d9d8,.3));wifi.position.set(0,.32,-.04);g.add(wifi);return {choose(i,points){devices[i].material.emissiveIntensity=points?.6:.04;},reset(){devices.forEach(d=>d.material.emissiveIntensity=.18);},update(t){wifi.rotation.z=Math.sin(t*2)*.1;}};},
- rounds:[
- {question:'طالب لا يملك جهازاً مناسباً',situation:'تريد فتح مقرر يعتمد على الأجهزة الشخصية.',options:[
- {label:'أوفر جهاز إعارة ومساراً بديلاً',points:1,result:'أبقيت المشاركة ممكنة',impact:'السماح بالجهاز الشخصي لا يعني اشتراط امتلاكه على كل طالب.'},
- {label:'أشترط الجهاز على الجميع',points:0,result:'استبعدت بعض الطلبة',impact:'السياسة تفقد قيمتها التعليمية إذا منعت من لا يملك الجهاز من الوصول.'}]},
- {question:'شبكة الجامعة مزدحمة',situation:'طلبة عدة تخصصات يدخلون المقرر في الوقت نفسه.',options:[
- {label:'أختبر الاتصال والمواد قبل التعميم',points:1,result:'خففت خطر الانقطاع',impact:'اختبار البنية والدخول إلى المواد يجعل التطبيق قابلاً للتنفيذ.'},
- {label:'أعلن التطبيق بلا تجربة',points:0,result:'تركت عائقاً غير معروف',impact:'توافر الأجهزة لا يكفي إذا لم تعمل شبكة الوصول والمواد عند الحاجة.'}]},
- {question:'الأجهزة تصرف الانتباه في الحصة',situation:'بعض الطلاب ينتقلون إلى تطبيقات لا تخص النشاط.',options:[
- {label:'أحدد مهمة قصيرة وقواعد استخدام',points:1,result:'صار للجهاز دور تعلم واضح',impact:'ترتبط فائدة BYOD بتصميم النشاط ومتى يستخدم الجهاز، لا بحضوره وحده.'},
- {label:'أترك الاستخدام بلا هدف',points:0,result:'تشتت النشاط',impact:'غياب هدف وقواعد يجعل الجهاز أقرب إلى مصدر تشتيت.'}]}
- ]});
+ const {g,heading}=world(ctx,'مجلس سياسة الأجهزة الشخصية',0x213f4e),cyan=m(0x70cddd,.25),green=m(0x89d39e,.3),red=m(0xe5848a,.3),gold=m(0xebc473,.3);
+ const router=ball(.055,cyan);router.position.set(0,.31,-.08);g.add(router);const devices=[-.2,0,.2].map((x,i)=>{const d=box(.12,.09,.02,i===2?red:cyan);d.position.set(x,.12,.1);g.add(d);const l=text(i===2?'بلا جهاز':'طالب',.12);l.position.set(x,.24,.1);g.add(l);ctx.tap(d,()=>connect(i));ctx.tap(l,()=>connect(i));return {d,l,connected:false,available:i<2,x};});const links=devices.map(x=>{const l=line([0,.28,-.08],[x.x,.18,.1],0x85deea);l.visible=false;g.add(l);return l;});const loaner=box(.12,.06,.08,gold);loaner.position.set(-.18,.08,-.14);g.add(loaner);const loanerLabel=text('جهاز إعارة',.13);loanerLabel.position.set(-.18,.18,-.14);g.add(loanerLabel);const capacity=box(.12,.06,.08,gold);capacity.position.set(.18,.08,-.14);g.add(capacity);const capacityLabel=text('وسّع الشبكة',.13);capacityLabel.position.set(.18,.18,-.14);g.add(capacityLabel);let slots=2,loaned=false;
+ function connect(i){const d=devices[i];if(d.connected)return;if(!d.available){ctx.sfx.bad();ctx.ui.toast('الطالب يحتاج جهاز إعارة أولاً');return;}if(devices.filter(x=>x.connected).length>=slots){ctx.sfx.bad();ctx.ui.toast('الشبكة وصلت إلى سعتها؛ وسّعها');return;}d.connected=true;d.d.material=green;links[i].visible=true;ctx.sfx.good();ctx.ui.hud(`${devices.filter(x=>x.connected).length} من ٣ طلبة متصلين`);if(devices.every(x=>x.connected)){card(ctx,'سياسة BYOD','وصل الجميع إلى النشاط','الأجهزة الشخصية قد تفيد التعلم إذا صاحبها بديل لمن لا يملك جهازاً وبنية تسمح بالوصول، وهي أسئلة تطبيق السياسة في الصفحة.',0x89d39e);ctx.ui.done();ctx.ui.choices([{label:'↻ أعد تصميم الشبكة',onPick:reset}]);}}
+ function giveLoaner(){loaned=true;devices[2].available=true;devices[2].d.material=cyan;loaner.material=green;ctx.sfx.good();ctx.ui.toast('أصبح للطالب جهاز إعارة');}
+ function upgrade(){slots=3;capacity.material=green;ctx.sfx.good();ctx.ui.toast('الشبكة تسع ثلاثة أجهزة');}
+ function reset(){slots=2;loaned=false;devices.forEach((x,i)=>{x.connected=false;x.available=i<2;x.d.material=i===2?red:cyan;links[i].visible=false;});loaner.material=capacity.material=gold;ctx.ui.hideCard();ctx.ui.hud('صل ثلاثة طلبة بالشبكة دون إقصاء');ctx.ui.caption('طالب بلا جهاز، وشبكة تسع جهازين فقط');ctx.ui.choices([]);}reset();[[loaner,giveLoaner],[loanerLabel,giveLoaner],[capacity,upgrade],[capacityLabel,upgrade]].forEach(([o,f])=>ctx.tap(o,f));
+ return updateWorld(g,heading,t=>{router.material.emissiveIntensity=.35+.2*Math.sin(t*4);devices.forEach((x,i)=>x.d.position.y=.12+Math.sin(t*2+i)*.006);});
 }
 
 export function buildTechBalanceGame(ctx){
- return decisionGame(ctx,{title:'غرفة التوازن التقني',role:'مستشار تعليمي',color:0xe49a82,intro:'حالات جامعية بين الخوف من التقنية والإفراط فيها',start:'✦ ابدأ الحالات',pass:3,successTitle:'قرارات متزنة',success:'فرقت بين حاجة التدريب وحدود الاستخدام وتقييم الفائدة. تناقش الصفحة الخوف من التكنولوجيا والهوس بها.',
- props(g){const beam=box(.43,.018,.04,material(0xe8c88b));beam.position.set(0,.18,0);g.add(beam);const stem=box(.018,.16,.03,material(0xb7bbc8));stem.position.set(0,.1,0);g.add(stem);const pans=[-.18,.18].map((x,i)=>{const p=box(.14,.015,.09,material(i?0xe59389:0x6dc8d0,.2));p.position.set(x,.12,.02);g.add(p);const lbl=label(i?'هوس':'خوف',.12);lbl.position.set(x,.25,.02);g.add(lbl);return {p,lbl};});const needle=orb(.035,material(0xf5d57b,.35));needle.position.set(0,.22,.025);g.add(needle);let lean=0;return {choose(i,points){lean=points?0:(i%2?1:-1);},reset(){lean=0;},update(t,dt,e){beam.rotation.z=THREE.MathUtils.lerp(beam.rotation.z,lean*.18,Math.min(1,dt*4));needle.position.x=Math.sin(t*2)*.007;pans.forEach((x,i)=>tagScale(x.lbl,.12,ease((t-.1)/1)*e));}};},
- rounds:[
- {question:'محاضر يخشى تجربة منصة جديدة',situation:'الرفض مرتبط بقلة الخبرة أكثر من اعتراض على الهدف التعليمي.',options:[
- {label:'تدريب قصير وتجربة منخفضة المخاطر',points:1,result:'قدمت طريقاً للتعلم',impact:'تذكر الصفحة أن الصفوف والدورات والمعرفة تساعد على تجاوز الخوف من التقنية.'},
- {label:'أسخر من تردده أمام زملائه',points:0,result:'عمقت المقاومة',impact:'الإحراج لا يبني مهارة ولا يجيب عن القلق.'}]},
- {question:'طالب يفتح المنصة طوال الليل',situation:'يربط كل دقيقة دراسة بإشعارات وتنبيهات متواصلة.',options:[
- {label:'أضع فترات دراسة وحدوداً للتنبيهات',points:1,result:'حفظت فائدة الأداة',impact:'الهدف استخدام التقنية لخدمة التعلم مع حدود واضحة للوقت والانتباه.'},
- {label:'أزيد الإشعارات لتحفيزه',points:0,result:'ازداد التشتت',impact:'المزيد من التنبيهات لا يعالج الإفراط في الاستخدام.'}]},
- {question:'لجنة تريد إلغاء كل تقنية بعد تعثر تجربة',situation:'تعثر نشاط واحد، لكن بعض الطلبة استفادوا منه.',options:[
- {label:'أراجع الأدلة وأعدل طريقة التطبيق',points:1,result:'اتخذت قراراً مبنياً على الأثر',impact:'التقييم يميز بين مشكلة في الأداة ومشكلة في استخدامها، ويجنب الرفض المطلق أو الحماس المطلق.'},
- {label:'ألغي جميع الأدوات فوراً',points:0,result:'حكمت من تجربة واحدة',impact:'التعميم لا يبين سبب التعثر ولا يحفظ ما نجح من النشاط.'}]}
- ]});
+ const {g,heading}=world(ctx,'غرفة التوازن التقني',0x334153),gold=m(0xeac477,.3),cyan=m(0x75ccd9,.25),red=m(0xe68588,.3);
+ const beam=box(.46,.018,.04,gold);beam.position.set(0,.22,0);g.add(beam);const stem=box(.018,.19,.03,m(0xc2c6cc));stem.position.set(0,.12,0);g.add(stem);const pans=[-.19,.19].map((x,i)=>{const p=box(.13,.015,.1,i?red:cyan);p.position.set(x,.13,.02);g.add(p);const l=text(i?'استخدام مفرط':'خوف',.13);l.position.set(x,.31,.02);g.add(l);ctx.tap(p,()=>nudge(i?1:-1));ctx.tap(l,()=>nudge(i?1:-1));return {p,l};});const needle=ball(.026,gold);needle.position.set(0,.25,.04);g.add(needle);const scenarios=[['محاضر يخشى تجربة منصة جديدة',-2,'خطوة تدريب وتجربة منخفضة المخاطر'],['طالب يغرق في التنبيهات',2,'حدود زمنية للتنبيهات والاستخدام'],['لجنة تحكم من تجربة واحدة',-2,'راجع الدليل قبل الرفض أو الحماس']];let index=0,tilt=-2,won=false;
+ function show(){tilt=scenarios[index][1];ctx.ui.hideCard();ctx.ui.hud(`الحالة ${index+1} من ٣ · اضبط الميزان`);ctx.ui.caption(`${scenarios[index][0]} · المس الكفة لتقرب المؤشر من الوسط`);}
+ function nudge(dir){if(won)return;tilt=Math.max(-3,Math.min(3,tilt+dir));ctx.sfx.tap();ctx.ui.hud(`الحالة ${index+1} من ٣ · ${tilt===0?'اتزان':tilt<0?'يميل إلى الخوف':'يميل إلى الإفراط'}`);if(tilt===0){ctx.sfx.good();card(ctx,'تدخل متزن',scenarios[index][2],'الفكرة أن تستخدم التقنية حسب الحاجة والأثر، مع تدريب وحدود ومراجعة؛ تعالج صفحة ٦٢٤ الخوف والهوس معاً.',0x88d3a2);ctx.ui.choices([{label:index===2?'اعرض النتيجة':'الحالة التالية',primary:true,onPick:()=>{if(index===2){won=true;ctx.ui.done();ctx.ui.hud('وازنت الحالات الثلاث');ctx.ui.choices([{label:'↻ جولة جديدة',onPick:reset}]);}else{index++;show();ctx.ui.choices([]);}}}]);}else ctx.ui.caption(tilt<0?'خفف الخوف بالتدريب وتجربة صغيرة':'خفف الإفراط بحدود واضحة للاستخدام');}
+ function reset(){index=0;won=false;show();ctx.ui.choices([]);}reset();ctx.tap(needle,()=>nudge(tilt<0?1:-1));
+ return updateWorld(g,heading,(t,dt)=>{beam.rotation.z=THREE.MathUtils.damp(beam.rotation.z,tilt*.1,4,dt);needle.position.x=THREE.MathUtils.damp(needle.position.x,tilt*.055,4,dt);pans.forEach((x,i)=>x.p.position.y=.13+(i?1:-1)*tilt*.014);});
 }

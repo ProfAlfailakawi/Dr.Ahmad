@@ -13,7 +13,9 @@ import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-ne
 import { buildLivingNetwork, buildLessonFactory, buildWebEvolution, buildStoryboardDirector, buildFoldingBook } from './doors-future.js?v=13';
 import { buildAccessibleWorld, buildArcsReactor, buildSearchDetective, buildComputerElevator, buildFlippedClass } from './doors-wave-a.js?v=14';
 import { buildHologramLab, buildArMirror, buildMediaOrchestra, buildBalloonNetwork, buildSchoollessCity } from './doors-wave-b.js?v=14';
-import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=18';
+import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=21';
+import { buildProgrammedCorridor, buildDesignMachine, buildEvidenceLab, buildCloudCourse, buildBlendMixer } from './doors-ten-a.js?v=21';
+import { buildArLayers, buildGameForge, buildThinkingBoard, buildBranchingVideo, buildOpenResourceMuseum } from './doors-ten-b.js?v=21';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -801,6 +803,11 @@ export const EXPERIENCES = [
     behind: { principle: 'تنبّأ ثم شاهد (البنائية) والتعلّم بالاسترجاع', body: 'حين تلتزم بإجابة قبل أن ترى الحقيقة، يقارن عقلك توقّعه بالواقع ويعيد بناء الفكرة. ثم أضأنا لك الخانة نفسها في الجدول المطبوع ليتصل الجديد بما في الكتاب.' },
   },
   {
+    id: 'programmed-corridor', kind: 'page', door: 1, pack: 'next-lab1', page: 'p59', pageNo: '٥٩', title: 'الممر الذي يكتب نفسه', type: 'branching', typeLabel: 'ممر متفرع',
+    center: [0.5, 0.52], free: true, build: buildProgrammedCorridor,
+    behind: { principle: 'التعليم المبرمج', body: 'تتغير خطوات التعلم وفق استجابة الطالب، ويقوده الخطأ إلى شرح وتصحيح قبل المتابعة كما تصف الصفحة.' },
+  },
+  {
     id: 'channels-of-time', kind: 'page', door: 1, pack: 'door1', page: 'p66', pageNo: '٦٦', title: 'قنوات الزمن: رحلة الوسائل التعليمية', type: 'timeline', typeLabel: 'آلة الزمن',
     video: 'gPzhwiIN__8', center: [0.635, 0.36], free: true, crop: [0.34, 0.02, 0.955, 0.58], build: buildTimeTV,
     behind: { principle: 'التنظيم المتقدّم والسرد (أوزوبل)', body: 'وضعنا كل وسيلة على خطّ زمني واحد قبل تفاصيلها؛ فحين يرى عقلك الإطار الكبير أولاً، يجد لكل معلومة جديدة مكاناً تتعلّق به.' },
@@ -821,6 +828,11 @@ export const EXPERIENCES = [
     behind: { principle: 'التعلّم بالمحاكاة والتجريب', body: 'لم نخبرك بأثر التشويش؛ أعطيناك مقبضه. حين تغيّر متغيّراً واحداً وترى نتيجته فوراً، تكتشف العلاقة بنفسك كما يكتشفها العالِم في مختبره.' },
   },
   {
+    id: 'design-machine', kind: 'page', door: 1, pack: 'next-lab1', page: 'p164', pageNo: '١٦٤', title: 'آلة بناء المقرر', type: 'factory', typeLabel: 'آلة تصميم',
+    center: [0.5, 0.52], free: true, build: buildDesignMachine,
+    behind: { principle: 'التصميم التعليمي المتكرر', body: 'ترتب المراحل الخمس ثم تعود إلى مرحلة سابقة وفق التغذية الراجعة؛ تؤكد الصفحة أن التصميم عملية مستمرة.' },
+  },
+  {
     id: 'arcs-reactor', kind: 'page', door: 1, pack: 'doorwave1', page: 'p186', pageNo: '١٨٦', title: 'مفاعل الدافعية: نموذج ARCS', type: 'reactor', typeLabel: 'مفاعل الدافعية',
     center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildArcsReactor,
     behind: { principle: 'الانتباه والصلة والثقة والرضا', body: 'تجعل عناصر نموذج كيلر الأربعة مصادر طاقة للتعلم، وتختبر كيف يعمل كل عنصر مع البقية.' },
@@ -831,9 +843,14 @@ export const EXPERIENCES = [
     behind: { principle: 'ممارسة صياغة هدف قابل للتقويم', body: 'تتخذ قرارات لصياغة هدف جامعي محدد وقابل للقياس ومرتبط بزمن وموارد واقعية.' },
   },
   {
+    id: 'evidence-lab', kind: 'page', door: 1, pack: 'next-lab2', page: 'p230', pageNo: '٢٣٠', title: 'مختبر كشف الوهم', type: 'lab', typeLabel: 'ميزان الدليل',
+    center: [0.5, 0.52], free: true, build: buildEvidenceLab,
+    behind: { principle: 'نقد أنماط التعلم', body: 'تزن ادعاء مطابقة التدريس لنمط ثابت مقابل الانتقادات العلمية التي تذكرها الصفحة.' },
+  },
+  {
     id: 'adoption-game', kind: 'page', door: 2, pack: 'games-foundations', page: 'p256', pageNo: '٢٥٦', title: 'غرفة قرار التحول التقني', type: 'unigame', typeLabel: 'لعبة تخطيط جامعي',
     center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildAdoptionGame,
-    behind: { principle: 'تخطيط تبني المستحدثات', body: 'تعالج ثلاث حالات من معوقات التدريب والبنية والتمويل التي تذكرها الصفحة.' },
+    behind: { principle: 'تخطيط تبني المستحدثات', body: 'توزع موارد محدودة بين التدريب والبنية والتخطيط قبل إطلاق مشروع جامعي، ثم ترى أثر قرارك.' },
   },
   {
     id: 'living-network', kind: 'page', door: 2, pack: 'door2future', page: 'p273', pageNo: '٢٧٣', title: 'الشبكة التي تشفي نفسها', type: 'network', typeLabel: 'شبكة حيّة',
@@ -866,9 +883,19 @@ export const EXPERIENCES = [
     behind: { principle: 'التزامن والتغذية الراجعة الفورية', body: 'جمعت التجربة المعلم والطلبة في الوقت نفسه رغم بُعد المكان. تمرّ الرسالة ويعود الرد فوراً، فتظهر ميزة النقاش المباشر والتغذية الراجعة التي تصفها الصفحة.' },
   },
   {
+    id: 'cloud-course', kind: 'page', door: 3, pack: 'next-lab2', page: 'p366', pageNo: '٣٦٦', title: 'المقرر الذي يعيش في السحابة', type: 'network', typeLabel: 'شبكة سحابية',
+    center: [0.5, 0.52], free: true, build: buildCloudCourse,
+    behind: { principle: 'الوصول عبر الشبكة', body: 'تقطع اتصال الأطراف وتعيده لترى كيف تصبح الموارد المشتركة متاحة أو محجوبة.' },
+  },
+  {
     id: 'flipped-class', kind: 'page', door: 3, pack: 'doorwave3', page: 'p370', pageNo: '٣٧٠', title: 'الفصل المقلوب حرفياً', type: 'flipped', typeLabel: 'فصل مقلوب',
     center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildFlippedClass,
     behind: { principle: 'إعادة توزيع وقت التعلم', body: 'تقلب مكان الشرح والتطبيق، ثم تحدد كيف يستثمر وقت الصف في النقاش أو النشاط.' },
+  },
+  {
+    id: 'blend-mixer', kind: 'page', door: 3, pack: 'next-lab3', page: 'p373', pageNo: '٣٧٣', title: 'مِزجتان، فصل واحد', type: 'balance', typeLabel: 'مِزج تفاعلي',
+    center: [0.5, 0.52], free: true, build: buildBlendMixer,
+    behind: { principle: 'تكامل الحضوري والإلكتروني', body: 'تغير نسبة المزج وتراقب كيف يتكامل نقاش القاعة مع المادة الإلكترونية.' },
   },
   {
     id: 'web-evolution', kind: 'page', door: 3, pack: 'door3future', page: 'p380', pageNo: '٣٨٠', title: 'ولادة الويب: من القراءة إلى المعنى', type: 'web', typeLabel: 'تحول تفاعلي',
@@ -901,9 +928,24 @@ export const EXPERIENCES = [
     behind: { principle: 'التعلم فوق التعلم', body: 'تكشف طبقات الكاميرا والتعرف وتقدير الموضع والمجسم الذي يثبت فوق الصفحة.' },
   },
   {
+    id: 'ar-layers', kind: 'page', door: 3, pack: 'next-lab3', page: 'p408', pageNo: '٤٠٨', title: 'مختبر ظهور الطبقات', type: 'mirror', typeLabel: 'تثبيت الواقع المعزز',
+    center: [0.5, 0.52], free: true, build: buildArLayers,
+    behind: { principle: 'العلامة وتمييز الصورة والموقع', body: 'تقارن طرق تثبيت الطبقة الرقمية المذكورة في صفحة أنواع الواقع المعزز.' },
+  },
+  {
+    id: 'game-forge', kind: 'page', door: 3, pack: 'next-lab4', page: 'p434', pageNo: '٤٣٤', title: 'اصنع اللعبة ثم اكسرها', type: 'game', typeLabel: 'ورشة ألعاب',
+    center: [0.5, 0.52], free: true, build: buildGameForge,
+    behind: { principle: 'عناصر اللعبة التعليمية', body: 'تركيب الهدف والقواعد والتغذية الراجعة والتحدي يغير سلوك اللعبة عند تشغيلها.' },
+  },
+  {
     id: 'learning-bag', kind: 'page', door: 3, pack: 'door3new', page: 'p449', pageNo: '٤٤٩', title: 'حقيبتي التعليمية: مسار يتشكل لي', type: 'bag', typeLabel: 'حقيبة شخصية',
     center: [0.43, 0.54], free: true, crop: [0.0703, 0.1801, 0.9306, 0.7900], build: buildLearningBag,
     behind: { principle: 'تفريد التعلم والتعلم الذاتي', body: 'الحقيبة في الكتاب نظام للتعلم الذاتي يراعي الفروق الفردية. تختار هدفك فتظهر وسائل وأنشطة وتقويم، ليصبح ترتيب الرحلة مرتبطا بما تحتاجه.' },
+  },
+  {
+    id: 'thinking-board', kind: 'page', door: 3, pack: 'next-lab4', page: 'p453', pageNo: '٤٥٣', title: 'سبورة التفكير الحيّة', type: 'hotspots', typeLabel: 'سبورة تفاعلية',
+    center: [0.5, 0.52], free: true, build: buildThinkingBoard,
+    behind: { principle: 'التفاعل باللمس', body: 'تربط سؤالاً ودليلاً واستنتاجاً على سبورة حساسة للمس كما تصف الصفحة.' },
   },
   {
     id: 'media-orchestra', kind: 'page', door: 3, pack: 'doorwave4', page: 'p464', pageNo: '٤٦٤', title: 'أوركسترا الوسائط', type: 'orchestra', typeLabel: 'مزج الوسائط',
@@ -914,6 +956,11 @@ export const EXPERIENCES = [
     id: 'storyboard-director', kind: 'page', door: 3, pack: 'door3future', page: 'p477', pageNo: '٤٧٧', title: 'أنت المخرج: الستوري بورد يصحو', type: 'director', typeLabel: 'إخراج مشهد',
     center: [0.47, 0.5], free: true, crop: [0.0703, 0.0996, 0.9325, 0.8276], build: buildStoryboardDirector,
     behind: { principle: 'السرد البصري والتتابع', body: 'تختار حجم اللقطة وترتيب الإطارات، ثم ترى كيف تتحول لوحة التخطيط إلى عرض متحرك. تشير الصفحة إلى أن اتجاه الكاميرا والتكبير وترتيب اللقطات جزء من الستوري بورد.' },
+  },
+  {
+    id: 'branching-video', kind: 'page', door: 3, pack: 'next-lab5', page: 'p480', pageNo: '٤٨٠', title: 'أوقف المشهد وغيّر النتيجة', type: 'director', typeLabel: 'مشهد متفرع',
+    center: [0.5, 0.52], free: true, build: buildBranchingVideo,
+    behind: { principle: 'الفيديو التفاعلي', body: 'توقف مشهداً تدريسياً عند لحظة حرجة ثم تغير نتيجته بتدخل مباشر.' },
   },
   {
     id: 'balloon-network', kind: 'page', door: 3, pack: 'doorwave5', page: 'p510', pageNo: '٥١٠', title: 'بالونات تحمل الإنترنت', type: 'balloon', typeLabel: 'شبكة جوية',
@@ -951,6 +998,11 @@ export const EXPERIENCES = [
     behind: { principle: 'التعلّم التجريبي (ديفيد كولب)', body: 'جرّبت قراراً، ثم رأيت نتيجته، ثم تأمّلتها، ثم وصلت إلى المفهوم في النهاية. هذه دورة كولب: تجربة فتأمّل فمفهوم فتطبيق.' },
   },
   {
+    id: 'open-resource-museum', kind: 'page', door: 4, pack: 'next-lab5', page: 'p620', pageNo: '٦٢٠', title: 'متحف المعرفة القابلة للبناء', type: 'accessible', typeLabel: 'مجموعة موارد',
+    center: [0.5, 0.52], free: true, build: buildOpenResourceMuseum,
+    behind: { principle: 'تنوع الموارد وإتاحتها', body: 'تجمع الصوت والمكتبة الرقمية والكتاب واللعبة ثم تختبر اتساع طرق الوصول.' },
+  },
+  {
     id: 'byod-policy-game', kind: 'page', door: 4, pack: 'games-policy', page: 'p621', pageNo: '٦٢١', title: 'مجلس سياسة الأجهزة الشخصية', type: 'unigame', typeLabel: 'لعبة سياسات',
     center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildByodPolicyGame,
     behind: { principle: 'موازنة الوصول والاستخدام', body: 'تتخذ قرارات جامعية حول الأجهزة الشخصية والبدائل والبنية وتنظيم النشاط.' },
@@ -979,6 +1031,11 @@ export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 // Recognition packs: each opens with its own small recognition file so speed stays the same as the
 // book grows. `ids` follows the order of the images inside that pack's file.
 export const PACKS = [
+  { id: 'next-lab1', title: 'الممر وآلة المقرر', sub: 'التعليم المبرمج والتصميم', file: './targets-next-lab1.mind', ids: ['programmed-corridor', 'design-machine'] },
+  { id: 'next-lab2', title: 'الدليل والسحابة', sub: 'نقد الأنماط والاتصال', file: './targets-next-lab2.mind', ids: ['evidence-lab', 'cloud-course'] },
+  { id: 'next-lab3', title: 'المزج وطبقات الواقع', sub: 'التعليم المخلوط والواقع المعزز', file: './targets-next-lab3.mind', ids: ['blend-mixer', 'ar-layers'] },
+  { id: 'next-lab4', title: 'اللعبة والسبورة', sub: 'الألعاب التعليمية والتفكير', file: './targets-next-lab4.mind', ids: ['game-forge', 'thinking-board'] },
+  { id: 'next-lab5', title: 'المشهد والموارد', sub: 'الفيديو التفاعلي والموارد المفتوحة', file: './targets-next-lab5.mind', ids: ['branching-video', 'open-resource-museum'] },
   { id: 'games-foundations', title: 'ألعاب جامعية · التصميم والتقنية', sub: 'الأهداف والتحول وجودة الكتب', file: './targets-games-foundations.mind', ids: ['smart-goal-game', 'adoption-game', 'ebook-audit-game'] },
   { id: 'games-policy', title: 'ألعاب جامعية · السياسات والتوازن', sub: 'الأجهزة الشخصية والاستخدام المتزن', file: './targets-games-policy.mind', ids: ['byod-policy-game', 'tech-balance-game'] },
   { id: 'doorwave1', title: 'الباب الأول · الوصول والدافعية', sub: 'التكنولوجيا المساندة ونموذج كيلر', file: './targets-doorwave1.mind', ids: ['accessible-world', 'arcs-reactor'] },

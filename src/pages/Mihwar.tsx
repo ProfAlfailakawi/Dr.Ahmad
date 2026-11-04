@@ -11,7 +11,7 @@ type FeedItem = { id: string; title: string; source: string; url: string; publis
 const cleanTitle = (value: string) => value.replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&amp;/gi, '&').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 const researchTopics = [
   { query: 'educational technology', match: (t: string) => /educat|learn|teach|pedagog/.test(t) && /technolog|digital|online/.test(t) },
-  { query: 'artificial intelligence education', match: (t: string) => /artificial intelligence|\bai\b|machine learning/.test(t) && /educat|learn|teach|student/.test(t) },
+  { query: 'artificial intelligence education', match: (t: string) => /artificial intelligence|\bai\b|machine learning/.test(t) && /educat|teach|student|school|classroom|pedagog|curricul|universit|academic|instruction/.test(t) },
   { query: 'digital learning', match: (t: string) => /digital|online|e-learning/.test(t) && /learn|educat|teach/.test(t) },
   { query: 'gamification education', match: (t: string) => /gamif|game-based/.test(t) && /educat|teach|student|classroom|pedagog|curricul|school|universit|academic|instruction/.test(t) },
   { query: 'media literacy education', match: (t: string) => /media/.test(t) && /literacy|educat|learn/.test(t) },

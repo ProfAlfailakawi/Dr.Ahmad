@@ -448,6 +448,7 @@ const STATIC = [
   ...learningPaths.map((path) => ({ path: `/paths/${path.id}`, title: path.title, desc: path.intro })),
   { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
   { path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' },
+  { path: '/mihwar', title: 'مِحور', desc: 'مساحة عمل خاصة بصاحب الموقع.', robots: 'noindex, nofollow' },
   /* المرآة الإنجليزية */
   { path: '/en', title: 'Dr. Ahmad H. Alfailakawi — Professor of Educational Technology & AI', desc: `Official website of Dr. Ahmad H. Alfailakawi, Professor of Educational Technology and Artificial Intelligence in Kuwait. ${nBooks} books, ${nPapers} peer-reviewed papers, and over ${nArticles} essays since ${firstYear}.`, lang: 'en' },
   { path: '/en/cv', title: 'Curriculum Vitae', desc: 'Education, academic appointments, advisory roles and international memberships of Dr. Ahmad H. Alfailakawi.', lang: 'en' },
@@ -739,7 +740,7 @@ function generateBodyHtml(path, lang = 'ar') {
       </main>`
   }
 
-  if (path === '/admin') {
+  if (path === '/admin' || path === '/mihwar') {
     return `
       <main style="min-height:100vh;display:grid;place-items:center;background:#FCFCFA;padding:2rem;" dir="rtl">
         <div style="width:min(440px,100%);border:1px solid rgba(62,92,120,.14);border-radius:22px;background:#fff;padding:2rem;text-align:center;">
@@ -751,7 +752,7 @@ function generateBodyHtml(path, lang = 'ar') {
   }
 
   const en = lang === 'en'
-  const isAdmin = path === '/admin'
+  const isAdmin = path === '/admin' || path === '/mihwar'
   // Header
   const headerHtml = en ? `
     <header style="border-bottom: 1px solid rgba(62, 92, 120, 0.1); padding: 1.5rem 1rem;">
@@ -1281,7 +1282,7 @@ function schemaMediaDateTime(value = '') {
 
 function render({ path, title, desc, type = 'website', iso, cat, image, robots, lang = 'ar', scholar, isbn, year, edition, publisher, pageCount, url: videoUrl, duration, topics, thumbnail, program, channel, clipStart, clipEnd, audioUrl, audioFile }) {
   const en = lang === 'en'
-  const isAdmin = path === '/admin'
+  const isAdmin = path === '/admin' || path === '/mihwar'
   const mediaUploadDate = schemaMediaDateTime(iso)
   // ما دامت المرآة مخفية: صفحاتها الإنجليزية لا تُفهرس
   if (en && !SHOW_EN) robots = 'noindex, nofollow'
@@ -1636,6 +1637,7 @@ for (const [name, contents] of sitemapDocuments) writeFileSync(resolve(DIST, nam
 writeFileSync(resolve(DIST, 'robots.txt'), `User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /mihwar
 Disallow: /login
 Disallow: /_share
 Disallow: /search?

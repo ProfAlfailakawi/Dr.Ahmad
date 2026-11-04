@@ -1,0 +1,1 @@
+export function initMihwar(root: ShadowRoot, bridge: { load(): Promise<Record<string, unknown>>; save(value: Record<string, unknown>): Promise<void>; feed(interests: Array<{ active?: boolean; terms?: string[] }>): Promise<{ items: unknown[]; errors: Record<string, string> }> }): () => void

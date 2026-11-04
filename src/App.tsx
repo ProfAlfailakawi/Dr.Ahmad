@@ -46,6 +46,7 @@ const AboutSite = lazy(() => import('./pages/AboutSite'))
 const Questions = lazy(() => import('./pages/Questions'))
 const Radar = lazy(() => import('./pages/Radar'))
 const Admin = lazy(() => import('./pages/Admin'))
+const Mihwar = lazy(() => import('./pages/Mihwar'))
 const PrivacyPolicy = lazy(() => import('./pages/Legal').then((m) => ({ default: m.PrivacyPolicy })))
 const TermsOfUse = lazy(() => import('./pages/Legal').then((m) => ({ default: m.TermsOfUse })))
 const DataDeletion = lazy(() => import('./pages/Legal').then((m) => ({ default: m.DataDeletion })))
@@ -767,6 +768,7 @@ function AnimatedRoutes() {
         <Route path="/radar" element={<Radar />} />
         <Route path="/now" element={<Navigate to="/" replace />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/mihwar" element={<Mihwar />} />
         <Route path="/curated" element={<Curated />} />
         <Route path="/upcoming" element={<Upcoming />} />
         <Route path="/inbox" element={<Inbox />} />

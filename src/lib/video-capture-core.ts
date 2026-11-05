@@ -536,6 +536,16 @@ export async function sampleVideoFrames(blob: Blob, durationSeconds: number, poi
       video.onerror = () => { window.clearTimeout(timer); reject(new Error('error')) }
       video.src = url
     })
+    /* ملفات MediaRecorder تأتي بلا مدة في الترويسة (Infinity) ولا يمكن القفز فيها قبل أن تُحسب المدة. */
+    if (!Number.isFinite(video.duration)) {
+      await new Promise<void>((resolve) => {
+        const timer = window.setTimeout(resolve, 2000)
+        const done = () => { if (Number.isFinite(video.duration)) { window.clearTimeout(timer); resolve() } }
+        video.ondurationchange = done
+        video.onseeked = done
+        try { video.currentTime = 1e7 } catch { window.clearTimeout(timer); resolve() }
+      })
+    }
     const canvas = document.createElement('canvas')
     canvas.width = 54; canvas.height = 96
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
@@ -548,6 +558,8 @@ export async function sampleVideoFrames(blob: Blob, durationSeconds: number, poi
           video.onseeked = () => { window.clearTimeout(timer); resolve() }
           video.currentTime = target
         })
+        /* القفز لم يصل إلى الموضع المطلوب: عيّنة «غير متحقَّق منها» أصدق من إطارٍ خاطئ يُحتسب نجاحاً أو فشلاً. */
+        if (Math.abs(video.currentTime - target) > 0.6) { results.push({ ...point, stats: null }); continue }
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
         results.push({ ...point, stats: lumaStats(ctx.getImageData(0, 0, canvas.width, canvas.height).data, 16, canvas.width) })
       } catch { results.push({ ...point, stats: null }) }

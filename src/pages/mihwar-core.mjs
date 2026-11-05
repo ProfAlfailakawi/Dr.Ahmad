@@ -1,3 +1,4 @@
+import lexicon from './mihwar-lexicon.json' with { type: 'json' }
 // منطق «مِحور» المشترك بين المتصفح وسكربت الجلب الخادمي.
 // لا يعتمد على أي مكتبة، ويعمل في Node والمتصفح بالسلوك نفسه.
 
@@ -106,6 +107,43 @@ function matchPhrase(phrase, titleTokens, bodyTokens) {
   return { weight, inTitle, strong }
 }
 
+// ---------- قاموس الموقع: المصطلحات ومرادفاتها ----------
+// عبارة الاهتمام (كاملة) إذا طابقت مصطلحاً في القاموس صارت مرادفاته بدائل لها.
+// المرادف المفرد القصير (مثل AR أو جدول) لا يُستعمل أبداً لأنه ملتبس.
+let SYN_INDEX = null
+function usableSynonym(term) {
+  const toks = tokenize(term)
+  if (!toks.length) return false
+  if (toks.length > 1) return normalizeText(term).replace(/\s+/g, '').length >= 8
+  return toks[0].length >= 7
+}
+function synonymIndex() {
+  if (SYN_INDEX) return SYN_INDEX
+  SYN_INDEX = new Map()
+  for (const group of lexicon.groups) {
+    const targets = group.terms.filter(usableSynonym)
+    if (!targets.length) continue
+    for (const term of group.terms) {
+      const key = tokenize(term).join(' ')
+      if (key.replace(/\s+/g, '').length < 4) continue // مفتاح قصير ملتبس (AI، AR…)
+      const list = SYN_INDEX.get(key) || []
+      for (const other of targets) if (other !== term && !list.includes(other)) list.push(other)
+      SYN_INDEX.set(key, list)
+    }
+  }
+  return SYN_INDEX
+}
+
+/** بدائل عبارة اهتمام من القاموس (للعبارات البسيطة دون «+»). */
+export function expandPhrase(phrase) {
+  const raw = String(phrase || '')
+  if (raw.includes('+')) return []
+  const strong = raw.trim().startsWith('!')
+  const key = tokenize(raw.replace(/^\s*!/, '')).join(' ')
+  const list = synonymIndex().get(key) || []
+  return list.slice(0, 12).map((term) => (strong ? '!' + term : term))
+}
+
 /**
  * تقدير الصلة. العتبة 2: عبارة قوية في المتن، أو عبارة قوية في العنوان،
  * أو عدّة إشارات ضعيفة من اهتمامات مختلفة. لا تكفي كلمة مفردة.
@@ -121,15 +159,22 @@ export function scoreItem(item, interests, projects = []) {
     let best = null
     let sum = 0
     for (const phrase of interest.phrases || interest.terms || []) {
-      const m = matchPhrase(phrase, titleTokens, bodyTokens)
+      let m = matchPhrase(phrase, titleTokens, bodyTokens)
+      let shown = phrase, via = ''
+      if (!m) {
+        for (const alt of expandPhrase(phrase)) {
+          const a = matchPhrase(alt, titleTokens, bodyTokens)
+          if (a && (!m || a.weight > m.weight)) { m = a; shown = alt; via = String(phrase).replace(/^\s*!/, '') }
+        }
+      }
       if (!m) continue
       sum += m.weight
-      if (!best || m.weight > best.m.weight) best = { phrase, m }
+      if (!best || m.weight > best.m.weight) best = { phrase: shown, via, m }
     }
     if (best && sum >= 2) {
       total += Math.min(sum, 6)
       const where = best.m.inTitle ? 'في العنوان' : 'في الملخص أو الوسوم'
-      reasons.push({ interest: interest.name, phrase: String(best.phrase).replace(/^\s*!/, '').replace(/\s*\+\s*/g, ' + '), where, weight: sum })
+      reasons.push({ interest: interest.name, phrase: String(best.phrase).replace(/^\s*!/, '').replace(/\s*\+\s*/g, ' + '), where, weight: sum, ...(best.via ? { via: best.via } : {}) })
     }
   }
   for (const project of projects) {
@@ -146,7 +191,8 @@ export function reasonText(reasons) {
   if (!reasons?.length) return ''
   const r = reasons[0]
   const extra = reasons.length > 1 ? ' + ' + (reasons.length - 1) + ' اهتمامات أخرى' : ''
-  return `سبب الظهور: ${r.interest} — العبارة «${r.phrase}» ${r.where}${extra}`
+  const syn = r.via ? ` (مرادف «${r.via}» في قاموسك)` : ''
+  return `سبب الظهور: ${r.interest} — العبارة «${r.phrase}»${syn} ${r.where}${extra}`
 }
 
 // ---------- روابط وتواريخ ومعرّفات ----------

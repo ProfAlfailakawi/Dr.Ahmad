@@ -122,12 +122,14 @@ export function diffMonteurRevisions(
   return diff
 }
 
+import { arabicCountPhrase, REEL_SCENE_FORMS } from './arabic-count.ts'
+
 /** سطر عربي يلخّص ما سيتغيّر لو اعتُمدت النسخة المرشّحة. */
 export function describeRevisionDiff(diff: RevisionDiff): string {
   if (diff.identical) return 'النسخة مطابقة لما في المحرّر الآن؛ لا فرق يُذكر.'
   const parts: string[] = []
   if (diff.scenesBefore !== diff.scenesAfter) parts.push(`عدد المشاهد ${diff.scenesBefore} ← ${diff.scenesAfter}`)
-  if (diff.changedScenes.length) parts.push(`تغيّر ${diff.changedScenes.length} مشهد (${diff.changedScenes.slice(0, 6).map((i) => i + 1).join('، ')}${diff.changedScenes.length > 6 ? '…' : ''})`)
+  if (diff.changedScenes.length) parts.push(`تغيّر ${arabicCountPhrase(diff.changedScenes.length, REEL_SCENE_FORMS)} (${diff.changedScenes.slice(0, 6).map((i) => i + 1).join('، ')}${diff.changedScenes.length > 6 ? '…' : ''})`)
   if (diff.titleChanged) parts.push('العنوان مختلف')
   if (diff.bodyChanged) parts.push('نص المصدر مختلف')
   if (diff.themeChanged) parts.push('الثيمة أو الاقتباس مختلف')

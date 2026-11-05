@@ -74,7 +74,7 @@ check(same.identical && describeRevisionDiff(same).includes('مطابقة'), 'ن
 const other = diffMonteurRevisions(cur, { plan: { ...plan('أ', 'مختلف', 'ج', 'د'), theme: 'cold' }, title: 'ع٢', body: 'متن آخر' })
 check(!other.identical && other.changedScenes.join() === '1' && other.addedScenes === 1 && other.titleChanged && other.bodyChanged && other.themeChanged, 'فرق مفصّل: مشهد معدّل، مشهد مضاف، عنوان، متن، ثيمة')
 const line = describeRevisionDiff(other)
-check(line.includes('3 ← 4') && line.includes('تغيّر 1 مشهد') && line.includes('العنوان') && line.includes('نص المصدر'), 'الوصف العربي يذكر كل فرق')
+check(line.includes('3 ← 4') && line.includes('تغيّر مشهد (') && line.includes('العنوان') && line.includes('نص المصدر'), 'الوصف العربي يذكر كل فرق')
 check(diffMonteurRevisions(cur, { plan: plan('أ', 'ب'), title: 'ع', body: 'متن' }).removedScenes === 1, 'حذف مشهد يُرصد')
 check(diffMonteurRevisions(cur, { ...cur, body: 'متن   ' }).bodyChanged === false, 'مسافة زائدة في المتن ليست فرقاً')
 

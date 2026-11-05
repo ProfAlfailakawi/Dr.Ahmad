@@ -1,9 +1,9 @@
 // Offline cache for the living encyclopedia: after the first visit the app, its libraries, the fonts
 // and the recognition packs come from the phone, so it opens instantly even with a weak network.
-const CACHE = 'living-v25';
+const CACHE = 'living-v7';
 const BASE = new URL('./', self.location);                       // …/living/
 const PAGE = BASE.pathname === '/' ? BASE.href : BASE.href.slice(0, -1); // …/living (the page itself)
-const SHELL = ['app.js?v=25', 'experiences.js?v=25', 'kit.js?v=6', 'pencil.js?v=6', 'doors34.js?v=7', 'doors2.js?v=8', 'doors-next.js?v=11', 'doors-future.js?v=25', 'doors-wave-a.js?v=25', 'doors-wave-b.js?v=25', 'doors-games.js?v=25', 'doors-ten-a.js?v=25', 'doors-ten-b.js?v=25', 'doors-anim-a.js?v=25', 'doors-anim-b.js?v=25', 'sound.js?v=6', 'targets-door1.mind?v=25', 'targets-door2.mind?v=25', 'targets-door3new.mind?v=25', 'targets-door2future.mind?v=25', 'targets-door3future.mind?v=25', 'targets-door4future.mind?v=25', 'targets-doorwave1.mind?v=25', 'targets-doorwave2.mind?v=25', 'targets-doorwave3.mind?v=25', 'targets-doorwave4.mind?v=25', 'targets-doorwave5.mind?v=25', 'targets-games-foundations.mind?v=25', 'targets-games-policy.mind?v=25', 'targets-next-lab1.mind?v=25', 'targets-next-lab2.mind?v=25', 'targets-next-lab3.mind?v=25', 'targets-next-lab4.mind?v=25', 'targets-next-lab5.mind?v=25', 'targets-anim1.mind?v=25', 'targets-anim2.mind?v=25', 'targets-anim3.mind?v=25', 'targets-anim4.mind?v=25', 'targets-anim5.mind?v=25'].map((p) => new URL(p, BASE).href);
+const SHELL = ['app.js?v=7', 'experiences.js?v=7', 'kit.js?v=7', 'pencil.js?v=7', 'doors34.js?v=7', 'sound.js?v=7', 'targets/pack1.mind?v=7'].map((p) => new URL(p, BASE).href);
 const LIBS = [
   'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
   'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js',

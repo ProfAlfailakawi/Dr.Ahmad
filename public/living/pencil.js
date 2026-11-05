@@ -6,7 +6,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import {
   P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, label, sprite, glow, glowTexture, goldMat, mat, glossy,
   shadowed, sketch, lightTube, textCanvas,
-} from './kit.js?v=6';
+} from './kit.js?v=7';
 
 const TAU = Math.PI * 2;
 const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
@@ -464,7 +464,7 @@ export function buildWelcome(ctx) {
     const u = WELCOME.cols[i % 3], v = WELCOME.rows[Math.floor(i / 3)];
     const found = ctx.isFound(x.id);
     const { c, t } = cardCanvas(x, x.typeColor, null, found);
-    const img = new Image(); img.onload = () => { const r = cardCanvas(x, x.typeColor, img, found); c.getContext('2d').drawImage(r.c, 0, 0); t.needsUpdate = true; }; img.src = ctx.asset(`./pages/${x.page}.jpg`);
+    const img = new Image(); img.onload = () => { const r = cardCanvas(x, x.typeColor, img, found); c.getContext('2d').drawImage(r.c, 0, 0); t.needsUpdate = true; }; img.src = ctx.asset(`./thumbs/${x.page}.jpg`);
     const w = WELCOME.card[0], h = WELCOME.card[1] * PAGE_H;
     const card = new THREE.Mesh(new RoundedBoxGeometry(w, 0.006, h, 2, 0.003), [
       mat(0xf7f2e7), mat(0xf7f2e7), new THREE.MeshStandardMaterial({ map: t, roughness: 0.6 }), mat(0xf7f2e7), mat(0xf7f2e7), mat(0xf7f2e7),

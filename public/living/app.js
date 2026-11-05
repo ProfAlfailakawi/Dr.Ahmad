@@ -3,9 +3,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=25';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=6';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=6';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=7';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=7';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=7';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -14,6 +14,9 @@ const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 const livePages = (n) => n === 1 ? 'صفحة حيّة واحدة' : n === 2 ? 'صفحتين حيّتين' : n <= 10 ? `${toAr(n)} صفحات حيّة` : `${toAr(n)} صفحة حيّة`;
 const params = new URLSearchParams(location.search);
 const TEST = params.has('test');
+// The public app is AR only: without the camera nothing runs. `?dev`, `?lecture` and `?remote` keep the no-camera views for the author.
+const DEV = params.has('dev') || params.has('lecture') || !!params.get('remote');
+if (!DEV) document.body.classList.add('arOnly');
 const PEERJS = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/+esm';
 const QRCODE = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm';
 
@@ -33,26 +36,6 @@ const TYPES = {
   balance: { c: '#1f9d7a', svg: '<path d="M12 3v18M7 21h10M4 7h16M4 7l-2.5 6h5L4 7ZM20 7l-2.5 6h5L20 7Z"/>' },
   roleplay: { c: '#e0861f', svg: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6M13 20c.3-3 1.6-5 3-5 2 0 4 2 4 5"/>' },
   branching: { c: '#c99a3b', svg: '<path d="M12 21v-7M12 14 6 8M12 14l6-6M12 14V5"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="4" r="2"/>' },
-  synchrony: { c: '#43b7d4', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M2 12h2M20 12h2"/>' },
-  simulation: { c: '#3ba9c4', svg: '<path d="M3 18h18M4 13l8-9 8 9M12 4v14M7 15h10"/>' },
-  depth: { c: '#a264c5', svg: '<circle cx="7" cy="12" r="4"/><circle cx="17" cy="12" r="4"/><path d="M11 12h2"/>' },
-  bag: { c: '#cf6091', svg: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
-  network: { c: '#25a9c8', svg: '<circle cx="4" cy="12" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="12" cy="19" r="2"/><path d="m6 11 4-5m4 0 4 5m0 2-4 5m-4 0-4-5"/>' },
-  factory: { c: '#b98a36', svg: '<path d="M3 20V9l6 3V8l6 4V4h6v16H3Z"/><path d="M7 17h2m4 0h2m3 0h2"/>' },
-  web: { c: '#9253ad', svg: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-4 4-4 14 0 18m0-18c4 4 4 14 0 18"/>' },
-  director: { c: '#d27b37', svg: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 7 5 3h17l-3 4M7 3l3 4m4-4 3 4M9 11l6 3-6 3v-6Z"/>' },
-  folding: { c: '#6aa557', svg: '<path d="M3 5h6l3 3 3-3h6v14h-6l-3 3-3-3H3V5Z"/><path d="M12 8v14"/>' },
-  accessible: { c: '#55bba8', svg: '<circle cx="12" cy="12" r="9"/><path d="M4 10h16m-8 0v10M8 20l4-5 4 5"/>' },
-  reactor: { c: '#d4994b', svg: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="3" r="2"/><circle cx="21" cy="12" r="2"/><circle cx="12" cy="21" r="2"/><circle cx="3" cy="12" r="2"/>' },
-  detective: { c: '#3e9ba9', svg: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M8 10h4"/>' },
-  elevator: { c: '#687fb6', svg: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 6v12m-4-8 4-4 4 4m-8 5 4 4 4-4"/>' },
-  flipped: { c: '#4cb8bd', svg: '<path d="M4 9h16M4 15h16m-4-9 4 3-4 3M8 12l-4 3 4 3"/>' },
-  hologram: { c: '#8b75cb', svg: '<path d="m12 2 9 16H3L12 2Zm0 4v13M7 13h10"/>' },
-  mirror: { c: '#47a6d2', svg: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h3m4 0h3M7 16h3m4 0h3M12 10v4"/>' },
-  orchestra: { c: '#cd709c', svg: '<path d="M5 5v14M10 8v11M15 3v16M20 10v9M3 19h19"/>' },
-  balloon: { c: '#5bb3c9', svg: '<path d="M12 3c-5 0-7 4-7 8 0 4 3 6 7 8 4-2 7-4 7-8 0-4-2-8-7-8Zm-2 16 2 3 2-3"/>' },
-  city: { c: '#699c79', svg: '<path d="M2 21V9l5-3 5 3v12M12 21V5l5-3 5 3v16M4 14h2m11-3h2M2 21h20"/>' },
-  unigame: { c: '#7b64b0', svg: '<path d="M4 8h16v11H4V8Zm3-4h10v4H7V4Zm2 8h6m-3-3v6M7 19v2m10-2v2"/>' },
   welcome: { c: '#a9832f', svg: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/>' },
   secret: { c: '#8b1d2c', svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' },
 };
@@ -61,15 +44,28 @@ const icon = (type) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 // The book's structure (page numbers here only group pages on the map; recognition never uses them).
 const DOORS = {
   1: { t: 'الباب الأول', s: 'مفهوم تكنولوجيا التعليم' },
-  2: { t: 'الباب الثاني', s: 'مستحدثات تكنولوجيا التعليم' },
-  3: { t: 'الباب الثالث', s: 'نماذج مستحدثات تكنولوجيا التعليم' },
+  2: { t: 'الباب الثاني', s: 'الحاسب والتعليم الإلكتروني' },
+  3: { t: 'الباب الثالث', s: 'مستحدثات ومنصات تعليمية' },
   4: { t: 'الباب الرابع', s: 'المعلم والتكنولوجيا' },
 };
 const CHAPTERS = [
-  [1, 36, 'المفاهيم الأساسية في تكنولوجيا التعليم'], [1, 82, 'نظرة تاريخية في تكنولوجيا التعليم'], [1, 126, 'التعليم ونظرية الاتصال التعليمي'], [1, 152, 'التصميم التعليمي'], [1, 194, 'نظريات التعلم ونماذجه'],
-  [2, 242, 'المستحدثات التكنولوجية'], [2, 260, 'الإنترنت في التعليم'], [2, 294, 'الحاسوب التعليمي'], [2, 310, 'استراتيجيات التعليم بمساعدة الحاسب الآلي'], [2, 332, 'التعليم الإلكتروني والتعليم عن بُعد'],
-  [3, 364, 'نماذج التعليم الإلكتروني والتعليم عن بُعد'], [3, 388, 'العالم الافتراضي'], [3, 412, 'تكنولوجيا الوسائل التعليمية'], [3, 458, 'برمجيات الحاسب الآلي التطبيقية'], [3, 486, 'نماذج الشبكة العنكبوتية في التعليم'], [3, 528, 'الأجهزة الذكية في التعليم'],
-  [4, 554, 'القرن الحادي والعشرون والتعليم'], [4, 570, 'مستويات بلوم وتكنولوجيا التعليم'], [4, 580, 'الفجوة الرقمية'], [4, 596, 'من التعلم التقليدي إلى التعلم التفاعلي'], [4, 614, 'التكنولوجيا كأداة للتغيير'],
+  [1, 26, "مفاهيم أساسية في تكنولوجيا التعليم"],
+  [1, 64, "تاريخ تكنولوجيا التعليم وتطور مفهومها"],
+  [1, 108, "التعليم والاتصال التعليمي"],
+  [1, 134, "التصميم التعليمي"],
+  [1, 176, "نظريات التعلم ونماذجه"],
+  [2, 224, "الحاسب الآلي التعليمي"],
+  [2, 240, "التعليم الإلكتروني والتعليم عن بُعد"],
+  [2, 268, "نماذج التعليم الإلكتروني: السحابة والفصل المقلوب والكتاب الإلكتروني"],
+  [3, 286, "الواقع الافتراضي والمعزز والتقنيات ثلاثية الأبعاد"],
+  [3, 310, "الألعاب التعليمية والتلعيب والسبورة التفاعلية"],
+  [3, 330, "الشبكات والمنصات التعليمية"],
+  [3, 366, "الأجهزة الذكية في التعليم"],
+  [4, 392, "القرن الحادي والعشرون والتعليم"],
+  [4, 408, "مستويات بلوم وتكنولوجيا التعليم"],
+  [4, 418, "الفجوة الرقمية"],
+  [4, 434, "من التعلم التقليدي إلى التعلم التفاعلي"],
+  [4, 452, "التكنولوجيا كأداة للتغيير"]
 ];
 const pageNum = (x) => parseInt(x.page.slice(1), 10);
 const chapterOf = (x) => CHAPTERS.filter(([d, start]) => d === x.door && pageNum(x) >= start).pop();
@@ -81,7 +77,7 @@ function writeStamps(s) { try { localStorage.setItem(STAMP_KEY, JSON.stringify([
 let stamps = readStamps();
 const doorPages = (d) => PAGES.filter((x) => x.door === d);
 const foundOf = (list) => list.filter((x) => stamps.has(x.id)).length;
-const doorDone = (d) => doorPages(d).length > 0 && foundOf(doorPages(d)) === doorPages(d).length;
+const doorDone = (d) => doorPages(d).length > 0 && foundOf(doorPages(d)) >= Math.ceil(doorPages(d).length * 0.6);
 const LIVE_DOORS = [...new Set(PAGES.map((x) => x.door))].sort();
 // The secret page opens when any one door is complete; it reports the door closest to completion.
 function secretProgress() {
@@ -93,7 +89,7 @@ function secretProgress() {
 function renderHome() {
   $('grid').innerHTML = PAGES.map((x, i) => `
     <button class="card" data-i="${i}">
-      <div class="thumb"><img src="${asset(`./pages/${x.page}.jpg`)}" alt="" loading="lazy"></div>
+      <div class="thumb"><img src="${asset(`./thumbs/${x.page}.jpg`)}" alt="" loading="lazy"></div>
       <div class="meta">
         <span class="badge" style="background:${TYPES[x.type].c}">${icon(x.type)}${x.typeLabel}</span>
         <h3>${x.title}</h3>
@@ -121,9 +117,9 @@ function renderMap() {
         : '<span class="star soon">قريباً</span>';
       return `<div class="chap"><b>${title}</b>${stars}</div>`;
     }).join('');
-    const packs = PACKS.filter((p) => p.ids.some((id) => EXPERIENCES.find((x) => x.id === id)?.door === d));
+    const pack = PACKS.find((p) => p.ids.some((id) => EXPERIENCES.find((x) => x.id === id)?.door === d));
     const buttons = [
-      ...packs.map((pack) => `<button class="btn btn-gold" data-pack="${pack.id}">كاميرا ${pack.title}</button>`),
+      pack ? `<button class="btn btn-gold" data-pack="${pack.id}">افتح الكاميرا على هذا الباب</button>` : '',
       doorDone(d) ? `<button class="btn btn-line" data-cert="${d}">شهادة الباب</button>` : '',
     ].join('');
     const count = doorPages(d).length;
@@ -172,7 +168,6 @@ const ui = {
     const box = $('slider');
     box.querySelector('span').textContent = label;
     const input = box.querySelector('input');
-    input.setAttribute('aria-label', label);
     input.value = Math.round(value * 100);
     input.oninput = () => { box.style.setProperty('--v', input.value + '%'); onInput(input.value / 100); };
     box.style.setProperty('--v', input.value + '%');
@@ -395,6 +390,7 @@ function pageHole(hole) {
 }
 // `which` is an index into EXPERIENCES.
 async function startShowcase(which) {
+  if (!DEV) return;
   await enterExp('show');
   if (!show) {
     const el = $('showStage');
@@ -425,7 +421,8 @@ async function startShowcase(which) {
     const bookSun = new THREE.DirectionalLight(0xfff1dc, 0.6); bookSun.position.set(-1, 2, 1); scene.add(bookSun);
 
     const loader = new THREE.TextureLoader();
-    const pageTex = EXPERIENCES.map((x) => { const t = loader.load(asset(`./pages/${x.page}.jpg`)); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; });
+    const pageTex = [];
+    pageTex.get = (i) => (pageTex[i] ||= (() => { const t = loader.load(asset(`./pages/${EXPERIENCES[i].page}.jpg`)); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; })());
     const resize = () => {
       const w = el.clientWidth, h = el.clientHeight;
       renderer.setSize(w, h, false); renderer.domElement.style.width = '100%'; renderer.domElement.style.height = '100%';
@@ -447,7 +444,7 @@ async function startShowcase(which) {
   activeCanvas = show.renderer.domElement;
   show.resize();
   const exp = EXPERIENCES[which];
-  show.pageMat.map = show.pageTex[which];
+  show.pageMat.map = show.pageTex.get(which);
   show.pageMat.alphaMap = exp.hole ? pageHole(exp.hole) : null;
   show.pageMat.alphaTest = exp.hole ? 0.5 : 0;
   show.block.visible = show.cover.visible = !exp.hole;
@@ -460,22 +457,20 @@ async function startShowcase(which) {
 
 // ------------------------------------------------------------ AR (camera), one recognition pack at a time
 const PACK_KEY = 'living-encyclopedia:pack';
-let packId = (() => { const q = params.get('pack'); if (PACKS.some((p) => p.id === q)) return q; try { return localStorage.getItem(PACK_KEY) || 'door1'; } catch { return 'door1'; } })();
-if (!PACKS.some((p) => p.id === packId)) packId = 'door1';
-let ar = null;
+let packId = PACKS.some((p) => p.id === params.get('pack')) ? params.get('pack') : PACKS[0].id;
+let ar = null, rotor = null;
 
 const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
 
 async function startAR(id = packId) {
   packId = id;
-  try { localStorage.setItem(PACK_KEY, id); } catch { /* private mode */ }
   const pack = PACKS.find((p) => p.id === id);
   await enterExp('ar');
-  $('loading').classList.remove('hidden'); $('loadingText').textContent = `نجهّز الكاميرا و${pack.title}…`;
+  $('loading').classList.remove('hidden'); $('loadingText').textContent = 'نجهّز الكاميرا…';
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=25`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=7`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;
@@ -483,19 +478,26 @@ async function startAR(id = packId) {
     environment(renderer, scene);
     scene.add(new THREE.HemisphereLight(0xfff4e0, 0x5a4a3a, 0.7));
     activeCanvas = renderer.domElement;
-    const anchors = pack.ids.map((expId, i) => {
-      const index = EXPERIENCES.findIndex((x) => x.id === expId);
-      const exp = EXPERIENCES[index];
+    // The camera looks through the recognition packs one after another by itself; the student never picks.
+    let ids = pack.ids, packNo = PACKS.indexOf(pack);
+    const slots = Math.max(...PACKS.map((p) => p.ids.length));
+    const expOf = (i) => { const k = EXPERIENCES.findIndex((x) => x.id === ids[i]); return k < 0 ? null : [k, EXPERIENCES[k]]; };
+    const anchors = Array.from({ length: slots }, (_, i) => {
       const a = mind.addAnchor(i);
-      // Page space inside the anchor: when only part of the page is the target, scale and shift
-      // so experiences keep using whole-page coordinates.
       const page = new THREE.Group(); a.group.add(page);
-      if (exp.crop) {
-        const [u0, v0, u1, v1] = exp.crop, s = 1 / (u1 - u0);
-        page.scale.setScalar(s);
-        page.position.set(-((u0 + u1) / 2 - 0.5) * s, -(0.5 - (v0 + v1) / 2) * PAGE_H * s, 0);
-      }
       a.onTargetFound = () => {
+        if (performance.now() < ignoreUntil) return;   // right after a pack swap the matcher and our id list may disagree for a moment
+        const hit = expOf(i); if (!hit) return;
+        const [index, exp] = hit;
+        // Page space inside the anchor: when only part of the page is the target, scale and shift
+        // so experiences keep using whole-page coordinates.
+        page.scale.setScalar(1); page.position.set(0, 0, 0);
+        if (exp.crop) {
+          const [u0, v0, u1, v1] = exp.crop, k = 1 / (u1 - u0);
+          page.scale.setScalar(k);
+          page.position.set(-((u0 + u1) / 2 - 0.5) * k, -(0.5 - (v0 + v1) / 2) * PAGE_H * k, 0);
+        }
+        lastSeen = performance.now(); seen = true;
         $('scan').classList.add('hidden');
         if (test) testFound(exp);
         if (current && current.index === index && current.root === page) { current.found = true; showOverlays(true); sfx.wake(); }
@@ -503,12 +505,27 @@ async function startAR(id = packId) {
         navigator.vibrate?.(25);
       };
       a.onTargetLost = () => {
-        if (current && current.index === index) { current.found = false; showOverlays(false); }
+        const hit = expOf(i);
+        if (hit && current && current.index === hit[0]) { current.found = false; showOverlays(false); }
+        seen = false; lastSeen = performance.now();
         $('scan').classList.remove('hidden');
         if (test) test.since = performance.now();
       };
       return a;
     });
+    let seen = false, lastSeen = performance.now(), rotating = false, ignoreUntil = 0;
+    const nextPack = async () => {
+      if (rotating || !mind.controller) return; rotating = true;
+      try {
+        packNo = (packNo + 1) % PACKS.length; ignoreUntil = performance.now() + 5000;
+        await mind.controller.addImageTargets(asset(`${PACKS[packNo].file}?v=7`));
+        ids = PACKS[packNo].ids; packId = PACKS[packNo].id; ignoreUntil = performance.now() + 450;
+      } catch (err) { console.warn('pack swap failed', err); }
+      rotating = false;
+    };
+    // Warm the other packs in the background so every swap is instant.
+    (async () => { for (const p of PACKS) { if (p === pack) continue; try { await fetch(asset(`${p.file}?v=7`)); } catch { /* offline */ } } })();
+    if (!params.has('norotate')) rotor = setInterval(() => { if (!seen && performance.now() - lastSeen > 1700 && !document.hidden) nextPack(); }, 600);
     bindTaps($('arStage'));
     bindGestures($('arStage'));
     await mind.start();
@@ -520,19 +537,23 @@ async function startAR(id = packId) {
       if (test) testFrame(now);
     });
     ar = { mind, anchors };
+    if (TEST) window.__mind = mind;   // field-test diagnostics (?test)
     [100, 600, 1500].forEach((ms) => setTimeout(() => dispatchEvent(new Event('resize')), ms));
     $('loading').classList.add('hidden');
     $('scan').classList.remove('hidden');
-    $('packPill').classList.remove('hidden'); $('packPill').querySelector('span').textContent = `${pack.title} ▾`;
+    $('packPill').classList.remove('hidden'); $('packPill').querySelector('span').textContent = 'خريطة الكتاب ▾';
     $('photoBtn').classList.remove('hidden');
     if (test) { test.since = performance.now(); renderTest(); }
   } catch (err) {
     console.error(err);
-    $('loadingText').innerHTML = 'تعذّر فتح الكاميرا.<br><small style="opacity:.7">اسمح للمتصفح باستخدامها ثم أعد المحاولة، أو شاهد الصفحات بدون كاميرا.</small>';
-    setTimeout(() => { leaveExp(); }, 2200);
+    $('loading').classList.remove('hidden');
+    $('loadingText').innerHTML = 'الموسوعة الحيّة تعمل بالكاميرا فقط.<br><small style="opacity:.8;display:block;margin:.5em 0 1em">اسمح للمتصفح باستخدام الكاميرا ثم اضغط «أعد المحاولة». وإن رفضتها سابقاً ففعّلها من إعدادات الموقع في المتصفح.</small><button class="btn btn-gold" id="retryCam">أعد المحاولة</button>';
+    $('retryCam').onclick = () => { stopAR(); startAR(); };
+    if (DEV) setTimeout(() => { leaveExp(); }, 2200);
   }
 }
 function stopAR() {
+  clearInterval(rotor); rotor = null;
   if (!ar) return;
   try { ar.mind.renderer.setAnimationLoop(null); ar.mind.stop(); } catch { /* already stopped */ }
   $('arStage').innerHTML = ''; ar = null;
@@ -837,6 +858,25 @@ if ('serviceWorker' in navigator && !params.has('nosw')) {
 const m = location.hash.match(/show=([\w-]+)/);
 if (params.get('remote')) startRemote(params.get('remote'));
 else if (params.has('lecture')) lecture.start();
-else if (m) startShowcase(/^\d+$/.test(m[1]) ? EXPERIENCES.indexOf(PAGES[+m[1]]) : Math.max(0, EXPERIENCES.findIndex((x) => x.id === m[1])));
-else if (params.has('home')) leaveExp();
+else if (m && DEV) startShowcase(/^\d+$/.test(m[1]) ? EXPERIENCES.indexOf(PAGES[+m[1]]) : Math.max(0, EXPERIENCES.findIndex((x) => x.id === m[1])));
+else if (params.has('home') && DEV) leaveExp();
 else startAR();
+// Debug handle for local checks.
+window.__living = {
+  get current() { return current; }, get show() { return show; }, start: startShowcase, EXPERIENCES,
+  setStamps(ids) { stamps = new Set(ids); writeStamps(stamps); },
+  // Render one frame at time `t` (seconds) and post it to the local capture receiver.
+  async snap(name, t, w = 900, h = 1100) {
+    const { renderer, scene, camera, controls } = show;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    frame(camera); controls.update();
+    syncLines(w, h);
+    const steps = Math.max(1, Math.round((t - current.t) / 0.05));
+    for (let i = 0; i < steps; i++) tick(0.05);
+    syncLines(w, h);
+    renderer.render(scene, camera);
+    const url = renderer.domElement.toDataURL('image/png');
+    await fetch('http://localhost:8767/?n=' + name, { method: 'POST', body: url });
+    return name;
+  },
+};

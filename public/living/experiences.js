@@ -5,19 +5,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
-} from './kit.js?v=6';
-import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=6';
+} from './kit.js?v=7';
+import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=7';
 import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=7';
-import { buildSynchronous } from './doors2.js?v=8';
-import { buildSafeSimulation, buildDepthLab, buildLearningBag } from './doors-next.js?v=11';
-import { buildLivingNetwork, buildLessonFactory, buildWebEvolution, buildStoryboardDirector, buildFoldingBook } from './doors-future.js?v=13';
-import { buildAccessibleWorld, buildArcsReactor, buildSearchDetective, buildComputerElevator, buildFlippedClass } from './doors-wave-a.js?v=14';
-import { buildHologramLab, buildArMirror, buildMediaOrchestra, buildBalloonNetwork, buildSchoollessCity } from './doors-wave-b.js?v=14';
-import { buildSmartGoalGame, buildAdoptionGame, buildEbookAuditGame, buildByodPolicyGame, buildTechBalanceGame } from './doors-games.js?v=25';
-import { buildProgrammedCorridor, buildDesignMachine, buildEvidenceLab, buildCloudCourse, buildBlendMixer } from './doors-ten-a.js?v=25';
-import { buildArLayers, buildGameForge, buildThinkingBoard, buildBranchingVideo, buildOpenResourceMuseum } from './doors-ten-b.js?v=25';
-import { buildConcreteToAbstract, buildAccessBridge, buildBlueprintClass, buildGoalBeacon, buildInnovationWave } from './doors-anim-a.js?v=25';
-import { buildSafeReactor, buildFilmIllusion, buildRadioWave, buildWikiConstellation, buildMobileOrbit } from './doors-anim-b.js?v=25';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -775,343 +765,96 @@ export const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩
 // kind 'page' = a living page that earns a stamp; 'special' = the welcome page and the secret page.
 export const EXPERIENCES = [
   {
-    id: 'teacher-roles', kind: 'page', door: 1, pack: 'door1', page: 'p51', pageNo: '٥١', title: 'أدوار المعلم في عصر التكنولوجيا', type: 'infographic', typeLabel: 'إنفوجرافيك حيّ',
+    id: 'teacher-roles', kind: 'page', door: 1, pack: 'door1', page: 'p41', pageNo: '', title: 'أدوار المعلم في عصر التكنولوجيا', type: 'infographic', typeLabel: 'إنفوجرافيك حيّ',
     video: 'HHowUzMcWEQ', center: [0.5, 0.69], free: true, build: buildInfographic,
     behind: { principle: 'مبدأ التجزئة (ريتشارد ماير)', body: 'لم نعرض الأدوار الستة دفعة واحدة؛ ارتفعت درجةً درجة، وأنت تكشف كل دور بلمستك. تقسيم المعلومة إلى قطع يخفّف العبء على الذاكرة العاملة، فيثبت الترتيب في ذهنك.' },
   },
   {
-    id: 'e-learning-class', kind: 'page', door: 1, pack: 'door1', page: 'p49', pageNo: '٤٩', title: 'الفصل الإلكتروني: مراحل التدريب التكنولوجي', type: 'model', typeLabel: 'مجسّم ثلاثي الأبعاد',
+    id: 'e-learning-class', kind: 'page', door: 1, pack: 'door1', page: 'p39', pageNo: '', title: 'الفصل الإلكتروني: مراحل التدريب التكنولوجي', type: 'model', typeLabel: 'مجسّم ثلاثي الأبعاد',
     video: 'IYwFwcVajqQ', center: [0.54, 0.715], free: true, build: buildModel,
     behind: { principle: 'مخروط الخبرة (إدجار ديل)', body: 'النموذج المجسّم أقرب إلى الخبرة الحقيقية من الصورة المسطّحة. حين تدور حول الفصل وتلمس أجزاءه، يصبح المفهوم المجرّد شيئاً تراه وتلمسه.' },
   },
   {
-    id: 'technology-tree', kind: 'page', door: 1, pack: 'door1', page: 'p45', pageNo: '٤٥', title: 'شجرة التكنولوجيا: ثلاثة معانٍ', type: 'hotspots', typeLabel: 'صورة تفاعلية',
+    id: 'technology-tree', kind: 'page', door: 1, pack: 'door1', page: 'p35', pageNo: '', title: 'شجرة التكنولوجيا: ثلاثة معانٍ', type: 'hotspots', typeLabel: 'صورة تفاعلية',
     video: 'IYwFwcVajqQ', center: [0.42, 0.7], free: false, build: buildHotspots,
     behind: { principle: 'الاكتشاف الموجّه (جيروم برونر)', body: 'لم نعطك التعريفات الثلاثة جاهزة؛ تركناك تكتشفها بنفسك من داخل الصورة. المعنى الذي تصل إليه بنفسك يبقى في الذاكرة أطول من المعنى الذي يُلقى عليك.' },
   },
   {
-    id: 'instructional-design', kind: 'page', door: 1, pack: 'door1', page: 'p54', pageNo: '٥٤', title: 'تصميم التدريس: من فكرة المصمّم إلى عقل المتعلّم', type: 'animation', typeLabel: 'أنيميشن',
+    id: 'instructional-design', kind: 'page', door: 1, pack: 'door1', page: 'p44', pageNo: '', title: 'تصميم التدريس: من فكرة المصمّم إلى عقل المتعلّم', type: 'animation', typeLabel: 'أنيميشن',
     video: 'NSTqBgSMi_g', center: [0.72, 0.22], free: true, crop: [0.5, 0.03, 0.98, 0.5], build: buildAnimation,
     behind: { principle: 'مبدأ التزامن (ماير) والترميز الثنائي (بايفيو)', body: 'الكلمة تظهر في اللحظة نفسها التي يدور فيها الترس الذي تصفه. حين تصل الصورة والكلمة معاً، يبني عقلك تمثيلين للفكرة نفسها فتترسّخ.' },
   },
   {
-    id: 'planning-darts', kind: 'page', door: 1, pack: 'door1', page: 'p55', pageNo: '٥٥', title: 'أصب الهدف: فوائد تخطيط التدريس', type: 'game', typeLabel: 'لعبة',
+    id: 'planning-darts', kind: 'page', door: 1, pack: 'door1', page: 'p45', pageNo: '', title: 'أصب الهدف: فوائد تخطيط التدريس', type: 'game', typeLabel: 'لعبة',
     video: 'NSTqBgSMi_g', center: [0.55, 0.75], free: true, crop: [0.12, 0.64, 0.52, 0.95], build: buildGame,
     behind: { principle: 'التلعيب والتعزيز الفوري (سكنر)', body: 'وقت ونقاط وتحدٍّ، وكل رمية تعطيك نتيجتها في الحال. التغذية الراجعة الفورية تحوّل الحفظ إلى قرارات سريعة تكرّرها بمتعة.' },
   },
   {
-    id: 'teaching-vs-instruction', kind: 'page', door: 1, pack: 'door1', page: 'p41', pageNo: '٤١', title: 'تنبّأ ثم شاهد: التعليم أم التدريس؟', type: 'quiz', typeLabel: 'أسئلة',
+    id: 'teaching-vs-instruction', kind: 'page', door: 1, pack: 'door1', page: 'p31', pageNo: '', title: 'تنبّأ ثم شاهد: التعليم أم التدريس؟', type: 'quiz', typeLabel: 'أسئلة',
     video: 'HHowUzMcWEQ', center: [0.5, 0.62], free: false, build: buildQuiz,
     behind: { principle: 'تنبّأ ثم شاهد (البنائية) والتعلّم بالاسترجاع', body: 'حين تلتزم بإجابة قبل أن ترى الحقيقة، يقارن عقلك توقّعه بالواقع ويعيد بناء الفكرة. ثم أضأنا لك الخانة نفسها في الجدول المطبوع ليتصل الجديد بما في الكتاب.' },
   },
   {
-    id: 'programmed-corridor', kind: 'page', door: 1, pack: 'next-lab1', page: 'p59', pageNo: '٥٩', title: 'الممر الذي يكتب نفسه', type: 'branching', typeLabel: 'ممر متفرع',
-    center: [0.5, 0.52], free: true, build: buildProgrammedCorridor,
-    behind: { principle: 'التعليم المبرمج', body: 'تتغير خطوات التعلم وفق استجابة الطالب، ويقوده الخطأ إلى شرح وتصحيح قبل المتابعة كما تصف الصفحة.' },
-  },
-  {
-    id: 'concrete-to-abstract', kind: 'page', door: 1, pack: 'anim1', page: 'p78', pageNo: '٧٨', title: 'من الصورة إلى الخبرة', type: 'animation', typeLabel: 'رحلة حسية',
-    center: [0.5, 0.52], free: true, build: buildConcreteToAbstract,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تتحول الصورة الثابتة إلى مجسم ثم مفهوم، في حركة توضح دور الوسائل في الانتقال من المحسوس إلى المجرد.' },
-  },
-  {
-    id: 'channels-of-time', kind: 'page', door: 1, pack: 'door1', page: 'p66', pageNo: '٦٦', title: 'قنوات الزمن: رحلة الوسائل التعليمية', type: 'timeline', typeLabel: 'آلة الزمن',
+    id: 'channels-of-time', kind: 'page', door: 1, pack: 'door1', page: 'p56', pageNo: '', title: 'قنوات الزمن: رحلة الوسائل التعليمية', type: 'timeline', typeLabel: 'آلة الزمن',
     video: 'gPzhwiIN__8', center: [0.635, 0.36], free: true, crop: [0.34, 0.02, 0.955, 0.58], build: buildTimeTV,
     behind: { principle: 'التنظيم المتقدّم والسرد (أوزوبل)', body: 'وضعنا كل وسيلة على خطّ زمني واحد قبل تفاصيلها؛ فحين يرى عقلك الإطار الكبير أولاً، يجد لكل معلومة جديدة مكاناً تتعلّق به.' },
   },
   {
-    id: 'accessible-world', kind: 'page', door: 1, pack: 'doorwave1', page: 'p111', pageNo: '١١١', title: 'العالم الذي يتبدّل', type: 'accessible', typeLabel: 'فصل متاح للجميع',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildAccessibleWorld,
-    behind: { principle: 'التصميم الشامل وإزالة الحواجز', body: 'توضح الصفحة أن التكنولوجيا المساندة تفتح فرص التعلم والتواصل. اختر عائقاً ثم عدّل وسيلة الدرس ليشارك الطالب.' },
-  },
-  {
-    id: 'dale-cone', kind: 'page', door: 1, pack: 'door1', page: 'p147', pageNo: '١٤٧', title: 'مخروط الخبرة: من الواقع إلى التجريد', type: 'ladder', typeLabel: 'سلّم تفاعلي',
+    id: 'dale-cone', kind: 'page', door: 1, pack: 'door1', page: 'p129', pageNo: '', title: 'مخروط الخبرة: من الواقع إلى التجريد', type: 'ladder', typeLabel: 'سلّم تفاعلي',
     video: 'Ro4IM9cWn0s', center: [0.542, 0.5], free: true, crop: [0.14, 0.245, 0.84, 0.7], build: buildCone,
     behind: { principle: 'من المحسوس إلى المجرد (برونر وديل)', body: 'بدأت رحلتك من قاعدة المخروط، من الخبرة الواقعية، ثم صعدت نحو الرموز. هكذا يُبنى الفهم: تمثيل عملي، ثم صوري، ثم رمزي.' },
   },
   {
-    id: 'access-bridge', kind: 'page', door: 1, pack: 'anim1', page: 'p112', pageNo: '١١٢', title: 'الجسر الذي يصل إلى الجميع', type: 'animation', typeLabel: 'تحول معماري',
-    center: [0.5, 0.52], free: true, build: buildAccessBridge,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يتحول درج مغلق إلى جسر يعبره ثلاثة متعلمين، ليظهر أثر إتاحة المواد التعليمية.' },
-  },
-  {
-    id: 'communication-lab', kind: 'page', door: 1, pack: 'door1', page: 'p151', pageNo: '١٥١', title: 'مختبر الاتصال: الرسالة والتشويش', type: 'lab', typeLabel: 'مختبر تفاعلي',
+    id: 'communication-lab', kind: 'page', door: 1, pack: 'door1', page: 'p133', pageNo: '', title: 'مختبر الاتصال: الرسالة والتشويش', type: 'lab', typeLabel: 'مختبر تفاعلي',
     video: 'GHKPjqQZRnA', center: [0.54, 0.27], free: false, crop: [0.11, 0.09, 0.88, 0.42], build: buildLab,
     behind: { principle: 'التعلّم بالمحاكاة والتجريب', body: 'لم نخبرك بأثر التشويش؛ أعطيناك مقبضه. حين تغيّر متغيّراً واحداً وترى نتيجته فوراً، تكتشف العلاقة بنفسك كما يكتشفها العالِم في مختبره.' },
   },
   {
-    id: 'design-machine', kind: 'page', door: 1, pack: 'next-lab1', page: 'p164', pageNo: '١٦٤', title: 'آلة بناء المقرر', type: 'factory', typeLabel: 'آلة تصميم',
-    center: [0.5, 0.52], free: true, build: buildDesignMachine,
-    behind: { principle: 'التصميم التعليمي المتكرر', body: 'ترتب المراحل الخمس ثم تعود إلى مرحلة سابقة وفق التغذية الراجعة؛ تؤكد الصفحة أن التصميم عملية مستمرة.' },
-  },
-  {
-    id: 'blueprint-class', kind: 'page', door: 1, pack: 'anim2', page: 'p180', pageNo: '١٨٠', title: 'المخطط يصير درساً', type: 'animation', typeLabel: 'بناء متحرك',
-    center: [0.5, 0.52], free: true, build: buildBlueprintClass,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يرتفع التصميم من شبكة خطوط إلى قاعة، ثم تعود إشارة التقويم إلى المخطط.' },
-  },
-  {
-    id: 'arcs-reactor', kind: 'page', door: 1, pack: 'doorwave1', page: 'p186', pageNo: '١٨٦', title: 'مفاعل الدافعية: نموذج ARCS', type: 'reactor', typeLabel: 'مفاعل الدافعية',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildArcsReactor,
-    behind: { principle: 'الانتباه والصلة والثقة والرضا', body: 'تجعل عناصر نموذج كيلر الأربعة مصادر طاقة للتعلم، وتختبر كيف يعمل كل عنصر مع البقية.' },
-  },
-  {
-    id: 'smart-goal-game', kind: 'page', door: 1, pack: 'games-foundations', page: 'p205', pageNo: '٢٠٥', title: 'مختبر الأهداف الذكية', type: 'unigame', typeLabel: 'لعبة صياغة أهداف',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildSmartGoalGame,
-    behind: { principle: 'ممارسة صياغة هدف قابل للتقويم', body: 'تتخذ قرارات لصياغة هدف جامعي محدد وقابل للقياس ومرتبط بزمن وموارد واقعية.' },
-  },
-  {
-    id: 'goal-beacon', kind: 'page', door: 1, pack: 'anim2', page: 'p212', pageNo: '٢١٢', title: 'منارة الهدف', type: 'animation', typeLabel: 'أنميشن ضوئي',
-    center: [0.5, 0.52], free: true, build: buildGoalBeacon,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تظهر الخطوات للمتعلم عندما يعرف هدف الدرس، وتتبعثر عندما يختفي.' },
-  },
-  {
-    id: 'evidence-lab', kind: 'page', door: 1, pack: 'next-lab2', page: 'p230', pageNo: '٢٣٠', title: 'مختبر كشف الوهم', type: 'lab', typeLabel: 'ميزان الدليل',
-    center: [0.5, 0.52], free: true, build: buildEvidenceLab,
-    behind: { principle: 'نقد أنماط التعلم', body: 'تزن ادعاء مطابقة التدريس لنمط ثابت مقابل الانتقادات العلمية التي تذكرها الصفحة.' },
-  },
-  {
-    id: 'innovation-wave', kind: 'page', door: 2, pack: 'anim3', page: 'p244', pageNo: '٢٤٤', title: 'موجة التغيير', type: 'animation', typeLabel: 'انتشار حي',
-    center: [0.5, 0.52], free: true, build: buildInnovationWave,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تنتقل فكرة مستحدث تقني من تجربة مصغرة إلى شبكة من الممارسين؛ العائق يبطئ الموجة.' },
-  },
-  {
-    id: 'adoption-game', kind: 'page', door: 2, pack: 'games-foundations', page: 'p256', pageNo: '٢٥٦', title: 'غرفة قرار التحول التقني', type: 'unigame', typeLabel: 'لعبة تخطيط جامعي',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildAdoptionGame,
-    behind: { principle: 'تخطيط تبني المستحدثات', body: 'توزع موارد محدودة بين التدريب والبنية والتخطيط قبل إطلاق مشروع جامعي، ثم ترى أثر قرارك.' },
-  },
-  {
-    id: 'living-network', kind: 'page', door: 2, pack: 'door2future', page: 'p273', pageNo: '٢٧٣', title: 'الشبكة التي تشفي نفسها', type: 'network', typeLabel: 'شبكة حيّة',
-    center: [0.49, 0.55], free: true, crop: [0.0375, 0.1303, 0.9559, 0.8199], build: buildLivingNetwork,
-    behind: { principle: 'التعلم بالمحاكاة السببية', body: 'تنتقل رسالة بين أجهزة شبكة محلية ثم إلى نطاق أوسع. عندما ينقطع المسار، تعيد توجيهها بنفسك فترى أثر نوع الشبكة وطريق الاتصال.' },
-  },
-  {
-    id: 'search-detective', kind: 'page', door: 2, pack: 'doorwave2', page: 'p274', pageNo: '٢٧٤', title: 'محقّق البحث في الإنترنت', type: 'detective', typeLabel: 'تحقيق تفاعلي',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildSearchDetective,
-    behind: { principle: 'صياغة الاستعلام وفحص الدليل', body: 'من تخمة النتائج إلى كلمات أدق وفهرس منظم ومصدر تفحصه بنفسك.' },
-  },
-  {
-    id: 'computer-elevator', kind: 'page', door: 2, pack: 'doorwave2', page: 'p297', pageNo: '٢٩٧', title: 'مصعد أجيال الحاسوب', type: 'elevator', typeLabel: 'مصعد زمني',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildComputerElevator,
-    behind: { principle: 'التطور عبر الأجيال', body: 'تنتقل بين خمسة أجيال من الحاسب كما تصنفها الصفحة، وتشاهد تغير الحجم والقدرات.' },
-  },
-  {
-    id: 'lesson-factory', kind: 'page', door: 2, pack: 'door2future', page: 'p321', pageNo: '٣٢١', title: 'مصنع الدرس: نموذج الجزار', type: 'factory', typeLabel: 'آلة تصميم الدرس',
-    center: [0.5, 0.48], free: true, crop: [0.0750, 0.0460, 0.9372, 0.8889], build: buildLessonFactory,
-    behind: { principle: 'التصميم التعليمي مع التغذية الراجعة', body: 'تتحول مراحل نموذج الجزار المطبوعة إلى آلة تختبر فيها خصائص المتعلم والوسيلة، ثم يعود التقويم إلى التصميم كي تعدل الدرس.' },
-  },
-  {
-    id: 'safe-simulation', kind: 'page', door: 2, pack: 'door2', page: 'p328', pageNo: '٣٢٨', title: 'مختبر الخطأ الآمن: محاكاة الطيران', type: 'simulation', typeLabel: 'محاكاة بقراراتك',
-    center: [0.52, 0.64], free: true, crop: [0.0797, 0.1502, 0.9194, 0.8199], build: buildSafeSimulation,
-    behind: { principle: 'التعلم بالمحاكاة والتجربة الآمنة', body: 'تسمح المحاكاة بتجربة قرار يصعب اختباره في الواقع. تغيّر الرياح ومسار الطائرة، وتكشف النتيجة أثر القرار، ثم تعيد المحاولة بلا عواقب حقيقية.' },
-  },
-  {
-    id: 'safe-reactor', kind: 'page', door: 2, pack: 'anim3', page: 'p329', pageNo: '٣٢٩', title: 'داخل المحاكاة الآمنة', type: 'animation', typeLabel: 'محاكاة متحركة',
-    center: [0.5, 0.52], free: true, build: buildSafeReactor,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يتغير متغير واحد في نموذج رمزي، ثم تعيد الزمن لتقارن السبب بالنتيجة دون خطر واقعي.' },
-  },
-  {
-    id: 'synchronous-class', kind: 'page', door: 2, pack: 'door2', page: 'p341', pageNo: '٣٤١', title: 'اللحظة المشتركة: التعليم الإلكتروني المتزامن', type: 'synchrony', typeLabel: 'فصلان في لحظة واحدة',
-    center: [0.45, 0.47], free: true, crop: [0.1003, 0.160, 0.9503, 0.840], build: buildSynchronous,
-    behind: { principle: 'التزامن والتغذية الراجعة الفورية', body: 'جمعت التجربة المعلم والطلبة في الوقت نفسه رغم بُعد المكان. تمرّ الرسالة ويعود الرد فوراً، فتظهر ميزة النقاش المباشر والتغذية الراجعة التي تصفها الصفحة.' },
-  },
-  {
-    id: 'cloud-course', kind: 'page', door: 3, pack: 'next-lab2', page: 'p366', pageNo: '٣٦٦', title: 'المقرر الذي يعيش في السحابة', type: 'network', typeLabel: 'شبكة سحابية',
-    center: [0.5, 0.52], free: true, build: buildCloudCourse,
-    behind: { principle: 'الوصول عبر الشبكة', body: 'تقطع اتصال الأطراف وتعيده لترى كيف تصبح الموارد المشتركة متاحة أو محجوبة.' },
-  },
-  {
-    id: 'flipped-class', kind: 'page', door: 3, pack: 'doorwave3', page: 'p370', pageNo: '٣٧٠', title: 'الفصل المقلوب حرفياً', type: 'flipped', typeLabel: 'فصل مقلوب',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildFlippedClass,
-    behind: { principle: 'إعادة توزيع وقت التعلم', body: 'تقلب مكان الشرح والتطبيق، ثم تحدد كيف يستثمر وقت الصف في النقاش أو النشاط.' },
-  },
-  {
-    id: 'blend-mixer', kind: 'page', door: 3, pack: 'next-lab3', page: 'p373', pageNo: '٣٧٣', title: 'مِزجتان، فصل واحد', type: 'balance', typeLabel: 'مِزج تفاعلي',
-    center: [0.5, 0.52], free: true, build: buildBlendMixer,
-    behind: { principle: 'تكامل الحضوري والإلكتروني', body: 'تغير نسبة المزج وتراقب كيف يتكامل نقاش القاعة مع المادة الإلكترونية.' },
-  },
-  {
-    id: 'web-evolution', kind: 'page', door: 3, pack: 'door3future', page: 'p380', pageNo: '٣٨٠', title: 'ولادة الويب: من القراءة إلى المعنى', type: 'web', typeLabel: 'تحول تفاعلي',
-    center: [0.49, 0.48], free: true, crop: [0.0984, 0.0153, 0.9138, 0.7280], build: buildWebEvolution,
-    behind: { principle: 'المقارنة البنيوية والتعلم بالمشاركة', body: 'يتحول جدول الويب ١٫٠ و٢٫٠ إلى تجربة تحرك المحتوى من القراءة إلى المشاركة، ثم تربط الكلمات بمعانيها كما تصف الصفحة الويب الدلالي.' },
-  },
-  {
-    id: 'ebook-audit-game', kind: 'page', door: 3, pack: 'games-foundations', page: 'p386', pageNo: '٣٨٦', title: 'محكمة جودة الكتاب الإلكتروني', type: 'unigame', typeLabel: 'لعبة مراجعة جودة',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildEbookAuditGame,
-    behind: { principle: 'تقييم متعدد المعايير', body: 'تفحص الإبحار والتقويم وقابلية القراءة وفق معايير تصميم الكتب الإلكترونية في الصفحة.' },
-  },
-  {
-    id: 'eyes-make-depth', kind: 'page', door: 3, pack: 'door3new', page: 'p390', pageNo: '٣٩٠', title: 'عينان تصنعان العمق', type: 'depth', typeLabel: 'مختبر الرؤية',
-    center: [0.5, 0.55], free: true, crop: [0.0797, 0.0299, 0.9194, 0.7203], build: buildDepthLab,
-    behind: { principle: 'الإدراك البصري والعمق', body: 'توضح الصفحة أن المشهد ثلاثي الأبعاد يعتمد على طريقة عمل العينين والدماغ. تفصل التجربة الصورتين ثم تجمعهما، ويمكنك تغيير مقدار العمق بنفسك.' },
-  },
-  {
-    id: 'hologram-lab', kind: 'page', door: 3, pack: 'doorwave3', page: 'p392', pageNo: '٣٩٢', title: 'هولوجرام يهرب من الصفحة', type: 'hologram', typeLabel: 'مختبر الضوء',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildHologramLab,
-    behind: { principle: 'التصوير التجسيدي', body: 'تفصل مصدر الضوء وسطح العرض والصورة الطافية في محاكاة تعليمية مستوحاة من شرح الصفحة.' },
-  },
-  {
-    id: 'virtual-portal', kind: 'page', door: 3, pack: 'door34', page: 'p395', pageNo: '٣٩٥', title: 'بوابة العالم الافتراضي', type: 'portal', typeLabel: 'بوابة',
+    id: 'virtual-portal', kind: 'page', door: 3, pack: 'door34', page: 'p293', pageNo: '', title: 'بوابة العالم الافتراضي', type: 'portal', typeLabel: 'بوابة',
     video: 'hc9KfKNPIRQ', center: [0.256, 0.585], free: false, hole: PORTAL_HOLE, crop: [0.02, 0.36, 0.5, 0.82], build: buildPortal,
     behind: { principle: 'الانغماس والحضور (Presence)', body: 'حين يشعر المتعلّم أنه «داخل» البيئة لا أمامها، يرتفع انتباهه ودافعيته. لذلك فتحنا لك نافذة في الورق نفسه بدل صورة تنظر إليها.' },
   },
   {
-    id: 'ar-mirror', kind: 'page', door: 3, pack: 'doorwave4', page: 'p406', pageNo: '٤٠٦', title: 'الصفحة التي تشرح سحرها', type: 'mirror', typeLabel: 'مرآة الواقع المعزز',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildArMirror,
-    behind: { principle: 'التعلم فوق التعلم', body: 'تكشف طبقات الكاميرا والتعرف وتقدير الموضع والمجسم الذي يثبت فوق الصفحة.' },
-  },
-  {
-    id: 'ar-layers', kind: 'page', door: 3, pack: 'next-lab3', page: 'p408', pageNo: '٤٠٨', title: 'مختبر ظهور الطبقات', type: 'mirror', typeLabel: 'تثبيت الواقع المعزز',
-    center: [0.5, 0.52], free: true, build: buildArLayers,
-    behind: { principle: 'العلامة وتمييز الصورة والموقع', body: 'تقارن طرق تثبيت الطبقة الرقمية المذكورة في صفحة أنواع الواقع المعزز.' },
-  },
-  {
-    id: 'film-illusion', kind: 'page', door: 3, pack: 'anim4', page: 'p420', pageNo: '٤٢٠', title: 'حين تتحرك الصورة الثابتة', type: 'animation', typeLabel: 'شريط سينمائي',
-    center: [0.5, 0.52], free: true, build: buildFilmIllusion,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'يتسارع شريط من الصور المنفصلة حتى ترى الحركة، كما تناقش الصفحة الأفلام التعليمية.' },
-  },
-  {
-    id: 'radio-wave', kind: 'page', door: 3, pack: 'anim4', page: 'p424', pageNo: '٤٢٤', title: 'الصوت يعبر الصفحة', type: 'animation', typeLabel: 'موجة صوتية',
-    center: [0.5, 0.52], free: true, build: buildRadioWave,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تنطلق موجة من مصدر واحد وتصل إلى مستقبلات متباعدة لتجسد الراديو التعليمي.' },
-  },
-  {
-    id: 'game-forge', kind: 'page', door: 3, pack: 'next-lab4', page: 'p434', pageNo: '٤٣٤', title: 'اصنع اللعبة ثم اكسرها', type: 'game', typeLabel: 'ورشة ألعاب',
-    center: [0.5, 0.52], free: true, build: buildGameForge,
-    behind: { principle: 'عناصر اللعبة التعليمية', body: 'تركيب الهدف والقواعد والتغذية الراجعة والتحدي يغير سلوك اللعبة عند تشغيلها.' },
-  },
-  {
-    id: 'learning-bag', kind: 'page', door: 3, pack: 'door3new', page: 'p449', pageNo: '٤٤٩', title: 'حقيبتي التعليمية: مسار يتشكل لي', type: 'bag', typeLabel: 'حقيبة شخصية',
-    center: [0.43, 0.54], free: true, crop: [0.0703, 0.1801, 0.9306, 0.7900], build: buildLearningBag,
-    behind: { principle: 'تفريد التعلم والتعلم الذاتي', body: 'الحقيبة في الكتاب نظام للتعلم الذاتي يراعي الفروق الفردية. تختار هدفك فتظهر وسائل وأنشطة وتقويم، ليصبح ترتيب الرحلة مرتبطا بما تحتاجه.' },
-  },
-  {
-    id: 'thinking-board', kind: 'page', door: 3, pack: 'next-lab4', page: 'p453', pageNo: '٤٥٣', title: 'سبورة التفكير الحيّة', type: 'hotspots', typeLabel: 'سبورة تفاعلية',
-    center: [0.5, 0.52], free: true, build: buildThinkingBoard,
-    behind: { principle: 'التفاعل باللمس', body: 'تربط سؤالاً ودليلاً واستنتاجاً على سبورة حساسة للمس كما تصف الصفحة.' },
-  },
-  {
-    id: 'media-orchestra', kind: 'page', door: 3, pack: 'doorwave4', page: 'p464', pageNo: '٤٦٤', title: 'أوركسترا الوسائط', type: 'orchestra', typeLabel: 'مزج الوسائط',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildMediaOrchestra,
-    behind: { principle: 'تكامل الوسائط', body: 'تمزج النص والصوت والصورة والحركة وتختبر متى يخدم تعددها الفكرة ومتى يزدحم المشهد.' },
-  },
-  {
-    id: 'storyboard-director', kind: 'page', door: 3, pack: 'door3future', page: 'p477', pageNo: '٤٧٧', title: 'أنت المخرج: الستوري بورد يصحو', type: 'director', typeLabel: 'إخراج مشهد',
-    center: [0.47, 0.5], free: true, crop: [0.0703, 0.0996, 0.9325, 0.8276], build: buildStoryboardDirector,
-    behind: { principle: 'السرد البصري والتتابع', body: 'تختار حجم اللقطة وترتيب الإطارات، ثم ترى كيف تتحول لوحة التخطيط إلى عرض متحرك. تشير الصفحة إلى أن اتجاه الكاميرا والتكبير وترتيب اللقطات جزء من الستوري بورد.' },
-  },
-  {
-    id: 'branching-video', kind: 'page', door: 3, pack: 'next-lab5', page: 'p480', pageNo: '٤٨٠', title: 'أوقف المشهد وغيّر النتيجة', type: 'director', typeLabel: 'مشهد متفرع',
-    center: [0.5, 0.52], free: true, build: buildBranchingVideo,
-    behind: { principle: 'الفيديو التفاعلي', body: 'توقف مشهداً تدريسياً عند لحظة حرجة ثم تغير نتيجته بتدخل مباشر.' },
-  },
-  {
-    id: 'balloon-network', kind: 'page', door: 3, pack: 'doorwave5', page: 'p510', pageNo: '٥١٠', title: 'بالونات تحمل الإنترنت', type: 'balloon', typeLabel: 'شبكة جوية',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildBalloonNetwork,
-    behind: { principle: 'الوصول بالتقنية إلى المناطق النائية', body: 'توجه المناطيد وتوصل الإشارة إلى مدرسة بعيدة في محاكاة لفكرة مشروع لوون التاريخي المذكور في الصفحة.' },
-  },
-  {
-    id: 'wiki-constellation', kind: 'page', door: 3, pack: 'anim5', page: 'p520', pageNo: '٥٢٠', title: 'المعرفة التي يكتبها الجميع', type: 'animation', typeLabel: 'كوكبة صفحات',
-    center: [0.5, 0.52], free: true, build: buildWikiConstellation,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'تنمو صفحات الويكي بإضافة وتصحيح، ويظهر أثر تاريخ التعديل على الشبكة.' },
-  },
-  {
-    id: 'mobile-orbit', kind: 'page', door: 3, pack: 'anim5', page: 'p530', pageNo: '٥٣٠', title: 'المعرفة ترافق الطالب', type: 'animation', typeLabel: 'مدار متحرك',
-    center: [0.5, 0.52], free: true, build: buildMobileOrbit,
-    behind: { principle: 'التعلم بالمشاهدة والتحكم', body: 'ينتقل مورد تعليمي واحد مع الطالب بين البيت والجامعة والطريق عبر جهاز ذكي.' },
-  },
-  {
-    id: 'mobile-exploded', kind: 'page', door: 3, pack: 'door34', page: 'p541', pageNo: '٥٤١', title: 'فكّك الجوال: التعلّم المتنقل', type: 'exploded', typeLabel: 'فكّك الجهاز',
+    id: 'mobile-exploded', kind: 'page', door: 3, pack: 'door34', page: 'p379', pageNo: '', title: 'فكّك الجوال: التعلّم المتنقل', type: 'exploded', typeLabel: 'فكّك الجهاز',
     video: 'JMlobDkhuPY', center: [0.275, 0.62], free: true, crop: [0.04, 0.38, 0.5, 0.82], build: buildPhone,
     behind: { principle: 'المنظر المفكَّك وتقليل العبء المعرفي', body: 'رؤية الجهاز طبقةً طبقة، وكل طبقة مربوطة بوظيفتها، أسهل على الذاكرة العاملة من رؤية الكل مرة واحدة؛ فتفهم العلاقة بين الجزء والوظيفة.' },
   },
   {
-    id: 'bloom-pyramid', kind: 'page', door: 4, pack: 'door34', page: 'p573', pageNo: '٥٧٣', title: 'هرم بلوم: ركّبه أو شاهده يرتفع', type: 'assemble', typeLabel: 'تركيب ومشهد ثلاثي الأبعاد',
+    id: 'bloom-pyramid', kind: 'page', door: 4, pack: 'door34', page: 'p411', pageNo: '', title: 'ركّب هرم بلوم', type: 'assemble', typeLabel: 'ركّب الهرم',
     video: 'WTh25DM1ZCI', center: [0.33, 0.6], free: true, crop: [0.04, 0.08, 0.64, 0.68], build: buildBloom,
-    behind: { principle: 'التسلسل الهرمي للتعلّم', body: 'يرتفع المجسّم فوق الصفحة ليجعل المستويات الستة مرئية، ثم يمكنك تركيبها بيدك من القاعدة إلى القمة. تظهر أسماء المستويات وفق التصنيف المعروض في الكتاب، مع شرح منفصل لمراجعة أندرسون.' },
+    behind: { principle: 'التسلسل الهرمي للتعلّم (روبرت جانييه)', body: 'لم يُقبل منك مستوى قبل الذي تحته، كما ينصّ الكتاب: على المتعلّم أن يصل إلى أهداف المستوى الأدنى قبل أن يبني عليها المستوى الأعلى.' },
   },
   {
-    id: 'digital-divide-balance', kind: 'page', door: 4, pack: 'door34', page: 'p587', pageNo: '٥٨٧', title: 'ميزان الفجوة الرقمية', type: 'balance', typeLabel: 'الميزان',
+    id: 'digital-divide-balance', kind: 'page', door: 4, pack: 'door34', page: 'p425', pageNo: '', title: 'ميزان الفجوة الرقمية', type: 'balance', typeLabel: 'الميزان',
     video: 'S0GvFyJOQ5g', center: [0.56, 0.62], free: true, crop: [0.14, 0.34, 0.86, 0.68], build: buildBalance,
     behind: { principle: 'التفكير المنظومي', body: 'رأيت الأرقام المطبوعة وزناً تحمله يدك، ثم رأيت أن عاملاً واحداً لا يكفي. التفكير المنظومي يعلّمك أن المشكلات الكبيرة تتوازن بعوامل متعددة معاً.' },
   },
   {
-    id: 'interactive-classroom', kind: 'page', door: 4, pack: 'door34', page: 'p599', pageNo: '٥٩٩', title: 'من فصل تقليدي إلى فصل تفاعلي', type: 'roleplay', typeLabel: 'مشهد تمثيلي',
+    id: 'interactive-classroom', kind: 'page', door: 4, pack: 'door34', page: 'p437', pageNo: '', title: 'من فصل تقليدي إلى فصل تفاعلي', type: 'roleplay', typeLabel: 'مشهد تمثيلي',
     video: 'DzdyVn3kS50', center: [0.31, 0.3], free: true, crop: [0.02, 0.02, 0.6, 0.5], build: buildRoleplay,
     behind: { principle: 'التعلّم الاجتماعي ولعب الأدوار (ألبرت باندورا)', body: 'تقمّصت دور المعلّم ورأيت أثر قراراتك على طلابك. حين نمارس الدور ونرى نتائجه، تنتقل المعرفة من «أعرف» إلى «أستطيع».' },
   },
   {
-    id: 'folding-book', kind: 'page', door: 4, pack: 'door4future', page: 'p609', pageNo: '٦٠٩', title: 'الكتاب الذي يطوي نفسه', type: 'folding', typeLabel: 'كتاب مرن',
-    center: [0.52, 0.55], free: true, crop: [0.1593, 0.0153, 0.8529, 0.9119], build: buildFoldingBook,
-    behind: { principle: 'التصور المكاني بالتجريب', body: 'تحتوي الصفحة تصوراً لكتاب إلكتروني قابل للطي. تحرك مفاصل الكتاب لتفهم كيف يجتمع شكل القراءة الواسع مع حجم صغير للحمل.' },
-  },
-  {
-    id: 'tech-teacher-branch', kind: 'page', door: 4, pack: 'door34', page: 'p617', pageNo: '٦١٧', title: 'طريق المعلّم التكنولوجي', type: 'branching', typeLabel: 'قرار متفرّع',
+    id: 'tech-teacher-branch', kind: 'page', door: 4, pack: 'door34', page: 'p455', pageNo: '', title: 'طريق المعلّم التكنولوجي', type: 'branching', typeLabel: 'قرار متفرّع',
     video: 'dJidLUqALTY', center: [0.27, 0.5], free: true, crop: [0.0, 0.28, 0.56, 0.8], build: buildBranch,
     behind: { principle: 'التعلّم التجريبي (ديفيد كولب)', body: 'جرّبت قراراً، ثم رأيت نتيجته، ثم تأمّلتها، ثم وصلت إلى المفهوم في النهاية. هذه دورة كولب: تجربة فتأمّل فمفهوم فتطبيق.' },
-  },
-  {
-    id: 'open-resource-museum', kind: 'page', door: 4, pack: 'next-lab5', page: 'p620', pageNo: '٦٢٠', title: 'متحف المعرفة القابلة للبناء', type: 'accessible', typeLabel: 'مجموعة موارد',
-    center: [0.5, 0.52], free: true, build: buildOpenResourceMuseum,
-    behind: { principle: 'تنوع الموارد وإتاحتها', body: 'تجمع الصوت والمكتبة الرقمية والكتاب واللعبة ثم تختبر اتساع طرق الوصول.' },
-  },
-  {
-    id: 'byod-policy-game', kind: 'page', door: 4, pack: 'games-policy', page: 'p621', pageNo: '٦٢١', title: 'مجلس سياسة الأجهزة الشخصية', type: 'unigame', typeLabel: 'لعبة سياسات',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildByodPolicyGame,
-    behind: { principle: 'موازنة الوصول والاستخدام', body: 'تتخذ قرارات جامعية حول الأجهزة الشخصية والبدائل والبنية وتنظيم النشاط.' },
-  },
-  {
-    id: 'tech-balance-game', kind: 'page', door: 4, pack: 'games-policy', page: 'p624', pageNo: '٦٢٤', title: 'غرفة التوازن التقني', type: 'unigame', typeLabel: 'لعبة قرارات',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildTechBalanceGame,
-    behind: { principle: 'التقويم المتزن لاستخدام التقنية', body: 'تواجه حالات بين الخوف والإفراط وتختار تدخلاً تعليمياً مبنياً على الحاجة والأثر.' },
-  },
-  {
-    id: 'schoolless-city', kind: 'page', door: 4, pack: 'doorwave5', page: 'p628', pageNo: '٦٢٨', title: 'مدينة تتعلم بلا جدران', type: 'city', typeLabel: 'مدينة تعليمية',
-    center: [0.5, 0.52], free: true, crop: [0.0611, 0.075, 0.9369, 0.9], build: buildSchoollessCity,
-    behind: { principle: 'التعلم الشبكي وإتاحة الفرص', body: 'تعيد توزيع التعلم على البيت والمكتبة والمجتمع، ثم تصل متعلماً بقي خارج الشبكة.' },
   },
   {
     id: 'welcome', kind: 'special', pack: 'all', page: 'intro', pageNo: '', title: 'مرحباً بك في الموسوعة الحيّة', type: 'welcome', typeLabel: 'صفحة الترحيب',
     center: [0.5, 0.5], free: false, build: buildWelcome,
   },
   {
-    id: 'secret', kind: 'special', pack: 'all', page: 'p8', pageNo: '', title: 'الصفحة السرّية', type: 'secret', typeLabel: 'صفحة سرّية',
+    id: 'secret', kind: 'special', pack: 'all', page: 'p390', pageNo: '', title: 'الصفحة السرّية', type: 'secret', typeLabel: 'صفحة سرّية',
     center: [0.5, 0.5], free: false, crop: [0.19, 0.24, 0.81, 0.76], build: buildSecret,
   },
 ];
+import { SPEC_PAGES } from './v2/catalog.js';
+import { specToExperience } from './v2/engine.js';
+// The hand-built showpieces first, then every spec-driven page in book order.
+EXPERIENCES.push(...SPEC_PAGES.map(specToExperience));
+const ORDER = (x) => (x.kind === 'page' ? parseInt(x.page.slice(1), 10) : 1e6);
+EXPERIENCES.sort((a, b) => ORDER(a) - ORDER(b));
 export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 
-// Recognition packs: each opens with its own small recognition file so speed stays the same as the
-// book grows. `ids` follows the order of the images inside that pack's file.
-export const PACKS = [
-  { id: 'anim1', title: 'الحس والإتاحة', sub: 'من الخبرة إلى الوصول', file: './targets-anim1.mind', ids: ['concrete-to-abstract', 'access-bridge'] },
-  { id: 'anim2', title: 'المخطط والهدف', sub: 'تصميم حي ومنارة التعلم', file: './targets-anim2.mind', ids: ['blueprint-class', 'goal-beacon'] },
-  { id: 'anim3', title: 'الانتشار والمحاكاة', sub: 'موجة التغيير والخطأ الآمن', file: './targets-anim3.mind', ids: ['innovation-wave', 'safe-reactor'] },
-  { id: 'anim4', title: 'الفيلم والراديو', sub: 'حركة الصورة وانتقال الصوت', file: './targets-anim4.mind', ids: ['film-illusion', 'radio-wave'] },
-  { id: 'anim5', title: 'الويكي والتعلم المتنقل', sub: 'صفحات مشتركة وجهاز ذكي', file: './targets-anim5.mind', ids: ['wiki-constellation', 'mobile-orbit'] },
-  { id: 'next-lab1', title: 'الممر وآلة المقرر', sub: 'التعليم المبرمج والتصميم', file: './targets-next-lab1.mind', ids: ['programmed-corridor', 'design-machine'] },
-  { id: 'next-lab2', title: 'الدليل والسحابة', sub: 'نقد الأنماط والاتصال', file: './targets-next-lab2.mind', ids: ['evidence-lab', 'cloud-course'] },
-  { id: 'next-lab3', title: 'المزج وطبقات الواقع', sub: 'التعليم المخلوط والواقع المعزز', file: './targets-next-lab3.mind', ids: ['blend-mixer', 'ar-layers'] },
-  { id: 'next-lab4', title: 'اللعبة والسبورة', sub: 'الألعاب التعليمية والتفكير', file: './targets-next-lab4.mind', ids: ['game-forge', 'thinking-board'] },
-  { id: 'next-lab5', title: 'المشهد والموارد', sub: 'الفيديو التفاعلي والموارد المفتوحة', file: './targets-next-lab5.mind', ids: ['branching-video', 'open-resource-museum'] },
-  { id: 'games-foundations', title: 'ألعاب جامعية · التصميم والتقنية', sub: 'الأهداف والتحول وجودة الكتب', file: './targets-games-foundations.mind', ids: ['smart-goal-game', 'adoption-game', 'ebook-audit-game'] },
-  { id: 'games-policy', title: 'ألعاب جامعية · السياسات والتوازن', sub: 'الأجهزة الشخصية والاستخدام المتزن', file: './targets-games-policy.mind', ids: ['byod-policy-game', 'tech-balance-game'] },
-  { id: 'doorwave1', title: 'الباب الأول · الوصول والدافعية', sub: 'التكنولوجيا المساندة ونموذج كيلر', file: './targets-doorwave1.mind', ids: ['accessible-world', 'arcs-reactor'] },
-  { id: 'doorwave2', title: 'الباب الثاني · البحث والحاسوب', sub: 'البحث وأجيال الحاسب', file: './targets-doorwave2.mind', ids: ['search-detective', 'computer-elevator'] },
-  { id: 'doorwave3', title: 'الباب الثالث · الصف والضوء', sub: 'الفصل المقلوب والهولوجرام', file: './targets-doorwave3.mind', ids: ['flipped-class', 'hologram-lab'] },
-  { id: 'doorwave4', title: 'الباب الثالث · الواقع والوسائط', sub: 'الواقع المعزز والوسائط المتعددة', file: './targets-doorwave4.mind', ids: ['ar-mirror', 'media-orchestra'] },
-  { id: 'doorwave5', title: 'البابان الثالث والرابع · التعليم المتصل', sub: 'المناطيد ومجتمع بلا مدرسة', file: './targets-doorwave5.mind', ids: ['balloon-network', 'schoolless-city'] },
-  { id: 'door1', title: 'الباب الأول', sub: 'مفهوم تكنولوجيا التعليم', file: './targets-door1.mind',
-    ids: ['teacher-roles', 'e-learning-class', 'technology-tree', 'instructional-design', 'planning-darts', 'teaching-vs-instruction', 'channels-of-time', 'dale-cone', 'communication-lab', 'welcome', 'secret'] },
-  { id: 'door2', title: 'الباب الثاني', sub: 'مستحدثات تكنولوجيا التعليم', file: './targets-door2.mind',
-    ids: ['synchronous-class', 'safe-simulation'] },
-  { id: 'door2future', title: 'الباب الثاني · الشبكات والتصميم', sub: 'الشبكات ونموذج الجزار', file: './targets-door2future.mind',
-    ids: ['living-network', 'lesson-factory'] },
-  { id: 'door3new', title: 'الباب الثالث · صفحات جديدة', sub: 'العمق والحقيبة التعليمية', file: './targets-door3new.mind',
-    ids: ['eyes-make-depth', 'learning-bag'] },
-  { id: 'door3future', title: 'الباب الثالث · الويب والإخراج', sub: 'أجيال الويب والستوري بورد', file: './targets-door3future.mind',
-    ids: ['web-evolution', 'storyboard-director'] },
-  { id: 'door4future', title: 'الباب الرابع · الكتاب المرن', sub: 'الكتاب الإلكتروني القابل للطي', file: './targets-door4future.mind',
-    ids: ['folding-book'] },
-  { id: 'door34', title: 'البابان الثالث والرابع', sub: 'المستحدثات والمعلّم والتكنولوجيا', file: './targets-door34.mind',
-    ids: ['virtual-portal', 'mobile-exploded', 'bloom-pyramid', 'digital-divide-balance', 'interactive-classroom', 'tech-teacher-branch', 'welcome', 'secret'] },
-];
+// Recognition packs come from v2/catalog.js (generated). The camera cycles through them by itself.
+export { PACKS } from './v2/catalog.js';

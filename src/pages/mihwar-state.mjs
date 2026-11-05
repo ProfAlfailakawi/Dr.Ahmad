@@ -180,7 +180,7 @@ export function toCsvRows(state, names) {
 export function buildIcs({ id, title, date, description = '', url = '', alarms = [3, 1] }) {
   const d = String(date).replaceAll('-', '')
   const esc = (t) => String(t).replace(/[\\;,]/g, (m) => '\\' + m).replace(/\r?\n/g, '\\n')
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Mihwar//AR', 'BEGIN:VEVENT', `UID:${id}@mihwar.dr-alfailakawi.com`, `DTSTAMP:${new Date().toISOString().replace(/[-:]|\.\d+/g, '')}`, `DTSTART;VALUE=DATE:${d}`, `SUMMARY:${esc(title)}`]
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Mihwar//AR', 'BEGIN:VEVENT', `UID:${id}@mihwar.dr-alfailakawi.com`, `DTSTAMP:${new Date().toISOString().slice(0, 19).replace(/\D/g, '').replace(/^(\d{8})(\d{6})$/, '$1T$2')}Z`, `DTSTART;VALUE=DATE:${d}`, `SUMMARY:${esc(title)}`]
   if (description) lines.push(`DESCRIPTION:${esc(description)}`)
   if (safeUrl(url)) lines.push(`URL:${safeUrl(url)}`)
   for (const days of alarms) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc(title)}`, `TRIGGER:-P${days}D`, 'END:VALARM')

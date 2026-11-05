@@ -73,7 +73,7 @@ function createBridge(uid: string) {
     },
     async createBackup(state: Record<string, unknown>, reason: string) {
       const { db, fs } = await ref()
-      const id = uid + '__' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '_' + Math.random().toString(36).slice(2, 6)
+      const id = uid + '__' + new Date().toISOString().replace(/\D/g, '').slice(0, 14) + '_' + Math.random().toString(36).slice(2, 6)
       await fs.setDoc(fs.doc(db, 'admin_mihwar_backups', id), { payload: JSON.stringify(state), createdAt: new Date().toISOString(), uid, reason })
       const all = await this.listBackups()
       for (const old of all.slice(12)) await fs.deleteDoc(fs.doc(db, 'admin_mihwar_backups', old.id))

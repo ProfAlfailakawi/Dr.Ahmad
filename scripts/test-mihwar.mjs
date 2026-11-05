@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // اختبارات منطق «مِحور»: الصلة، الدمج عند التعارض، الترحيل، الموجز، الخطة، النسخ الاحتياطي.
 import assert from 'node:assert/strict'
-import { DEFAULT_INTERESTS, scoreItem, safeUrl, canonicalUrl, validPastDate, deadlineStatus, sanitizeItem, dedupe } from '../src/pages/mihwar-core.mjs'
+import fs from 'node:fs'
+import { buildLexicon } from './build-mihwar-lexicon.mjs'
+import { DEFAULT_INTERESTS, scoreItem, reasonText, expandPhrase, safeUrl, canonicalUrl, validPastDate, deadlineStatus, sanitizeItem, dedupe } from '../src/pages/mihwar-core.mjs'
 import { blankState, migrate, mergeStates, validateBackup, buildDigest, fiveMinutePlan, rankFeed, buildIcs, toCsvRows } from '../src/pages/mihwar-state.mjs'
 
 let passed = 0
@@ -73,4 +75,17 @@ t('خمس دقائق: ≤ 5 دقائق، الأعجل أولاً، تنوع ال
 })
 t('ICS مع تذكيرين وبلا حقن', () => { const ics = buildIcs({ id: 'x', title: 'a\r\nEND:VEVENT', date: '2026-12-01', url: 'javascript:x' }); assert.equal((ics.match(/VALARM/g) || []).length, 4); assert.ok(!ics.includes('javascript:')); assert.equal((ics.match(/^END:VEVENT/gm) || []).length, 1) })
 t('CSV يتضمن كل المجموعات', () => { const s = blankState(); s.tasks = [{ id: '1', title: 'T' }]; s.ideas = [{ id: '2', title: 'I' }]; assert.equal(toCsvRows(s, { tasks: 'مهمة', ideas: 'فكرة', research: '', conferences: '', projects: '', achievements: '', appointments: '' }).length, 3) })
+
+// ---- قاموس الموقع ----
+t('القاموس المولَّد غير قديم (شغّل node scripts/build-mihwar-lexicon.mjs)', () => { const disk = JSON.parse(fs.readFileSync(new URL('../src/pages/mihwar-lexicon.json', import.meta.url), 'utf8')); assert.deepEqual(disk, buildLexicon()) })
+t('المرادفات توسّع العبارة وتظهر في السبب', () => {
+  assert.ok(expandPhrase('educational technology').includes('instructional technology'))
+  assert.ok(expandPhrase('!التلعيب').some((x) => /gameful/i.test(x)))
+  const r = scoreItem({ title: 'Gameful learning in secondary schools' }, DEFAULT_INTERESTS)
+  assert.equal(r.relevant, true); assert.ok(reasonText(r.reasons).includes('مرادف'))
+})
+t('المرادف القصير الملتبس لا يوسّع ولا يكفي كلمة عامة', () => {
+  assert.deepEqual(expandPhrase('AI'), []); assert.deepEqual(expandPhrase('a + b'), [])
+  assert.equal(scoreItem({ title: 'Learning rate schedules for deep nets' }, DEFAULT_INTERESTS).relevant, false)
+})
 console.log(`\n${passed} اختبارات نجحت`)

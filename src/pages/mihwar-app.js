@@ -581,7 +581,7 @@ export function initMihwar(root, bridge) {
     const ss = sec('sources', 'المصادر وحالتها')
     if (!feed.meta) ss.append(el('p', 'detail-meta', feed.error ? 'تعذرت قراءة حالة المصادر.' : 'لم يعمل الجالب الدوري بعد.'))
     else {
-      ss.append(el('p', 'detail-meta', 'آخر تحديث مكتمل: ' + fmtDateTime(feed.meta.updatedAt) + ' · يعمل الجالب تلقائياً كل ست ساعات. يمكنك إخفاء أي مصدر من عرضك.'))
+      ss.append(el('p', 'detail-meta', 'آخر تحديث مكتمل: ' + fmtDateTime(feed.meta.updatedAt) + ' · يعمل الجالب تلقائياً مرة كل يوم. يمكنك إخفاء أي مصدر من عرضك.'))
       for (const s of feed.meta.sources) {
         const row = el('div', 'src-row' + (s.ok ? '' : ' src-bad')); const t = el('div')
         t.append(el('strong', '', (s.ok ? '✓ ' : '✗ ') + s.name), el('p', 'detail-meta', ['مقبول ' + s.kept, s.ok ? 'آخر نجاح ' + fmtDateTime(s.lastSuccess) : 'آخر نجاح: ' + (s.lastSuccess ? fmtDateTime(s.lastSuccess) : 'لم يسبق'), s.licence].join(' · ')))

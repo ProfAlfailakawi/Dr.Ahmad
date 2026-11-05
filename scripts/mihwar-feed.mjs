@@ -45,7 +45,7 @@ async function getText(url, { timeout = 25000, retries = 1, headers = {}, max = 
       if (attempt < retries) await sleep(1500 * (attempt + 1))
     }
   }
-  throw new Error(String(lastError?.message || lastError).slice(0, 140))
+  throw new Error(String(lastError?.message || lastError).slice(0, 80) + (lastError?.cause?.code ? ' [' + lastError.cause.code + ']' : ''))
 }
 const getJson = async (url, opts) => {
   const body = await getText(url, opts)
@@ -331,11 +331,12 @@ function isExpired(item) {
 let _db
 async function db() {
   if (_db) return _db
-  const admin = await import('firebase-admin')
+  const { initializeApp, cert } = await import('firebase-admin/app')
+  const { getFirestore } = await import('firebase-admin/firestore')
   const saPath = process.env.FIREBASE_SERVICE_ACCOUNT || 'sa.json'
   if (!existsSync(saPath)) throw new Error('ملف حساب الخدمة مفقود')
-  const app = admin.default.initializeApp({ credential: admin.default.credential.cert(JSON.parse(readFileSync(saPath, 'utf8'))), projectId: process.env.FIREBASE_PROJECT_ID || 'drahmad-8e9e2' }, 'mihwar-feed')
-  _db = app.firestore()
+  const app = initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))), projectId: process.env.FIREBASE_PROJECT_ID || 'drahmad-8e9e2' }, 'mihwar-feed')
+  _db = getFirestore(app)
   return _db
 }
 

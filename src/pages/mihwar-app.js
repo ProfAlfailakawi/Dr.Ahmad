@@ -328,7 +328,7 @@ export function initMihwar(root, bridge) {
     const plan = fiveMinutePlan(state, feed.items)
     setCount('')
     if (!plan.steps.length) { list.append(empty('لا شيء عاجل الآن', 'لا مهام قريبة ولا مواد جديدة غير مقروءة. استمتع بالوقت، أو أضف فكرة.', button('+ فكرة', () => openForm('ideas'), 'btn primary small'))); return }
-    notice.append(noticeEl(`الخطة: ${plan.steps.length} خطوات · نحو ${plan.minutes} دقائق. تبدأ بالأكثر إلحاحاً ثم أنسب ما لم تقرأه.`, 'info'))
+    notice.append(noticeEl(`الخطة — عدد الخطوات: ${plan.steps.length} · الزمن التقريبي بالدقائق: ${plan.minutes}. تبدأ بالأكثر إلحاحاً ثم أنسب ما لم تقرأه.`, 'info'))
     plan.steps.forEach((s, n) => {
       const card = el('article', 'row step'); const m = el('div', 'meta'); m.append(el('span', 'badge', (n + 1) + ' · ' + s.minutes + ' د'), el('span', '', s.why || ''))
       const open = () => (s.kind === 'item' ? openItem(s.item) : openWork(s.rec, s.kind))
@@ -434,7 +434,7 @@ export function initMihwar(root, bridge) {
     const s = el('div', 'aside-card'); s.append(el('h3', '', 'آخر تحديث ناجح للمصادر'))
     const ok = (feed.meta?.sources || []).filter((x) => x.ok); const bad = (feed.meta?.sources || []).filter((x) => !x.ok && !x.optional)
     s.append(el('p', '', feed.meta ? fmtDateTime(feed.meta.updatedAt) : 'لم يحدث بعد'))
-    if (feed.meta) s.append(el('p', 'detail-meta', `${ok.length} مصادر تعمل` + (bad.length ? ` · ${bad.length} متعثرة` : '')), button('حالة المصادر', () => settings('sources'), 'linkish'))
+    if (feed.meta) s.append(el('p', 'detail-meta', `المصادر العاملة: ${ok.length}` + (bad.length ? ` · المتعثرة: ${bad.length}` : '')), button('حالة المصادر', () => settings('sources'), 'linkish'))
     a.append(s)
   }
   function nextDeadlines() {

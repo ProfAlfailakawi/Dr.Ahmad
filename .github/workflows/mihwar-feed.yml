@@ -1,0 +1,62 @@
+name: جلب مصادر مِحور
+
+# يجلب أبحاثاً ومقالات ومؤتمرات من واجهات رسمية مجانية وخلاصات RSS عامة،
+# وينظّفها ويكتبها في Firestore (mihwar_feed/*) ليقرأها المشرف فقط في /mihwar.
+# لا يقرأ أي بيانات خاصة، ولا يعتمد على مفاتيح خارجية. المستودع عام فالدقائق مجانية.
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mihwar-feed
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout (الملفات اللازمة فقط)
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            scripts/mihwar-feed.mjs
+            src/pages/mihwar-core.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Install the two runtime dependencies
+        run: |
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund --registry=https://registry.npmjs.org/ firebase-admin@14.2.0 fast-xml-parser@5.10.1
+
+      - name: Parser self-test
+        run: node scripts/mihwar-feed.mjs --self-test
+
+      - name: Validate credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT_DRAHMAD_8E9E2 is missing."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > sa.json
+
+      - name: Fetch sources and publish to Firestore
+        env:
+          FIREBASE_PROJECT_ID: drahmad-8e9e2
+          FIREBASE_SERVICE_ACCOUNT: sa.json
+        run: node scripts/mihwar-feed.mjs
+
+      - name: Remove temporary credentials
+        if: always()
+        run: rm -f sa.json

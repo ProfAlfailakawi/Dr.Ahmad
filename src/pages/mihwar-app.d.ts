@@ -1,1 +1,3 @@
-export function initMihwar(root: ShadowRoot, bridge: { load(): Promise<Record<string, unknown>>; save(value: Record<string, unknown>): Promise<void>; feed(interests: Array<{ active?: boolean; terms?: string[] }>): Promise<{ items: unknown[]; errors: Record<string, string> }> }): () => void
+// الجسر بين واجهة مِحور (JS) وFirestore معرّف في Mihwar.tsx (createBridge).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function initMihwar(root: ShadowRoot, bridge: any): () => void

@@ -5,51 +5,98 @@ import { markup } from './mihwar-markup'
 import { initMihwar } from './mihwar-app'
 import './mihwar-gate.css'
 
-type MihwarState = Record<string, unknown>
-type FeedItem = { id: string; title: string; source: string; url: string; published: string | null; fetched: string; language: string; type: string; description: string; keywords: string; demo: false }
+type Remote = { state: Record<string, unknown>; rev: number }
+type SaveResult = { rev: number }
+export type FeedBundle = { meta: Record<string, unknown> | null; items: Array<Record<string, unknown>>; error?: string }
 
-const cleanTitle = (value: string) => value.replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&amp;/gi, '&').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-const researchTopics = [
-  { query: 'educational technology', match: (t: string) => /educat|learn|teach|pedagog/.test(t) && /technolog|digital|online/.test(t) },
-  { query: 'artificial intelligence education', match: (t: string) => /artificial intelligence|\bai\b|machine learning/.test(t) && /educat|teach|student|school|classroom|pedagog|curricul|universit|academic|instruction/.test(t) },
-  { query: 'digital learning', match: (t: string) => /digital|online|e-learning/.test(t) && /learn|educat|teach/.test(t) },
-  { query: 'gamification education', match: (t: string) => /gamif|game-based/.test(t) && /educat|teach|student|classroom|pedagog|curricul|school|universit|academic|instruction/.test(t) },
-  { query: 'media literacy education', match: (t: string) => /media/.test(t) && /literacy|educat|learn/.test(t) },
-  { query: 'inclusive education assistive technology', match: (t: string) => /inclusive|assistive|accessib|special needs/.test(t) && /educat|learn|teach|student/.test(t) },
-  { query: 'education society culture', match: (t: string) => /educat|learn|teach/.test(t) && /social|societ|cultur|communit/.test(t) },
-]
-const relevantTitle = (title: string) => researchTopics.some(topic => topic.match(cleanTitle(title).toLowerCase()))
-const validDate = (value: string | null) => !value || (Number.isFinite(new Date(value).getTime()) && new Date(value).getTime() <= Date.now())
+const parse = (payload: unknown) => { try { return JSON.parse(String(payload || '{}')) as Record<string, unknown> } catch { return {} } }
+const isOfflineError = (error: unknown) => {
+  const code = String((error as { code?: string })?.code || '')
+  return !navigator.onLine || ['unavailable', 'deadline-exceeded', 'cancelled'].includes(code) || /offline|network|Failed to get document/i.test(String((error as Error)?.message || ''))
+}
 
-async function fetchResearch() {
-  const items: FeedItem[] = []
-  const errors: Record<string, string> = {}
-  for (const topic of researchTopics) {
-    try {
-      const url = new URL('https://api.crossref.org/works')
-      url.searchParams.set('query.title', topic.query)
-      url.searchParams.set('rows', '12')
-      url.searchParams.set('sort', 'published')
-      url.searchParams.set('order', 'desc')
-      url.searchParams.set('filter', 'from-pub-date:2024-01-01,until-pub-date:' + new Date().toISOString().slice(0, 10) + ',type:journal-article')
-      const response = await fetch(url)
-      if (!response.ok) throw new Error(String(response.status))
-      const data = await response.json() as { message?: { items?: Array<Record<string, unknown>> } }
-      for (const work of data.message?.items || []) {
-        const title = Array.isArray(work.title) ? cleanTitle(String(work.title[0] || '')) : ''
-        const doi = String(work.DOI || '')
-        if (!title || !doi || !topic.match(title.toLowerCase())) continue
-        const parts = (work.published as { 'date-parts'?: number[][] } | undefined)?.['date-parts']?.[0]
-        const year = Number(parts?.[0])
-        if (!Number.isInteger(year) || year < 2024 || year > new Date().getFullYear()) continue
-        const published = parts && parts.length >= 3 ? parts.slice(0, 3).map((v, i) => i ? String(v).padStart(2, '0') : String(v)).join('-') : null
-        if (published && (!Number.isFinite(new Date(published).getTime()) || new Date(published).getTime() > Date.now())) continue
-        items.push({ id: 'doi:' + doi.toLowerCase(), title, source: 'Crossref · ' + String(work.publisher || 'ناشر غير محدد'), url: 'https://doi.org/' + encodeURIComponent(doi), published, fetched: new Date().toISOString(), language: String(work.language || 'en'), type: 'بحث', description: Array.isArray(work['container-title']) ? String(work['container-title'][0] || '') : '', keywords: Array.isArray(work.subject) ? work.subject.map(String).join('، ') : '', demo: false })
-      }
-    } catch { errors[topic.query] = 'تعذر الجلب' }
-    await new Promise(resolve => setTimeout(resolve, 1100))
+function createBridge(uid: string) {
+  const ref = async () => {
+    const db = await getDb()
+    if (!db) throw Object.assign(new Error('Firestore unavailable'), { code: 'unavailable' })
+    const fs = await import('firebase/firestore')
+    return { db, fs, doc: fs.doc(db, 'admin_mihwar', uid) }
   }
-  return { items: [...new Map(items.map(item => [item.id, item])).values()], errors }
+  let queue: Promise<unknown> = Promise.resolve()
+  return {
+    async load(): Promise<Remote> {
+      const { fs, doc } = await ref()
+      const snap = await fs.getDoc(doc)
+      return snap.exists() ? { state: parse(snap.data().payload), rev: Number(snap.data().rev) || 0 } : { state: {}, rev: 0 }
+    },
+    // حفظ مشروط برقم النسخة: إن غيّر جهاز آخر المستند يُرفض الحفظ بكود conflict ولا يُكتب فوقه.
+    save(state: Record<string, unknown>, baseRev: number): Promise<SaveResult> {
+      const run = async () => {
+        const payload = JSON.stringify(state)
+        if (new TextEncoder().encode(payload).length > 850_000) throw Object.assign(new Error('too large'), { code: 'too-large' })
+        const { db, fs, doc } = await ref()
+        try {
+          return await fs.runTransaction(db, async (tx) => {
+            const snap = await tx.get(doc)
+            const remoteRev = snap.exists() ? Number(snap.data().rev) || 0 : 0
+            if (remoteRev !== baseRev) throw Object.assign(new Error('conflict'), { code: 'conflict', remote: { state: parse(snap.data()?.payload), rev: remoteRev } })
+            tx.set(doc, { payload, rev: baseRev + 1, updatedAt: fs.serverTimestamp() })
+            return { rev: baseRev + 1 }
+          })
+        } catch (error) {
+          if ((error as { code?: string }).code === 'conflict') throw error
+          if (isOfflineError(error)) throw Object.assign(new Error('offline'), { code: 'offline' })
+          throw error
+        }
+      }
+      const next = queue.catch(() => undefined).then(run)
+      queue = next
+      return next as Promise<SaveResult>
+    },
+    async subscribe(onRemote: (remote: Remote) => void) {
+      const { fs, doc } = await ref()
+      return fs.onSnapshot(doc, (snap) => { if (snap.exists() && !snap.metadata.hasPendingWrites) onRemote({ state: parse(snap.data().payload), rev: Number(snap.data().rev) || 0 }) }, () => undefined)
+    },
+    async feed(): Promise<FeedBundle> {
+      try {
+        const { db, fs } = await ref()
+        const metaSnap = await fs.getDoc(fs.doc(db, 'mihwar_feed', 'meta'))
+        if (!metaSnap.exists()) return { meta: null, items: [] }
+        const meta = parse(metaSnap.data().payload)
+        const items: Array<Record<string, unknown>> = []
+        for (let n = 0; n < Number(metaSnap.data().chunks || 0); n++) {
+          const chunk = await fs.getDoc(fs.doc(db, 'mihwar_feed', 'items-' + n))
+          if (chunk.exists()) items.push(...(JSON.parse(String(chunk.data().payload || '[]')) as Array<Record<string, unknown>>))
+        }
+        return { meta, items }
+      } catch (error) { return { meta: null, items: [], error: isOfflineError(error) ? 'offline' : 'failed' } }
+    },
+    async createBackup(state: Record<string, unknown>, reason: string) {
+      const { db, fs } = await ref()
+      const id = uid + '__' + new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '_' + Math.random().toString(36).slice(2, 6)
+      await fs.setDoc(fs.doc(db, 'admin_mihwar_backups', id), { payload: JSON.stringify(state), createdAt: new Date().toISOString(), uid, reason })
+      const all = await this.listBackups()
+      for (const old of all.slice(12)) await fs.deleteDoc(fs.doc(db, 'admin_mihwar_backups', old.id))
+      return id
+    },
+    async listBackups() {
+      const { db, fs } = await ref()
+      const snap = await fs.getDocs(fs.query(fs.collection(db, 'admin_mihwar_backups'), fs.where('uid', '==', uid)))
+      return snap.docs.map((d) => ({ id: d.id, createdAt: String(d.data().createdAt || ''), reason: String(d.data().reason || ''), size: String(d.data().payload || '').length })).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    },
+    async readBackup(id: string) {
+      const { db, fs } = await ref()
+      const snap = await fs.getDoc(fs.doc(db, 'admin_mihwar_backups', id))
+      return snap.exists() ? parse(snap.data().payload) : null
+    },
+    // نسخة غير مرسلة محفوظة على هذا الجهاز فقط ريثما يعود الاتصال.
+    pending: {
+      key: 'mihwar:pending:' + uid,
+      read() { try { return JSON.parse(localStorage.getItem(this.key) || 'null') } catch { return null } },
+      write(value: unknown) { try { localStorage.setItem(this.key, JSON.stringify(value)) } catch { /* التخزين المحلي اختياري */ } },
+      clear() { try { localStorage.removeItem(this.key) } catch { /* ignore */ } },
+    },
+  }
 }
 
 function MihwarApp({ uid }: { uid: string }) {
@@ -64,39 +111,8 @@ function MihwarApp({ uid }: { uid: string }) {
     const content = document.createElement('div')
     content.innerHTML = markup
     shadow.append(content)
-    let saveQueue: Promise<void> = Promise.resolve()
-    const bridge = {
-      async load(): Promise<MihwarState> {
-        const db = await getDb()
-        if (!db) throw new Error('Firestore unavailable')
-        const { doc, getDoc } = await import('firebase/firestore')
-        const snapshot = await getDoc(doc(db, 'admin_mihwar', uid))
-        const state = snapshot.exists() ? JSON.parse(String(snapshot.data().payload || '{}')) as MihwarState : { version: 1 }
-        // Keep imported and saved records intact; hide low-quality automatic records from the feed.
-        if (Array.isArray(state.items)) {
-          const saved = (state.saved || {}) as Record<string, boolean>
-          const notes = (state.notes || {}) as Record<string, string>
-          const ignored = { ...((state.ignored || {}) as Record<string, boolean>) }
-          for (const item of state.items as FeedItem[]) if (item.source?.startsWith('Crossref')) {
-            item.title = cleanTitle(item.title)
-            if (!saved[item.id] && !notes[item.id] && (!relevantTitle(item.title) || !validDate(item.published))) ignored[item.id] = true
-          }
-          state.ignored = ignored
-        }
-        return state
-      },
-      async save(value: MihwarState) {
-        const payload = JSON.stringify(value)
-        if (new TextEncoder().encode(payload).length > 700_000) throw new Error('Backup required')
-        const db = await getDb()
-        if (!db) throw new Error('Firestore unavailable')
-        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-        saveQueue = saveQueue.catch(() => undefined).then(() => setDoc(doc(db, 'admin_mihwar', uid), { payload, updatedAt: serverTimestamp() }))
-        await saveQueue
-      },
-      feed: fetchResearch,
-    }
-    return initMihwar(shadow, bridge)
+    const dispose = initMihwar(shadow, createBridge(uid))
+    return () => dispose?.()
   }, [uid])
   return <div ref={host} className="mihwar-frame" />
 }

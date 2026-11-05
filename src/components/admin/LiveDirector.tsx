@@ -99,6 +99,28 @@ function safeTimestamp(value: unknown) {
   return 0
 }
 
+/* من يفعل ماذا؟ الموقع يكتب الخطة والبرومبتات فقط؛ توليد المقاطع يدوي خارج الموقع ثم تُرفع الملفات. */
+function FlowHandoff({ compact = false }: { compact?: boolean }) {
+  const steps = [
+    ['١', 'الموقع يكتب', 'الخطة والمقاطع وبرومبتات Flow. هذا كل ما يفعله الموقع.'],
+    ['٢', 'أنت تولّد يدوياً', 'تنسخ كل برومبت وتولّد المقطع داخل حسابك في Flow، خارج هذا الموقع.'],
+    ['٣', 'ثم ترفع الملفات', 'تعود وترفع المقاطع الناتجة إلى المشروع هنا، فتتابع حالة كل مقطع.'],
+  ]
+  return (
+    <div className={`${compact ? 'mt-3' : 'mt-5'} rounded-2xl border border-amber-300 bg-amber-50/70 p-4`} data-live-director-handoff="manual-flow" role="note">
+      <p className="text-[.74rem] font-bold text-amber-900">الموقع لا يولّد أي مقطع فيديو هنا — توليد المقاطع يتم يدوياً خارج الموقع.</p>
+      <ol className="mt-3 grid gap-2 sm:grid-cols-3">
+        {steps.map(([n, head, text]) => (
+          <li key={n} className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white/70 px-3 py-2">
+            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-200 text-[.65rem] font-black text-amber-900">{n}</span>
+            <span className="text-[.7rem] leading-relaxed text-amber-950"><b className="block">{head}</b>{text}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
 export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
   const { user } = useAdminAuth()
   const [path, setPath] = useState<DirectorPath>(null)
@@ -415,6 +437,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
           <p className="text-[.72rem] font-semibold text-accent">المخرج الحي</p>
           <h2 className="mt-1 font-display text-2xl font-semibold text-ink">اختر نقطة البداية.</h2>
           <p className="mt-2 max-w-3xl text-[.8rem] leading-relaxed text-soft">الموقع يحلل ويكتب خطة ومقاطع وبرومبتات Flow؛ التوليد يدوي داخل حسابك، بلا Flow API أو Veo أو خدمة فيديو مدفوعة.</p>
+          <FlowHandoff />
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <button type="button" onClick={() => setPath('article')} className="rounded-3xl border border-hair bg-canvas p-6 text-right transition hover:-translate-y-0.5 hover:border-accent"><span className="text-[.68rem] font-semibold text-accent">المسار الأول</span><strong className="mt-2 block font-display text-xl text-ink">فيديو من مقال</strong><span className="mt-2 block text-[.78rem] leading-relaxed text-soft">حوّل مقالة موجودة إلى شرح بصري مختصر يجذب الناس إلى قراءتها.</span></button>
             {/* دُمج «فيديو للجمهور» و«الريل الرمزي» في باب واحد بأمر الدكتور:
@@ -442,6 +465,7 @@ export function LiveDirector({ articles }: { articles: ArticleRecord[] }) {
         {!project && path === 'public' && <div className="mt-6 grid gap-4"><div className="grid gap-4 lg:grid-cols-2"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الموضوع؟</span><textarea className={`${input} min-h-28`} value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="فكرة، سؤال، موقف، دراسة أو حدث…" /></label><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ما الرسالة التي تريد إيصالها؟</span><textarea className={`${input} min-h-28`} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="اختياري؛ إن تركته يختصر المحرك جوهر الموضوع." /></label></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">الجمهور</span><input className={input} value={audience} onChange={(event) => setAudience(event.target.value)} /></label><CastPicker castMode={castMode} setCastMode={setCastMode} /><CommonSelects platform={platform} tone={tone} setPlatform={setPlatform} setTone={setTone} look={look} setLook={setLook} clipSeconds={clipSeconds} setClipSeconds={setClipSeconds} /><label><span className="mb-2 block text-[.72rem] font-semibold text-ink">ربط اختياري بمقال</span><select className={input} value={linkedArticleSlug} onChange={(event) => setLinkedArticleSlug(event.target.value)}><option value="">بلا ربط</option>{articles.map((article) => <option key={article.slug} value={article.slug}>{article.title}</option>)}</select></label></div><details className="rounded-xl border border-hair bg-canvas p-4"><summary className="cursor-pointer list-none text-[.72rem] font-semibold text-soft">خيارات متقدمة عند الحاجة</summary><div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]"><label><span className="mb-2 block text-[.7rem] font-semibold text-ink">مصدر أو دراسة مرتبطة</span><input className={input} value={source} onChange={(event) => setSource(event.target.value)} placeholder="رابط أو مرجع مختصر — اختياري" /></label><div className="flex flex-wrap items-center gap-5"><label className="text-[.74rem] text-ink"><input type="checkbox" checked={wantsSeries} onChange={(event) => setWantsSeries(event.target.checked)} /> الموضوع يحتاج سلسلة</label></div></div></details></div>}
 
         {!project && path !== 'reel' && <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" onClick={buildProject} className={primary}>حلّل وابنِ خطة Flow</button><span className="text-[.7rem] text-soft">3 مقاطع يومياً · {arabicCountPhrase(clipSeconds, SECOND_FORMS)} لكل مقطع · لا توليد فيديو داخل الموقع</span></div>}
+        <FlowHandoff compact />
         {notice && <p className="mt-4 rounded-xl border border-accent/25 bg-canvas px-4 py-3 text-[.76rem] leading-relaxed text-accent">{notice}</p>}
       </section>
 

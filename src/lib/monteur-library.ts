@@ -1,4 +1,5 @@
 import { getDb } from './firebase'
+import { planMonteurSave, type AiDraft, type MonteurStatus, type SaveIntent } from './monteur-drafts'
 
 export type MonteurScene = {
   t: string; src: string; prop?: string; l1: string[]; l2: string[]; em: number; ann: string
@@ -14,6 +15,11 @@ export type MonteurPlan = {
 export type MonteurProject = {
   plan: MonteurPlan; title: string; body: string; category: string; source: 'ai' | 'curated'
   sourceHash: string; revision: number; history: { plan: MonteurPlan; savedAt: string; body?: string; title?: string }[]
+  /** غياب الحقل = «معتمد» (بيانات سابقة). المسودة لا تُعتمد إلا بنقرة صريحة. */
+  status?: MonteurStatus
+  approvedAt?: string
+  /** ناتج «لوحة بالذكاء» بانتظار المراجعة فوق نسخة معتمدة؛ لا يمسّ الخطة المعتمدة. */
+  aiDraft?: Omit<AiDraft, 'plan'> & { plan: MonteurPlan }
 }
 
 export async function monteurSourceHash(text: string) {
@@ -47,8 +53,13 @@ export function watchMonteurProjects(
   return () => { active = false; stop() }
 }
 
-/** Keep bounded previous plans atomically: concurrent saves never silently erase history. */
-export async function saveMonteurProject(slug: string, project: Omit<MonteurProject, 'revision' | 'history'>, expectedRevision?: number) {
+/**
+ * يحفظ بمعاملة ذرية. القرار (ماذا يُكتب) في planMonteurSave النقية والمُختبَرة:
+ *  - 'working-save': حفظ تعديلات المستخدم؛ يحفظ السابق في التاريخ ولا يغيّر الحالة.
+ *  - 'approve': اعتماد صريح (نسخة مرشّحة أو مسودة).
+ *  - 'ai-generated': ناتج النموذج؛ فوق نسخة معتمدة يُكتب في aiDraft فقط.
+ */
+export async function saveMonteurProject(slug: string, project: Omit<MonteurProject, 'revision' | 'history' | 'status' | 'aiDraft' | 'approvedAt'>, expectedRevision?: number, intent: SaveIntent = 'working-save') {
   if (!/^[a-zA-Z0-9_-]{1,200}$/.test(slug)) throw new Error('معرّف المشروع غير صالح.')
   const db = await getDb()
   if (!db) throw new Error('لم تُحفظ اللوحة؛ اتصال Firebase غير متاح.')
@@ -57,13 +68,21 @@ export async function saveMonteurProject(slug: string, project: Omit<MonteurProj
     const ref = doc(db, 'monteur_plans', slug)
     const previous = await transaction.get(ref)
     const old = previous.data() as (MonteurProject & { createdAt?: unknown }) | undefined
-    if (expectedRevision !== undefined && (old?.revision || 0) !== expectedRevision) {
-      throw new Error('تغيّرت اللوحة في جلسة أخرى؛ افتح أحدث نسخة قبل الحفظ.')
+    const outcome = planMonteurSave(old as never, JSON.parse(JSON.stringify(project)), intent, new Date().toISOString(), expectedRevision)
+    if (outcome.kind === 'conflict') throw new Error(outcome.message)
+    if (outcome.kind === 'ai-draft-only') {
+      transaction.update(ref, { ...outcome.patch, updatedAt: serverTimestamp() })
+      return
     }
-    const history = old?.plan ? [...(old.history || []), { plan: old.plan, body: old.body || "", title: old.title || "", savedAt: new Date().toISOString() }].slice(-8) : []
-    transaction.set(ref, {
-      ...JSON.parse(JSON.stringify(project)), history, revision: (old?.revision || 0) + 1,
-      createdAt: old?.createdAt || serverTimestamp(), updatedAt: serverTimestamp(),
-    })
+    transaction.set(ref, { ...outcome.doc, createdAt: old?.createdAt || serverTimestamp(), updatedAt: serverTimestamp() })
   })
+}
+
+/** يمسح مسودة الذكاء المعلّقة (تجاهلها) دون المساس بالنسخة المعتمدة. */
+export async function discardMonteurAiDraft(slug: string) {
+  if (!/^[a-zA-Z0-9_-]{1,200}$/.test(slug)) throw new Error('معرّف المشروع غير صالح.')
+  const db = await getDb()
+  if (!db) throw new Error('اتصال Firebase غير متاح.')
+  const { doc, updateDoc, deleteField } = await import('firebase/firestore')
+  await updateDoc(doc(db, 'monteur_plans', slug), { aiDraft: deleteField() })
 }

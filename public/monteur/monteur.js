@@ -835,59 +835,118 @@ async function packagePoster(){var c=document.createElement('canvas'),x=c.getCon
   x.fillStyle=M.se;x.fillRect(770,1650,160,8);x.font='500 34px Alexandria, sans-serif';x.fillText('dr-alfailakawi.com',930,1740);
   return new Promise(function(resolve){c.toBlob(function(blob){resolve(blob);},'image/png');});}
 async function motionCover(){if(!HTMLCanvasElement.prototype.captureStream||typeof MediaRecorder==='undefined')return null;var c=document.createElement('canvas'),x=c.getContext('2d'),W=c.width=540,H=c.height=960,stream=c.captureStream(24),mime=['video/webm;codecs=vp9','video/webm'].find(function(m){return MediaRecorder.isTypeSupported(m);});if(!mime)return null;var parts=[],rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2600000}),title=(scenes[0]&&scenes[0].title)||'فكرة تستحق أن تُرى',start=performance.now();rec.ondataavailable=function(e){if(e.data.size)parts.push(e.data);};var done=new Promise(function(resolve){rec.onstop=function(){stream.getTracks().forEach(function(t){t.stop();});resolve(new Blob(parts,{type:mime}));};});rec.start(150);await new Promise(function(resolve){function frame(now){var p=Math.min(1,(now-start)/2200),M=pal(),g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,M.sg);g.addColorStop(1,M.se);x.fillStyle=g;x.fillRect(0,0,W,H);x.globalAlpha=.16;x.strokeStyle='#fff';x.lineWidth=2;for(var i=0;i<7;i++){x.beginPath();x.arc(W/2,H*.38,70+i*28+p*38,0,Math.PI*2);x.stroke();}x.globalAlpha=1;x.textAlign='center';x.direction='rtl';x.fillStyle=M.si;x.font='700 42px Tajawal, sans-serif';var words=String(title).split(/\s+/),lines=[],line='';words.forEach(function(word){var next=(line+' '+word).trim();if(x.measureText(next).width>420&&line){lines.push(line);line=word;}else line=next;});if(line)lines.push(line);lines.slice(0,3).forEach(function(value,index){x.fillText(value,W/2,H*.64+index*56);});x.fillStyle=M.sa;x.font='600 20px Tajawal, sans-serif';x.fillText('د. أحمد الفيلكاوي',W/2,H*.88);if(p<1)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});rec.stop();return done;}
-async function reviewExport(blob){var fallback=qualityAudit(false),result={score:fallback.score,frames:0,issues:fallback.issues.slice()},url=URL.createObjectURL(blob),video=document.createElement('video');video.muted=true;video.playsInline=true;video.preload='metadata';video.src=url;try{await new Promise(function(resolve,reject){video.onloadedmetadata=resolve;video.onerror=reject;});var c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true});c.width=54;c.height=96;for(var i=1;i<=5;i++){video.currentTime=Math.max(.05,video.duration*i/6);await new Promise(function(resolve){video.onseeked=resolve;setTimeout(resolve,900);});x.drawImage(video,0,0,c.width,c.height);var d=x.getImageData(0,0,c.width,c.height).data,sum=0,sum2=0;for(var q=0;q<d.length;q+=16){var y=.2126*d[q]+.7152*d[q+1]+.0722*d[q+2];sum+=y;sum2+=y*y;}var n=d.length/16,mean=sum/n,variance=sum2/n-mean*mean;if(mean<5||variance<2)result.issues.push('إطار خافت');result.frames++;}result.score=Math.max(0,100-new Set(result.issues).size*8);}catch(e){result.issues.push('تعذر أخذ عينة من الملف');result.score=Math.min(result.score,92);}finally{URL.revokeObjectURL(url);}DIRECTOR.exportReview=result;return result;}
+async function reviewExport(blob){var fallback=qualityAudit(false),result={score:fallback.score,frames:0,issues:fallback.issues.slice(),samples:[],measured:{duration:null,width:0,height:0}},url=URL.createObjectURL(blob),video=document.createElement('video');video.muted=true;video.playsInline=true;video.preload='metadata';video.src=url;
+  /* خمس عيّنات تشمل البداية والوسط والنهاية صراحةً: النهاية الأكثر عرضة للقطع، والبداية للفراغ. */
+  var points=[{p:.06,label:'بداية الفيديو'},{p:.27,label:'ربع الفيديو الأول'},{p:.5,label:'وسط الفيديو'},{p:.74,label:'ثلاثة أرباع الفيديو'},{p:.95,label:'نهاية الفيديو'}];
+  try{await new Promise(function(resolve,reject){video.onloadedmetadata=resolve;video.onerror=reject;});
+    var dur=video.duration;
+    /* ملفات MediaRecorder تأتي بلا مدة في الترويسة (Infinity): القفز لنهاية بعيدة يُجبر المتصفح على حسابها. */
+    if(!isFinite(dur)||dur<=0){await new Promise(function(resolve){video.onseeked=resolve;video.ondurationchange=function(){if(isFinite(video.duration)&&video.duration>0)resolve();};setTimeout(resolve,2500);try{video.currentTime=1e7;}catch(e){resolve();}});dur=video.duration;}
+    result.measured={duration:isFinite(dur)&&dur>0?dur:null,width:video.videoWidth||0,height:video.videoHeight||0};
+    var c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true});c.width=54;c.height=96;
+    for(var i=0;i<points.length;i++){
+      if(!result.measured.duration){result.samples.push({label:points[i].label,stats:null});continue;}
+      try{video.currentTime=Math.max(.05,Math.min(result.measured.duration-.08,result.measured.duration*points[i].p));await new Promise(function(resolve){video.onseeked=resolve;setTimeout(resolve,1200);});x.drawImage(video,0,0,c.width,c.height);var d=x.getImageData(0,0,c.width,c.height).data,sum=0,sum2=0;for(var q=0;q<d.length;q+=16){var y=.2126*d[q]+.7152*d[q+1]+.0722*d[q+2];sum+=y;sum2+=y*y;}var n=d.length/16,mean=sum/n,variance=sum2/n-mean*mean;if(mean<5||variance<2)result.issues.push('إطار خافت');result.samples.push({label:points[i].label,stats:{mean:mean,variance:variance}});result.frames++;}
+      catch(err){result.samples.push({label:points[i].label,stats:null});}
+    }
+    result.score=Math.max(0,100-new Set(result.issues).size*8);}
+  catch(e){result.issues.push('تعذر أخذ عينة من الملف');result.score=Math.min(result.score,92);}
+  finally{URL.revokeObjectURL(url);}
+  DIRECTOR.exportReview=result;return result;}
 async function deliverPackage(videoBlob,ext,review){var stem='monteur-'+(CUR_SLUG||'idea'),poster=await packagePoster(),motion=await motionCover(),report=new Blob(['فحص الإخراج: '+ar((review||{}).score||0)+' / 100\nالعينات: '+ar((review||{}).frames||0)+'\n'+((review||{}).issues||[]).join(' · ')],{type:'text/plain;charset=utf-8'}),caption=new Blob([packageCaption()],{type:'text/plain;charset=utf-8'}),files=[new File([videoBlob],stem+'.'+ext,{type:videoBlob.type}),new File([poster],stem+'-cover.png',{type:'image/png'}),new File([caption],stem+'-caption.txt',{type:caption.type}),new File([report],stem+'-quality.txt',{type:report.type})];if(motion&&motion.size)files.push(new File([motion],stem+'-living-cover.webm',{type:motion.type}));
   if(navigator.canShare&&navigator.canShare({files:files})&&navigator.share){try{await navigator.share({files:files,title:scenes[0]&&scenes[0].title||'المونتير الآلي'});return;}catch(e){if(e.name==='AbortError')return;}}
   files.forEach(function(file,index){window.setTimeout(function(){downloadBlob(file,file.name);},index*300);});
 }
 async function exportVideo(){
   if(EXP.rec&&EXP.rec.state!=="inactive")return;
+  var G=window.MonteurExportGuard;
+  if(!G){alert('تعذّر تحميل حارس التصدير (export-guard.js)؛ أعد تحميل الصفحة.');return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){alert("التصدير يحتاج متصفح كروم/إيدج حديث.");return;}
-  var btn=root.querySelector("#exportBtn"),stream=null,recorded=false,mix=null,preflight=qualityAudit(false);if(preflight.score<96){qualityAudit(true);render();}
+  var btn=root.querySelector("#exportBtn"),notice=root.querySelector('#directorNotice'),stream=null,recorded=false,mix=null,meterTimer=0,meterNode=null,preflight=qualityAudit(false);if(preflight.score<96){qualityAudit(true);render();}
+  function say(text){if(notice)notice.textContent=text;}
   function reset(){btn.textContent="⬇ تصدير فيديو";btn.disabled=false;root.classList.remove('exporting');}
+  function stopMeter(){if(meterTimer){clearInterval(meterTimer);meterTimer=0;}if(meterNode){try{AU.master.disconnect(meterNode);}catch(ignore){}meterNode=null;}}
   try{
     pause();btn.disabled=true;btn.textContent='يجهّز التصدير…';
     auInit();if(AU.ctx&&AU.ctx.state==="suspended")await AU.ctx.resume();
+    if(!AU.ctx)throw new Error('المتصفح لا يدعم WebAudio اللازم لتسجيل صوت المونتير.');
     stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:true,preferCurrentTab:true,selfBrowserSurface:"include",systemAudio:"include"});
-    EXP.stream=stream;EXP.chunks=[];
+    EXP.stream=stream;EXP.chunks=[];EXP.seen={};EXP.trackEnded=false;EXP.error=null;EXP.audioPeak=0;EXP.metered=false;
     var videoTrack=stream.getVideoTracks()[0];
-    // Restrict export to the artwork when region capture is supported.
-    if(window.CropTarget&&videoTrack&&videoTrack.cropTo){
-      try{await videoTrack.cropTo(await window.CropTarget.fromElement(screen));}catch(e){if(screen.requestFullscreen)await screen.requestFullscreen();else throw new Error('تعذّر عزل مساحة الفيديو.');}
-    }else{if(!screen.requestFullscreen)throw new Error('متصفحك لا يدعم عزل الفيديو بملء الشاشة.');await screen.requestFullscreen();}
+    if(!videoTrack)throw new Error('لم يصل مسار فيديو من المتصفح؛ اختر «هذا التبويب» في نافذة المشاركة.');
+    /* ١) سطح المشاركة قبل أي تسجيل: نافذة أو شاشة كاملة تسجّل ما حول الفيديو وتفشل بصمت. */
+    var surface=G.checkSurface(videoTrack.getSettings?videoTrack.getSettings():{});
+    if(surface.status==='fail')throw new Error(surface.detail);
+    EXP.surfaceCheck=surface;
+    /* ٢) عزل مساحة الفيديو: قصّ المنطقة إن أمكن، وإلا ملء شاشة العنصر نفسه. ثم نتحقق من النتيجة لا نفترضها. */
+    var cropped=false,fullscreenOk=false;
+    if(window.CropTarget&&videoTrack.cropTo){
+      try{await videoTrack.cropTo(await window.CropTarget.fromElement(screen));cropped=true;}catch(e){if(!screen.requestFullscreen)throw new Error('تعذّر عزل مساحة الفيديو (القص غير ممكن ولا ملء الشاشة).');await screen.requestFullscreen();fullscreenOk=document.fullscreenElement===screen;}
+    }else{if(!screen.requestFullscreen)throw new Error('متصفحك لا يدعم عزل الفيديو بملء الشاشة.');await screen.requestFullscreen();fullscreenOk=document.fullscreenElement===screen;}
+    await new Promise(function(r){setTimeout(r,350);});/* يستقر مقاس المسار بعد القص */
+    var rect=screen.getBoundingClientRect();
+    EXP.expectedAspect=rect.width/rect.height;
+    var crop=G.checkCrop(videoTrack.getSettings?videoTrack.getSettings():null,{width:rect.width,height:rect.height},cropped,fullscreenOk);
+    if(crop.status==='fail')throw new Error(crop.detail);
+    EXP.cropCheck=crop;
     root.classList.add('exporting');
     var gateNow=root.querySelector('#gate');if(gateNow)gateNow.remove();
-    // Capture the site's own audio graph: no microphone or accidental desktop audio.
+    /* الصوت من رسم الموقع نفسه: لا ميكروفون ولا صوت سطح مكتب عرضي. ونقيس قمّته أثناء التسجيل. */
     mix=AU.ctx.createMediaStreamDestination();AU.master.connect(mix);
     stream.getAudioTracks().forEach(function(t){stream.removeTrack(t);t.stop();});
     mix.stream.getAudioTracks().forEach(function(t){stream.addTrack(t);});
+    EXP.audioWanted=!!(AU.on&&(AU.cur||AU.narr));
+    try{meterNode=AU.ctx.createAnalyser();meterNode.fftSize=1024;AU.master.connect(meterNode);var buf=new Float32Array(meterNode.fftSize);EXP.metered=true;meterTimer=setInterval(function(){meterNode.getFloatTimeDomainData(buf);for(var q=0;q<buf.length;q++){var v=Math.abs(buf[q]);if(v>EXP.audioPeak)EXP.audioPeak=v;}},100);}catch(e){EXP.metered=false;}
     var mime=["video/mp4;codecs=avc1,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm"].find(function(m){return MediaRecorder.isTypeSupported(m);});
     if(!mime)throw new Error('لا يوجد ترميز فيديو متاح في هذا المتصفح.');
     await document.fonts.ready;
     await Promise.all(Array.from(screen.querySelectorAll('img')).map(function(img){return img.decode().catch(function(){});}));
     var rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8000000});EXP.rec=rec;
     rec.ondataavailable=function(e){if(e.data.size)EXP.chunks.push(e.data);};
-    var finish=function(){if(rec.state!=="inactive")rec.stop();};EXP.stopAt=finish;videoTrack.addEventListener('ended',finish,{once:true});
+    var finish=function(){if(rec.state!=="inactive")rec.stop();};EXP.stopAt=finish;
+    /* إيقاف المستخدم للمشاركة من شريط المتصفح يقطع الفيديو: نسجّل ذلك فلا يُعلَن الملف المقطوع جاهزاً. */
+    videoTrack.addEventListener('ended',function(){EXP.trackEnded=true;finish();},{once:true});
     rec.onstop=async function(){
-      pause();stream.getTracks().forEach(function(t){t.stop();});AU.master.disconnect(mix);
+      pause();stopMeter();stream.getTracks().forEach(function(t){t.stop();});try{AU.master.disconnect(mix);}catch(ignore){}
       if(document.fullscreenElement===screen)document.exitFullscreen().catch(function(){});
-      var blob=new Blob(EXP.chunks,{type:mime.split(';')[0]});
-      if(blob.size){var ext=/mp4/.test(mime)?'mp4':'webm',packageMode=root.querySelector('#exportMode').value==='package',review=await reviewExport(blob);if(packageMode)await deliverPackage(blob,ext,review);else downloadBlob(blob,'monteur-'+(CUR_SLUG||'video')+'.'+ext);root.querySelector('#directorNotice').textContent='فحص '+ar(review.score)+' / 100 · '+(packageMode?'جهزت الحزمة والغلاف الحي':'اكتمل الفيديو');notifyParent({type:'monteur:exported',ext:ext,bytes:blob.size,package:packageMode,review:review});}
+      var blob=new Blob(EXP.chunks,{type:mime.split(';')[0]}),completed=elapsed>=total()-.15;
+      if(!blob.size){
+        var emptyMsg='لم يُنتج التسجيل أي بيانات'+(EXP.error?' ('+EXP.error+')':'')+'؛ أعد التصدير واختر «هذا التبويب».';
+        say(emptyMsg);alert(emptyMsg);notifyParent({type:'monteur:exported',ext:'',bytes:0,verified:false,status:'failed',error:emptyMsg});EXP.rec=null;EXP.stream=null;reset();return;
+      }
+      var ext=/mp4/.test(mime)?'mp4':'webm',packageMode=root.querySelector('#exportMode').value==='package';
+      say('يفحص الملف الناتج…');
+      var review=await reviewExport(blob);
+      /* ٣) فحص الملف نفسه: المدة والمقاس واكتمال المشاهد والصوت وعيّنات البداية/الوسط/النهاية. */
+      var verdict=G.evaluateExport({
+        expectedSeconds:total(),expectedAspect:EXP.expectedAspect,measured:review.measured,bytes:blob.size,completed:completed,
+        endedEarly:EXP.trackEnded&&!completed?'أُوقفت مشاركة التبويب قبل نهاية الفيديو، فالملف مقطوع عند '+elapsed.toFixed(1)+'ث من '+total().toFixed(1)+'ث.':null,
+        sceneCount:scenes.length,scenesSeen:Object.keys(EXP.seen).map(Number),
+        audio:{wanted:EXP.audioWanted,peak:EXP.metered?EXP.audioPeak:null},samples:review.samples,recorderError:EXP.error,extraChecks:[EXP.surfaceCheck,EXP.cropCheck]});
+      review.verdict=verdict;
+      if(packageMode)await deliverPackage(blob,ext,review);else downloadBlob(blob,'monteur-'+(CUR_SLUG||'video')+'.'+ext);
+      say('فحص '+ar(review.score)+' / 100 · '+(packageMode?'جهزت الحزمة والغلاف الحي. ':'نزل الفيديو. ')+G.describe(verdict));
+      notifyParent({type:'monteur:exported',ext:ext,bytes:blob.size,package:packageMode,review:review,verified:verdict.ready,status:verdict.status,checks:verdict.checks});
       EXP.rec=null;EXP.stream=null;reset();
     };
-    rec.onerror=function(){finish();};
+    rec.onerror=function(e){EXP.error='MediaRecorder أبلغ عن خطأ'+(e&&e.error&&e.error.message?': '+e.error.message:'');finish();};
     speed=1;root.querySelectorAll('[data-sp]').forEach(function(b){b.setAttribute('aria-current',String(b.dataset.sp==='1'));});
     elapsed=0;cur=-1;showScene(0);paint(0);rec.start(250);recorded=true;btn.textContent='● يسجّل…';play();
   }catch(e){
+    stopMeter();
     if(stream&&!recorded)stream.getTracks().forEach(function(t){t.stop();});
     if(mix&&AU.master)try{AU.master.disconnect(mix);}catch(ignore){}
     EXP.stream=null;
     if(document.fullscreenElement===screen)document.exitFullscreen().catch(function(){});
-    reset();if(e.name!=='NotAllowedError')alert('تعذّر التصدير: '+e.message);
+    reset();
+    /* NotAllowedError = ألغى المستخدم نافذة المشاركة: صمت. غير ذلك: رسالة عربية تقول ما يفعل. */
+    var human=(e&&e.name&&e.name!=='Error')?G.explainCaptureError(e):(e&&e.message)||'تعذّر التصدير';
+    if(human){say(human);alert(human);}
   }
 }
 root.querySelector("#"+"exportBtn").addEventListener("click",exportVideo);
 /* أوقف التسجيل عند نهاية الفيديو */
+(function(){var _show=showScene;showScene=function(i){if(EXP.rec&&EXP.seen&&EXP.rec.state==="recording")EXP.seen[i]=true;return _show.apply(this,arguments);};})();
 (function(){var _pause=pause;pause=function(){_pause();if(EXP.rec&&EXP.rec.state==="recording"&&elapsed>=total()-0.05)setTimeout(function(){EXP.stopAt&&EXP.stopAt();},150);};})();
 if(window.__m)window.__m.state=function(){return {plans:Object.keys(PLANS).length,arts:ARTICLES.length,music:AU.cur,unlocked:AU.unlocked};};
 notifyParent({type:"monteur:ready",plans:Object.keys(PLANS).length,articles:ARTICLES.length});

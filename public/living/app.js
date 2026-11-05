@@ -865,18 +865,4 @@ else startAR();
 window.__living = {
   get current() { return current; }, get show() { return show; }, start: startShowcase, EXPERIENCES,
   setStamps(ids) { stamps = new Set(ids); writeStamps(stamps); },
-  // Render one frame at time `t` (seconds) and post it to the local capture receiver.
-  async snap(name, t, w = 900, h = 1100) {
-    const { renderer, scene, camera, controls } = show;
-    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-    frame(camera); controls.update();
-    syncLines(w, h);
-    const steps = Math.max(1, Math.round((t - current.t) / 0.05));
-    for (let i = 0; i < steps; i++) tick(0.05);
-    syncLines(w, h);
-    renderer.render(scene, camera);
-    const url = renderer.domElement.toDataURL('image/png');
-    await fetch('http://localhost:8767/?n=' + name, { method: 'POST', body: url });
-    return name;
-  },
 };

@@ -21,10 +21,10 @@ async function startServer() {
       // Return firestore reference if available
       return { db: null }
     },
-    verifyAdminRequest: async (req) => {
-      const authHeader = req.headers.authorization || ''
-      return authHeader.startsWith('Bearer ')
-    },
+    // Fail closed: this legacy dev entry has no token verifier, and treating any
+    // "Bearer ..." header as admin would open the admin WhatsApp routes to anyone.
+    // The production entry (server.mjs) verifies Firebase admin claims properly.
+    verifyAdminRequest: async () => false,
   })
 
   // WhatsApp Bridge API Proxy

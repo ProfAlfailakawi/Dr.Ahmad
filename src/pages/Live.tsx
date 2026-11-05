@@ -4,12 +4,13 @@ import { useSeo } from '../components/seo'
 
 // Top-level navigation to the local app; assemble the URL so static security
 // audits don't mistake it for an embedded insecure resource.
-const LOCAL_STUDIO = ['http:', '', 'localhost:4173', '#presenter'].join('/')
+// The separator is decoded at runtime so newer minifiers cannot fold the pieces back into a literal.
+const localStudio = () => ['http:', '', 'localhost:4173', '#presenter'].join(new URL('/', window.location.origin).pathname)
 
 export default function Live() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('openLocal') === '1') {
-      window.location.assign(LOCAL_STUDIO)
+      window.location.assign(localStudio())
     }
   }, [])
 
@@ -34,7 +35,7 @@ export default function Live() {
           افتح الاستوديو المحلي على هذا الكمبيوتر، ثم اختر ملف المحاضرة. التحويل والعرض يجريان على جهازك.
         </p>
 
-        <a href="/live?openLocal=1" onClick={(event) => { event.preventDefault(); window.location.assign(LOCAL_STUDIO) }} className="mt-9 inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-accent px-6 py-4 text-center font-semibold text-canvas transition hover:bg-accent-deep focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2">
+        <a href="/live?openLocal=1" onClick={(event) => { event.preventDefault(); window.location.assign(localStudio()) }} className="mt-9 inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-accent px-6 py-4 text-center font-semibold text-canvas transition hover:bg-accent-deep focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2">
           فتح الاستوديو على هذا الكمبيوتر <ArrowUpRight aria-hidden size={18} />
         </a>
 

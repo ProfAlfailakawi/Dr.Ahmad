@@ -12,7 +12,7 @@ assert.match(source, /class="hidden-kufic"/, 'the Kufic identity is hidden insid
 assert.match(source, /class="loop-echo"/, 'the ending visually returns to the opening')
 assert.match(source, /async function motionCover/, 'the package creates a living cover')
 assert.match(source, /async function reviewExport/, 'the exported file is sampled after recording')
-assert.match(source, /for\(var i=1;i<=5;i\+\+\)/, 'the critic samples five moments across the result')
+assert.match(source, /var points=\[\{p:\.06,label:'بداية الفيديو'\}.*\{p:\.5,label:'وسط الفيديو'\}.*\{p:\.95,label:'نهاية الفيديو'\}\]/, 'the critic samples five moments including start, middle and end')
 assert.match(source, /quality.txt/, 'the publishing package includes the critic report')
 assert.match(source, /function signatureRecipeFor/, 'every topic receives a deterministic semantic signature')
 assert.match(source, /data-signature/, 'the climax exposes its unique signature identity')

@@ -50,6 +50,7 @@ import { interpretDrAhmadDomain } from '../../lib/dr-ahmad-domain-glossary'
 import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { MovableWordsLayer, MoveWordsToggle } from './MovableWords'
 import { downloadDesignVideo, designVideoSupported, designHasMotion } from '../../lib/design-video'
+import { describeVerification } from '../../lib/video-capture-core'
 import { resolveResonantQuotes, type ResonanceRow } from '../../lib/resonance-quotes'
 import { GenerationLibraryPanel, type GeneratedDesignLibraryAsset, type GeneratedLibraryAsset } from './GenerationLibraryPanel'
 import { buildMeaningFingerprint } from '../../lib/editorial-memory'
@@ -3283,8 +3284,15 @@ export function SocialDesignStudio({ initialText = '', initialContext = '' }: { 
   }
 
   const exportPlanVideo = async (plan: CompositionPlan) => {
+    /* الفيديو مشتقّ من المادة كالـPNG تماماً: يمرّ بمحكمة المعنى وببروتوكول التصحيح نفسيهما. */
+    if (!authorizeMeaningExport([plan])) return
     setVideoBusy(true); setVideoPct(0)
-    try { await downloadDesignVideo(plan, { onProgress: (r) => setVideoPct(Math.round(r * 100)) }) }
+    try {
+      const result = await downloadDesignVideo(plan, { onProgress: (r) => setVideoPct(Math.round(r * 100)) })
+      setNotice(result.verification.readyToPublish
+        ? `نزل الفيديو المتحرك · ${result.seconds.toFixed(1)}ث · فُحص الملف (المدة والمقاس والإطارات والحركة) · جاهز للنشر.`
+        : `نزل الفيديو المتحرك — لا تنشره قبل مراجعته: ${describeVerification(result.verification)}`)
+    }
     catch (error) { setNotice(error instanceof Error ? error.message : 'تعذّر تصدير الفيديو') }
     finally { setVideoBusy(false) }
   }

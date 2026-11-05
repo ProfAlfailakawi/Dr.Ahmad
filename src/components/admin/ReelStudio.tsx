@@ -10,7 +10,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { auditReelPlan, planReel, planReelWithMemory, commitReelMemory, type ReelPlan } from '../../lib/reel-scenes'
 import DesignWorldsGallery from './DesignWorldsGallery'
 import type { DesignWorld } from '../../lib/design-worlds'
-import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, type ReelHandle } from '../../lib/reel-motion'
+import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, reelExportSupportReasons, type ReelHandle } from '../../lib/reel-motion'
+import { bindReelSource, gateReelPlan, type BoundReelSource } from '../../lib/reel-source'
+import { takeReelSeed } from '../../lib/video-hub'
+import { describeVerification } from '../../lib/video-capture-core'
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 import { lazy, Suspense } from 'react'
 
@@ -49,11 +52,27 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   const [audioEnabled, setAudioEnabled] = useState(true)
   const [memoryNote, setMemoryNote] = useState('')
   const [selectedWorld, setSelectedWorld] = useState<DesignWorld | null>(null)
+  /* المصدر الذي بُنيت منه الخطة الحالية بالضبط؛ يقارنه gate بما في الحقول الآن. */
+  const [planSource, setPlanSource] = useState<BoundReelSource | null>(null)
   const memoryKeyRef = useRef<string>('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const handleRef = useRef<ReelHandle | null>(null)
   const supported = useMemo(() => reelExportSupported(), [])
   const quality = useMemo(() => plan ? auditReelPlan(plan) : null, [plan])
+  /* بصمة المصدر: تعديل العنوان أو المتن أو العالم بعد بناء الخطة يبطلها فلا يُصدَّر فيديو لا يطابق النص الظاهر. */
+  const sourceGate = useMemo(() => gateReelPlan(plan ? planSource : null, { title, body, worldId: selectedWorld?.id }), [plan, planSource, title, body, selectedWorld])
+  const planStale = Boolean(plan) && sourceGate.state === 'stale'
+
+  /* مادة اختارها المستخدم من الأطلس عبر مدخل الفيديو: تُستلم مرة واحدة وتحدد الوضع والعنوان والمتن. */
+  useEffect(() => {
+    try {
+      const seed = takeReelSeed(sessionStorage)
+      if (!seed) return
+      setMode(seed.mode)
+      if (seed.title) setTitle(seed.title)
+      if (seed.body) setBody(seed.body)
+    } catch { /* بذرة تالفة لا توقف الاستوديو */ }
+  }, [])
 
   /* نص الاستوديو الحالي يصير بذرة الريل تلقائياً — بلا نسخ يدوي. */
   useEffect(() => {
@@ -61,25 +80,33 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   }, [seedText, body])
 
   useEffect(() => () => { handleRef.current?.stop() }, [])
+  /* خطة تقادمت أثناء معاينة جارية: نوقف المعاينة فوراً كي لا تستمر في عرض نصٍّ لم يعد هو الحقول. */
+  useEffect(() => { if (planStale && busy === 'preview') { handleRef.current?.stop(); setBusy('idle') } }, [planStale, busy])
 
-  const buildPlan = (nextVariant = variant, useMemory = false) => {
+  const buildPlan = (nextVariant = variant, useMemory = false, worldOverride?: DesignWorld | null) => {
     const cleanTitle = title.trim() || body.trim().split(/[\n.!؟…]/)[0]?.trim() || 'مادة جديدة'
     if (!body.trim() && !title.trim()) { setNotice('اكتب المادة أولاً — عنواناً أو فقرة من المقال.'); return null }
     const source = { title: cleanTitle, body: body.trim() || cleanTitle }
+    const world = worldOverride === undefined ? selectedWorld : worldOverride
+    const bound = bindReelSource({ title, body, worldId: world?.id })
+    /* مفتاح الذاكرة يخص المصدر الذي بُني به؛ مصدر مختلف لا يرث مفتاح سابقه فلا تُسجَّل خطته تحت مفهوم آخر. */
+    if (planSource && planSource.fingerprint !== bound.fingerprint) memoryKeyRef.current = ''
     if (useMemory) {
       /* أول بناءٍ للمادة يستشير الذاكرة: إن سبق تناول المفهوم، يعطي نسخةً مختلفة. */
-      const aware = planReelWithMemory(source, { world: selectedWorld })
+      const aware = planReelWithMemory(source, { world })
       memoryKeyRef.current = aware.key
       setVariant(aware.plan.variant)
       setPlan(aware.plan)
+      setPlanSource(bound)
       setNotice('')
       setMemoryNote(aware.timesSeenBefore > 0
         ? `تناولتَ هذا المفهوم من قبل ${aware.timesSeenBefore === 1 ? 'مرةً واحدة' : `${aware.timesSeenBefore} مرات`} — نوّعتُ لك القالب والعالم والاستعارة.`
         : 'أول مرة تتناول هذا المفهوم — سأتذكّره وأنوّع في المرات القادمة.')
       return aware.plan
     }
-    const next = planReel(source, nextVariant, { world: selectedWorld })
+    const next = planReel(source, nextVariant, { world })
     setPlan(next)
+    setPlanSource(bound)
     setNotice('')
     return next
   }
@@ -88,6 +115,8 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
      في النقرة نفسها، فقراءتها هنا كانت تعيد تشغيل خطة المادة السابقة —
      فتبدو كل الريلات متشابهة وإن اختلف نصها. */
   const preview = async (planToPlay?: ReelPlan) => {
+    /* خطة مُمرَّرة صراحةً تأتي من بناءٍ جديد؛ أما إعادة تشغيل المخزَّنة فتُحجب إن تقادم مصدرها. */
+    if (!planToPlay && planStale) { setNotice(sourceGate.reason); return }
     const active = planToPlay || plan || buildPlan()
     if (!active || !canvasRef.current) return
     handleRef.current?.stop()
@@ -110,11 +139,13 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
     if(!title.trim()&&!body.trim()){setNotice('اختر العالم الآن، ثم اكتب المادة واضغط جهّز الريل.');return}
     const next=planReel({title:cleanTitle,body:body.trim()||cleanTitle},variant,{world})
     setPlan(next)
+    setPlanSource(bindReelSource({ title, body, worldId: world?.id }))
     setNotice(world?`تم تثبيت «${world.labelAr}» كمخرج فني للريل — التكوين والمادة والحركة والإضاءة تتبع دستوره.`:'عاد الريل إلى وضع «المخرج يختار».')
     void preview(next)
   }
 
   const exportVideo = async (planToRecord?: ReelPlan) => {
+    if (!planToRecord && planStale) { setNotice(sourceGate.reason); return }
     const active = planToRecord || plan || buildPlan()
     if (!active) return
     const gate = auditReelPlan(active)
@@ -127,7 +158,11 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
       const result = await exportReelVideo(active, { canvas: canvasRef.current || undefined, onProgress: setProgress, audio: audioEnabled })
       downloadReelBlob(result, active.title)
       if (memoryKeyRef.current) commitReelMemory(memoryKeyRef.current, active)
-      setNotice(`نزل الفيديو (${result.mime.includes('mp4') ? 'MP4' : 'WebM'} · ${Math.round(result.blob.size / 1024 / 102.4) / 10} MB · ${arabicCountPhrase(active.seconds, SECOND_FORMS)}) — جاهز للنشر.`)
+      const head = `نزل الفيديو (${result.mime.includes('mp4') ? 'MP4' : 'WebM'} · ${Math.round(result.blob.size / 1024 / 102.4) / 10} MB · ${arabicCountPhrase(active.seconds, SECOND_FORMS)})`
+      /* «جاهز للنشر» تُكتب فقط حين اجتاز الملف الفعلي كل الفحوص؛ وإلا يُسمّى ما تعذّر. */
+      setNotice(result.verification.readyToPublish
+        ? `${head} — فُحص الملف: المدة والمقاس والإطارات وعيّنات البداية والوسط والنهاية${result.audioRequested ? ' والصوت' : ''}. جاهز للنشر.`
+        : `${head} — لا تنشره قبل مراجعته: ${describeVerification(result.verification)}`)
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'تعذّر التصدير — جرّب متصفح Chrome.')
     } finally {
@@ -143,28 +178,29 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           <p className="text-[.66rem] font-black uppercase tracking-[.18em] text-accent">Cinematic Reel · محلي ومجاني</p>
           <h3 className="mt-2 font-display text-2xl font-bold text-ink md:text-3xl">استوديو الريل السينمائي</h3>
           <div className="mt-3 inline-flex rounded-full border border-hair bg-canvas p-1" role="tablist" aria-label="نوع الفيديو">
-            <button type="button" role="tab" aria-selected={mode === 'monteur'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'monteur' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('monteur')}>فيديو مشاهد يفهم موضوعه</button>
-            <button type="button" role="tab" aria-selected={mode === 'flow'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'flow' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('flow')}>ريل Flow سينمائي</button>
+            <button type="button" role="tab" aria-selected={mode === 'monteur'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'monteur' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('monteur')}>ريل بمشاهد · المونتير</button>
+            <button type="button" role="tab" aria-selected={mode === 'flow'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'flow' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('flow')}>ريل Flow مرسوم</button>
           </div>
           {mode === 'monteur' && <p className="mt-2 text-[.82rem] leading-relaxed text-soft">اكتب تغريدة أو الصق مقالة في الحقل أدناه — أو اختر مقالة من الموقع — فيبني فيديو مشاهد يفهم موضوعه: استعارة لكل جملة، إنفوجرافيك، موسيقى من مكتبتك، نمطان (رصين/جريء)، وقطع على ضربة الإيقاع. التصدير من داخل المشغّل.</p>}
           {mode === 'flow' && <p className="mt-2 text-[.82rem] leading-relaxed text-soft">
+            <b className="text-ink">«Flow» هنا اسم نمط الإخراج: يُرسم الريل في متصفحك، ولا علاقة له بخدمة Flow لتوليد المقاطع (تلك في «المخرج الحي»).</b>{' '}
             ألصق المقال — يقرؤه المخطِّط، يختار قالباً وعالماً لونياً ومزاجاً موسيقياً من النص نفسه،
             ثم يصدّر فيديو 1080×1920 بصوت مؤلَّف في متصفحك. المادة نفسها تعطي الريل نفسه دائماً،
             ومادتان لا تتشابهان، و«لقطة أخرى» تفتح تنويعاً شقيقاً. ويمكنك أيضاً إخراجه يدوياً من نفس معرض الـ64 عالماً المستخدم في استوديو التصاميم.
           </p>}
         </div>
-        {!supported && <span className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] text-amber-800">هذا المتصفح لا يدعم تسجيل الفيديو — المعاينة تعمل، والتصدير يحتاج Chrome.</span>}
+        {!supported && <span className="rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[.68rem] text-amber-800">هذا المتصفح لا يدعم تسجيل الفيديو — المعاينة تعمل، والتصدير يحتاج Chrome. {reelExportSupportReasons()[0] || ''}</span>}
       </div>
 
       <div className={`mt-5 grid gap-5 ${mode === 'flow' ? 'lg:grid-cols-[1fr_300px]' : ''}`}>
         <div className="grid gap-3">
           <label className="grid gap-2 text-[.76rem] font-semibold text-ink">
             عنوان المادة
-            <input className={input} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="مثال: ذكاءٌ بلا ضمير" />
+            <input className={input} value={title} disabled={busy === 'export'} onChange={(event) => setTitle(event.target.value)} placeholder="مثال: ذكاءٌ بلا ضمير" />
           </label>
           <label className="grid gap-2 text-[.76rem] font-semibold text-ink">
             متن المقال أو مقاطعه الأقوى
-            <textarea className={`${input} min-h-44 resize-y leading-loose`} value={body} onChange={(event) => setBody(event.target.value)} placeholder="اكتب تغريدة، أو ألصق المقال كاملاً أو فقراته الجوهرية — المخطِّط ينقّب فيه عن السؤال والمقابلة والاقتباس والرقم." />
+            <textarea className={`${input} min-h-44 resize-y leading-loose`} value={body} disabled={busy === 'export'} onChange={(event) => setBody(event.target.value)} placeholder="اكتب تغريدة، أو ألصق المقال كاملاً أو فقراته الجوهرية — المخطِّط ينقّب فيه عن السؤال والمقابلة والاقتباس والرقم." />
           </label>
 
           {mode === 'monteur' && (
@@ -194,8 +230,8 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
             <button type="button" className={ghost} disabled={!plan || busy === 'export'} onClick={anotherTake}>لقطة أخرى</button>
             {busy === 'preview'
               ? <button type="button" className={ghost} onClick={stopPreview}>إيقاف المعاينة</button>
-              : <button type="button" className={ghost} disabled={!plan || busy === 'export'} onClick={() => void preview()}>إعادة المعاينة</button>}
-            <button type="button" className={primary} disabled={!supported || busy === 'export' || Boolean(quality && !quality.ready)} onClick={() => void exportVideo()}>
+              : <button type="button" className={ghost} disabled={!plan || busy === 'export' || planStale} onClick={() => void preview()}>إعادة المعاينة</button>}
+            <button type="button" className={primary} disabled={!supported || busy === 'export' || planStale || Boolean(quality && !quality.ready)} onClick={() => void exportVideo()}>
               {busy === 'export' ? `يسجّل… ${Math.round(progress * 100)}%` : 'صدّر الفيديو'}
             </button>
             <label className="flex items-center gap-2 rounded-full border border-hair bg-canvas px-3 py-2 text-[.68rem] font-semibold text-soft"><input type="checkbox" checked={audioEnabled} onChange={(event)=>setAudioEnabled(event.target.checked)} disabled={busy === 'export'} />Soundmark اختياري</label>
@@ -206,10 +242,17 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
             </div>
           )}
           {memoryNote && <p className="rounded-xl border border-accent/25 bg-accent/[.06] px-3 py-2 text-[.72rem] leading-relaxed text-accent">{memoryNote}</p>}
+          {planStale && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-[.72rem] leading-relaxed text-amber-900" role="alert" data-reel-plan-stale="true">
+              <span>{sourceGate.reason}</span>
+              <button type="button" className={primary} disabled={busy === 'export'} onClick={() => { const next = buildPlan(0, true); if (next) void preview(next) }}>ابنِ خطة جديدة من المصدر الحالي</button>
+            </div>
+          )}
           {notice && <p className="rounded-xl border border-hair bg-canvas px-3 py-2 text-[.72rem] leading-relaxed text-ink" role="status">{notice}</p>}
 
           {plan && (
-            <div className="grid gap-2 rounded-2xl border border-hair bg-canvas p-4">
+            <div className={`grid gap-2 rounded-2xl border border-hair bg-canvas p-4 ${planStale ? 'opacity-60' : ''}`} data-reel-plan-state={sourceGate.state}>
+              {planStale && <p className="text-[.66rem] font-bold text-amber-800">خطة قديمة — لا تطابق العنوان والمتن والعالم الظاهرة الآن.</p>}
               <div className="flex flex-wrap gap-2 text-[.68rem] font-bold">
                 <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">القالب: {TEMPLATE_LABELS[plan.templateId]}</span>
                 <span className="rounded-full bg-ink/[.06] px-3 py-1 text-ink">العالم: {plan.world.label}</span>

@@ -36,7 +36,7 @@ const reelScenesUrl=dataUrl(reelScenesOut), reelScenes=await import(reelScenesUr
 let timelineOut=transpile(await read('src/lib/reel-timeline.ts'),'reel-timeline.ts');timelineOut=rep(timelineOut,'./reel-scenes',reelScenesUrl);const reelTimeline=await import(dataUrl(timelineOut))
 
 
-const motionSource=await read('src/lib/design-motion.ts');assert.match(motionSource,/durationMs:\s*4_800/);assert.match(motionSource,/durationMs:\s*9_000/);assert.match(motionSource,/durationMs:\s*16_800/);assert.match(motionSource,/registerMotionProfile/);assert.match(motionSource,/probeRecordedVideo/)
+const motionSource=await read('src/lib/design-motion.ts');assert.match(motionSource,/durationMs:\s*4_800/);assert.match(motionSource,/durationMs:\s*9_000/);assert.match(motionSource,/durationMs:\s*16_800/);assert.match(motionSource,/registerMotionProfile/);assert.match(motionSource,/verifyRecordedVideo\(/)
 
 const phrases=[
   ['جيل بلا جذور','تربوية'],

@@ -35,6 +35,7 @@ import {
 } from '../../lib/social-design-engine'
 import { downloadCompositionRaster, renderCompositionSvg } from '../../lib/social-design-renderer'
 import { auditDesignMotion, downloadDesignVideo, MOTION_PROFILES, motionSupported, type MotionProfileId } from '../../lib/design-motion'
+import { describeVerification } from '../../lib/video-capture-core'
 import { LivingMetaphorIcon, LivingIconToggle, LivingIconPicker, useLivingIconEnabled } from './LivingMetaphorIcon'
 import { MovableWordsLayer, MoveWordsToggle } from './MovableWords'
 import { dressPlanInWorld, planWorldId, type DesignWorld } from '../../lib/design-worlds'
@@ -2398,7 +2399,10 @@ function ProfessionalStandaloneDesignCard({ plan, rank }: { plan: CompositionPla
                 setMotionBusy(true); setMotionProgress(0); setMotionNotice('')
                 try {
                   const result = await downloadDesignVideo(draftPlan, { style: 'semantic', profile: motionProfile, audio: motionAudio, onProgress: setMotionProgress })
-                  setMotionNotice(`نزل ${result.extension.toUpperCase()} · ${result.seconds}ث · اجتاز ${result.audit.score}٪`)
+                  /* «جاهز للنشر» لا تُكتب إلا إذا اجتاز الملف نفسه كل الفحوص؛ ما تعذّر قياسه يُسمّى ولا يُخفى. */
+                  setMotionNotice(result.verification.readyToPublish
+                    ? `نزل ${result.extension.toUpperCase()} · ${result.seconds.toFixed(1)}ث · فُحص الملف (المدة والمقاس والإطارات) · جاهز للنشر`
+                    : `نزل ${result.extension.toUpperCase()} · ${result.seconds.toFixed(1)}ث — لا تنشره قبل مراجعته: ${describeVerification(result.verification)}`)
                 } catch (reason) {
                   setMotionNotice(reason instanceof Error ? reason.message : 'تعذّر تصدير فيديو المنشور.')
                 } finally { setMotionBusy(false); setMotionProgress(0) }

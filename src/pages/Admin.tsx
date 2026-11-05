@@ -49,6 +49,8 @@ const PublishingStudio = lazy(() => import('../components/admin/PublishingStudio
 const StyleChecker = lazy(() => import('../components/admin/StyleChecker').then((module) => ({ default: module.StyleChecker })))
 const SocialDesignStudio = lazy(() => import('../components/admin/SocialDesignStudio').then((module) => ({ default: module.SocialDesignStudio })))
 const TweetStudio = lazy(() => import('../components/admin/TweetStudio').then((module) => ({ default: module.TweetStudio })))
+const VideoHub = lazy(() => import('../components/admin/VideoHub').then((module) => ({ default: module.VideoHub })))
+const ReelStudio = lazy(() => import('../components/admin/ReelStudio').then((module) => ({ default: module.ReelStudio })))
 const StoryboardAtlas = lazy(() => import('../components/admin/StoryboardAtlas').then((module) => ({ default: module.StoryboardAtlas })))
 const ImageLab = lazy(() => import('../components/admin/ImageLab').then((module) => ({ default: module.ImageLab })))
 const VoiceBakeoffCard = lazy(() => import('../components/admin/VoiceBakeoff').then((module) => ({ default: module.VoiceBakeoffCard })))
@@ -345,7 +347,8 @@ function Panel({ email }: { email: string }) {
 
   useEffect(() => {
     const toDesign = () => chooseTab('design')
-    const toLiveDirector = () => chooseTab('studio')
+    /* من داخل استوديو النشر نفسه (زر «افتح فيديو المقال في المخرج الحي») نبقى فيه كي لا تضيع مسودة المقال؛ من غيره نفتح تبويب المخرج الحي المستقل. */
+    const toLiveDirector = () => { if (previousTab.current !== 'studio') chooseTab('live-director') }
     window.addEventListener('studio:campaign-seed', toDesign)
     window.addEventListener('studio:dna-palette', toDesign)
     window.addEventListener('studio:live-director-seed', toLiveDirector)
@@ -379,7 +382,10 @@ function Panel({ email }: { email: string }) {
     'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,
     tweets: <TweetStudio />,
-    'storyboard-atlas': <StoryboardAtlas articles={cms.articles} papers={cms.papers} books={cms.books} />,
+    'storyboard-atlas': <StoryboardAtlas articles={cms.articles} papers={cms.papers} books={cms.books} onOpen={chooseTab} />,
+    'video-hub': <VideoHub onOpen={chooseTab} />,
+    'reel-studio': <ReelStudio />,
+    'live-director': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="director" />,
     'image-lab': <ImageLab />,
     launch: <LaunchModeCard articles={cms.articles} books={cms.books} papers={cms.papers} media={cms.media} />,
     lab: (

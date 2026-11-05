@@ -2,11 +2,14 @@ import { useMemo, useState } from 'react'
 import type { ArticleRecord, BookRecord, PaperRecord } from '../../lib/cms'
 import { buildAtlas, stableHash, ATLAS_KIND_LABEL, type AtlasEntry, type AtlasKind } from '../../lib/storyboard-atlas.ts'
 import { MASTER_WORLD_ORDER, resolveWorld, type DesignWorld } from '../../lib/design-worlds.ts'
+import { writeVideoSeed } from '../../lib/video-hub.ts'
+import type { AdminTab } from './admin-navigation'
 
 /* أطلس القصص البصرية — لوحة إدارية تمرّ على كامل الأرشيف، ترتّب كل عملٍ حسب
-   إمكانيته البصرية، تقترح له عالماً من عوالم الاستوديو الأربعة والستين، ثم تفتحه
-   بنقرةٍ في «المخرج الحي» عبر المصافحة القائمة. لا تولّد شيئاً ولا تستهلك مفتاح
-   API ولا تكلّف أيّ زائر؛ الحساب حتميٌّ في storyboard-atlas.ts. */
+   اكتمال مادته وقوة فكرته (مقياسان منفصلان)، تقترح له عالماً من عوالم الاستوديو
+   الأربعة والستين، ثم تسلّمه إلى «مدخل الفيديو» ليختار المستخدم المسار. الأطلس أداة
+   اختيار المادة وبداية المشروع، لا مسار إنتاج. لا تولّد شيئاً ولا تستهلك مفتاح API
+   ولا تكلّف أيّ زائر؛ الحساب حتميٌّ في storyboard-atlas.ts. */
 
 const card = 'bg-canvas border border-hair rounded-2xl overflow-hidden flex flex-col transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(21,22,26,.04),0_14px_38px_-22px_rgba(21,22,26,.28)] hover:border-accent/40'
 const seg = 'inline-flex rounded-xl overflow-hidden border border-hair bg-wash'
@@ -62,11 +65,34 @@ function openInLiveDirector(entry: AtlasEntry) {
   window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail }))
 }
 
-function AtlasCard({ entry, rank }: { entry: AtlasEntry; rank: number }) {
+/* بداية مشروع: تُسلَّم المادة المختارة إلى مدخل الفيديو، فيختار المستخدم المسار هناك. */
+function startVideoProject(entry: AtlasEntry, onOpen?: (tab: AdminTab) => void) {
+  const saved = writeVideoSeed(sessionStorage, { origin: 'atlas', kind: entry.kind, slug: entry.slug, title: entry.title, body: entry.seed.article.body, excerpt: entry.seed.article.excerpt, cat: entry.seed.article.cat })
+  if (!saved) return false
+  onOpen?.('video-hub')
+  return true
+}
+
+/* الجاهزية تفصل المادة عن الفكرة: «جاهزة للوحة» = مادة كافية + حدٌّ أدنى من المؤشرات اللفظية، لا حكماً بأن الفكرة بصريةٌ ممتازة. */
+const BOARD_LABEL = { ready: 'جاهزة للوحة', 'needs-idea': 'المادة كافية — الفكرة تحتاج زاوية بصرية', 'needs-material': 'تحتاج مادة أوضح' } as const
+const BOARD_COLOR = { ready: 'rgb(62 107 87)', 'needs-idea': 'rgb(138 109 47)', 'needs-material': 'rgb(138 59 59)' } as const
+
+function ScoreBar({ label, value, hint }: { label: string; value: number; hint: string }) {
+  return (
+    <div className="flex items-center gap-2.5" title={hint}>
+      <span className="min-w-[34px] text-end text-[12.5px] tabular-nums text-soft">{value}٪</span>
+      <span className="h-1.5 flex-1 overflow-hidden rounded-full border border-hair bg-wash" role="img" aria-label={`${label} ${value}٪`}>
+        <i className="block h-full rounded-full" style={{ width: `${value}%`, background: 'linear-gradient(90deg, rgb(var(--c-accent)), rgb(var(--c-accent-deep)))' }} />
+      </span>
+      <span className="w-[8.5rem] text-xs text-soft">{label}</span>
+    </div>
+  )
+}
+
+function AtlasCard({ entry, rank, onOpen }: { entry: AtlasEntry; rank: number; onOpen?: (tab: AdminTab) => void }) {
   const world = useMemo(() => worldForEntry(entry), [entry.slug, entry.familyHint])
-  const ready = entry.potential >= 55 ? 'good' : entry.potential >= 40 ? 'warn' : 'crit'
-  const readyLabel = ready === 'good' ? 'جاهزة للوحة' : ready === 'warn' ? 'تحتاج تقوية الفكرة' : 'تحتاج مادة أوضح'
-  const readyColor = ready === 'good' ? 'rgb(62 107 87)' : ready === 'warn' ? 'rgb(138 109 47)' : 'rgb(138 59 59)'
+  const readyLabel = BOARD_LABEL[entry.board]
+  const readyColor = BOARD_COLOR[entry.board]
   return (
     <article className={card}>
       <div className="relative">
@@ -85,12 +111,9 @@ function AtlasCard({ entry, rank }: { entry: AtlasEntry; rank: number }) {
           {entry.year ? (<><span className="h-[3px] w-[3px] rounded-full bg-current opacity-50" /><span className="tabular-nums">{entry.year}</span></>) : null}
         </div>
 
-        <div className="flex items-center gap-2.5" title="الإمكانية البصرية">
-          <span className="min-w-[34px] text-end text-[12.5px] tabular-nums text-soft">{entry.potential}٪</span>
-          <span className="h-1.5 flex-1 overflow-hidden rounded-full border border-hair bg-wash">
-            <i className="block h-full rounded-full" style={{ width: `${entry.potential}%`, background: 'linear-gradient(90deg, rgb(var(--c-accent)), rgb(var(--c-accent-deep)))' }} />
-          </span>
-          <span className="text-xs text-soft">إمكانية بصرية</span>
+        <div className="grid gap-1.5">
+          <ScoreBar label="اكتمال المادة" value={entry.material} hint="هل في النص ما يكفي لبناء لوحة؟ يقيس الطول ووجود مقتطف وعنوان — لا جودة الفكرة." />
+          <ScoreBar label="قوة الفكرة (مؤشرات لفظية)" value={entry.idea} hint="كلمات دالّة على حكاية أو سؤال أو صورة حسية وتظليل القرّاء. مؤشر لفظي لا فهم للمعنى ولا حكم على جودة الفكرة." />
         </div>
 
         <div className="flex items-center gap-2.5 rounded-xl border border-hair bg-wash px-3 py-2.5">
@@ -113,20 +136,23 @@ function AtlasCard({ entry, rank }: { entry: AtlasEntry; rank: number }) {
           ))}
         </div>
 
-        {entry.reasons[0] ? <p className="text-[12px] leading-relaxed text-soft">{entry.reasons.slice(0, 2).join(' · ')}</p> : null}
+        {entry.reasons[0] ? <p className="text-[12px] leading-relaxed text-soft">{[entry.materialReasons[0], entry.ideaReasons[0]].filter(Boolean).join(' · ')}</p> : null}
 
         <div className="mt-auto flex items-center justify-between gap-2.5 pt-1">
           <span className="inline-flex items-center gap-1.5 text-xs text-soft">
             <span className="h-[7px] w-[7px] rounded-full" style={{ background: readyColor }} />{readyLabel}
           </span>
-          <button
-            type="button"
-            onClick={() => openInLiveDirector(entry)}
-            className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-[15px] py-2 font-sans text-[13px] font-medium text-white transition-colors hover:bg-accent-deep"
-          >
-            افتح في المخرج الحي
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M13 5l7 7-7 7M20 12H4" /></svg>
-          </button>
+          <span className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => { if (!startVideoProject(entry, onOpen)) openInLiveDirector(entry) }}
+              className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-[15px] py-2 font-sans text-[13px] font-medium text-white transition-colors hover:bg-accent-deep"
+            >
+              ابدأ مشروع فيديو
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M13 5l7 7-7 7M20 12H4" /></svg>
+            </button>
+            <button type="button" onClick={() => openInLiveDirector(entry)} className="rounded-[10px] border border-hair bg-canvas px-3 py-2 font-sans text-[12.5px] text-soft transition-colors hover:border-accent hover:text-accent">خطة للمخرج الحي مباشرة</button>
+          </span>
         </div>
       </div>
     </article>
@@ -135,12 +161,17 @@ function AtlasCard({ entry, rank }: { entry: AtlasEntry; rank: number }) {
 
 type Filter = 'all' | AtlasKind
 
-export function StoryboardAtlas({ articles = [], papers = [], books = [] }: {
+type SortKey = 'start' | 'idea' | 'material'
+const BOARD_RANK = { ready: 0, 'needs-idea': 1, 'needs-material': 2 } as const
+
+export function StoryboardAtlas({ articles = [], papers = [], books = [], onOpen }: {
   articles?: ArticleRecord[]
   papers?: PaperRecord[]
   books?: BookRecord[]
+  onOpen?: (tab: AdminTab) => void
 }) {
   const [filter, setFilter] = useState<Filter>('all')
+  const [sort, setSort] = useState<SortKey>('start')
 
   const atlas = useMemo(() => buildAtlas({
     articles: articles.map((a) => ({ slug: a.slug, title: a.title, excerpt: a.excerpt, body: a.body, cat: a.cat, year: a.year })),
@@ -148,14 +179,23 @@ export function StoryboardAtlas({ articles = [], papers = [], books = [] }: {
     books: books.map((b) => ({ slug: b.slug, title: b.title, desc: b.desc, longDescription: b.longDescription, whyWritten: b.whyWritten, toc: b.toc, targetAudience: b.targetAudience, year: b.year })),
   }), [articles, papers, books])
 
-  const shown = useMemo(() => (filter === 'all' ? atlas : atlas.filter((e) => e.kind === filter)), [atlas, filter])
-  const strong = atlas.filter((e) => e.potential >= 55).length
+  const shown = useMemo(() => {
+    const list = filter === 'all' ? atlas : atlas.filter((e) => e.kind === filter)
+    const compare: Record<SortKey, (a: AtlasEntry, b: AtlasEntry) => number> = {
+      start: (a, b) => BOARD_RANK[a.board] - BOARD_RANK[b.board] || b.potential - a.potential,
+      idea: (a, b) => b.idea - a.idea || b.material - a.material,
+      material: (a, b) => b.material - a.material || b.idea - a.idea,
+    }
+    return [...list].sort(compare[sort])
+  }, [atlas, filter, sort])
+  const ready = atlas.filter((e) => e.board === 'ready').length
+  const strongIdeas = atlas.filter((e) => e.idea >= 65).length
 
   const stats: Array<[string, string, string]> = [
     [String(atlas.length), '', 'عملاً في الأرشيف'],
-    [String(atlas.filter((e) => e.kind === 'article').length), 'مقالاً', 'جاهزة للوحة قصة'],
-    [String(atlas.filter((e) => e.kind === 'paper').length + atlas.filter((e) => e.kind === 'book').length), 'مصدراً', 'أبحاث وكتب'],
-    [String(strong), 'عملاً', 'إمكانية بصرية عالية'],
+    [String(ready), 'عملاً', 'جاهزة للوحة (مادة كافية + مؤشرات فكرة)'],
+    [String(atlas.filter((e) => e.board === 'needs-material').length), 'عملاً', 'تحتاج مادة أوضح'],
+    [String(strongIdeas), 'عملاً', 'فكرتها قوية بمؤشرات لفظية'],
   ]
 
   const filters: Array<[Filter, string]> = [['all', 'الكل'], ['article', 'مقالات'], ['paper', 'أبحاث'], ['book', 'كتب']]
@@ -165,7 +205,7 @@ export function StoryboardAtlas({ articles = [], papers = [], books = [] }: {
       <header className="flex flex-col gap-2">
         <span className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.14em] text-soft before:inline-block before:h-px before:w-[22px] before:bg-accent">الاستوديو · الأطلس</span>
         <h2 className="font-display text-[clamp(24px,4vw,34px)] font-semibold leading-tight text-balance">أطلس القصص البصرية</h2>
-        <p className="max-w-[62ch] text-[15px] text-soft">يمرّ على كامل الأرشيف — المقالات والأبحاث والكتب — ويرتّب كل عملٍ حسب إمكانيته البصرية، يقترح له عالماً من عوالمك، ويجهّز لوحة قصةٍ أولية. بنقرة واحدة يفتح في «المخرج الحي» للتنقيح. لا يستهلك شيئاً من أيّ زائر.</p>
+        <p className="max-w-[62ch] text-[15px] text-soft">أداة اختيار المادة وبداية المشروع: يمرّ على المقالات والأبحاث والكتب ويقيس لكل عملٍ شيئين منفصلين — <b className="font-medium text-ink">اكتمال المادة</b> (هل تكفي لبناء لوحة؟) و<b className="font-medium text-ink">قوة الفكرة</b> (مؤشرات لفظية: حكاية، سؤال، ألفاظ حسية، تظليل القرّاء). «جاهزة للوحة» تعني مادةً كافية وحداً أدنى من المؤشرات، لا حكماً بأن الفكرة بصرية ممتازة. اختر مادة ثم «ابدأ مشروع فيديو» لتختار المسار في مدخل الفيديو. لا يستهلك شيئاً من أيّ زائر.</p>
       </header>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-px overflow-hidden rounded-2xl border border-hair bg-hair">
@@ -184,14 +224,20 @@ export function StoryboardAtlas({ articles = [], papers = [], books = [] }: {
           ))}
         </div>
         <div className="flex-1" />
-        <span className="text-[13.5px] text-soft">مرتّب حسب: <b className="font-medium text-ink">الإمكانية البصرية</b></span>
+        <label className="flex items-center gap-2 text-[13.5px] text-soft">مرتّب حسب:
+          <select value={sort} onChange={(event) => setSort(event.target.value as SortKey)} className="rounded-xl border border-hair bg-canvas px-3 py-1.5 text-[13px] text-ink">
+            <option value="start">الأنسب للبدء (جاهزة ثم الأقوى)</option>
+            <option value="idea">قوة الفكرة</option>
+            <option value="material">اكتمال المادة</option>
+          </select>
+        </label>
       </div>
 
       {shown.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-hair bg-wash px-5 py-8 text-center text-soft">لا مواد في هذا التصنيف بعد.</p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[18px]">
-          {shown.map((entry, index) => <AtlasCard key={`${entry.kind}:${entry.slug}`} entry={entry} rank={index + 1} />)}
+          {shown.map((entry, index) => <AtlasCard key={`${entry.kind}:${entry.slug}`} entry={entry} rank={index + 1} onOpen={onOpen} />)}
         </div>
       )}
     </section>

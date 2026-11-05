@@ -12,6 +12,10 @@ import type { ReelPlan, ReelScene, ReelMotifId, ReelWorld } from './reel-scenes'
 import { auditReelPlan, mulberry } from './reel-scenes'
 import { paintMetaphor } from './reel-metaphors'
 import { ReelAudit, assertQualityGate } from './world-audits'
+import {
+  createAudioMeter, createCaptureSession, createFrameLoop, collectRecording, detectCaptureSupport, evaluateAudio,
+  firstFailure, trackVisibility, verifyRecordedVideo, type FileVerification,
+} from './video-capture-core'
 
 export const REEL_WIDTH = 1080
 export const REEL_HEIGHT = 1920
@@ -30,24 +34,14 @@ const CARRY_SCALE = 0.035
 
 /* ------------------------------- دعم المتصفح ------------------------------- */
 
-function pickReelMime(): string {
-  if (typeof MediaRecorder === 'undefined') return ''
-  const candidates = [
-    'video/mp4;codecs=avc1.640028,mp4a.40.2',
-    'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-  ]
-  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || ''
+/* قائمة الصيغ وفحص الدعم من الأساس المشترك؛ الريل يفضّل MP4 لأن النشر على الهاتف أسهل به. */
+export function reelExportSupported(): boolean {
+  return detectCaptureSupport({ preference: 'mp4-first', needsAudio: true }).supported
 }
 
-export function reelExportSupported(): boolean {
-  return typeof MediaRecorder !== 'undefined'
-    && typeof HTMLCanvasElement !== 'undefined'
-    && typeof HTMLCanvasElement.prototype.captureStream === 'function'
-    && typeof AudioContext !== 'undefined'
-    && Boolean(pickReelMime())
+/** أسباب عجز التصدير بالعربية، لتظهر في الواجهة بدل رسالة عامة. */
+export function reelExportSupportReasons(): string[] {
+  return detectCaptureSupport({ preference: 'mp4-first', needsAudio: true }).reasons
 }
 
 /** خط الاستوديو مع بدائل صريحة — السقوط الصامت لخط النظام ممنوع. */
@@ -940,17 +934,9 @@ export async function auditReelTextFit(plan: ReelPlan): Promise<ReelTextFitAudit
   return {ready:warnings.length===0,warnings,maxLines:maxFound,safeZone:{left:REEL_SAFE_LEFT,right:REEL_SAFE_RIGHT,top:REEL_SAFE_TOP,bottom:REEL_SAFE_BOTTOM}}
 }
 
-async function probeReelVideo(blob:Blob,expectedSeconds:number):Promise<{duration:number|null;verified:boolean}>{
-  const url=URL.createObjectURL(blob)
-  try{
-    const video=document.createElement('video'); video.preload='metadata'; video.muted=true
-    const duration=await new Promise<number|null>((resolve)=>{let done=false; const finish=(v:number|null)=>{if(done)return;done=true;window.clearTimeout(timer);resolve(v)}; const read=()=>{if(Number.isFinite(video.duration)&&video.duration>0)finish(video.duration);else{try{video.currentTime=1e7}catch{finish(null)}}}; video.onloadedmetadata=read; video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)finish(video.duration)}; video.onerror=()=>finish(null); const timer=window.setTimeout(()=>finish(null),2600); video.src=url})
-    return {duration,verified:duration!=null&&Math.abs(duration-expectedSeconds)<=Math.max(.9,expectedSeconds*.08)}
-  }finally{URL.revokeObjectURL(url)}
-}
 export interface ReelHandle { stop: () => void }
 
-export async function playReelPreview(canvas: HTMLCanvasElement, plan: ReelPlan, options: { audio?: boolean; onDone?: () => void } = {}): Promise<ReelHandle> {
+export async function playReelPreview(canvas: HTMLCanvasElement, plan: ReelPlan, options: { audio?: boolean; onDone?: () => void; onError?: (error: unknown) => void } = {}): Promise<ReelHandle> {
   await ensureFonts()
   spriteCache.clear()
   canvas.width = REEL_WIDTH
@@ -958,8 +944,6 @@ export async function playReelPreview(canvas: HTMLCanvasElement, plan: ReelPlan,
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('تعذّر تجهيز لوحة الرسم')
   const stage = buildStage(plan)
-  let raf = 0
-  let stopped = false
   let audio: AudioContext | null = null
   const reducedMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   if (options.audio !== false && !reducedMotion) {
@@ -968,122 +952,121 @@ export async function playReelPreview(canvas: HTMLCanvasElement, plan: ReelPlan,
       buildScore(audio, audio.destination, plan)
     } catch { audio = null }
   }
-  const startedAt = performance.now()
-  let last = startedAt
-  let done = false
-  let timer = 0
-  const step = () => {
-    if (stopped || done) return
-    const now = performance.now()
-    const t = (now - startedAt) / 1000
-    const dt = Math.min(0.05, (now - last) / 1000)
-    last = now
-    if (t >= plan.seconds) {
-      done = true
-      window.clearInterval(timer)
-      drawReelFrame(ctx, stage, plan.seconds - 0.001, 0)
-      options.onDone?.()
-      return
-    }
-    drawReelFrame(ctx, stage, t, dt)
-    raf = requestAnimationFrame(step)
-  }
-  raf = requestAnimationFrame(step)
-  /* مؤقّت احتياطي — التبويب الخلفي يخنق rAF فلا تتجمد المعاينة. */
-  timer = window.setInterval(step, Math.round(1000 / FPS))
-  return {
-    stop: () => {
-      stopped = true
-      cancelAnimationFrame(raf)
-      window.clearInterval(timer)
-      if (audio) { audio.close().catch(() => { /* أُغلق مسبقاً */ }) }
+  const closeAudio = () => { const a = audio; audio = null; if (a) a.close().catch(() => { /* أُغلق مسبقاً */ }) }
+  /* حلقة واحدة: rAF أصلٌ والمؤقّت يوقظها في التبويب الخلفي فقط، فلا تتعدد السلاسل. */
+  const loop = createFrameLoop({
+    fps: FPS,
+    onFrame: ({ t, dt }) => {
+      if (t >= plan.seconds) { drawReelFrame(ctx, stage, plan.seconds - 0.001, 0); return false }
+      drawReelFrame(ctx, stage, t, dt)
     },
-  }
+  })
+  let stopped = false
+  void loop.run().then(() => { closeAudio(); if (!stopped) options.onDone?.() }, (error) => {
+    closeAudio()
+    if (!stopped) { options.onError?.(error); options.onDone?.() }
+  })
+  return { stop: () => { stopped = true; loop.stop(); closeAudio() } }
 }
 
-export interface ReelExportResult { blob: Blob; mime: string; seconds: number; frameCount: number; verifiedDuration: boolean; textFit: ReelTextFitAudit }
+export interface ReelExportResult {
+  blob: Blob; mime: string; seconds: number; frameCount: number
+  /** مدة الملف الفعلية طابقت الخطة (قياس حقيقي، لا افتراض). */
+  verifiedDuration: boolean
+  textFit: ReelTextFitAudit
+  /** نتيجة فحص الملف: المقاس والمدة والإطارات والعيّنات والصوت. «جاهز للنشر» لا تصح إلا إذا readyToPublish. */
+  verification: FileVerification
+  audioRequested: boolean
+}
 
 export async function exportReelVideo(plan: ReelPlan, options: { canvas?: HTMLCanvasElement; onProgress?: (ratio: number) => void; audio?: boolean } = {}): Promise<ReelExportResult> {
-  const mime = pickReelMime()
-  if (!mime) throw new Error('هذا المتصفح لا يدعم تسجيل الفيديو — استخدم صيغة مدعومة من المتصفح')
+  const support = detectCaptureSupport({ preference: 'mp4-first' })
+  if (!support.supported) throw new Error(`هذا المتصفح لا يدعم تسجيل الفيديو — ${support.reasons[0]}`)
+  const mime = support.mime
   const storyGate = auditReelPlan(plan)
   if (!storyGate.ready) throw new Error(`بوابة الريل منعت التصدير: ${storyGate.warnings[0] || 'الخطة السردية لم تجتز الجودة.'}`)
-  const [textFit,fontAudit] = await Promise.all([auditReelTextFit(plan),auditReelFonts()])
+  const [textFit, fontAudit] = await Promise.all([auditReelTextFit(plan), auditReelFonts()])
   if (!textFit.ready) throw new Error(`بوابة الريل منعت التصدير: ${textFit.warnings[0]}`)
   if (!fontAudit.ready) throw new Error(`بوابة الريل منعت التصدير: ${fontAudit.warnings[0]}`)
   assertQualityGate(ReelAudit({seconds:plan.seconds,sceneCount:plan.scenes.length,hookSeconds:plan.scenes[0]?.seconds||99,duplicate:false,clipped:!textFit.ready,genericOpening:false,genericCta:false,safeZone:textFit.ready,fallbackFont:!fontAudit.ready,unfinishedSentence:false,overcrowded:textFit.maxLines>4}), 'الريل')
   if (plan.seconds < 18 || plan.seconds > 30 || plan.scenes.length < 5 || plan.scenes.length > 8) throw new Error('بوابة الريل منعت التصدير: المدة أو عدد المشاهد خارج الحدود المعتمدة.')
-  await ensureFonts()
-  spriteCache.clear()
-  const canvas = options.canvas || document.createElement('canvas')
-  canvas.width = REEL_WIDTH
-  canvas.height = REEL_HEIGHT
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('تعذّر تجهيز لوحة الرسم')
-  const stage = buildStage(plan)
+  const visibility = trackVisibility()
+  /* التبويب المخفي يوقف rAF ويخنق المؤقّتات إلى ~1Hz فيخرج فيديو بإطارات قليلة؛ نمنع البدء بدل الفشل المتأخر. */
+  if (visibility.hiddenAtStart) { visibility.dispose(); throw new Error('التبويب مخفي — أبقِ هذا التبويب ظاهراً أثناء التصدير ثم أعد المحاولة.') }
+  const session = createCaptureSession()
+  try {
+    await ensureFonts()
+    spriteCache.clear()
+    const canvas = options.canvas || document.createElement('canvas')
+    canvas.width = REEL_WIDTH
+    canvas.height = REEL_HEIGHT
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('تعذّر تجهيز لوحة الرسم')
+    const stage = buildStage(plan)
 
-  let audio: AudioContext | null = null
-  let audioTracks: MediaStreamTrack[] = []
-  if (options.audio !== false) {
-    try {
-      audio = new AudioContext()
-      const sink = audio.createMediaStreamDestination()
-      buildScore(audio, sink, plan)
-      audioTracks = sink.stream.getAudioTracks()
-    } catch { audio = null; audioTracks = [] }
-  }
-
-  const videoStream = canvas.captureStream(FPS)
-  const mixed = new MediaStream([...videoStream.getVideoTracks(), ...audioTracks])
-  /* 5.2 ميغابت/ث تكفي لنصٍّ حادٍّ على تدرّجٍ هادئ عند 1080×1920، وتنزل
-     بالملف إلى نحو نصف حجمه السابق بلا فرقٍ مرئي على الهاتف. */
-  let recorder: MediaRecorder
-  try { recorder = new MediaRecorder(mixed, { mimeType: mime, videoBitsPerSecond: 5_200_000, ...(audioTracks.length ? { audioBitsPerSecond: 128_000 } : {}) }) } catch (error) { videoStream.getTracks().forEach((track)=>track.stop()); await audio?.close().catch(()=>{}); throw new Error(`تعذّر بدء MediaRecorder: ${error instanceof Error ? error.message : String(error)}`) }
-  const chunks: BlobPart[] = []
-  recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
-  const finished = new Promise<Blob>((resolve,reject) => { recorder.onstop = () => resolve(new Blob(chunks, { type: mime.split(';')[0] })); recorder.onerror = () => reject(new Error('MediaRecorder أبلغ عن خطأ أثناء تسجيل الريل.')) })
-
-  drawReelFrame(ctx, stage, 0, 0)
-  recorder.start(250)
-  let frameCount = 1
-  const startedAt = performance.now()
-  let last = startedAt
-  await new Promise<void>((resolve) => {
-    let raf = 0
-    let timer = 0
-    const step = () => {
-      const now = performance.now()
-      const t = (now - startedAt) / 1000
-      const dt = Math.min(0.05, (now - last) / 1000)
-      last = now
-      const ratio = Math.min(1, t / plan.seconds)
-      options.onProgress?.(ratio)
-      if (t >= plan.seconds + 0.15) {
-        cancelAnimationFrame(raf)
-        window.clearInterval(timer)
-        resolve()
-        return
-      }
-      drawReelFrame(ctx, stage, Math.min(t, plan.seconds - 0.001), dt)
-      frameCount += 1
-      raf = requestAnimationFrame(step)
+    const audioRequested = options.audio !== false
+    let audioTracks: MediaStreamTrack[] = []
+    let meter: ReturnType<typeof createAudioMeter> | null = null
+    if (audioRequested) {
+      try {
+        const audio = session.audio(new AudioContext())
+        /* سياسة التشغيل التلقائي قد تُبقي السياق معلّقاً فيُسجَّل الصوت صامتاً بلا أي خطأ. */
+        if (audio.state === 'suspended') await audio.resume().catch(() => { /* يكشفه مقياس الصوت */ })
+        const sink = audio.createMediaStreamDestination()
+        meter = createAudioMeter(audio, sink)
+        buildScore(audio, meter.input, plan)
+        audioTracks = sink.stream.getAudioTracks()
+      } catch { audioTracks = []; meter = null }
     }
-    raf = requestAnimationFrame(step)
-    /* مؤقّت احتياطي كي لا يتجمد التسجيل إن خُنق rAF في تبويب خلفي. */
-    timer = window.setInterval(step, Math.round(1000 / FPS))
-  })
-  recorder.stop()
-  const blob = await finished
-  videoStream.getTracks().forEach((track) => track.stop())
-  mixed.getTracks().forEach((track) => track.stop())
-  await audio?.close().catch(() => { /* أُغلق مسبقاً */ })
-  if (!blob.size || blob.size < 24_000) throw new Error('فشل التصدير: ملف الريل فارغ أو لا يحتوي فيديو فعلياً.')
-  if (frameCount < Math.max(18, Math.floor(plan.seconds * FPS * .42))) throw new Error('فشل التصدير: عدد الإطارات المسجلة لا يناسب مدة الريل.')
-  const probe = await probeReelVideo(blob, plan.seconds)
-  if (probe.duration != null && !probe.verified) throw new Error(`فشل التصدير: مدة الملف الفعلية ${probe.duration.toFixed(2)}ث لا تطابق خطة ${plan.seconds.toFixed(2)}ث.`)
-  const finalAudit=ReelAudit({seconds:probe.duration||plan.seconds,sceneCount:plan.scenes.length,hookSeconds:plan.scenes[0]?.seconds||99,duplicate:false,clipped:!textFit.ready,genericOpening:false,genericCta:false,safeZone:textFit.ready,fallbackFont:!fontAudit.ready,unfinishedSentence:false,overcrowded:textFit.maxLines>4,singleFrame:frameCount<2,durationValid:probe.duration==null||probe.verified,soundOverpowering:false,exportMismatch:false,logoDistorted:false,excessGlow:false})
-  assertQualityGate(finalAudit,'الريل')
-  return { blob, mime, seconds: probe.duration || plan.seconds, frameCount, verifiedDuration: probe.verified, textFit }
+
+    const videoStream = session.stream(canvas.captureStream(FPS))
+    const mixed = session.stream(new MediaStream([...videoStream.getVideoTracks(), ...audioTracks]))
+    /* 5.2 ميغابت/ث تكفي لنصٍّ حادٍّ على تدرّجٍ هادئ عند 1080×1920، وتنزل
+       بالملف إلى نحو نصف حجمه السابق بلا فرقٍ مرئي على الهاتف. */
+    let recorder: MediaRecorder
+    try { recorder = new MediaRecorder(mixed, { mimeType: mime, videoBitsPerSecond: 5_200_000, ...(audioTracks.length ? { audioBitsPerSecond: 128_000 } : {}) }) }
+    catch (error) { throw new Error(`تعذّر بدء MediaRecorder: ${error instanceof Error ? error.message : String(error)}`) }
+    const collector = collectRecording(recorder, mime, 'MediaRecorder أبلغ عن خطأ أثناء تسجيل الريل.')
+
+    drawReelFrame(ctx, stage, 0, 0)
+    recorder.start(250)
+    /* حلقة واحدة منضبطة (rAF + مؤقّت احتياطي لا يتسابقان). خطأ المسجِّل أو الرسم يوقفها فوراً
+       بدل إكمال تسجيل ميّت حتى النهاية. */
+    const loop = createFrameLoop({
+      fps: FPS,
+      onFrame: ({ t, dt }) => {
+        const failure = collector.failure()
+        if (failure) throw failure
+        meter?.sample()
+        options.onProgress?.(Math.min(1, t / plan.seconds))
+        if (t >= plan.seconds + 0.15) return false
+        drawReelFrame(ctx, stage, Math.min(t, plan.seconds - 0.001), dt)
+      },
+    })
+    const stats = await loop.run()
+    const frameCount = stats.frames
+    const blob = await collector.finish()
+
+    /* فحص الملف الناتج فعلياً: الحجم والإطارات والمدة والمقاس وعيّنات البداية/الوسط/النهاية والصوت. */
+    const { verification, measured } = await verifyRecordedVideo({
+      blob, frames: frameCount, fps: FPS, minBytes: 24_000,
+      expected: { seconds: plan.seconds, width: REEL_WIDTH, height: REEL_HEIGHT },
+      extraChecks: [
+        visibility.wasHidden ? { id: 'visibility', label: 'ظهور التبويب', status: 'fail' as const, detail: 'أُخفي التبويب أثناء التسجيل؛ قد تكون الإطارات متقطعة.' } : null,
+        evaluateAudio(audioRequested, audioTracks.length > 0, meter ? meter.peak : null),
+      ],
+    })
+    const hard = firstFailure(verification)
+    if (hard) throw new Error(hard)
+    const durationCheck = verification.checks.find((c) => c.id === 'duration')
+    const durationVerified = durationCheck?.status === 'pass'
+    const finalAudit=ReelAudit({seconds:measured.duration||plan.seconds,sceneCount:plan.scenes.length,hookSeconds:plan.scenes[0]?.seconds||99,duplicate:false,clipped:!textFit.ready,genericOpening:false,genericCta:false,safeZone:textFit.ready,fallbackFont:!fontAudit.ready,unfinishedSentence:false,overcrowded:textFit.maxLines>4,singleFrame:frameCount<2,durationValid:durationCheck?.status!=='fail',soundOverpowering:false,exportMismatch:false,logoDistorted:false,excessGlow:false})
+    assertQualityGate(finalAudit,'الريل')
+    return { blob, mime, seconds: measured.duration || plan.seconds, frameCount, verifiedDuration: durationVerified, textFit, verification, audioRequested }
+  } finally {
+    visibility.dispose()
+    await session.dispose()
+  }
 }
 
 export function downloadReelBlob(result: ReelExportResult, title: string) {

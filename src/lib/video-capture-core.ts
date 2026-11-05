@@ -258,10 +258,14 @@ export function createCaptureSession() {
 
 /* --------------------------------------- المسجِّل --------------------------------------- */
 
+/* أنواع الأحداث فضفاضة عمداً كي يقبل MediaRecorder الحقيقي (BlobEvent/Event) والمحاكي في الاختبار. */
 export interface RecorderEvents {
-  ondataavailable: ((event: { data: { size: number } }) => void) | null
-  onstop: (() => void) | null
-  onerror: ((event?: unknown) => void) | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ondataavailable: ((this: any, event: any) => any) | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onstop: ((this: any, event: any) => any) | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onerror: ((this: any, event: any) => any) | null
   state?: string
   start(timeslice?: number): void
   stop(): void

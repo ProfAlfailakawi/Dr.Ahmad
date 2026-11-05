@@ -60,8 +60,8 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   const supported = useMemo(() => reelExportSupported(), [])
   const quality = useMemo(() => plan ? auditReelPlan(plan) : null, [plan])
   /* بصمة المصدر: تعديل العنوان أو المتن أو العالم بعد بناء الخطة يبطلها فلا يُصدَّر فيديو لا يطابق النص الظاهر. */
-  const gate = useMemo(() => gateReelPlan(plan ? planSource : null, { title, body, worldId: selectedWorld?.id }), [plan, planSource, title, body, selectedWorld])
-  const planStale = Boolean(plan) && gate.state === 'stale'
+  const sourceGate = useMemo(() => gateReelPlan(plan ? planSource : null, { title, body, worldId: selectedWorld?.id }), [plan, planSource, title, body, selectedWorld])
+  const planStale = Boolean(plan) && sourceGate.state === 'stale'
 
   /* مادة اختارها المستخدم من الأطلس عبر مدخل الفيديو: تُستلم مرة واحدة وتحدد الوضع والعنوان والمتن. */
   useEffect(() => {
@@ -116,7 +116,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
      فتبدو كل الريلات متشابهة وإن اختلف نصها. */
   const preview = async (planToPlay?: ReelPlan) => {
     /* خطة مُمرَّرة صراحةً تأتي من بناءٍ جديد؛ أما إعادة تشغيل المخزَّنة فتُحجب إن تقادم مصدرها. */
-    if (!planToPlay && planStale) { setNotice(gate.reason); return }
+    if (!planToPlay && planStale) { setNotice(sourceGate.reason); return }
     const active = planToPlay || plan || buildPlan()
     if (!active || !canvasRef.current) return
     handleRef.current?.stop()
@@ -145,7 +145,7 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   }
 
   const exportVideo = async (planToRecord?: ReelPlan) => {
-    if (!planToRecord && planStale) { setNotice(gate.reason); return }
+    if (!planToRecord && planStale) { setNotice(sourceGate.reason); return }
     const active = planToRecord || plan || buildPlan()
     if (!active) return
     const gate = auditReelPlan(active)
@@ -244,14 +244,14 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           {memoryNote && <p className="rounded-xl border border-accent/25 bg-accent/[.06] px-3 py-2 text-[.72rem] leading-relaxed text-accent">{memoryNote}</p>}
           {planStale && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-[.72rem] leading-relaxed text-amber-900" role="alert" data-reel-plan-stale="true">
-              <span>{gate.reason}</span>
+              <span>{sourceGate.reason}</span>
               <button type="button" className={primary} disabled={busy === 'export'} onClick={() => { const next = buildPlan(0, true); if (next) void preview(next) }}>ابنِ خطة جديدة من المصدر الحالي</button>
             </div>
           )}
           {notice && <p className="rounded-xl border border-hair bg-canvas px-3 py-2 text-[.72rem] leading-relaxed text-ink" role="status">{notice}</p>}
 
           {plan && (
-            <div className={`grid gap-2 rounded-2xl border border-hair bg-canvas p-4 ${planStale ? 'opacity-60' : ''}`} data-reel-plan-state={gate.state}>
+            <div className={`grid gap-2 rounded-2xl border border-hair bg-canvas p-4 ${planStale ? 'opacity-60' : ''}`} data-reel-plan-state={sourceGate.state}>
               {planStale && <p className="text-[.66rem] font-bold text-amber-800">خطة قديمة — لا تطابق العنوان والمتن والعالم الظاهرة الآن.</p>}
               <div className="flex flex-wrap gap-2 text-[.68rem] font-bold">
                 <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">القالب: {TEMPLATE_LABELS[plan.templateId]}</span>

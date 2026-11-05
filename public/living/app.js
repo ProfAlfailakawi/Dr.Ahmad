@@ -3,9 +3,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=7';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=7';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=7';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=8';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=8';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=8';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -470,7 +470,7 @@ async function startAR(id = packId) {
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=7`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=8`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;
@@ -518,13 +518,13 @@ async function startAR(id = packId) {
       if (rotating || !mind.controller) return; rotating = true;
       try {
         packNo = (packNo + 1) % PACKS.length; ignoreUntil = performance.now() + 5000;
-        await mind.controller.addImageTargets(asset(`${PACKS[packNo].file}?v=7`));
+        await mind.controller.addImageTargets(asset(`${PACKS[packNo].file}?v=8`));
         ids = PACKS[packNo].ids; packId = PACKS[packNo].id; ignoreUntil = performance.now() + 450;
       } catch (err) { console.warn('pack swap failed', err); }
       rotating = false;
     };
     // Warm the other packs in the background so every swap is instant.
-    (async () => { for (const p of PACKS) { if (p === pack) continue; try { await fetch(asset(`${p.file}?v=7`)); } catch { /* offline */ } } })();
+    (async () => { for (const p of PACKS) { if (p === pack) continue; try { await fetch(asset(`${p.file}?v=8`)); } catch { /* offline */ } } })();
     if (!params.has('norotate')) rotor = setInterval(() => { if (!seen && performance.now() - lastSeen > 1700 && !document.hidden) nextPack(); }, 600);
     bindTaps($('arStage'));
     bindGestures($('arStage'));

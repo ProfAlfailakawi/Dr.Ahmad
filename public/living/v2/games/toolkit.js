@@ -3,8 +3,8 @@
 // (timers, tweens, particles, end-of-game card) that every game type builds on.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=7';
-import { inked } from '../../pencil.js?v=7';
+import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=8';
+import { inked } from '../../pencil.js?v=8';
 
 export { THREE, P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, lightTube, sketch, inked, RoundedBoxGeometry };
 export const TAU = Math.PI * 2;
@@ -185,13 +185,16 @@ export function glassCylinder(r, h, liquidColor, { liquid = true } = {}) {
 
 // A flat paper wash with a pencil outline, laid under text so it stays legible over the printed page.
 export function panel(w, h, { r = 0.025, opacity = 0.78, color = 0xfbf8f0, outline = true } = {}) {
+  // The play pieces are opaque paper cards with their own text, so the wash behind them only needs to hint at the play area:
+  // keep the printed illustration visible instead of covering it.
+  opacity *= 0.42;
   const g = new THREE.Group();
   const c = document.createElement('canvas'); c.width = 256; c.height = Math.max(8, Math.round(256 * h / w));
   const x = c.getContext('2d'); x.fillStyle = '#' + color.toString(16).padStart(6, '0');
   x.beginPath(); x.roundRect(2, 2, c.width - 4, c.height - 4, Math.max(2, (r / w) * 256)); x.fill();
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex(c), transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
   m.rotation.x = -Math.PI / 2; m.position.y = 0.0014; m.renderOrder = 0; m.raycast = () => {}; g.add(m);
-  const line = outline ? inkLine(rectPts(0, 0, w, h, r, 0.0016), { r: 0.0014, opacity: 0.7 }) : null;
+  const line = outline ? inkLine(rectPts(0, 0, w, h, r, 0.0016), { r: 0.0009, opacity: 0.3 }) : null;
   if (line) g.add(line);
   g.userData.reveal = (p) => { m.material.opacity = opacity * clamp01(p * 1.6 - 0.4); line?.userData.reveal(clamp01(p * 1.4)); };
   g.userData.reveal(0);

@@ -12,6 +12,7 @@ import DesignWorldsGallery from './DesignWorldsGallery'
 import type { DesignWorld } from '../../lib/design-worlds'
 import { downloadReelBlob, exportReelVideo, playReelPreview, reelExportSupported, reelExportSupportReasons, type ReelHandle } from '../../lib/reel-motion'
 import { bindReelSource, gateReelPlan, type BoundReelSource } from '../../lib/reel-source'
+import { takeReelSeed } from '../../lib/video-hub'
 import { describeVerification } from '../../lib/video-capture-core'
 import { arabicCountPhrase, REEL_SCENE_FORMS, SECOND_FORMS } from '../../lib/arabic-count.ts'
 import { lazy, Suspense } from 'react'
@@ -61,6 +62,17 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
   /* بصمة المصدر: تعديل العنوان أو المتن أو العالم بعد بناء الخطة يبطلها فلا يُصدَّر فيديو لا يطابق النص الظاهر. */
   const gate = useMemo(() => gateReelPlan(plan ? planSource : null, { title, body, worldId: selectedWorld?.id }), [plan, planSource, title, body, selectedWorld])
   const planStale = Boolean(plan) && gate.state === 'stale'
+
+  /* مادة اختارها المستخدم من الأطلس عبر مدخل الفيديو: تُستلم مرة واحدة وتحدد الوضع والعنوان والمتن. */
+  useEffect(() => {
+    try {
+      const seed = takeReelSeed(sessionStorage)
+      if (!seed) return
+      setMode(seed.mode)
+      if (seed.title) setTitle(seed.title)
+      if (seed.body) setBody(seed.body)
+    } catch { /* بذرة تالفة لا توقف الاستوديو */ }
+  }, [])
 
   /* نص الاستوديو الحالي يصير بذرة الريل تلقائياً — بلا نسخ يدوي. */
   useEffect(() => {
@@ -166,11 +178,12 @@ export function ReelStudio({ seedText = '' }: { seedText?: string }) {
           <p className="text-[.66rem] font-black uppercase tracking-[.18em] text-accent">Cinematic Reel · محلي ومجاني</p>
           <h3 className="mt-2 font-display text-2xl font-bold text-ink md:text-3xl">استوديو الريل السينمائي</h3>
           <div className="mt-3 inline-flex rounded-full border border-hair bg-canvas p-1" role="tablist" aria-label="نوع الفيديو">
-            <button type="button" role="tab" aria-selected={mode === 'monteur'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'monteur' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('monteur')}>فيديو مشاهد يفهم موضوعه</button>
-            <button type="button" role="tab" aria-selected={mode === 'flow'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'flow' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('flow')}>ريل Flow سينمائي</button>
+            <button type="button" role="tab" aria-selected={mode === 'monteur'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'monteur' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('monteur')}>ريل بمشاهد · المونتير</button>
+            <button type="button" role="tab" aria-selected={mode === 'flow'} className={`rounded-full px-4 py-1.5 text-[.74rem] font-bold transition ${mode === 'flow' ? 'bg-ink text-white' : 'text-soft hover:text-ink'}`} onClick={() => setMode('flow')}>ريل Flow مرسوم</button>
           </div>
           {mode === 'monteur' && <p className="mt-2 text-[.82rem] leading-relaxed text-soft">اكتب تغريدة أو الصق مقالة في الحقل أدناه — أو اختر مقالة من الموقع — فيبني فيديو مشاهد يفهم موضوعه: استعارة لكل جملة، إنفوجرافيك، موسيقى من مكتبتك، نمطان (رصين/جريء)، وقطع على ضربة الإيقاع. التصدير من داخل المشغّل.</p>}
           {mode === 'flow' && <p className="mt-2 text-[.82rem] leading-relaxed text-soft">
+            <b className="text-ink">«Flow» هنا اسم نمط الإخراج: يُرسم الريل في متصفحك، ولا علاقة له بخدمة Flow لتوليد المقاطع (تلك في «المخرج الحي»).</b>{' '}
             ألصق المقال — يقرؤه المخطِّط، يختار قالباً وعالماً لونياً ومزاجاً موسيقياً من النص نفسه،
             ثم يصدّر فيديو 1080×1920 بصوت مؤلَّف في متصفحك. المادة نفسها تعطي الريل نفسه دائماً،
             ومادتان لا تتشابهان، و«لقطة أخرى» تفتح تنويعاً شقيقاً. ويمكنك أيضاً إخراجه يدوياً من نفس معرض الـ64 عالماً المستخدم في استوديو التصاميم.

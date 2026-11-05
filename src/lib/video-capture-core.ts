@@ -365,13 +365,14 @@ export function evaluateProbe(measured: ProbeMeasurement, expected: ExpectedMedi
   return checks
 }
 
-export interface FrameStats { mean: number; variance: number }
+/** grid: سطوع كل خلية 6×6px من العيّنة المصغّرة؛ يلتقط الحركة الموضعية (أيقونة صغيرة) التي لا يغيّر متوسطها شيئاً. */
+export interface FrameStats { mean: number; variance: number; grid?: number[] }
 export interface FrameSampleResult { position: number; label: string; stats: FrameStats | null }
 
 /** إطار شبه أسود/ثابت اللون يعني تسجيلاً فارغاً أو منطقة التقاط خاطئة. */
 export function isBlankFrame(stats: FrameStats) { return stats.mean < 5 || stats.variance < 2 }
 
-export function lumaStats(rgba: ArrayLike<number>, step = 16): FrameStats {
+export function lumaStats(rgba: ArrayLike<number>, step = 16, width = 0): FrameStats {
   let sum = 0; let sum2 = 0; let n = 0
   for (let i = 0; i + 2 < rgba.length; i += step) {
     const y = 0.2126 * rgba[i] + 0.7152 * rgba[i + 1] + 0.0722 * rgba[i + 2]
@@ -379,7 +380,22 @@ export function lumaStats(rgba: ArrayLike<number>, step = 16): FrameStats {
   }
   if (!n) return { mean: 0, variance: 0 }
   const mean = sum / n
-  return { mean, variance: sum2 / n - mean * mean }
+  const stats: FrameStats = { mean, variance: sum2 / n - mean * mean }
+  if (width > 0) {
+    const cell = 6
+    const pixels = Math.floor(rgba.length / 4)
+    const cols = Math.ceil(width / cell)
+    const rows = Math.ceil(pixels / width / cell)
+    const totals = new Array<number>(cols * rows).fill(0)
+    const counts = new Array<number>(cols * rows).fill(0)
+    for (let px = 0; px < pixels; px += 1) {
+      const index = Math.floor(px / width / cell) * cols + Math.floor((px % width) / cell)
+      totals[index] += 0.2126 * rgba[px * 4] + 0.7152 * rgba[px * 4 + 1] + 0.0722 * rgba[px * 4 + 2]
+      counts[index] += 1
+    }
+    stats.grid = totals.map((total, i) => (counts[i] ? total / counts[i] : 0))
+  }
+  return stats
 }
 
 /** عيّنات البداية والوسط والنهاية: يلزم نجاح الثلاث؛ العيّنة المفقودة «غير متحقَّق» لا نجاح. */
@@ -398,14 +414,32 @@ export function evaluateSamples(samples: FrameSampleResult[]): VerificationCheck
   })
 }
 
-/** هل بين العيّنات فرق حقيقي؟ فيديو كل إطاراته متطابقة = تجمّد (حلقة ماتت أو التقاط ثابت). */
-export function evaluateMotion(samples: FrameSampleResult[], minDelta = 1.5): VerificationCheck {
-  const means = samples.map((s) => s.stats?.mean).filter((v): v is number => typeof v === 'number')
-  if (means.length < 2) return { id: 'motion', label: 'الحركة', status: 'unverified', detail: 'عيّنات غير كافية لقياس الحركة.' }
-  const spread = Math.max(...means) - Math.min(...means)
-  return spread >= minDelta
+/**
+ * هل بين العيّنات فرق حقيقي؟ نقارن شبكة السطوع خليةً خلية: حركة أيقونة صغيرة فوق خلفية ثابتة
+ * تغيّر خلاياها وإن لم يتغيّر متوسط الإطار. فيديو متجمّد (حلقة ماتت أو التقاط ثابت) فروقه
+ * ضجيج ترميز أقل من درجة واحدة. بلا شبكة نعود إلى المتوسط والتباين.
+ */
+export function evaluateMotion(samples: FrameSampleResult[], minCellDelta = 1.0, minMeanDelta = 0.3, minVarianceRatio = 0.02): VerificationCheck {
+  const stats = samples.map((s) => s.stats).filter((v): v is FrameStats => Boolean(v))
+  if (stats.length < 2) return { id: 'motion', label: 'الحركة', status: 'unverified', detail: 'عيّنات غير كافية لقياس الحركة.' }
+  let moving = false
+  const grids = stats.map((s) => s.grid).filter((g): g is number[] => Array.isArray(g))
+  if (grids.length === stats.length) {
+    for (let i = 0; i < grids.length && !moving; i += 1) for (let j = i + 1; j < grids.length && !moving; j += 1) {
+      let diff = 0
+      for (let k = 0; k < grids[i].length; k += 1) diff += Math.abs(grids[i][k] - grids[j][k])
+      if (diff / Math.max(1, grids[i].length) >= minCellDelta) moving = true
+    }
+  } else {
+    const means = stats.map((s) => s.mean)
+    const variances = stats.map((s) => s.variance)
+    const meanSpread = Math.max(...means) - Math.min(...means)
+    const varianceSpread = (Math.max(...variances) - Math.min(...variances)) / Math.max(1, Math.max(...variances))
+    moving = meanSpread >= minMeanDelta || varianceSpread >= minVarianceRatio
+  }
+  return moving
     ? { id: 'motion', label: 'الحركة', status: 'pass', detail: 'الإطارات تتغيّر عبر الفيديو.' }
-    : { id: 'motion', label: 'الحركة', status: 'fail', detail: 'الإطارات المأخوذة من البداية والوسط والنهاية متطابقة تقريباً — يبدو الفيديو متجمّداً.' }
+    : { id: 'motion', label: 'الحركة', status: 'fail', detail: 'إطارات البداية والوسط والنهاية متطابقة تقريباً — يبدو الفيديو متجمّداً.' }
 }
 
 export function evaluateFrameCount(frames: number, expectedSeconds: number, fps: number, minRatio = 0.42): VerificationCheck {
@@ -419,6 +453,42 @@ export function evaluateFileSize(bytes: number, minBytes: number): VerificationC
   return bytes >= minBytes
     ? { id: 'size-bytes', label: 'حجم الملف', status: 'pass', detail: `${Math.round(bytes / 1024)}KB.` }
     : { id: 'size-bytes', label: 'حجم الملف', status: 'fail', detail: 'الملف فارغ أو أصغر من أن يحتوي فيديو حقيقياً.' }
+}
+
+/* ---------------------------------- قياس الصوت ---------------------------------- */
+
+export interface AudioMeter { input: AudioNode; sample(): void; readonly peak: number }
+
+/**
+ * يقيس أعلى قمة صوتية فعلية تمرّ إلى التسجيل. «طُلب الصوت» لا تعني «سُجّل الصوت»:
+ * AudioContext معلّق بسياسة التشغيل التلقائي أو مسار مفصول يُنتج ملفاً صامتاً بلا أي خطأ.
+ * المصدر الصوتي يُوصَل بـinput بدل الوجهة مباشرة، ويُستدعى sample() في كل إطار.
+ */
+export function createAudioMeter(context: AudioContext, destination: AudioNode): AudioMeter {
+  const input = context.createGain()
+  const analyser = context.createAnalyser()
+  analyser.fftSize = 1024
+  input.connect(destination)
+  input.connect(analyser)
+  const buffer = new Float32Array(analyser.fftSize)
+  let peak = 0
+  return {
+    input,
+    sample() {
+      analyser.getFloatTimeDomainData(buffer)
+      for (let i = 0; i < buffer.length; i += 1) { const v = Math.abs(buffer[i]); if (v > peak) peak = v }
+    },
+    get peak() { return peak },
+  }
+}
+
+export function evaluateAudio(requested: boolean, trackAttached: boolean, peak: number | null): VerificationCheck | null {
+  if (!requested) return null
+  if (!trackAttached) return { id: 'audio', label: 'الصوت', status: 'fail', detail: 'طُلب الصوت لكن لم يُركَّب مسار صوتي في التسجيل.' }
+  if (peak === null) return { id: 'audio', label: 'الصوت', status: 'unverified', detail: 'رُكّب مسار صوتي لكن تعذّر قياس مستواه.' }
+  return peak >= 0.002
+    ? { id: 'audio', label: 'الصوت', status: 'pass', detail: `مسار صوتي حيّ (قمة ${peak.toFixed(2)}).` }
+    : { id: 'audio', label: 'الصوت', status: 'fail', detail: 'المسار الصوتي صامت طوال التسجيل (تحقق من تعليق الصوت في المتصفح).' }
 }
 
 /* ---- أدوات المتصفح: قراءة الملف وأخذ العيّنات. لا تُختبر في Node؛ تُختبر دوالها النقية أعلاه. ---- */
@@ -479,7 +549,7 @@ export async function sampleVideoFrames(blob: Blob, durationSeconds: number, poi
           video.currentTime = target
         })
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-        results.push({ ...point, stats: lumaStats(ctx.getImageData(0, 0, canvas.width, canvas.height).data) })
+        results.push({ ...point, stats: lumaStats(ctx.getImageData(0, 0, canvas.width, canvas.height).data, 16, canvas.width) })
       } catch { results.push({ ...point, stats: null }) }
     }
   } catch {
@@ -496,8 +566,10 @@ export async function verifyRecordedVideo(input: {
   fps: number
   minBytes: number
   sampleFrames?: boolean
+  extraChecks?: Array<VerificationCheck | null>
 }): Promise<{ verification: FileVerification; measured: ProbeMeasurement }> {
   const checks: VerificationCheck[] = [evaluateFileSize(input.blob.size, input.minBytes), evaluateFrameCount(input.frames, input.expected.seconds, input.fps)]
+  for (const extra of input.extraChecks || []) if (extra) checks.push(extra)
   const measured = await probeVideoBlob(input.blob)
   checks.push(...evaluateProbe(measured, input.expected))
   if (input.sampleFrames !== false) {
@@ -508,8 +580,9 @@ export async function verifyRecordedVideo(input: {
   return { verification: summarizeChecks(checks), measured }
 }
 
-/** أول فحص فاشل كرسالة خطأ قابلة للرمي؛ null إن لم يفشل شيء. */
-export function firstFailure(verification: FileVerification): string | null {
-  const failed = verification.checks.find((c) => c.status === 'fail')
+/** أول فحص فاشل بين «الفحوص الحاسمة» كرسالة خطأ قابلة للرمي؛ غيرها يمنع «جاهز للنشر» دون أن يمنع التنزيل. */
+export const HARD_CHECK_IDS = ['size-bytes', 'frames', 'duration', 'size']
+export function firstFailure(verification: FileVerification, hardIds: string[] = HARD_CHECK_IDS): string | null {
+  const failed = verification.checks.find((c) => c.status === 'fail' && hardIds.includes(c.id))
   return failed ? `فشل التصدير — ${failed.label}: ${failed.detail}` : null
 }

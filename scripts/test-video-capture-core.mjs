@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict'
 import {
   pickRecorderMime, detectCaptureSupport, createFrameLoop, createCaptureSession, collectRecording,
-  evaluateProbe, evaluateSamples, evaluateMotion, evaluateFrameCount, evaluateFileSize, summarizeChecks,
+  evaluateProbe, evaluateAudio, evaluateSamples, evaluateMotion, evaluateFrameCount, evaluateFileSize, summarizeChecks,
   describeVerification, firstFailure, lumaStats, isBlankFrame, durationTolerance,
 } from '../src/lib/video-capture-core.ts'
 
@@ -215,8 +215,23 @@ const fakeRecorder = () => ({ ondataavailable: null, onstop: null, onerror: null
   const s = evaluateSamples([{ position: 0.06, label: 'بداية الفيديو', stats: lit }, { position: 0.5, label: 'وسط الفيديو', stats: black }, { position: 0.95, label: 'نهاية الفيديو', stats: null }])
   eq(s.map((c) => c.status), ['pass', 'fail', 'unverified'], 'بداية سليمة، وسط أسود، نهاية غير ممكنة القياس')
   check(evaluateMotion([{ stats: { mean: 90, variance: 9 } }, { stats: { mean: 90.2, variance: 9 } }, { stats: { mean: 90.1, variance: 9 } }]).status === 'fail', 'ثلاث عيّنات متطابقة → تجمّد')
+  // حركة موضعية: أيقونة صغيرة تتحرك فوق خلفية ثابتة — المتوسط ثابت لكن الشبكة تتغيّر
+  const flatGrid = new Array(144).fill(60)
+  const iconMoved = flatGrid.map((v, i) => (i === 50 || i === 51 ? 200 : v))
+  const iconElsewhere = flatGrid.map((v, i) => (i === 80 || i === 81 ? 200 : v))
+  check(evaluateMotion([{ stats: { mean: 60, variance: 5, grid: iconMoved } }, { stats: { mean: 60, variance: 5, grid: iconElsewhere } }]).status === 'pass', 'حركة أيقونة موضعية تُلتقط بالشبكة رغم ثبات المتوسط')
+  check(evaluateMotion([{ stats: { mean: 60, variance: 5, grid: flatGrid } }, { stats: { mean: 60, variance: 5, grid: flatGrid.map((v) => v + 0.2) } }, { stats: { mean: 60, variance: 5, grid: flatGrid } }]).status === 'fail', 'شبكات متطابقة (ضجيج ترميز فقط) → تجمّد')
+  const rgba = new Uint8ClampedArray(12 * 12 * 4).fill(255)
+  const withGrid = lumaStats(rgba, 4, 12)
+  check(withGrid.grid.length === 4 && withGrid.grid.every((v) => Math.abs(v - 255) < 0.01), 'lumaStats يبني شبكة 2×2 لعيّنة 12×12')
   check(evaluateMotion([{ stats: { mean: 40, variance: 9 } }, { stats: { mean: 95, variance: 9 } }]).status === 'pass', 'عيّنات متباينة → حركة')
   check(evaluateMotion([{ stats: null }, { stats: null }]).status === 'unverified', 'بلا عيّنات → غير متحقَّق')
+  check(evaluateAudio(false, false, null) === null, 'الصوت غير مطلوب → لا فحص')
+  check(evaluateAudio(true, false, null).status === 'fail', 'طُلب الصوت ولا مسار → فشل')
+  check(evaluateAudio(true, true, 0).status === 'fail', 'مسار صامت → فشل (لا يكفي أن المسار موجود)')
+  check(evaluateAudio(true, true, null).status === 'unverified', 'مسار بلا قياس → غير متحقَّق')
+  check(evaluateAudio(true, true, 0.3).status === 'pass', 'قمة صوتية فعلية → نجاح')
+  check(firstFailure(summarizeChecks([{ id: 'motion', label: 'الحركة', status: 'fail', detail: 'x' }])) === null, 'فشل غير حاسم لا يرمي لكنه يمنع الجاهزية')
   check(evaluateFrameCount(31, 24, 30).status === 'fail' && evaluateFrameCount(500, 24, 30).status === 'pass', 'عدد الإطارات الكافي')
   check(evaluateFileSize(10, 24000).status === 'fail' && evaluateFileSize(90000, 24000).status === 'pass', 'حجم الملف')
 

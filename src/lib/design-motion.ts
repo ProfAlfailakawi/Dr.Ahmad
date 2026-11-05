@@ -11,6 +11,10 @@ import { readEffectivePlacement, readIconEnabled, resolveMetaphor } from './desi
 import { analyzeWorldSemantics } from './world-semantics'
 import type { SemanticVerb } from './design-worlds'
 import { MotionAudit, assertQualityGate } from './world-audits'
+import {
+  createAudioMeter, createCaptureSession, createFrameLoop, collectRecording, detectCaptureSupport, evaluateAudio,
+  firstFailure, trackVisibility, verifyRecordedVideo, type FileVerification,
+} from './video-capture-core'
 
 /**
  * محرّك فيديو المنشور المستقل. الحركة هنا ليست تكبيراً عاماً للصورة: يقرأ
@@ -60,6 +64,8 @@ export interface DesignVideoResult {
   seconds: number
   frameCount: number
   verifiedDuration: boolean
+  /** فحص الملف الناتج؛ «جاهز للنشر» لا تصح إلا إذا readyToPublish. */
+  verification: FileVerification
   audit: DesignMotionAudit
 }
 
@@ -145,24 +151,13 @@ async function loadLogo() {
   try { return await imageFromUrl('/logo.png') } catch { return null }
 }
 
-function pickMime(): string {
-  if (typeof MediaRecorder === 'undefined') return ''
-  const candidates = [
-    'video/webm;codecs=vp9',
-    'video/webm;codecs=vp8',
-    'video/webm',
-    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-    'video/mp4;codecs=h264,aac',
-    'video/mp4',
-  ]
-  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || ''
+/* فيديو المنشور يفضّل WebM (VP9) لأنه يُرمَّز بثباتٍ أعلى لحلقاتٍ قصيرة؛ الدعم والصيغة من الأساس المشترك. */
+export function motionSupported(): boolean {
+  return detectCaptureSupport({ preference: 'webm-first' }).supported
 }
 
-export function motionSupported(): boolean {
-  return typeof MediaRecorder !== 'undefined'
-    && typeof HTMLCanvasElement !== 'undefined'
-    && typeof HTMLCanvasElement.prototype.captureStream === 'function'
-    && Boolean(pickMime())
+export function motionSupportReasons(): string[] {
+  return detectCaptureSupport({ preference: 'webm-first' }).reasons
 }
 
 function drawBase(ctx: CanvasRenderingContext2D, image: CanvasImageSource, w: number, h: number, p: number, style: MotionStyle) {
@@ -338,31 +333,10 @@ function buildSilentClock(audio: AudioContext, target: AudioNode, durationMs: nu
 }
 
 
-async function probeRecordedVideo(blob: Blob, expectedSeconds: number): Promise<{ duration: number | null; verified: boolean }> {
-  const url = URL.createObjectURL(blob)
-  try {
-    const video = document.createElement('video')
-    video.preload = 'metadata'
-    video.muted = true
-    const duration = await new Promise<number | null>((resolve) => {
-      let done = false
-      const finish = (value: number | null) => { if (done) return; done = true; window.clearTimeout(timer); resolve(value) }
-      const read = () => {
-        if (Number.isFinite(video.duration) && video.duration > 0) return finish(video.duration)
-        try { video.currentTime = 1e7 } catch { finish(null) }
-      }
-      video.onloadedmetadata = read
-      video.ondurationchange = () => { if (Number.isFinite(video.duration) && video.duration > 0) finish(video.duration) }
-      video.onerror = () => finish(null)
-      const timer = window.setTimeout(() => finish(null), 2600)
-      video.src = url
-    })
-    return { duration, verified: duration != null && Math.abs(duration - expectedSeconds) <= Math.max(.9, expectedSeconds * .09) }
-  } finally { URL.revokeObjectURL(url) }
-}
 export async function exportDesignVideo(plan: CompositionPlan, options: DesignVideoOptions = {}): Promise<DesignVideoResult> {
-  const mime = pickMime()
-  if (!mime) throw new Error('تسجيل الفيديو غير مدعوم في هذا المتصفح')
+  const support = detectCaptureSupport({ preference: 'webm-first' })
+  if (!support.supported) throw new Error(`تسجيل الفيديو غير مدعوم في هذا المتصفح — ${support.reasons[0]}`)
+  const mime = support.mime
   const profile = options.profile || recommendMotionProfile(plan)
   const timing = MOTION_PROFILES[profile] || MOTION_PROFILES.loop
   const durationMs = options.durationMs || timing.durationMs
@@ -374,102 +348,104 @@ export async function exportDesignVideo(plan: CompositionPlan, options: DesignVi
   const style = reducedMotion ? 'reveal' : (options.style || 'semantic')
   const audit = auditDesignMotion(plan, profile)
   if (!audit.ready) throw new Error(audit.warnings[0] || 'لم يجتز الفيديو بوابة الجاهزية')
-  const [image, logo] = await Promise.all([planToImage(plan), loadLogo()])
-  /* نُسطّح SVG مرة واحدة؛ رسم صورة SVG الأصلية في كل إطار يجبر المتصفح على
-     إعادة تنقيطها ويهبط بمعدل الفيديو إلى بضعة إطارات فقط. */
-  const base = document.createElement('canvas')
-  base.width = plan.format.width
-  base.height = plan.format.height
-  const baseContext = base.getContext('2d')
-  if (!baseContext) throw new Error('تعذّر تجهيز أصل فيديو المنشور')
-  baseContext.drawImage(image, 0, 0, base.width, base.height)
-  const canvas = document.createElement('canvas')
-  canvas.width = plan.format.width
-  canvas.height = plan.format.height
-  /* Canvas مفصول أو مخفي يُخنق في بعض Chromium إلى 2–3 إطارات/ثانية.
-     لذلك يظهر كنافذة إخراج حيّة صغيرة طوال التسجيل ثم يختفي فوراً. */
-  const previewWidth = Math.min(340, Math.max(220, window.innerWidth * .24))
-  canvas.style.cssText = `position:fixed;left:18px;bottom:18px;width:${previewWidth}px;height:auto;max-height:56vh;border-radius:18px;border:1px solid rgba(255,255,255,.28);box-shadow:0 24px 70px rgba(0,0,0,.32);pointer-events:none;z-index:2147483646;background:#0b0e12`
-  canvas.setAttribute('aria-hidden', 'true')
-  document.body.appendChild(canvas)
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('تعذّر تجهيز لوحة فيديو المنشور')
-  drawFrame(ctx, base, logo, plan, 0, style)
+  const visibility = trackVisibility()
+  if (visibility.hiddenAtStart) { visibility.dispose(); throw new Error('التبويب مخفي — أبقِ هذا التبويب ظاهراً أثناء التصدير ثم أعد المحاولة.') }
+  const session = createCaptureSession()
+  try {
+    const [image, logo] = await Promise.all([planToImage(plan), loadLogo()])
+    /* نُسطّح SVG مرة واحدة؛ رسم صورة SVG الأصلية في كل إطار يجبر المتصفح على
+       إعادة تنقيطها ويهبط بمعدل الفيديو إلى بضعة إطارات فقط. */
+    const base = document.createElement('canvas')
+    base.width = plan.format.width
+    base.height = plan.format.height
+    const baseContext = base.getContext('2d')
+    if (!baseContext) throw new Error('تعذّر تجهيز أصل فيديو المنشور')
+    baseContext.drawImage(image, 0, 0, base.width, base.height)
+    const canvas = document.createElement('canvas')
+    canvas.width = plan.format.width
+    canvas.height = plan.format.height
+    /* Canvas مفصول أو مخفي يُخنق في بعض Chromium إلى 2–3 إطارات/ثانية.
+       لذلك يظهر كنافذة إخراج حيّة صغيرة طوال التسجيل ثم يختفي فوراً (الجلسة تزيله في finally). */
+    const previewWidth = Math.min(340, Math.max(220, window.innerWidth * .24))
+    canvas.style.cssText = `position:fixed;left:18px;bottom:18px;width:${previewWidth}px;height:auto;max-height:56vh;border-radius:18px;border:1px solid rgba(255,255,255,.28);box-shadow:0 24px 70px rgba(0,0,0,.32);pointer-events:none;z-index:2147483646;background:#0b0e12`
+    canvas.setAttribute('aria-hidden', 'true')
+    document.body.appendChild(canvas)
+    session.node(canvas)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('تعذّر تجهيز لوحة فيديو المنشور')
+    drawFrame(ctx, base, logo, plan, 0, style)
 
-  const videoStream = canvas.captureStream(fps)
-  const videoTrack = videoStream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack | undefined
-  let audio: AudioContext | null = null
-  let stream: MediaStream = videoStream
-  try {
-    audio = new AudioContext()
-    const sink = audio.createMediaStreamDestination()
-    if (options.audio) buildSoundmark(audio, sink, plan, durationMs)
-    else buildSilentClock(audio, sink, durationMs)
-    stream = new MediaStream([...videoStream.getVideoTracks(), ...sink.stream.getAudioTracks()])
-  } catch { audio = null }
-  let recorder: MediaRecorder
-  try {
-    recorder = new MediaRecorder(stream, {
-      mimeType: mime,
-      videoBitsPerSecond: Math.max(6_000_000, Math.round(plan.format.width * plan.format.height * fps * 0.14)),
-      ...(audio ? { audioBitsPerSecond: 96_000 } : {}),
-    })
-  } catch (error) {
-    stream.getTracks().forEach((track) => track.stop())
-    videoStream.getTracks().forEach((track) => track.stop())
-    await audio?.close().catch(() => { /* لم يبدأ التسجيل */ })
-    canvas.remove()
-    throw new Error(`تعذّر بدء MediaRecorder: ${error instanceof Error ? error.message : String(error)}`)
-  }
-  const chunks: BlobPart[] = []
-  recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
-  const finished = new Promise<Blob>((resolve, reject) => {
-    recorder.onstop = () => resolve(new Blob(chunks, { type: mime.split(';')[0] }))
-    recorder.onerror = () => reject(new Error('MediaRecorder أبلغ عن خطأ أثناء تسجيل فيديو المنشور.'))
-  })
-  recorder.start(250)
-  let frameCount = 1
-  const startedAt = performance.now()
-  await new Promise<void>((resolve) => {
-    let raf = 0
-    let watchdog = 0
-    let finished = false
-    const step = (scheduleNext = true) => {
-      if (finished) return
-      const now = performance.now()
-      const elapsed = now - startedAt
-      const ratio = clamp(elapsed / durationMs)
-      drawFrame(ctx, base, logo, plan, ratio, style)
-      frameCount += 1
-      videoTrack?.requestFrame?.()
-      options.onProgress?.(ratio)
-      if (ratio >= 1) {
-        finished = true; cancelAnimationFrame(raf); window.clearInterval(watchdog); resolve(); return
-      }
-      if (scheduleNext) raf = requestAnimationFrame(() => step(true))
+    const videoStream = session.stream(canvas.captureStream(fps))
+    const videoTrack = videoStream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack | undefined
+    const audioRequested = Boolean(options.audio)
+    let stream: MediaStream = videoStream
+    let hasAudioTrack = false
+    let meter: ReturnType<typeof createAudioMeter> | null = null
+    try {
+      const audio = session.audio(new AudioContext())
+      if (audio.state === 'suspended') await audio.resume().catch(() => { /* يكشفه مقياس الصوت */ })
+      const sink = audio.createMediaStreamDestination()
+      if (audioRequested) {
+        meter = createAudioMeter(audio, sink)
+        buildSoundmark(audio, meter.input, plan, durationMs)
+      } else buildSilentClock(audio, sink, durationMs)
+      const tracks = sink.stream.getAudioTracks()
+      hasAudioTrack = tracks.length > 0
+      stream = session.stream(new MediaStream([...videoStream.getVideoTracks(), ...tracks]))
+    } catch { hasAudioTrack = false; meter = null }
+    let recorder: MediaRecorder
+    try {
+      recorder = new MediaRecorder(stream, {
+        mimeType: mime,
+        videoBitsPerSecond: Math.max(6_000_000, Math.round(plan.format.width * plan.format.height * fps * 0.14)),
+        ...(hasAudioTrack ? { audioBitsPerSecond: 96_000 } : {}),
+      })
+    } catch (error) {
+      throw new Error(`تعذّر بدء MediaRecorder: ${error instanceof Error ? error.message : String(error)}`)
     }
-    raf = requestAnimationFrame(() => step(true))
-    watchdog = window.setInterval(() => step(false), Math.max(20, Math.round(1000 / fps)))
-  })
-  /* نمنح المرمّز نبضةً أخيرة ليكتب الإطار الختامي قبل إغلاق الحاوية. */
-  videoTrack?.requestFrame?.()
-  await new Promise((resolve) => window.setTimeout(resolve, Math.max(80, Math.round(2000 / fps))))
-  recorder.requestData()
-  recorder.stop()
-  const blob = await finished
-  stream.getTracks().forEach((track) => track.stop())
-  if (stream !== videoStream) videoStream.getTracks().forEach((track) => track.stop())
-  await audio?.close().catch(() => { /* أُغلق مسبقاً */ })
-  canvas.remove()
-  const expectedSeconds = durationMs / 1000
-  if (!blob.size || blob.size < 18_000) throw new Error('فشل التصدير: ملف الفيديو فارغ أو أصغر من أن يحتوي فيديو حقيقياً.')
-  if (frameCount < Math.max(12, Math.floor(expectedSeconds * Math.min(fps, 30) * .45))) throw new Error('فشل التصدير: عدد الإطارات الفعلية غير كافٍ للمدة المطلوبة.')
-  const probe = await probeRecordedVideo(blob, expectedSeconds)
-  if (probe.duration != null && !probe.verified) throw new Error(`فشل التصدير: مدة الملف الفعلية ${probe.duration.toFixed(2)}ث لا تطابق ${expectedSeconds.toFixed(2)}ث.`)
-  const finalQuality=MotionAudit({semantic:true,loopSafe:true,meaningful:true,fps,durationValid:probe.duration==null||probe.verified,singleFrame:frameCount<2,excessGlow:false,textRotation:false,clippedText:false,fallbackFont:!staticAudit.fontsEmbedded,logoDistorted:!staticAudit.sealEmbedded,exportMismatch:!staticAudit.previewMatchesExport,excessiveZoom:false,bounce:false,shake:false,everythingMoves:false,recorderError:false})
-  assertQualityGate(finalQuality,'فيديو المنشور')
-  const extension = mime.includes('mp4') ? 'mp4' : 'webm'
-  return { blob, mime, extension, seconds: probe.duration || expectedSeconds, frameCount, verifiedDuration: probe.verified, audit }
+    const collector = collectRecording(recorder, mime, 'MediaRecorder أبلغ عن خطأ أثناء تسجيل فيديو المنشور.')
+    recorder.start(250)
+    /* حلقة واحدة منضبطة؛ خطأ المسجِّل يوقفها فوراً، والزمن زمن حائط فلا يمتد الفيديو على جهاز بطيء. */
+    const loop = createFrameLoop({
+      fps,
+      onFrame: ({ t }) => {
+        const failure = collector.failure()
+        if (failure) throw failure
+        const ratio = clamp((t * 1000) / durationMs)
+        drawFrame(ctx, base, logo, plan, ratio, style)
+        videoTrack?.requestFrame?.()
+        meter?.sample()
+        options.onProgress?.(ratio)
+        if (ratio >= 1) return false
+      },
+    })
+    const stats = await loop.run()
+    const frameCount = stats.frames + 1 /* الإطار الصفري المرسوم قبل البدء */
+    /* نمنح المرمّز نبضةً أخيرة ليكتب الإطار الختامي قبل إغلاق الحاوية. */
+    videoTrack?.requestFrame?.()
+    await new Promise((resolve) => window.setTimeout(resolve, Math.max(80, Math.round(2000 / fps))))
+    if (recorder.state === 'recording') recorder.requestData()
+    const blob = await collector.finish()
+    const expectedSeconds = durationMs / 1000
+    const { verification, measured } = await verifyRecordedVideo({
+      blob, frames: frameCount, fps: Math.min(fps, 30), minBytes: 18_000,
+      expected: { seconds: expectedSeconds, width: plan.format.width, height: plan.format.height, toleranceSeconds: Math.max(.9, expectedSeconds * .09) },
+      extraChecks: [
+        visibility.wasHidden ? { id: 'visibility', label: 'ظهور التبويب', status: 'fail' as const, detail: 'أُخفي التبويب أثناء التسجيل؛ قد تكون الإطارات متقطعة.' } : null,
+        evaluateAudio(audioRequested, hasAudioTrack, meter ? meter.peak : null),
+      ],
+    })
+    const hard = firstFailure(verification)
+    if (hard) throw new Error(hard)
+    const durationCheck = verification.checks.find((c) => c.id === 'duration')
+    const finalQuality=MotionAudit({semantic:true,loopSafe:true,meaningful:true,fps,durationValid:durationCheck?.status!=='fail',singleFrame:frameCount<2,excessGlow:false,textRotation:false,clippedText:false,fallbackFont:!staticAudit.fontsEmbedded,logoDistorted:!staticAudit.sealEmbedded,exportMismatch:!staticAudit.previewMatchesExport,excessiveZoom:false,bounce:false,shake:false,everythingMoves:false,recorderError:false})
+    assertQualityGate(finalQuality,'فيديو المنشور')
+    const extension = mime.includes('mp4') ? 'mp4' : 'webm'
+    return { blob, mime, extension, seconds: measured.duration || expectedSeconds, frameCount, verifiedDuration: durationCheck?.status === 'pass', verification, audit }
+  } finally {
+    visibility.dispose()
+    await session.dispose()
+  }
 }
 
 export async function downloadDesignVideo(plan: CompositionPlan, options?: DesignVideoOptions): Promise<DesignVideoResult> {

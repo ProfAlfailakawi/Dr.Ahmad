@@ -292,8 +292,8 @@ export default function HumanCoreHero() {
         <span style={{ insetInlineEnd: '12%', bottom: '28%' }}>مستقبل</span>
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.08fr_.92fr] md:gap-12 lg:gap-16">
-        <div className="order-1 relative md:order-2 md:-translate-x-6 lg:-translate-x-10">
+      <div className="human-core__grid relative z-10 mx-auto grid w-full max-w-shell items-center gap-8 md:grid-cols-[1.08fr_.92fr] md:gap-12 lg:gap-16">
+        <div className="human-core__copy order-1 relative md:order-2 md:-translate-x-6 lg:-translate-x-10">
           <h1 className="human-core__title font-display text-[clamp(2.1rem,5.4vw,4rem)] font-bold leading-[1.25] text-ink">
             <span className="-my-[0.3em] block overflow-hidden py-[0.3em]">
               <motion.span
@@ -332,7 +332,7 @@ export default function HumanCoreHero() {
           </motion.div>
         </div>
 
-        <div className="order-2 flex justify-center md:order-1">
+        <div className="human-core__visual order-2 flex justify-center md:order-1">
           <motion.div style={mobileVisual ? undefined : { y: portraitY }} className="human-core__portrait-shell w-full max-w-[310px] md:max-w-[520px]">
             <motion.div
               ref={portraitRef}
@@ -355,7 +355,7 @@ export default function HumanCoreHero() {
         </div>
 
         <motion.div
-          className="order-3 md:col-span-2"
+          className="human-core__cvrow order-3 md:col-span-2"
           initial={reduce ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: .5, delay: .76, ease: EASE }}

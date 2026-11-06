@@ -32,7 +32,7 @@ function Open({ title, children }: { title: string; children: React.ReactNode })
 }
 
 const Dots = ({ items }: { items: CvTextItem[] }) => (
-  <ul className="grid gap-2.5 md:grid-cols-2 md:gap-x-10">
+  <ul className="grid gap-2.5 min-[600px]:grid-cols-2 md:gap-x-10">
     {items.map((item) => (
       <li key={item.id} className="relative ps-5 text-[.95rem] font-light leading-[1.8] text-ink">
         <span className="absolute right-0 top-[.75em] h-1.5 w-1.5 rounded-full bg-accent" />
@@ -69,7 +69,7 @@ function CourseArchive({ items }: { items: CvTextItem[] }) {
             </span>
           </summary>
           <div className="border-t border-hair px-4 py-4 sm:px-5">
-            <ul dir={english ? 'ltr' : 'rtl'} className="grid gap-2.5 md:grid-cols-2">
+            <ul dir={english ? 'ltr' : 'rtl'} className="grid gap-2.5 min-[600px]:grid-cols-2">
               {group.items.map((item, index) => (
                 <li key={item.id} className={`rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] font-light leading-[1.65] text-ink ${english ? 'text-left' : 'text-right'}`}>
                   <span className="me-2 text-[.7rem] font-semibold text-accent/70">{index + 1}</span>
@@ -140,7 +140,7 @@ export default function CV() {
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
           <FadeUp delay={0.04}>
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
-            <div className="cv-impact-grid mb-5 grid grid-cols-2 gap-6 md:grid-cols-4" {...sealsDraw.props}>
+            <div className="cv-impact-grid mb-5 grid grid-cols-2 gap-6 min-[600px]:grid-cols-4" {...sealsDraw.props}>
               {[
                 { n: books.length, k: '', l: arabicCountLabel(books.length, BOOK_FORMS) },
                 { n: papers.length, k: '', l: arabicCountLabel(papers.length, PAPER_FORMS) },
@@ -226,7 +226,7 @@ export default function CV() {
 
               <Accordion title="الأبحاث والكتب" count={`${books.length} + ${papers.length}`}>
                 <div className="grid gap-10">
-                  <div className="grid gap-10 md:grid-cols-2">
+                  <div className="grid gap-10 min-[600px]:grid-cols-2">
                     <section>
                       <div className="flex items-baseline justify-between gap-4">
                         <h3 className="font-display text-[1.05rem] font-semibold text-ink">المؤلفات</h3>
@@ -258,7 +258,7 @@ export default function CV() {
                       </div>
                       <span className="text-[.78rem] text-soft">{papers.length}</span>
                     </div>
-                    <ol className="mt-5 grid gap-3 md:grid-cols-2">
+                    <ol className="mt-5 grid gap-3 min-[600px]:grid-cols-2">
                       {papers.map((paper, index) => (
                         <li key={paper.slug} className="group rounded-2xl border border-hair bg-canvas p-4 transition-colors hover:border-accent/[.55] hover:bg-wash">
                           <a href={paper.url} className="block" aria-label={`فتح البحث: ${paper.title}`}>

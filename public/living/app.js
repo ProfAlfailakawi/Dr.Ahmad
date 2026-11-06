@@ -3,9 +3,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=8';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=8';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=8';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=9';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=9';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=9';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -462,15 +462,29 @@ let ar = null, rotor = null;
 
 const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
 
+// The recognition file is stored gzipped (a third of the size); unpack it once per visit.
+const targetCache = new Map();
+function targetsURL(file) {
+  if (!targetCache.has(file)) targetCache.set(file, (async () => {
+    const url = asset(`${file}?v=9`);
+    if (!file.endsWith('.gz')) return url;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('targets ' + res.status);
+    const blob = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).blob();
+    return URL.createObjectURL(blob);
+  })().catch((e) => { targetCache.delete(file); throw e; }));
+  return targetCache.get(file);
+}
+
 async function startAR(id = packId) {
   packId = id;
   const pack = PACKS.find((p) => p.id === id);
   await enterExp('ar');
-  $('loading').classList.remove('hidden'); $('loadingText').textContent = 'نجهّز الكاميرا…';
+  $('loading').classList.remove('hidden'); $('loadingText').textContent = 'نجهّز الكاميرا… (أول مرة تحتاج لحظات فقط)';
   try {
     const { MindARThree } = await import('mindar-image-three');
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=8`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: await targetsURL(pack.file), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 3, missTolerance: 10,
     });
     const { renderer, scene, camera } = mind;
@@ -513,22 +527,23 @@ async function startAR(id = packId) {
       };
       return a;
     });
-    let seen = false, lastSeen = performance.now(), rotating = false, ignoreUntil = 0;
+    let seen = false, lastSeen = performance.now(), rotating = false, ignoreUntil = 0, swappedAt = performance.now();
     const nextPack = async () => {
       if (rotating || !mind.controller) return; rotating = true;
       try {
         packNo = (packNo + 1) % PACKS.length; ignoreUntil = performance.now() + 5000;
-        await mind.controller.addImageTargets(asset(`${PACKS[packNo].file}?v=8`));
-        ids = PACKS[packNo].ids; packId = PACKS[packNo].id; ignoreUntil = performance.now() + 450;
+        await mind.controller.addImageTargets(await targetsURL(PACKS[packNo].file));
+        ids = PACKS[packNo].ids; packId = PACKS[packNo].id; ignoreUntil = performance.now() + 450; swappedAt = performance.now();   // the dwell is counted from the END of the swap
       } catch (err) { console.warn('pack swap failed', err); }
       rotating = false;
     };
-    // Warm the other packs in the background so every swap is instant.
-    (async () => { for (const p of PACKS) { if (p === pack) continue; try { await fetch(asset(`${p.file}?v=8`)); } catch { /* offline */ } } })();
-    if (!params.has('norotate')) rotor = setInterval(() => { if (!seen && performance.now() - lastSeen > 1700 && !document.hidden) nextPack(); }, 600);
+    // Several packs (only if the book ever grows past one file): each gets a fair look, counted from the END of its swap.
+    const DWELL = 1700;
+    if (PACKS.length > 1 && !params.has('norotate')) rotor = setInterval(() => { if (!seen && performance.now() - Math.max(lastSeen, swappedAt) > DWELL && !document.hidden) nextPack(); }, 250);
     bindTaps($('arStage'));
     bindGestures($('arStage'));
     await mind.start();
+    lastSeen = swappedAt = performance.now();   // the first pack is looked at from the moment the camera is really running
     let last = performance.now();
     renderer.setAnimationLoop(() => {
       const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;

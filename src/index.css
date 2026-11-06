@@ -8763,14 +8763,56 @@ html.site-silent [data-draw] *, html.site-silent [data-draw]::before { transitio
 }
 
 
-/* iPhone Duo folded postures only. Unsupported/disabled Safari preview features
-   leave the existing site styles unchanged on every other device and posture. */
-@media (device-posture: folded) and (horizontal-viewport-segments: 2) {
-  html, body, #root { min-width: 0; max-width: 100%; }
-}
-@media (device-posture: folded) and (vertical-viewport-segments: 2) {
-  html, body, #root { min-width: 0; max-width: 100%; }
-}
-@media (device-posture: folded) and (orientation: landscape) and (max-height: 520px) {
+/* ============================================================
+   iPhone Duo — تخطيط بحسب العرض الفعلي لا بحسب الجهاز.
+   نقاط التحويل: 600 (نصف/مفتوح طولياً) · 768 (md) · 1100.
+   device-posture وviewport-segments معطّلتان افتراضياً في Safari،
+   فلا يُبنى عليهما شيء.
+   ============================================================ */
+
+/* لا أفقياً مهما ضاق النصف المنفصل. */
+html, body, #root { min-width: 0; max-width: 100%; }
+
+/* ارتفاع قصير (مطوي عرضياً، آيفون عرضياً): حافة آمنة للتمرير إلى المراسي. */
+@media (max-height: 520px) {
   html { scroll-padding-block: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-bottom)); }
+}
+
+/* الغلاف الطباعي للبطل: عمودان من 600px بدل تكرار تخطيط الهاتف.
+   الصورة على اليمين والنص على اليسار كما في md، والبطاقة تمتد عبر العمودين. */
+@media (min-width: 600px) and (max-width: 767px) {
+  .human-core { align-items: center; padding-top: 5.5rem; padding-bottom: 3.5rem; }
+  .human-core .human-core__grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    gap: 1.5rem 2rem;
+  }
+  .human-core .human-core__copy { order: 2; }
+  .human-core .human-core__visual { order: 1; }
+  .human-core .human-core__cvrow { grid-column: 1 / -1; }
+  .human-core .human-core__tagline { white-space: normal; text-wrap: balance; font-size: .9rem; }
+  .human-core .human-core__title { font-size: clamp(2rem, 6.4vw, 2.6rem); }
+  .human-core .human-core__portrait-shell { max-width: min(300px, calc((100svh - 9rem) * .657)); min-width: 12rem; }
+  .human-core .human-core__portrait-media { max-height: none; }
+}
+
+/* الشاشة الواسعة القصيرة (مفتوح عرضياً 951×600، نصف عريض): الصورة لا تتجاوز
+   ارتفاع النافذة، فيبقى العنوان واسم الدكتور في الشاشة الأولى. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .human-core .human-core__portrait-shell { max-width: min(520px, max(15rem, calc((100svh - 9rem) * .657))); }
+  .human-core .human-core__portrait-media { max-height: none; }
+}
+
+/* أهداف لمس ≥44px على الشاشات اللمسية (روابط التواصل في التذييل). */
+@media (pointer: coarse) {
+  .my-space-trigger,
+  .site-footer__icon-link,
+  .site-social-dock__socials a,
+  .site-social-dock__academic a { min-inline-size: 2.75rem; min-block-size: 2.75rem; }
+  .site-social-dock__socials a,
+  .site-social-dock__academic a { display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* الزر العائم لا يحجب آخر بطاقة في المحتوى من 640 إلى 1023px. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  #main { padding-bottom: 4.5rem; }
 }

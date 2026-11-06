@@ -1,0 +1,162 @@
+/* ═══════════════════════════════════════════════════════════════════
+   جولة الجمال (Duo) — تُحمَّل أخيراً، تُضيف ولا تُعيد البناء.
+   كل شيء داخل هوية الموقع: ورقيّ هادئ، حدّ شعريّ قبل الظلّ، رموز لونية
+   فقط (لا لون حرفي)، حركة transform/opacity بمنحنى --E وتحترم
+   prefers-reduced-motion. الهدف: صفحات ما تحت البطل والصفحات الداخلية
+   والتذييل بالجمال نفسه الذي في البطل، خصوصاً بين ٦٠٠ و١٠٠٠px.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── ١) الرأس: لا نصٌّ شبحيّ من تحته. مصمت تقريباً مع تمويه ─────────── */
+.site-nav.is-solid {
+  background: rgb(var(--c-canvas) / .995) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  box-shadow: 0 1px 0 var(--c-hair), 0 10px 24px -22px rgb(var(--c-ink) / .35);
+}
+html.dark .site-nav.is-solid { background: rgb(var(--c-canvas) / .995) !important; }
+
+/* ── ٢) رأس الصفحة الداخلية: لا هوّة فارغة تحت المقدمة ──────────────── */
+@media (min-width: 600px) {
+  .page-head { padding-bottom: clamp(1.75rem, 3.2vw, 2.75rem) !important; }
+  .page-head p { margin-top: 12px !important; }
+}
+
+/* ── ٣) بطاقات: عمق هادئ مبنيّ على الحدّ ثم لمعة داخلية دقيقة ─────────── */
+.spatial-card.rounded-2xl,
+a.group.rounded-2xl.border,
+.article-featured-rail .spatial-card {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), 0 1px 2px -1px rgb(var(--c-ink) / .08);
+  transition: border-color .35s var(--E, cubic-bezier(.2,.7,.2,1)), box-shadow .35s var(--E, cubic-bezier(.2,.7,.2,1)), translate .18s var(--E, cubic-bezier(.2,.7,.2,1));
+}
+html.dark .spatial-card.rounded-2xl,
+html.dark a.group.rounded-2xl.border { box-shadow: inset 0 1px 0 rgb(255 255 255 / .04); }
+@media (hover: hover) {
+  .spatial-card.rounded-2xl:hover,
+  a.group.rounded-2xl.border:hover {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), 0 14px 28px -22px rgb(var(--c-ink) / .32);
+  }
+}
+/* بطاقات المختارات: لا فراغ كبير داخلها */
+.article-featured-rail .spatial-card { min-height: 0; }
+.article-featured-rail .spatial-card > span[aria-hidden] { padding-top: 1rem; }
+
+/* شريط تصفية المقالات اللاصق: مصمت كي لا يلوح نصّ الصفوف من تحته */
+.articles-filter-bar { background: rgb(var(--c-canvas)) !important; }
+
+/* ── ٤) سجل المقالات: صفّ مدروس (تاريخ | عنوان+مقتطف | وسم) ─────────── */
+@media (min-width: 600px) {
+  #articles-list li > a.group {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+    column-gap: clamp(1rem, 2.4vw, 2rem);
+    align-items: start;
+    padding-block: 1.35rem;
+    border-radius: .75rem;
+    transition: background-color .3s var(--E, cubic-bezier(.2,.7,.2,1));
+  }
+  #articles-list li > a.group:hover { background: rgb(var(--c-wash) / .7); }
+  #articles-list li > a.group > time { padding-top: .3rem; font-size: .78rem; letter-spacing: .01em; }
+  #articles-list li > a.group > span:last-child {
+    align-self: start;
+    margin-top: .2rem;
+    padding: .2rem .7rem;
+    border: 1px solid var(--c-hair);
+    border-radius: 999px;
+    background: rgb(var(--c-wash));
+    color: rgb(var(--c-accent));
+    font-size: .72rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  #articles-list li > a.group span[class*="max-w-"] { max-width: 68ch; }
+}
+
+/* ── ٥) بطاقات السِّيَر: أعمدة متساوية بلا قصّ ولا ظلّ يقطع الحدّ ──── */
+#cv-downloads-title ~ * { position: relative; }
+section[aria-labelledby="cv-downloads-title"] > div:first-child { align-items: center; }
+section[aria-labelledby="cv-downloads-title"] > div:first-child > span {
+  padding: .25rem .8rem; border: 1px solid var(--c-hair); border-radius: 999px;
+  background: rgb(var(--c-wash)); font-size: .72rem;
+}
+section[aria-labelledby="cv-downloads-title"] .grid > a {
+  min-height: 44px;
+  overflow: visible;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .5);
+}
+@media (min-width: 600px) {
+  section[aria-labelledby="cv-downloads-title"] .grid { gap: 1.1rem; }
+  section[aria-labelledby="cv-downloads-title"] .grid > a { padding: 1.6rem 1rem; }
+}
+
+/* ── ٦) صفحة التواصل: الخدمات ثلاث بطاقات متساوية بدل صفّ ملتفّ ─────── */
+.contact-services { list-style: none; }
+@media (min-width: 600px) {
+  .contact-services {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .9rem !important;
+    width: 100% !important;
+    max-width: 52rem !important;
+    align-items: stretch !important;
+  }
+  .contact-services > li {
+    flex-direction: column;
+    justify-content: center;
+    gap: .75rem !important;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--c-hair);
+    border-radius: 1rem;
+    background: rgb(var(--c-wash) / .6);
+    text-align: center !important;
+    line-height: 1.7;
+    font-size: .92rem !important;
+    text-wrap: balance;
+    align-items: center;
+  }
+  .contact-services > li > span { height: 3rem !important; width: 3rem !important; background: rgb(var(--c-canvas)) !important; }
+}
+
+/* ── ٧) تذييل: مجلّد مرتّب بدل أيقونات عائمة في فراغ ───────────────── */
+.site-footer, .home-social-footer { position: relative; }
+@media (min-width: 600px) {
+  .home-footer-tools, .site-footer__utility { gap: .6rem !important; }
+  .home-footer-tools .site-footer__item,
+  .site-footer__utility .site-footer__item {
+    min-width: 5.5rem;
+    padding: .55rem .8rem .5rem;
+    border: 1px solid var(--c-hair);
+    border-radius: 1rem;
+    background: rgb(var(--c-wash) / .55);
+    transition: border-color .3s var(--E, cubic-bezier(.2,.7,.2,1)), background-color .3s var(--E, cubic-bezier(.2,.7,.2,1));
+  }
+  .home-footer-tools .site-footer__item:hover,
+  .site-footer__utility .site-footer__item:hover { border-color: rgb(var(--c-accent) / .45); background: rgb(var(--c-accent) / .05); }
+}
+
+/* ── ٨) إيقاع الأقسام: مسافات رأسية متناسبة مع النافذة (٦٠٠–١١٠٠) ──── */
+@media (min-width: 600px) and (max-width: 1100px) {
+  .home-page section.border-t:not(.home-social-footer):not(.human-core),
+  .home-page section[class*="md:py-["] {
+    padding-block: clamp(2.25rem, 5.2vw, 3.6rem) !important;
+  }
+  .home-page section.bg-wash { padding-block: clamp(2.5rem, 5.6vw, 3.9rem) !important; }
+  .editorial-breath-section { padding-block: 3rem !important; }
+  .home-page .home-social-footer { padding-block: 2rem !important; }
+}
+
+/* ── ٨ب) السيرة: القوائم الطويلة عمودان عند ٧٢٠px+ بدل عمود واحد نصفه فارغ ── */
+@media (min-width: 720px) {
+  .content-cv ul.space-y-6,
+  .content-cv ul.space-y-5 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 2.25rem;
+  }
+  .content-cv ul.space-y-6 > li,
+  .content-cv ul.space-y-5 > li { margin: 0 !important; }
+}
+
+/* ── ٩) تقليل الحركة ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .spatial-card, a.group, .site-footer__item { transition: none !important; }
+}

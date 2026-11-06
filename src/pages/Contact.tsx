@@ -37,7 +37,7 @@ export default function Contact() {
               <Reveal>لنعمل معاً.</Reveal>
             </h1>
             {/* ثلاث خدمات كرموز موجزة بدل فقرة — العرض فقط */}
-            <ul className="mx-auto mt-8 flex w-fit max-w-full flex-col items-start gap-4 text-start text-ink/80 sm:w-auto sm:max-w-[760px] sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
+            <ul className="contact-services mx-auto mt-8 flex w-fit max-w-full flex-col items-start gap-4 text-start text-ink/80 sm:w-auto sm:max-w-[760px] sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-8">
               {SERVICES.map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-3 text-[1rem] font-light">
                   <span aria-hidden className="grid h-11 w-11 place-items-center rounded-full border border-hair bg-wash text-accent"><Icon size={20} strokeWidth={1.6} /></span>

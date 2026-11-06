@@ -1,23 +1,20 @@
 // One geometric vote over ALL the pages at once: real matches agree on where the page sits in the picture, chance
-// matches scatter. Built on the phone from the recognition file, so it needs no extra download.
+// matches scatter. This worker downloads the pack itself, so nothing here touches the page's main thread.
 // SEL = the balanced descriptor bits used for hashing (6 tables of 23 bits), chosen offline from the book itself.
 const SEL = [[648,421,24,664,56,171,660,212,340,112,494,580,422,385,25,542,519,406,87,308,558,162,111],[635,459,47,535,224,32,348,159,261,322,379,440,248,292,355,323,103,550,203,0,600,485,1],[477,476,260,463,436,102,562,225,241,3,347,299,7,233,277,263,601,433,252,457,231,549,18],[661,78,278,482,649,240,227,270,311,16,200,267,9,137,179,565,557,296,222,36,27,54,10],[255,31,543,544,219,434,242,363,456,94,559,276,173,74,293,45,141,180,362,612,53,479,249],[386,611,419,628,121,93,220,183,442,172,428,420,629,164,466,603,46,291,556,89,215,184,120]];
 const W = 21, MAX_D = 100, TOP = 3, STEP_ANGLE = Math.PI / 6;
 let n = 0, targets = 0, desc, lab, wx, wy, ws, wa, cx, cy, keys, items, seen, stamp = 0;
 const popcount = (v) => { v -= (v >>> 1) & 0x55555555; v = (v & 0x33333333) + ((v >>> 2) & 0x33333333); return (((v + (v >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; };
 const hash = (t, a, o, m) => { let h = m; const s = SEL[t]; for (let i = 0; i < s.length; i++) { const b = s[i]; h = (h * 2) + ((a[o + (b >> 5)] >>> (b & 31)) & 1); } return h; };
-function build(list) {
-  targets = list.length; n = 0;
-  for (const t of list) for (const k of t) n += k.maximaPoints.length + k.minimaPoints.length;
-  desc = new Int32Array(n * W); lab = new Uint8Array(n); wx = new Float32Array(n); wy = new Float32Array(n); ws = new Float32Array(n); wa = new Float32Array(n);
-  cx = new Float32Array(targets); cy = new Float32Array(targets);
-  const maxima = new Uint8Array(n); let i = 0;
-  list.forEach((t, ti) => {
-    cx[ti] = t[0].width / t[0].scale / 2; cy[ti] = t[0].height / t[0].scale / 2;
-    for (const k of t) for (const [pts, m] of [[k.maximaPoints, 1], [k.minimaPoints, 0]]) for (const p of pts) {
-      desc.set(p.descriptors, i * W); lab[i] = ti; maxima[i] = m; wx[i] = p.x / k.scale; wy[i] = p.y / k.scale; ws[i] = p.scale / k.scale; wa[i] = p.angle; i++;
-    }
-  });
+// The pack holds every point in fixed columns, so reading it is a view over the download, not a decode.
+function build(buffer) {
+  const size = new DataView(buffer).getUint32(0, true), head = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 4, size)));
+  n = head.n; targets = head.pages.length;
+  let o = (4 + size + 3) & ~3;
+  const take = (Type, len) => { const a = new Type(buffer, o, len); o += a.byteLength; return a; };
+  desc = take(Int32Array, n * W); wx = take(Float32Array, n); wy = take(Float32Array, n); ws = take(Float32Array, n); wa = take(Float32Array, n); lab = take(Uint8Array, n);
+  const maxima = take(Uint8Array, n);
+  cx = Float32Array.from(head.pages, (p) => p.cx); cy = Float32Array.from(head.pages, (p) => p.cy);
   keys = []; items = []; seen = new Int32Array(n);
   for (let t = 0; t < SEL.length; t++) {
     const sorted = new Float64Array(n);
@@ -52,13 +49,20 @@ function query(points) {
   }
   return Array.from(best.keys()).filter((i) => best[i] > 0).sort((a, b) => best[b] - best[a]).slice(0, TOP);
 }
-onmessage = ({ data }) => {
-  if (data.type === 'setup') {
-    build(data.matchingDataList);
-    // A few rehearsal votes, so the phone's JavaScript engine has optimised this code before the first real frame.
-    const sample = Array.from({ length: 150 }, (_, i) => { const k = (i * 797) % n; return { descriptors: desc.subarray(k * W, k * W + W), maxima: i % 2 === 0, x: i, y: i, scale: 2, angle: 0 }; });
-    for (let i = 0; i < 6; i++) query(sample);
-    postMessage({ type: 'ready' }); return;
+onmessage = async ({ data }) => {
+  if (data.type === 'load') {
+    try {
+      const res = await fetch(data.url);
+      if (!res.ok) throw new Error('pack ' + res.status);
+      const buffer = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+      build(buffer);
+      // A few rehearsal votes, so the phone's JavaScript engine has optimised this code before the first real frame.
+      const sample = Array.from({ length: 150 }, (_, i) => { const k = (i * 797) % n; return { descriptors: desc.subarray(k * W, k * W + W), maxima: i % 2 === 0, x: i, y: i, scale: 2, angle: 0 }; });
+      for (let i = 0; i < 6; i++) query(sample);
+      const copy = buffer.slice(0);   // the page itself needs the same bytes to unpack candidates
+      postMessage({ type: 'ready', buffer: copy }, [copy]);
+    } catch (e) { postMessage({ type: 'failed', message: String(e) }); }
+    return;
   }
-  if (data.type === 'query') { const t = performance.now(); postMessage({ type: 'cands', list: query(data.points), ms: performance.now() - t }); }
+  if (data.type === 'query') postMessage({ type: 'cands', list: query(data.points) });
 };

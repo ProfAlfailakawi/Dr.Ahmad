@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=10';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=10';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=10';
-import { captureWorkers, installFast } from './fast.js?v=10';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=11';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=11';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=11';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=11';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -463,21 +463,12 @@ let ar = null, rotor = null;
 
 const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
 
-// The recognition file is stored gzipped (a third of the size); unpack it once per visit.
-const targetCache = new Map();
-function targetsURL(file) {
-  if (!targetCache.has(file)) targetCache.set(file, (async () => {
-    const url = asset(`${file}?v=10`);
-    if (!file.endsWith('.gz')) return url;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('targets ' + res.status);
-    const blob = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).blob();
-    return URL.createObjectURL(blob);
-  })().catch((e) => { targetCache.delete(file); throw e; }));
-  return targetCache.get(file);
-}
-
+const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=11`), location.href).href;
 let fastWorkers = [];
+function packFailed() {
+  $('loading').classList.remove('hidden');
+  $('loadingText').textContent = 'تعذّر تحميل صفحات الكتاب. تأكد من الاتصال ثم افتح الصفحة من جديد.';
+}
 async function startAR(id = packId) {
   packId = id;
   const pack = PACKS.find((p) => p.id === id);
@@ -488,12 +479,12 @@ async function startAR(id = packId) {
     const cores = navigator.hardwareConcurrency || 4;
     fastWorkers = captureWorkers(Math.min(4, Math.max(2, cores - 2)));
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: await targetsURL(pack.file), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=11`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 1, missTolerance: 10,
     });
     // MindAR creates its controller inside start(); the fast matching is attached at that moment, before the pages load.
     let liveController = null;
-    Object.defineProperty(mind, 'controller', { configurable: true, get: () => liveController, set: (c) => { liveController = c; installFast(c, fastWorkers); } });
+    Object.defineProperty(mind, 'controller', { configurable: true, get: () => liveController, set: (c) => { liveController = c; installFast(c, fastWorkers, { url: PACK_URL(), onFail: packFailed }); } });
     const { renderer, scene, camera } = mind;
     applyLook(renderer);
     environment(renderer, scene);
@@ -576,7 +567,7 @@ async function startAR(id = packId) {
 }
 function stopAR() {
   clearInterval(rotor); rotor = null;
-  fastWorkers.forEach((w) => w.terminate()); fastWorkers.index?.terminate(); fastWorkers = [];
+  fastWorkers.forEach((w) => w.terminate()); stopPack(); fastWorkers = [];
   if (!ar) return;
   try { ar.mind.renderer.setAnimationLoop(null); ar.mind.stop(); } catch { /* already stopped */ }
   $('arStage').innerHTML = ''; ar = null;

@@ -16,6 +16,7 @@ import './components/dna/dna-theme.css'
 import './components/elevation.css'
 import './components/elevation-2.css'
 import './polish.css'
+import './beauty.css'
 import { installPolishReveal } from './lib/polish-reveal'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب

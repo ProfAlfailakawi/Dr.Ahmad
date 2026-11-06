@@ -156,6 +156,28 @@ section[aria-labelledby="cv-downloads-title"] .grid > a {
   .content-cv ul.space-y-5 > li { margin: 0 !important; }
 }
 
+/* ── ٨ج) أشرطة الفلترة اللاصقة في كل الصفحات (استماع، مقالات، وسائط…): مصمتة ── */
+[class*="md:bg-canvas/[.96]"],
+.listen-filter-bar { background-color: rgb(var(--c-canvas)) !important; }
+
+/* وسم التصنيف في سجل المقالات: كبسولة في كل العروض (حتى المطوي 382) */
+#articles-list li > a.group > span:last-child {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: .55rem;
+  padding: .2rem .7rem;
+  border: 1px solid var(--c-hair);
+  border-radius: 999px;
+  background: rgb(var(--c-wash));
+  color: rgb(var(--c-accent));
+  font-size: .72rem;
+  font-weight: 500;
+}
+@media (min-width: 600px) { #articles-list li > a.group > span:last-child { margin-top: .2rem; } }
+
+/* بطاقات «الآن» في الصفحة الرئيسية: لا ارتفاع أدنى يترك نصفها فارغاً */
+.rail div[data-hover].min-h-\[170px\] { min-height: 0; }
+
 /* ── ٩) تقليل الحركة ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .spatial-card, a.group, .site-footer__item { transition: none !important; }

@@ -40,15 +40,18 @@ export function buildDiagram(spec, ctx) {
     const placed = [];
     [...items].sort((a, b) => a.root.position.x - b.root.position.x).forEach((it) => {
       let lvl = 0;
-      const clash = (l) => placed.some((o) => o.lvl === l && Math.abs(o.x - it.root.position.x) < (o.w + it.w) / 2 + 0.01 && Math.abs(o.z - it.root.position.z) < 0.16);
+      // a label near the edge slides inward, so its first letters are never cut by the page
+      const limit = 0.485 - it.w / 2, labX = Math.max(-limit, Math.min(limit, it.root.position.x));
+      it.labDX = labX - it.root.position.x;
+      const clash = (l) => placed.some((o) => o.lvl === l && Math.abs(o.x - labX) < (o.w + it.w) / 2 + 0.01 && Math.abs(o.z - it.root.position.z) < 0.16);
       while (clash(lvl)) lvl++;
-      placed.push({ x: it.root.position.x, z: it.root.position.z, w: it.w, lvl });
+      placed.push({ x: labX, z: it.root.position.z, w: it.w, lvl });
       it.lvl = lvl;
       it.labY = 0.085 + lvl * 0.062;
       const sp = it.stem.userData.pts; void sp;
     });
   }
-  items.forEach((it) => { it.lab.position.y = it.labY; it.root.remove(it.stem); it.stem = inkPath([V(0, 0.008, 0), V(0, it.labY - 0.03, 0)], { width: 1.3, jitter: 0.0005, seed: it.i + 7, opacity: 0.75 }); it.root.add(it.stem); });
+  items.forEach((it) => { it.lab.position.y = it.labY; it.lab.position.x = it.labDX; it.root.remove(it.stem); it.stem = inkPath([V(0, 0.008, 0), V(it.labDX, it.labY - 0.03, 0)], { width: 1.3, jitter: 0.0005, seed: it.i + 7, opacity: 0.75 }); it.root.add(it.stem); });
 
   const eds = E.map((x, k) => {
     const A = items[x.a].root.position, B = items[x.b].root.position;

@@ -11,7 +11,9 @@ export function buildCompare(spec, ctx) {
   const cA = pal[0], cB = pal[1], cC = new THREE.Color(cA), cD = new THREE.Color(cB);
   const d = spec.data, A = d.a || { title: '', points: [] }, B = d.b || { title: '', points: [] };
   const rows = Math.max(A.points.length, B.points.length);
-  const [cu, cv] = spec.center || [0.5, 0.5];
+  // the block is wider than most printed pictures: keep it whole on the page instead of hanging over the edge
+  const [cu0, cv0] = spec.center || [0.5, 0.5];
+  const cu = Math.min(0.585, Math.max(0.415, cu0)), cv = cv0;
   const g = new THREE.Group(); g.position.copy(P(cu, cv, 0)); ctx.stage.add(g);
   const X = 0.225, W = 0.36, GAP = 0.014;          // a on the right, as Arabic reads
 
@@ -36,6 +38,9 @@ export function buildCompare(spec, ctx) {
     const guide = inkPath([V(sx * X - W / 2, 0.006, zl), V(sx * X + W / 2, 0.006, zl)], { color, width: 1.4, jitter: 0.001, seed: i * 2 + (sx > 0 ? 1 : 5), opacity: 0.6 });
     g.add(guide, s);
     cells.push({ s, guide, i, sx });
+    // the rows are small on a phone: a touch opens the sentence at reading size
+    const col = sx > 0 ? A : B;
+    ctx.tap(s, () => { if (!ready) return; ctx.sfx.pop?.(); ctx.ui.card({ tag: col.title, title: col.points[i], body: '', color }); });
   });
   addSide(pa, 1, cA); addSide(pb, -1, cB);
   // a soft pool of the leaning side's colour lights the page behind each column
@@ -88,7 +93,7 @@ export function buildCompare(spec, ctx) {
     ready() {
       ready = true;
       ctx.ui.slider({ label: 'حرّك الضوء', value: 0.5, onInput: (v) => { touched = true; tv = v; checkEnds(); } });
-      ctx.ui.hud('حرّك المنزلق: الضوء ينتقل بين الفكرتين');
+      ctx.ui.hud('حرّك المنزلق، والمس أي سطر لتقرأه');
     },
     update(t, dt, e) {
       if (!touched) tv = 0.5 + 0.5 * Math.sin(Math.max(0, t - 1) * 0.9 - 0.4);   // already swaying before it is touched

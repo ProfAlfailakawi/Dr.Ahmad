@@ -1,9 +1,9 @@
 // Offline cache for the living encyclopedia: after the first visit the app, its libraries, the fonts
 // and the recognition packs come from the phone, so it opens instantly even with a weak network.
-const CACHE = 'living-v10';
+const CACHE = 'living-v11';
 const BASE = new URL('./', self.location);                       // …/living/
 const PAGE = BASE.pathname === '/' ? BASE.href : BASE.href.slice(0, -1); // …/living (the page itself)
-const SHELL = ['app.js?v=10', 'experiences.js?v=10', 'kit.js?v=10', 'pencil.js?v=10', 'doors34.js?v=10', 'sound.js?v=10', 'fast.js?v=10', 'fast-index.js?v=10'].map((p) => new URL(p, BASE).href);
+const SHELL = ['app.js?v=11', 'experiences.js?v=11', 'kit.js?v=11', 'pencil.js?v=11', 'doors34.js?v=11', 'sound.js?v=11', 'boot.js?v=11', 'fast.js?v=11', 'fast-index.js?v=11', 'targets/all.stub.mind?v=11'].map((p) => new URL(p, BASE).href);
 const LIBS = [
   'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
   'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js',

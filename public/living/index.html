@@ -9,7 +9,6 @@
 <title>الموسوعة الحيّة</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --night: #14110d; --night-2: #221c15; --paper: #f7f3ea; --paper-2: #efe7d8; --ink: #1f1b16; --muted: #6f655a;
@@ -246,6 +245,9 @@
   "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
 } }
 </script>
+<script type="module" async src="/living/boot.js?v=12"></script>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/controller-mGt1s8dJ.js">
 </head>
 <body>
 <main id="home" class="hidden">
@@ -349,7 +351,6 @@
 <div id="remote" class="hidden"></div>
 <div id="stampFx"><div class="big"><div class="disc">✦</div><div class="lbl" id="stampLbl"></div></div></div>
 
-<script type="module" src="/living/boot.js?v=11"></script>
-<script type="module" src="/living/app.js?v=11"></script>
+<script type="module" src="/living/app.js?v=12"></script>
 </body>
 </html>

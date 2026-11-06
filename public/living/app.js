@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=11';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=11';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=11';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=11';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=12';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=12';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=12';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=12';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;

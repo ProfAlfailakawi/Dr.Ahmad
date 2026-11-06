@@ -32,6 +32,7 @@ export function buildGame(spec, ctx) {
   const G = createGame(spec, ctx);
   const extra = make(G) || {};
   return {
+    ready() { G.isReady = true; G.after(0.4, () => G.startNow?.()); },
     update(t, dt, e) { G.update(t, dt, e); extra.update?.(t, dt, e); },
     G,
   };

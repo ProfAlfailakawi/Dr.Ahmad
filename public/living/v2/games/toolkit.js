@@ -3,8 +3,8 @@
 // (timers, tweens, particles, end-of-game card) that every game type builds on.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=13';
-import { inked } from '../../pencil.js?v=13';
+import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=14';
+import { inked } from '../../pencil.js?v=14';
 
 export { THREE, P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, lightTube, sketch, inked, RoundedBoxGeometry };
 export const TAU = Math.PI * 2;
@@ -231,10 +231,14 @@ export function createGame(spec, ctx) {
   G.hud = (s) => ctx.ui.hud(s);
   // touching a piece before the start simply starts the game; nobody should be told to press a button first
   G.toast = (s) => { if (s.startsWith('اضغط «ابدأ') && G.startNow) { const go = G.startNow; G.startNow = null; go(); return; } ctx.ui.toast(s); };
+  // No start button: a game begins by itself the moment its introduction ends (and again a second after a replay is offered).
+  G.isReady = false;
   G.buttons = (list) => {
-    const first = list.find((b) => b.primary);
-    G.startNow = first && first.label.startsWith('ابدأ') ? () => { ctx.ui.choices([]); first.onPick(); } : null;
-    ctx.ui.choices(list);
+    const first = list.find((b) => b.primary && b.label.startsWith('ابدأ'));
+    if (!first) { G.startNow = null; ctx.ui.choices(list); return; }
+    const go = () => { if (G.startNow !== go) return; G.startNow = null; ctx.ui.choices([]); first.onPick(); };
+    G.startNow = go; ctx.ui.choices([]);
+    if (G.isReady) G.after(1.0, go);
   };
   let cardId = 0;
   G.card = (o, hideAfter = 0) => { ctx.ui.card(o); const id = ++cardId; if (hideAfter) G.after(hideAfter, () => { if (id === cardId) ctx.ui.hideCard(); }); };

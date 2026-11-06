@@ -3,8 +3,8 @@
 // (timers, tweens, particles, end-of-game card) that every game type builds on.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=12';
-import { inked } from '../../pencil.js?v=12';
+import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=13';
+import { inked } from '../../pencil.js?v=13';
 
 export { THREE, P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, lightTube, sketch, inked, RoundedBoxGeometry };
 export const TAU = Math.PI * 2;
@@ -14,7 +14,7 @@ export const lerp = THREE.MathUtils.lerp;
 export const damp = THREE.MathUtils.damp;
 export const clamp = THREE.MathUtils.clamp;
 export const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
-export const COL = { teal: 0x1fa5a0, blue: 0x2a8fd0, amber: 0xef8f2a, gold: 0xd4ad55, green: 0x2f9e5b, red: 0xd6453a, violet: 0x7a4fd0, rose: 0xe0457a, slate: 0x7f8f9b, ink: INK };
+export const COL = { teal: 0x1fa5a0, blue: 0x2a8fd0, amber: 0xef8f2a, gold: 0xd4ad55, green: 0x2f9e5b, red: 0xd6453a, violet: 0x7a4fd0, rose: 0xe0457a, slate: 0x2f7fb0, ink: INK };
 const K = 1800; // canvas pixels per page unit: sharp Arabic at any zoom
 
 export function shuffle(arr, seed = 7) {
@@ -229,8 +229,13 @@ export function createGame(spec, ctx) {
   G.anim = (dur, fn, done) => { const gen = G.gen; G.anims.push({ t0: G.now, dur, fn, done, gen }); };
   G.sfx = (n) => { try { ctx.sfx?.[n]?.(); } catch { /* sound is optional */ } };
   G.hud = (s) => ctx.ui.hud(s);
-  G.toast = (s) => ctx.ui.toast(s);
-  G.buttons = (list) => ctx.ui.choices(list);
+  // touching a piece before the start simply starts the game; nobody should be told to press a button first
+  G.toast = (s) => { if (s.startsWith('اضغط «ابدأ') && G.startNow) { const go = G.startNow; G.startNow = null; go(); return; } ctx.ui.toast(s); };
+  G.buttons = (list) => {
+    const first = list.find((b) => b.primary);
+    G.startNow = first && first.label.startsWith('ابدأ') ? () => { ctx.ui.choices([]); first.onPick(); } : null;
+    ctx.ui.choices(list);
+  };
   let cardId = 0;
   G.card = (o, hideAfter = 0) => { ctx.ui.card(o); const id = ++cardId; if (hideAfter) G.after(hideAfter, () => { if (id === cardId) ctx.ui.hideCard(); }); };
   G.hideCard = () => { cardId++; ctx.ui.hideCard(); };

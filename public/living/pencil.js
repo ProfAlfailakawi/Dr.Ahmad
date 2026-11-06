@@ -6,7 +6,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import {
   P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, label, sprite, glow, glowTexture, goldMat, mat, glossy,
   shadowed, sketch, lightTube, textCanvas,
-} from './kit.js?v=9';
+} from './kit.js?v=10';
 
 const TAU = Math.PI * 2;
 const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);

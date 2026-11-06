@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=13';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=13';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=13';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=13';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=14';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=14';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=14';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=14';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -245,7 +245,7 @@ function startExperience(index, root, camera, mode) {
     isFound: (id) => stamps.has(id),
   };
   const inst = exp.build(ctx);
-  current = { exp, index, root, stage: outer, pivot, sweep, taps, fx, inst, camera, t: 0, e: 0, found: true, stamped: false, yaw: 0, yawV: 0, zoom: 1, drag: false };
+  current = { exp, index, root, stage: outer, pivot, sweep, taps, fx, inst, camera, t: 0, e: 0, found: true, stamped: false, yaw: 0, yawV: 0, pitch: 0, zoom: 1, drag: false };
 
   const ty = TYPES[exp.type];
   $('chip').classList.remove('hidden');
@@ -280,9 +280,9 @@ function tick(dt) {
   if (!c.drag) {
     c.yaw += c.yawV * dt;
     c.yawV *= Math.exp(-3.2 * dt);
-    if (!c.exp.free) { c.yaw = THREE.MathUtils.damp(c.yaw, 0, 4, dt); c.zoom = THREE.MathUtils.damp(c.zoom, 1, 4, dt); }
+    if (!c.exp.free) { c.yaw = THREE.MathUtils.damp(c.yaw, 0, 4, dt); c.pitch = THREE.MathUtils.damp(c.pitch, 0, 4, dt); c.zoom = THREE.MathUtils.damp(c.zoom, 1, 4, dt); }
   }
-  c.pivot.rotation.y = c.yaw;
+  c.pivot.rotation.order = 'YXZ'; c.pivot.rotation.x = c.pitch; c.pivot.rotation.y = c.yaw;
   c.pivot.scale.setScalar(c.zoom);
   c.inst.update(c.t, dt, ease(c.e));
   c.fx.update(dt);
@@ -309,11 +309,11 @@ function bindTaps(el) {
 }
 function bindGestures(el) {
   const pts = new Map();
-  let lastX = 0, lastT = 0, pinch0 = 1, zoom0 = 1, downAt = 0, lastTapAt = 0, moved = 0;
+  let lastX = 0, lastY = 0, lastT = 0, pinch0 = 1, zoom0 = 1, downAt = 0, lastTapAt = 0, moved = 0;
   el.addEventListener('pointerdown', (e) => {
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (!current) return;
-    if (pts.size === 1) { lastX = e.clientX; lastT = downAt = performance.now(); moved = 0; current.drag = true; current.yawV = 0; }
+    if (pts.size === 1) { lastX = e.clientX; lastY = e.clientY; lastT = downAt = performance.now(); moved = 0; current.drag = true; current.yawV = 0; }
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y) || 1; zoom0 = current.zoom; }
   });
   el.addEventListener('pointermove', (e) => {
@@ -324,6 +324,8 @@ function bindGestures(el) {
     if (pts.size === 1) {
       const now = performance.now(), d = ((e.clientX - lastX) / innerWidth) * Math.PI * 1.5;
       current.yaw += d;
+      current.pitch = THREE.MathUtils.clamp(current.pitch + ((e.clientY - lastY) / innerHeight) * Math.PI * 1.4, -1.15, 1.15);   // the model can be seen from above and below too
+      lastY = e.clientY;
       current.yawV = THREE.MathUtils.lerp(current.yawV, d / Math.max(0.008, (now - lastT) / 1000), 0.5);
       lastX = e.clientX; lastT = now;
     } else if (pts.size === 2) {
@@ -347,11 +349,11 @@ function bindGestures(el) {
 }
 function resetView() {
   const c = current; if (!c) return;
-  const y0 = c.yaw, z0 = c.zoom, t0 = performance.now();
+  const y0 = c.yaw, p0 = c.pitch, z0 = c.zoom, t0 = performance.now();
   const step = () => {
     if (current !== c) return;
     const k = ease((performance.now() - t0) / 450);
-    c.yaw = y0 * (1 - k); c.zoom = z0 + (1 - z0) * k;
+    c.yaw = y0 * (1 - k); c.pitch = p0 * (1 - k); c.zoom = z0 + (1 - z0) * k;
     if (k < 1) requestAnimationFrame(step); else c.drag = false;
   };
   step();
@@ -757,7 +759,7 @@ const lecture = {
     if (m.type === 'zoom') current.zoom = m.v;
     if (m.type === 'choice') $('choices').querySelectorAll('button')[m.k]?.click();
     if (m.type === 'behind') $('behindBtn').click();
-    if (m.type === 'reset') { current.yaw = 0; current.zoom = 1; }
+    if (m.type === 'reset') { current.yaw = 0; current.pitch = 0; current.zoom = 1; }
   },
 };
 

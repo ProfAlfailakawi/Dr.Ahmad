@@ -1,9 +1,9 @@
 // p193 — Gagné's nine events as nine distinct little objects on nine coloured terraced plinths-of-their-own: a bell, a target, books, a screen, a signpost, a pencil, a speech bubble, a clipboard and a graduation cap pop up one by one as a spark counts 1 to 9.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
-import { softLight } from '../../v2/common.js?v=16';
-import { hints, finder, toAr, slabText, blobShadow, hitSphere } from '../lib/a3-kit.js?v=16';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=17';
+import { softLight } from '../../v2/common.js?v=17';
+import { hints, finder, toAr, slabText, blobShadow, hitSphere } from '../lib/a3-kit.js?v=17';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'أحداث التعليم' };
 

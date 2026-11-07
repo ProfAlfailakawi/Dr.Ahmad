@@ -1,9 +1,9 @@
 // p471 — «أن توقد شمعة خير من أن تلعن الظلام»: a brass candelabra whose six candles are the solutions; touch a candle to light it.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, goldMat, shadowed, glow } from '../../kit.js?v=16';
-import { inked } from '../../pencil.js?v=16';
-import { lightPool } from '../../v2/common.js?v=16';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
+import { P, ease, easeBack, clamp01, stag, mat, goldMat, shadowed, glow } from '../../kit.js?v=17';
+import { inked } from '../../pencil.js?v=17';
+import { lightPool } from '../../v2/common.js?v=17';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=17';
 
 export const meta = { free: true, center: [0.5, 0.275], typeLabel: 'شمعدان الحلول', title: 'أنِر شموع الحلول' };
 

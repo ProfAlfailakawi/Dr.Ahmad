@@ -1,9 +1,9 @@
 // p232 — the learner's desk: a blue desk-top diorama; every object (laptop, report, notebook, colour fan, phone, coffee) wakes up and reveals one purpose of the computer in teaching.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=16';
-import { hints, finder } from '../lib/a3-kit.js?v=16';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=17';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=17';
+import { hints, finder } from '../lib/a3-kit.js?v=17';
 
 export const meta = { free: true, center: [0.37, 0.4], typeLabel: 'مكتب تفاعلي' };
 

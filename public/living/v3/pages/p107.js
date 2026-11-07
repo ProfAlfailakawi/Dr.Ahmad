@@ -1,150 +1,107 @@
-// p107 — the other face of technology: a bright laptop ringed by the things it steals (time, sleep of lessons, the phone, endless chat).
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=16';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, desk, at, TAU, INK, GOLD } from '../lib/a2.js?v=16';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=17';
+import { animator, plinth, shadowBlob, V, TAU, softLight, canvasTexture } from '../lib/a1-kit.js?v=17';
+import { medal, tweener, shakeX } from '../lib/b1-kit.js?v=17';
 
-export const meta = { free: true, center: [0.5, 0.66], typeLabel: 'مجسّم تفاعلي' };
+export const meta = { free: true, center: [0.5, 0.65], typeLabel: 'لعبة: اكتشف الخطأ' };
 
-function screenTex() {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 340;
-  const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 0, 340); gr.addColorStop(0, '#e4f4ff'); gr.addColorStop(1, '#9fd2f5');
-  g.fillStyle = gr; g.fillRect(0, 0, 512, 340);
-  g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(34, 34, 300, 190, 18); g.fill();
-  g.fillStyle = '#2a8fd0'; g.beginPath(); g.roundRect(54, 54, 120, 14, 7); g.fill();
-  [['#2a8fd0', 90], ['#9fb3c2', 122], ['#9fb3c2', 150], ['#9fb3c2', 178]].forEach(([col, y], i) => { g.fillStyle = col; g.beginPath(); g.roundRect(54, y, i ? 240 - i * 22 : 200, 12, 6); g.fill(); });
-  g.fillStyle = '#ef8f2a'; g.beginPath(); g.arc(412, 110, 62, 0, TAU); g.fill();
-  g.fillStyle = '#ffffff'; g.beginPath(); g.arc(412, 110, 30, 0, TAU); g.fill();
-  g.fillStyle = '#8a9a1f'; g.fillRect(360, 200, 36, 90); g.fillStyle = '#2a8fd0'; g.fillRect(404, 170, 36, 120); g.fillStyle = '#ef8f2a'; g.fillRect(448, 230, 36, 60);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
-function keysTex() {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 300;
-  const g = c.getContext('2d'); g.fillStyle = '#26292e'; g.fillRect(0, 0, 512, 300);
-  g.fillStyle = '#464b53';
-  for (let r = 0; r < 5; r++) for (let k = 0; k < 14; k++) { g.beginPath(); g.roundRect(14 + k * 34.5, 14 + r * 38, 29, 31, 5); g.fill(); }
-  g.beginPath(); g.roundRect(120, 212, 270, 30, 6); g.fill();
-  g.fillStyle = '#383d44'; g.beginPath(); g.roundRect(186, 248, 140, 42, 8); g.fill();
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
-}
+const GREEN = 0x3fbf86, AMBER = 0xe8a030, RED = 0xe0453a, TEAL = 0x22b5a8;
+const ST = [
+  { g: 'scale', t: 'تتعدد إيجابيات تكنولوجيا التعليم، ومع ذلك لا يمكن إنكار سلبياتها.', wrong: false },
+  { g: 'clock', t: 'غالب المتعلمين يستخدمون التكنولوجيا في أوقات فراغهم وعطلهم لأغراض تعليمية في المقام الأول.', wrong: true, fix: 'غالبهم يستخدمونها في غير التعليم في أوقات الفراغ أو العطل.' },
+  { g: 'laptop', t: 'يتعلم الطالب مهارات تخدمه في التعليم وفي سوق العمل بعد التخرج.', wrong: false },
+  { g: 'chat', t: 'تقتصر مخاطر الجلوس الطويل أمام مواقع التواصل على الصحة الجسدية.', wrong: true, fix: 'للجلوس الطويل خطورة صحية ونفسية معاً.' },
+  { g: 'alert', t: 'أصبح الإدمان ظاهرة بين الطلبة، وتحتّم على التربويين وأولياء الأمور التدخل وتوعية المتعلمين.', wrong: false },
+  { g: 'family', t: 'ما دامت المواقع تعليمية فلا حاجة إلى تدخل أولياء الأمور أو التربويين.', wrong: true, fix: 'الإدمان ومخاطر المواقع تحتّم تدخل التربويين وأولياء الأمور.' },
+  { g: 'hourglass', t: 'إهدار الوقت يؤثر في المستقبل العلمي والمهني للطالب.', wrong: false },
+];
 
+const qa = new THREE.Quaternion();
 export default function build(ctx) {
   const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g);
-  const seq = new Seq(), pulse = new Pulse(), seen = new Set();
-  const found = (k) => { seen.add(k); ctx.ui.hud(`${seen.size} من ٥ — للتكنولوجيا وجه آخر`); if (seen.size >= 5) ctx.ui.done(); };
+  const A = animator(ctx, g, 1.0);
+  const tw = tweener();
+  g.add(shadowBlob(0.7, 0.4, 0.3));
+  const base = plinth(0.34, { top: 0xf2ece0 }); g.add(base);
 
-  const Y0 = 0.09; const base = desk(g, 0.86, 0.5); seq.add(base, 0, 0.7, { rise: 0.06 });
-
-  // ---------------- laptop
-  const lap = grp(g, -0.04, Y0, -0.04); lap.scale.setScalar(1.55);
-  add(lap, rb(0.31, 0.012, 0.2, 0.01, 3), std(0x34383e, { metalness: 0.5, roughness: 0.35 }), 0, 0.006, 0, true);
-  const kb = add(lap, new THREE.PlaneGeometry(0.28, 0.165), new THREE.MeshStandardMaterial({ map: keysTex(), roughness: 0.6 }), 0, 0.0126, -0.005); kb.rotation.x = -Math.PI / 2;
-  const hinge = grp(lap, 0, 0.012, -0.1);
-  const lid = grp(hinge, 0, 0, 0); lid.rotation.x = Math.PI / 2;
-  add(lid, rb(0.31, 0.205, 0.008, 0.008, 3), std(0x3b4047, { metalness: 0.55, roughness: 0.3 }), 0, 0.103, 0, true);
-  const stex = screenTex();
-  const scr = add(lid, new THREE.PlaneGeometry(0.285, 0.185), new THREE.MeshStandardMaterial({ map: stex, emissiveMap: stex, emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.3 }), 0, 0.103, 0.0046);
-  const apple = add(lid, new THREE.CircleGeometry(0.014, 24), new THREE.MeshBasicMaterial({ color: 0xdcdcdc }), 0, 0.103, -0.0046); apple.rotation.y = Math.PI;
-  const scrGlow = glow(0x6cc4ff, 0.5, 0.0); scrGlow.position.set(0, 0.1, 0.05); lid.add(scrGlow);
-  hit(lap, 0.14, 0, 0.08, 0.0);
-  seq.add(lap, 0.15, 0.8);
-  const lapChip = chip('المهارات', 0.11, 0x2a8fd0); lapChip.position.set(-0.04, Y0 + 0.03, 0.215); g.add(lapChip); seq.add(lapChip, 1.9, 0.5);
-  pulse.add(lap, 0x5fb8f5, 0.4, 0, 0.1, 0.05, { op: 0.28, amp: 0.1 });
-
-  // ---------------- hourglass (time)
-  const hg = grp(g, 0.33, Y0, -0.1); hg.scale.setScalar(1.45);
-  const body = grp(hg, 0, 0, 0); body.position.y = 0.0;
-  const gl = add(body, lathe([[0.0001, 0.012], [0.034, 0.015], [0.036, 0.034], [0.03, 0.062], [0.011, 0.088], [0.006, 0.098], [0.011, 0.108], [0.03, 0.134], [0.036, 0.162], [0.034, 0.181], [0.0001, 0.184]], 28), glass(0xdff3ff, 0.34, { side: THREE.DoubleSide }), 0, 0, 0);
-  const sandMat = std(0xef8f2a, { roughness: 0.7 });
-  const topSand = add(body, new THREE.ConeGeometry(0.03, 0.074, 20), sandMat, 0, 0.14, 0); topSand.rotation.x = Math.PI;
-  const botSand = add(body, new THREE.ConeGeometry(0.032, 0.045, 20), sandMat, 0, 0.034, 0);
-  const stream = add(body, new THREE.CylinderGeometry(0.0022, 0.0022, 0.1, 6), sandMat, 0, 0.065, 0);
-  [0.012, 0.19].forEach((y) => add(hg, new THREE.CylinderGeometry(0.044, 0.044, 0.012, 24), brass(), 0, y - (y > 0.1 ? 0.004 : 0), 0, true));
-  [[-0.04, -0.04], [0.04, -0.04], [0, 0.056]].forEach(([x, z]) => add(hg, new THREE.CylinderGeometry(0.0034, 0.0034, 0.18, 8), brass(), x * 0.85, 0.101, z * 0.8));
-  hit(hg, 0.085, 0, 0.1, 0);
-  seq.add(hg, 0.4, 0.8);
-  let sandP = 0.12, flipT = -1, flipSpd = 0;
-  const hgChip = chip('الوقت', 0.1, 0xef8f2a); hgChip.position.set(0.33, Y0 + 0.34, -0.1); g.add(hgChip); seq.add(hgChip, 2.6, 0.6);
-  pulse.add(hg, 0xef8f2a, 0.2, 0, 0.1, 0, { op: 0.4 });
-  touch(ctx, hg, () => { flipT = 0; ctx.sfx.whoosh?.(); ctx.ui.card({ tag: 'للتكنولوجيا وجه آخر', title: 'وقت يُهدر', body: 'أهمية الوقت الذي يُهدر تؤثر في مستقبلهم العلمي والمهني.', color: 0xef8f2a }); found('t'); }, 0xef8f2a);
-
-  // ---------------- phone (addiction)
-  const ph = grp(g, -0.3, Y0, 0.15); ph.rotation.y = 0.55; ph.scale.setScalar(1.7);
-  const phb = grp(ph, 0, 0, 0);
-  add(phb, rb(0.056, 0.008, 0.108, 0.012, 3), std(0x1b1d21, { metalness: 0.5, roughness: 0.3 }), 0, 0.004, 0, true);
-  const pscr = add(phb, new THREE.PlaneGeometry(0.048, 0.098), new THREE.MeshStandardMaterial({ color: 0xff6a5c, emissive: 0xe0453c, emissiveIntensity: 0.9 }), 0, 0.0084, 0); pscr.rotation.x = -Math.PI / 2;
-  const badge = add(phb, new THREE.SphereGeometry(0.011, 16, 12), lit(0xff3b30, 1.2), 0.026, 0.012, -0.05);
-  const rings = [0, 1].map(() => { const r = add(ph, new THREE.TorusGeometry(0.05, 0.0018, 6, 40), new THREE.MeshBasicMaterial({ color: 0xe0453c, transparent: true, opacity: 0 }), 0, 0.006, 0); r.rotation.x = Math.PI / 2; return r; });
-  hit(ph, 0.075, 0, 0.01, 0);
-  seq.add(ph, 0.6, 0.8);
-  const phChip = chip('الإدمان', 0.1, 0xe0453c); phChip.position.set(-0.3, Y0 + 0.11, 0.24); g.add(phChip); seq.add(phChip, 2.8, 0.6);
-  pulse.add(ph, 0xe0453c, 0.17, 0, 0.012, 0, { op: 0.5 });
-  let buzz = -1;
-  touch(ctx, ph, () => { buzz = 0; ctx.sfx.bad?.(); ctx.ui.card({ tag: 'للتكنولوجيا وجه آخر', title: 'الهاتف والإدمان', body: 'صار الإدمان ظاهرة بين الطلبة، وتحتّم على التربويين وأولياء الأمور التدخل وتوعية المتعلمين.', color: 0xe0453c }); found('p'); }, 0xe0453c);
-
-  // ---------------- chat bubbles (social media)
-  const bb = grp(g, -0.33, Y0 + 0.3, -0.1); bb.scale.setScalar(1.5);
-  const bubbles = [[0, 0, 0, 0.05, 0xe0453c], [0.07, -0.035, 0.03, 0.034, 0x2a8fd0], [-0.055, -0.05, 0.035, 0.028, 0xef8f2a]].map(([x, y, z, r, col], i) => {
-    const b = grp(bb, x, y, z);
-    const s = add(b, new THREE.SphereGeometry(r, 28, 20), gloss(col), 0, 0, 0, true); s.scale.set(1.25, 0.9, 0.8);
-    const tail = add(b, new THREE.ConeGeometry(r * 0.3, r * 0.6, 12), gloss(col), -r * 0.7, -r * 0.8, 0); tail.rotation.z = 0.5;
-    [-1, 0, 1].forEach((k) => add(b, new THREE.SphereGeometry(r * 0.12, 10, 8), std(0xffffff), k * r * 0.4, 0, r * 0.7));
-    b.userData.r = r; return b;
+  // the phone monolith with a glowing screen
+  const phone = new THREE.Group();
+  const body = new THREE.Mesh(new RoundedBoxGeometry(0.21, 0.42, 0.03, 6, 0.026), glossy(0x1f2230, { metalness: 0.5, roughness: 0.25 }));
+  const sc = canvasTexture(256, 480, (c, w, h) => {
+    const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#2a3a7a'); gr.addColorStop(1, '#7a3a6a'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(255,255,255,.12)'; for (let i = 0; i < 6; i++) { c.beginPath(); c.roundRect(24, 40 + i * 70, w - 48, 54, 14); c.fill(); }
   });
-  hit(bb, 0.1, 0.0, -0.02, 0);
-  seq.add(bb, 0.8, 0.8, { rise: 0.1 });
-  const bbChip = chip('التواصل', 0.1, 0x2a8fd0); bbChip.position.set(-0.33, Y0 + 0.44, -0.1); g.add(bbChip); seq.add(bbChip, 3.0, 0.6);
-  let bbT = -1;
-  touch(ctx, bb, () => { bbT = 0; ctx.ui.card({ tag: 'للتكنولوجيا وجه آخر', title: 'الجلوس الطويل أمام التواصل', body: 'له خطورة صحية ونفسية، ويؤدي إلى إهمال الدروس.', color: 0x2a8fd0 }); found('b'); }, 0x2a8fd0);
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.185, 0.38), new THREE.MeshBasicMaterial({ map: sc, toneMapped: false })); screen.position.z = 0.0155;
+  const camDot = new THREE.Mesh(new THREE.CircleGeometry(0.006, 14), new THREE.MeshBasicMaterial({ color: 0x0a0a0a })); camDot.position.set(0, 0.18, 0.0158);
+  const back = new THREE.Mesh(new THREE.CircleGeometry(0.03, 24), goldMat()); back.position.set(0, 0.04, -0.0156); back.rotation.y = Math.PI;
+  phone.add(body, screen, camDot, back); phone.position.set(0, 0.26, 0); shadowed(phone);
+  const pg = glow(0x8aa4ff, 0.7, 0.35); pg.position.set(0, 0.24, 0.03);
+  const holder = new THREE.Group(); holder.add(phone, pg);
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.025, 36), goldMat()); stand.position.y = 0.014; holder.add(stand);
+  A.add(holder, { at: 0.1, dur: 0.9, rise: 0.12 });
 
-  // ---------------- books (neglected lessons)
-  const bk = grp(g, 0.3, Y0, 0.15); bk.rotation.y = -0.3; bk.scale.setScalar(1.55);
-  const cols = [0x6b4f3f, 0x8fa6b5, 0x8a9a1f];
-  const books = cols.map((col, i) => { const b = grp(bk, (i - 1) * 0.006, 0.014 + i * 0.026, 0); b.rotation.y = (i - 1) * 0.18; add(b, rb(0.1, 0.022, 0.07, 0.004, 2), std(col, { roughness: 0.6 }), 0, 0, 0, true); add(b, rb(0.094, 0.016, 0.066, 0.002, 2), std(0xf5efe0), 0.004, 0, 0); return b; });
-  const dust = Array.from({ length: 6 }, (_, i) => { const s = glow(0xb7aea0, 0.03, 0.5); s.position.set((i - 2.5) * 0.017, 0.1 + (i % 2) * 0.01, (i % 3 - 1) * 0.015); bk.add(s); return s; });
-  hit(bk, 0.085, 0, 0.04, 0);
-  seq.add(bk, 1.0, 0.8);
-  const bkChip = chip('الدروس', 0.1, 0x8a9a1f); bkChip.position.set(0.3, Y0 + 0.16, 0.24); g.add(bkChip); seq.add(bkChip, 3.2, 0.6);
-  pulse.add(bk, 0x8a9a1f, 0.19, 0, 0.05, 0, { op: 0.4 });
-  let bkT = -1;
-  touch(ctx, bk, () => { bkT = 0; ctx.ui.card({ tag: 'للتكنولوجيا وجه آخر', title: 'دروس مهملة', body: 'يستخدم غالب المتعلمين التكنولوجيا في غير التعليم أوقات فراغهم وعطلهم.', color: 0x8a9a1f }); found('k'); }, 0x8a9a1f);
+  // hourglass at the right (time lost): sand level reflects judged statements
+  const hg = new THREE.Group(); hg.position.set(0.34, 0, 0.16);
+  const gl = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.0, transparent: true, opacity: 0.28, roughness: 0.05, metalness: 0 });
+  const bulbT = new THREE.Mesh(new THREE.SphereGeometry(0.045, 24, 16), gl); bulbT.scale.y = 1.25; bulbT.position.y = 0.19;
+  const bulbB = bulbT.clone(); bulbB.position.y = 0.075;
+  const sandT = new THREE.Mesh(new THREE.SphereGeometry(0.036, 20, 14), mat(0xe8b24a, { roughness: 0.6 })); sandT.position.y = 0.19;
+  const sandB = new THREE.Mesh(new THREE.SphereGeometry(0.036, 20, 14), mat(0xe8b24a, { roughness: 0.6 })); sandB.position.y = 0.062; sandB.scale.setScalar(0.001);
+  const stream = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.07, 6), mat(0xe8b24a)); stream.position.y = 0.13;
+  [0.015, 0.25].forEach((y) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.012, 30), goldMat()); c.position.y = y; hg.add(c); });
+  [-1, 1].forEach((s) => { const r = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.235, 8), goldMat()); r.position.set(s * 0.055, 0.133, 0); hg.add(r); });
+  hg.add(bulbT, bulbB, sandT, sandB, stream); shadowed(hg); A.add(hg, { at: 0.5, dur: 0.8, rise: 0.1 });
 
-  // laptop: the bright face
-  let brightT = -1;
-  touch(ctx, lap, () => { brightT = 0; ctx.ui.card({ tag: 'الوجه المضيء', title: 'إيجابياتها كثيرة', body: 'يتعلم الطالب مهارات تخدمه في التعليم وفي سوق العمل بعد التخرج.', color: 0x2a8fd0 }); found('l'); }, 0x2a8fd0);
+  // seven orbs orbiting the phone, each a glass bubble with a glyph (no text)
+  const orbs = ST.map((s, i) => {
+    const o = new THREE.Group();
+    const col = 0x5468e8;
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.068, 28, 20), new THREE.MeshPhysicalMaterial({ color: 0x4a5fe0, roughness: 0.1, clearcoat: 1, transparent: true, opacity: 0.2, depthWrite: false }));
+    const m = medal(s.g, col, 0.058, { th: 0.012, upright: true, bg: '#3d4fd0', fg: '#ffffff' });
+    const gg = glow(col, 0.22, 0.3);
+    o.add(shell, m, gg); g.add(o); o.scale.setScalar(0.0001);
+    return { o, shell, m, gg, s, i, ph: i / 7 * TAU, state: 'orbit', verdict: null, ang: 0 };
+  });
+  const R = 0.3;
+  const place = (k, t) => { const a = t * 0.3 + k.ph; k.ang = a; return V(Math.cos(a) * R, 0.26 + Math.sin(a * 2 + k.ph) * 0.08, Math.sin(a) * R * 0.75); };
 
-  ctx.ui.hud('المس ما حول الشاشة');
+  let cur = null, judged = 0, correct = 0, shakeT = -9, shakeObj = null, sand = 0;
+  const finish = (k, answerWrong) => {
+    const right = answerWrong === k.s.wrong;
+    ctx.ui.choices([]); judged++; if (right) correct++;
+    const col = k.s.wrong ? AMBER : GREEN; k.verdict = k.s.wrong ? 'wrong' : 'ok';
+    k.shell.material.color.setHex(col); k.shell.material.opacity = 0.6; k.gg.material.color.setHex(col);
+    if (right) ctx.sfx.good?.(); else ctx.sfx.bad?.();
+    ctx.ui.card({ tag: k.s.wrong ? 'عبارة تخالف الكتاب' : 'عبارة صحيحة', title: right ? (k.s.wrong ? 'اكتشفت الخطأ' : 'حكم صحيح') : 'راجع الحكم', body: k.s.wrong ? `الصواب: ${k.s.fix}` : 'هذه العبارة تتفق مع ما يقوله الكتاب.', color: col });
+    ctx.fx.burst(k.o.position.clone().add(g.position), col, 18, 0.3, 0.03);
+    k.state = 'return'; const from = k.o.position.clone(); const at0 = A.now;
+    tw.go(0.9, (e) => { k.o.position.lerpVectors(from, place(k, A.now), ease(e)); }, 0.6, () => { k.state = 'orbit'; });
+    cur = null; sand = judged / 7; ctx.ui.hud(`${judged} من ٧`);
+    if (judged === 7) setTimeout(() => ctx.ui.done(), 2200);
+  };
+  orbs.forEach((k) => A.touch(k.o, () => {
+    if (cur || k.verdict) { return; }
+    cur = k; k.state = 'front'; const from = k.o.position.clone();
+    ctx.ui.card({ tag: 'اقرأ ثم احكم', title: 'هل يقول الكتاب هذا؟', body: k.s.t, color: 0x6c8cff });
+    ctx.ui.choices([{ label: 'يتفق مع الكتاب', primary: true, onPick: () => finish(k, false) }, { label: 'يخالف الكتاب', onPick: () => finish(k, true) }]);
+    tw.go(0.6, (e) => k.o.position.lerpVectors(from, V(0, 0.46, 0.2), ease(e)));
+  }, { color: 0x6c8cff, burst: false }));
+  ctx.ui.hud('المس فقاعة واحكم عليها');
 
   return {
     update(t, dt, e) {
-      seq.update(t, e); pulse.update(t, e);
-      lid.rotation.x = Math.PI / 2 - (Math.PI / 2 + 0.3) * ease((t - 0.25) / 1.2);
-      // screen breathes; brightens on touch
-      if (brightT >= 0) { brightT += dt; if (brightT > 1.6) brightT = -1; }
-      const bright = brightT >= 0 ? Math.sin(Math.min(1, brightT / 1.6) * Math.PI) : 0;
-      scr.material.emissiveIntensity = 0.8 + 0.12 * Math.sin(t * 1.5) + 0.7 * bright;
-      scrGlow.material.opacity = e * (0.28 + 0.25 * bright); scrGlow.scale.setScalar(0.5 + 0.3 * bright);
-      // hourglass sand
-      if (flipT >= 0) { flipT += dt; body.rotation.z = Math.PI * ease(flipT / 0.9); if (flipT >= 0.9) { flipT = -1; body.rotation.z = 0; sandP = 0; } }
-      else sandP = Math.min(1, sandP + dt / 18);
-      const sp = sandP;
-      topSand.scale.set(1, Math.max(1 - sp, 0.001), 1); topSand.position.y = 0.102 + 0.074 * (1 - sp) * 0.5 + 0.0;
-      botSand.scale.set(1, Math.max(sp, 0.001), 1); botSand.position.y = 0.012 + 0.045 * sp * 0.5;
-      stream.visible = sp > 0.01 && sp < 0.995 && flipT < 0;
-      // phone buzz
-      let sh = 0;
-      if (buzz >= 0) { buzz += dt; sh = Math.sin(buzz * 70) * 0.004 * (1 - clamp01(buzz / 0.9)); if (buzz > 1.4) buzz = -1; }
-      phb.position.x = sh; badge.scale.setScalar(1 + 0.2 * Math.sin(t * 5));
-      rings.forEach((r, i) => { const k = buzz >= 0 ? clamp01((buzz - i * 0.25) / 0.9) : 0; r.scale.setScalar(0.6 + k * 1.3); r.material.opacity = k > 0 && k < 1 ? 0.6 * (1 - k) : 0; });
-      // bubbles
-      if (bbT >= 0) { bbT += dt; if (bbT > 1.2) bbT = -1; }
-      bubbles.forEach((b, i) => { const k = bbT >= 0 ? Math.sin(clamp01(bbT / 1.2) * Math.PI) : 0; b.scale.setScalar(1 + 0.45 * k * (1 - i * 0.12)); b.position.y += Math.sin(t * 1.4 + i * 2) * dt * 0.012; b.rotation.y = Math.sin(t * 0.8 + i) * 0.35; });
-      bb.position.y = Y0 + 0.3 + Math.sin(t * 1.1) * 0.008;
-      // books + dust
-      if (bkT >= 0) { bkT += dt; if (bkT > 1.4) bkT = -1; }
-      const kk = bkT >= 0 ? Math.sin(clamp01(bkT / 1.4) * Math.PI) : 0;
-      books[2].position.x = 0.012 + kk * 0.08; books[2].rotation.y = 0.18 + kk * 0.5;
-      dust.forEach((d, i) => { d.material.opacity = e * (0.35 + 0.3 * Math.sin(t * 1.2 + i)) * (1 - 0.7 * kk); d.position.y = 0.1 + (i % 2) * 0.012 + Math.sin(t * 0.7 + i) * 0.008 + kk * 0.03; });
+      A.update(t, dt, e); tw.update(dt);
+      pg.scale.setScalar(0.65 + Math.sin(t * 2) * 0.04); holder.rotation.y = Math.sin(t * 0.5) * 0.25;
+      orbs.forEach((k) => {
+        const sc = easeBack(clamp01((t - 0.9 - k.i * 0.15) / 0.7));
+        if (k.state === 'orbit') k.o.position.copy(place(k, t));
+        k.o.scale.setScalar(Math.max(0.0001, sc * (k.state === 'front' ? 1.5 : 1)));
+        k.m.parent.getWorldQuaternion(qa); qa.invert().multiply(ctx.camera.quaternion); k.m.quaternion.copy(qa);
+        k.gg.scale.setScalar(0.24 + Math.sin(t * 2 + k.i) * 0.015);
+      });
+      sandT.scale.setScalar(Math.max(0.001, 1 - sand * 0.95)); sandT.position.y = 0.19 - sand * 0.025;
+      sandB.scale.setScalar(Math.max(0.001, sand * 0.9)); stream.visible = sand < 1;
     },
   };
 }

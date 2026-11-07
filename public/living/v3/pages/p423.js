@@ -1,160 +1,157 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=16';
-import { scene, RoundedBox, TAU, setSpr, tagSprite, contactShadow } from '../lib/a8-kit.js?v=16';
-export const meta = { free: true, center: [0.4, 0.641], typeLabel: 'لعبة تصنيف' };
-const hex = (c) => '#' + c.toString(16).padStart(6, '0');
-const GL = (c, i = 1) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: 0.3 });
-const BIN = [
-  { n: 'الدخول إلى التقنية', c: 0x3b8fe0 },
-  { n: 'كيفية الاستخدام', c: 0xf29a2e },
-  { n: 'فوائد التقنية', c: 0x2fbf8a },
+import { scene, contactShadow, sign, paintTex, drawText, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, shuffle, faceYaw } from '../lib/b7-kit.js?v=17';
+export const meta = { free: true, center: [0.46, 0.62], typeLabel: 'لعبة تصنيف' };
+
+// A stone platform torn in two by a glowing rift. A situation hovers on the near half: tap the tablet (on the far half) that names
+// its cause and the situation flies across. Every right answer lays a plank; when the six planks are down the halves close.
+const BINS = [
+  { t: 'قلة الدخول', c: 0x3b8fe0, ic: 'tower', why: 'قلة الدخول إلى التقنية من حيث توفرها: شبكة غائبة، أو جهاز لا يُشترى، أو ميزانية غير مخصصة.' },
+  { t: 'قلة معرفة الاستخدام', c: 0xf29a2e, ic: 'gear', why: 'قلة المعرفة في كيفية استخدام التكنولوجيا: الجهاز موجود لكن مهارة تشغيله ناقصة.' },
+  { t: 'قلة معرفة الفوائد', c: 0x7ab648, ic: 'bulb', why: 'قلة المعرفة في فوائد التكنولوجيا: الجهاز موجود لكن لا يُرى أثره في التعلّم.' },
 ];
-const IT = [
-  ['قرية بلا شبكة', 0, 'قرية بعيدة عن مراكز المدن لا تصلها شبكة اتصالات'],
-  ['أسرة بلا حاسوب', 0, 'أسرة محدودة الدخل لا تستطيع شراء حاسوب'],
-  ['مدرسة بلا ميزانية', 0, 'مدرسة بلا ميزانية مخصصة لشراء الأجهزة'],
-  ['بنية اتصالات ضعيفة', 0, 'منطقة ضعفت فيها البنية التحتية للاتصالات'],
-  ['طالب يجهل البحث', 1, 'طالب يملك جهازاً لكنه لا يعرف كيف يبحث ويرفع الملفات'],
-  ['جهل مجالات التطبيق', 1, 'بلد اشترى أجهزة كثيرة لكنه يجهل مجالات تطبيقها'],
-  ['معلمون بلا تدريب', 1, 'معلّمون وصلت مدرستهم حواسيب لم يتدربوا على تشغيل برمجياتها'],
-  ['واجهة بلغة غريبة', 1, 'مستخدم يجيد القراءة والكتابة لكنه لا يجيد لغة الواجهة'],
-  ['جهاز في خزانة', 2, 'جهاز في الصف محفوظ في خزانة لأن صاحب القرار لا يرى له أثراً في التعلّم'],
-  ['إدارة تعدّه تسلية', 2, 'إدارة تعدّ الإنترنت تسلية فتمنع استخدامه في الدروس'],
-  ['حاسوب يُعدّ ترفاً', 2, 'ولي أمر يرى الحاسوب ترفاً ولا يعلم أثره في مستقبل ابنه الدراسي'],
-  ['قيمة التقنية مجهولة', 2, 'مؤسسة تملك الشبكة والمهارة لكنها لا تعرف قيمتها في رفع جودة التعلّم'],
+const ITEMS = [
+  { t: 'قرية لا تصلها شبكة اتصالات', b: 0 }, { t: 'أسرة لا تستطيع شراء حاسوب', b: 0 },
+  { t: 'طالب يملك جهازاً ولا يعرف استخدامه', b: 1 }, { t: 'معلّمون لم يتدربوا على تشغيل البرمجيات', b: 1 },
+  { t: 'جهاز في خزانة لأن القرار لا يرى أثره', b: 2 }, { t: 'ولي أمر يرى الحاسوب ترفاً', b: 2 },
 ];
-const ORDER = [4, 0, 9, 5, 2, 10, 8, 1, 6, 11, 3, 7];
-const SAY = ['ينقصهم الدخول إلى التقنية', 'ينقصهم معرفة كيفية الاستخدام', 'ينقصهم إدراك فوائد التقنية'];
+const R = 0.3, G0 = 0.16, TH = 0.03, hx = (c) => '#' + c.toString(16).padStart(6, '0');
 
-function gearMesh(r, n, col, depth = 0.016) {
-  const sh = new THREE.Shape();
-  for (let k = 0; k < n * 4; k++) { const a = (k / (n * 4)) * TAU, rr = (k % 4 < 2) ? r : r * 0.8; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; k === 0 ? sh.moveTo(x, y) : sh.lineTo(x, y); }
-  sh.closePath(); sh.holes.push(new THREE.Path().absarc(0, 0, r * 0.3, 0, TAU, true));
-  return new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false }), glossy(col, { roughness: 0.3 }));
-}
-
-
-// outline of a page-sized slab whose inner side is torn into zigzag teeth
-function tornShape(w, h, side) { // side: +1 tooth edge on the right, -1 on the left
-  const s = new THREE.Shape(), r = 0.02, x1 = w / 2, y1 = h / 2;
-  const teeth = 14, amp = 0.011;
-  const zig = (dir) => { const pts = []; for (let i = 0; i <= teeth; i++) { const y = -y1 + (i / teeth) * h; pts.push([dir * (x1 - (i % 2 ? amp : 0)), y]); } return pts; };
-  if (side > 0) {
-    s.moveTo(-x1 + r, -y1); const z = zig(1); s.lineTo(z[0][0], z[0][1]); z.forEach(([x, y]) => s.lineTo(x, y)); s.lineTo(x1, y1 - r); s.quadraticCurveTo(x1, y1, x1 - r, y1); s.lineTo(-x1 + r, y1); s.quadraticCurveTo(-x1, y1, -x1, y1 - r); s.lineTo(-x1, -y1 + r); s.quadraticCurveTo(-x1, -y1, -x1 + r, -y1);
+function icon(x, k, cx, cy, s) {
+  x.save(); x.translate(cx, cy); x.scale(s / 100, s / 100); x.strokeStyle = '#fff'; x.fillStyle = '#fff'; x.lineWidth = 8; x.lineCap = 'round'; x.lineJoin = 'round';
+  if (k === 'tower') {
+    x.beginPath(); x.moveTo(-26, 44); x.lineTo(0, -20); x.lineTo(26, 44); x.moveTo(-14, 16); x.lineTo(14, 16); x.stroke();
+    x.beginPath(); x.arc(0, -26, 7, 0, TAU); x.fill();
+    [20, 38].forEach((r) => { x.beginPath(); x.arc(0, -26, r, -2.4, -0.74); x.stroke(); x.beginPath(); x.arc(0, -26, r, Math.PI + 0.74, Math.PI + 2.4 - Math.PI * 0, false); });
+    [20, 38].forEach((r) => { x.beginPath(); x.arc(0, -26, r, Math.PI * 1.17, Math.PI * 1.83); x.stroke(); });
+  } else if (k === 'gear') {
+    for (let i = 0; i < 8; i++) { x.save(); x.rotate((i / 8) * TAU); rr(x, -7, -42, 14, 18, 3); x.fill(); x.restore(); }
+    x.beginPath(); x.arc(0, 0, 28, 0, TAU); x.stroke(); x.beginPath(); x.arc(0, 0, 11, 0, TAU); x.stroke();
   } else {
-    s.moveTo(x1 - r, -y1); s.quadraticCurveTo(x1, -y1, x1, -y1 + r); s.lineTo(x1, y1 - r); s.quadraticCurveTo(x1, y1, x1 - r, y1); const z = zig(-1).reverse(); s.lineTo(z[0][0], z[0][1]); z.forEach(([x, y]) => s.lineTo(x, y)); s.lineTo(-x1, -y1);
+    x.beginPath(); x.arc(0, -10, 28, Math.PI * 0.78, Math.PI * 2.22); x.lineTo(14, 34); x.lineTo(-14, 34); x.closePath(); x.stroke();
+    x.beginPath(); x.moveTo(-12, 46); x.lineTo(12, 46); x.moveTo(-8, 22); x.lineTo(-8, 4); x.lineTo(0, 12); x.lineTo(8, 4); x.lineTo(8, 22); x.stroke();
   }
+  x.restore();
+}
+function tabletTex(b) {
+  return paintTex(320, 380, (x) => {
+    rr(x, 0, 0, 320, 380, 44); x.fillStyle = '#fbf6ea'; x.fill(); x.lineWidth = 9; x.strokeStyle = hx(b.c); x.stroke();
+    x.beginPath(); x.arc(160, 120, 84, 0, TAU); const g = x.createLinearGradient(80, 40, 240, 200); g.addColorStop(0, hx(new THREE.Color(b.c).lerp(new THREE.Color(0xffffff), 0.25).getHex())); g.addColorStop(1, hx(b.c)); x.fillStyle = g; x.fill();
+    icon(x, b.ic, 160, 122, 88);
+    drawText(x, b.t, 160, 292, 270, 120, { size: 58, color: '#2b2620' });
+  });
+}
+function halfShape(far) {
+  const s = new THREE.Shape(); const n = 12, a = 0.018; // same zigzag on both halves
+  const zz = (i) => (i === 0 || i === n ? 0 : (i % 2 ? 1 : -1) * a);
+  s.moveTo(-R, 0);
+  for (let i = 1; i <= n; i++) s.lineTo(-R + (i / n) * 2 * R, zz(i));
+  if (far) s.absarc(0, 0, R, 0, Math.PI, false); else s.absarc(0, 0, R, 0, -Math.PI, true);
   return s;
 }
-function paperTex() {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 640; const x = c.getContext('2d');
-  const gr = x.createLinearGradient(0, 0, 512, 640); gr.addColorStop(0, '#d2a465'); gr.addColorStop(1, '#b98846'); x.fillStyle = gr; x.fillRect(0, 0, 512, 640);
-  x.strokeStyle = 'rgba(80,50,20,.18)'; x.lineWidth = 2; for (let y = 8; y < 640; y += 10) { x.beginPath(); x.moveTo(0, y + (y % 20)); x.lineTo(512, y + (y % 20)); x.stroke(); }
-  x.setLineDash([14, 10]); x.strokeStyle = '#f6e3b0'; x.lineWidth = 5; x.strokeRect(34, 34, 444, 572); x.setLineDash([]);
-  x.fillStyle = '#fbf6ea'; x.beginPath(); x.roundRect(86, 150, 340, 190, 14); x.fill(); x.strokeStyle = '#2b2620'; x.lineWidth = 3; x.stroke();
-  x.fillStyle = '#2b2620'; x.font = '800 66px Tajawal, sans-serif'; x.textAlign = 'center'; x.direction = 'rtl'; x.fillText('الفجوة', 256, 218); x.fillText('الرقمية', 256, 300);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.repeat.set(1 / 0.28, 1 / 0.36); t.offset.set(0.5, 0.5); return t;
-}
-function screenTex2() {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 640; const x = c.getContext('2d');
-  const gr = x.createLinearGradient(0, 0, 0, 640); gr.addColorStop(0, '#173b6e'); gr.addColorStop(1, '#091526'); x.fillStyle = gr; x.fillRect(0, 0, 512, 640);
-  x.strokeStyle = 'rgba(120,190,255,.55)'; x.lineWidth = 3; const P = []; for (let i = 0; i < 16; i++) P.push([60 + ((i * 97) % 400), 80 + ((i * 163) % 480)]);
-  P.forEach((p, i) => { P.forEach((q, j) => { if (j > i && Math.hypot(p[0] - q[0], p[1] - q[1]) < 190) { x.beginPath(); x.moveTo(p[0], p[1]); x.lineTo(q[0], q[1]); x.stroke(); } }); });
-  P.forEach((p) => { x.beginPath(); x.arc(p[0], p[1], 9, 0, TAU); x.fillStyle = '#ffe3a0'; x.fill(); });
-  x.fillStyle = 'rgba(255,255,255,.92)'; x.font = '800 54px Tajawal, sans-serif'; x.textAlign = 'center'; x.direction = 'rtl'; x.fillText('The Digital Divide', 256, 590);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.repeat.set(1 / 0.28, 1 / 0.36); t.offset.set(0.5, 0.5); return t;
+function half(far) {
+  const m = new THREE.Mesh(new THREE.ExtrudeGeometry(halfShape(far), { depth: TH, bevelEnabled: true, bevelSize: 0.004, bevelThickness: 0.004, bevelSegments: 2, curveSegments: 64 }), glossy(0x7d6b55, { roughness: 0.5, clearcoat: 0.3 }));
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.0;
+  const g = new THREE.Group(); g.add(m);
+  // underside plate (dark) so it reads finished from below
+  const rim = new THREE.Mesh(new THREE.ExtrudeGeometry(halfShape(far), { depth: 0.006, bevelEnabled: false, curveSegments: 64 }), goldMat()); rim.rotation.x = -Math.PI / 2; rim.position.y = TH * 0.55; rim.scale.set(1.012, 1.012, 1); g.add(rim);
+  const base = new THREE.Mesh(new THREE.ExtrudeGeometry(halfShape(far), { depth: 0.01, bevelEnabled: false, curveSegments: 64 }), mat(0x3a332b)); base.rotation.x = -Math.PI / 2; base.position.y = -0.006; base.scale.set(0.97, 0.97, 1); g.add(base);
+  [0.2, 0.245].forEach((r, i) => { const ri = new THREE.Mesh(new THREE.RingGeometry(r - 0.0025, r + 0.0025, 64, 1, far ? 0.12 : Math.PI + 0.12, Math.PI - 0.24), new THREE.MeshStandardMaterial({ color: 0xe0b85e, metalness: 0.8, roughness: 0.3, side: THREE.DoubleSide })); ri.rotation.x = -Math.PI / 2; ri.position.y = TH + 0.0048; g.add(ri); });
+  return shadowed(g);
 }
 
 export default function build(ctx) {
-  const S = scene(ctx, meta), g0 = S.g; const g = new THREE.Group(); g.scale.setScalar(0.9); g0.add(g);
-  // ---- the divide: a ruled notebook and a glowing tablet, torn apart by a bright crack
-  const mkSlab = (right) => {
-    const geo = new THREE.ExtrudeGeometry(tornShape(0.28, 0.36, right ? -1 : 1), { depth: 0.032, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.003, bevelSegments: 2, curveSegments: 6 });
-    const face = right ? new THREE.MeshBasicMaterial({ map: screenTex2(), toneMapped: false }) : new THREE.MeshStandardMaterial({ map: paperTex(), roughness: 0.6 });
-    const sideM = right ? glossy(0x1d222c, { roughness: 0.3 }) : mat(0xe9dfc8);
-    const m = new THREE.Mesh(geo, [face, sideM]); const grp = new THREE.Group(); grp.add(m); m.position.y = 0.18;
-    if (!right) { for (let i = 0; i < 8; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0028, 6, 16), glossy(0x8a8f99, { metalness: 0.6 })); r.position.set(-0.14, 0.06 + i * 0.04, 0.016); r.rotation.y = Math.PI / 2; grp.add(r); } }
-    else { const bz = new THREE.Mesh(new THREE.TorusGeometry(0.004, 0.002, 6, 12), goldMat()); bz.visible = false; grp.add(bz); }
-    grp.rotation.x = -0.1; return shadowed(grp);
-  };
-  const L = mkSlab(false), Rr = mkSlab(true); L.position.set(-0.17, 0, -0.1); Rr.position.set(0.17, 0, -0.1); g.add(L, Rr);
-  const shL = contactShadow(0.34, 0.18, 0.35); shL.position.set(-0.17, 0.0015, -0.08); g.add(shL); const shR = contactShadow(0.34, 0.18, 0.35); shR.position.set(0.17, 0.0015, -0.08); g.add(shR);
-  const crack = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.36, 0.01), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.55, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false })); crack.position.set(0, 0.18, -0.1); g.add(crack);
-  const crackGlow = glow(0xffd27a, 0.3, 0.4); crackGlow.position.set(0, 0.18, -0.08); g.add(crackGlow);
-  const fxRing = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.006, 8, 56), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); fxRing.position.set(0, 0.18, -0.07); g.add(fxRing);
-  S.part(L, 0.1, { rise: 0.15 }); S.part(Rr, 0.25, { rise: 0.15 });
+  const S = scene(ctx, meta, 1.25), g = S.g;
+  const cam = ctx.camera;
+  g.add(contactShadow(0.95, 1.0, 0.38));
+  // the rift: a deep blue glow under the gap
+  const abyssT = paintTex(128, 128, (x) => { const gr = x.createLinearGradient(0, 0, 128, 0); gr.addColorStop(0, 'rgba(60,140,255,0)'); gr.addColorStop(0.5, 'rgba(120,190,255,1)'); gr.addColorStop(1, 'rgba(60,140,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 128, 128); });
+  const abyss = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: abyssT, transparent: true, opacity: 0.95, toneMapped: false, depthWrite: false })); abyss.rotation.x = -Math.PI / 2; abyss.rotation.z = Math.PI / 2; abyss.position.y = 0.003; abyss.renderOrder = 2; g.add(abyss);
+  const seam = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, toneMapped: false, depthWrite: false })); seam.rotation.x = -Math.PI / 2; seam.position.y = TH + 0.009; seam.scale.set(R * 2, 0.012, 1); seam.renderOrder = 3; g.add(seam);
+  const farH = half(true), nearH = half(false); g.add(farH, nearH);
 
-  // ---- three bins in front: a plug, a gear, a bulb, each on its own pad
-  const POS = [new THREE.Vector3(-0.24, 0, 0.19), new THREE.Vector3(0, 0, 0.23), new THREE.Vector3(0.24, 0, 0.19)];
-  const bins = BIN.map((b, i) => {
-    const grp = new THREE.Group(); grp.position.copy(POS[i]); g.add(grp);
-    const padm = new THREE.Mesh(new RoundedBox(0.2, 0.01, 0.17, 0.034), glossy(0x2d3f5c)); padm.position.y = 0.005; grp.add(padm);
-    const rim = new THREE.Mesh(new RoundedBox(0.208, 0.004, 0.178, 0.036), GL(b.c, 0.7)); rim.position.y = 0.0025; grp.add(rim);
-    let obj;
-    if (i === 0) {
-      obj = new THREE.Group(); const bx = new THREE.Mesh(new RoundedBox(0.1, 0.08, 0.045, 0.014), glossy(b.c)); bx.position.y = 0.05; obj.add(bx);
-      [-0.018, 0.018].forEach((x) => { const h = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.004, 14), mat(0x2b2620)); h.rotation.x = Math.PI / 2; h.position.set(x, 0.05, 0.0235); obj.add(h); });
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.0035, 8, 40), GL(b.c, 1.1)); ring.position.set(0, 0.05, 0.024); obj.add(ring);
-      const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0.05, 0.03, 0.02), new THREE.Vector3(0.09, 0.012, 0.05), new THREE.Vector3(0.07, 0.012, 0.08)]), 20, 0.004, 8), mat(0x2b2620)); obj.add(cable);
-    } else if (i === 1) {
-      obj = new THREE.Group(); const gm = gearMesh(0.048, 9, b.c); gm.position.set(0, 0.062, -0.008); obj.add(gm); obj.userData.gear = gm;
-      const g2 = gearMesh(0.03, 7, 0xffe3a0); g2.position.set(0.058, 0.03, -0.008); obj.add(g2); obj.userData.g2 = g2;
+  // three tablets on the far half
+  const tab = BINS.map((b, i) => {
+    const o = new THREE.Group(); o.position.set((i - 1) * 0.225, TH, -0.17); g.add(o);
+    const body = new THREE.Mesh(RB(0.2, 0.235, 0.016, 0.022), glossy(0xf6efdf, { roughness: 0.4 })); body.position.y = 0.138; o.add(body);
+    const mk = (z, ry) => { const f = new THREE.Mesh(new THREE.PlaneGeometry(0.19, 0.225), new THREE.MeshBasicMaterial({ map: tabletTex(b), transparent: true, toneMapped: false })); f.position.set(0, 0.138, z); f.rotation.y = ry; return f; };
+    o.add(mk(0.0085, 0)); o.add(mk(-0.0085, Math.PI));
+    const foot = new THREE.Mesh(RB(0.14, 0.02, 0.05, 0.008), goldMat()); foot.position.y = 0.01; o.add(foot);
+    shadowed(o);
+    const rec = { o, b, i, k: 0, bad: -9, ok: -9 };
+    S.part(o, 1.3 + i * 0.25, { rise: 0.1, dur: 0.9 });
+    rec.pr = S.touch(o, () => pick(rec), { color: b.c, size: 0.2, at: new THREE.Vector3(0, 0.14, 0.02), wake: 3.8 });
+    return rec;
+  });
+  // planks
+  const planks = Array.from({ length: 6 }, (_, i) => {
+    const o = new THREE.Group(); o.position.set(-0.25 + i * 0.1, TH + 0.007, 0); g.add(o);
+    const m = new THREE.Mesh(RB(0.07, 0.012, 1, 0.005), glossy(0xe0b85e, { roughness: 0.3 })); o.add(m);
+    const stripe = new THREE.Mesh(RB(0.02, 0.0135, 0.5, 0.003), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 })); o.add(stripe);
+    shadowed(o); o.visible = false; o.userData = { m, stripe, born: -9, c: 0xffffff };
+    return o;
+  });
+
+  // hovering situation
+  const card = new THREE.Group(); g.add(card);
+  const cs = sign(0.5, 0.115, '', { color: '#fff7e6', border: '#d4ad55', fs: 62 }); card.add(cs);
+  const cg = glow(0xffd27a, 0.5, 0.3); cs.add(cg);
+  card.visible = false;
+  const order = (() => { const o = shuffle([0, 1, 2, 3, 4, 5], 9); // never two of the same cause back to back
+    for (let k = 1; k < 6; k++) if (ITEMS[o[k]].b === ITEMS[o[k - 1]].b) { for (let j = k + 1; j < 6; j++) if (ITEMS[o[j]].b !== ITEMS[o[k - 1]].b && (j + 1 >= 6 || ITEMS[o[j]].b !== ITEMS[o[k + 1 < 6 ? k + 1 : k]].b || true)) { [o[k], o[j]] = [o[j], o[k]]; break; } }
+    return o; })();
+  const spawn = new THREE.Vector3(0, TH + 0.23, 0.15);
+  let round = -1, solved = 0, tries = 0, fl = null, fall = null, nextAt = 3.6, pend = 0, t0c = 0, gap = 0.7, fin = false, finT = -1;
+  function next() { round++; if (round >= 6) { finT = S.now; return; } cs.userData.set(ITEMS[order[round]].t); card.visible = true; card.scale.setScalar(0.0001); card.position.copy(spawn); t0c = S.now; fall = null; ctx.ui.hud('ما السبب الأقوى للفجوة؟'); }
+  function pick(r) {
+    if (round < 0) return;
+    if (!card.visible || fl || fall) { ctx.ui.card({ tag: 'سبب', title: r.b.t, body: r.b.why, color: r.b.c }); return; }
+    const it = ITEMS[order[round]];
+    if (it.b === r.i) {
+      solved++; ctx.sfx.good?.(); fl = { t0: S.now, from: card.position.clone(), r };
+      const p = planks[solved - 1]; p.userData.born = S.now; p.userData.m.material.color.setHex(r.b.c); p.userData.stripe.material.color.setHex(r.b.c); p.visible = true;
+      ctx.ui.card({ tag: 'سبب', title: r.b.t, body: r.b.why, color: r.b.c });
+      ctx.ui.hud(`${['', 'لوح', 'لوحان', 'ثلاثة ألواح', 'أربعة ألواح', 'خمسة ألواح'][solved] || 'اكتمل الجسر'}`);
     } else {
-      obj = new THREE.Group(); const bu = new THREE.Mesh(new THREE.SphereGeometry(0.045, 28, 20), GL(0xffe3a0, 0.8)); bu.position.y = 0.088; obj.add(bu);
-      const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.03, 16), goldMat()); nk.position.y = 0.04; obj.add(nk); obj.userData.bulb = bu;
-      const hh = glow(b.c, 0.26, 0.5); hh.position.y = 0.088; obj.add(hh);
+      tries++; ctx.sfx.bad?.(); fall = { t0: S.now, from: card.position.clone() }; r.bad = S.now; ctx.ui.toast('ليس هذا السبب، سقط الموقف في الهوّة');
     }
-    obj.position.y = 0.01; obj.scale.setScalar(1.65); grp.add(shadowed(obj));
-    const lamp = glow(b.c, 0.3, 0); lamp.position.y = 0.07; grp.add(lamp);
-    const plate = label(b.n, 0.19, { size: 50, width: 480, weight: 800, border: hex(b.c), pad: 16, radius: 18 }); plate.rotation.x = -1.0; plate.position.set(0, 0.012, 0.115); grp.add(plate);
-    S.part(grp, 0.6 + i * 0.3, { rise: 0.14 });
-    return { grp, obj, lamp, rim, b, i, shake: -9, pulse: -9 };
-  });
-
-  // ---- progress beads, and the pearl that carries the situation
-  const beads = [];
-  for (let i = 0; i < 12; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 12, 8), new THREE.MeshStandardMaterial({ color: 0xcfc6b2, emissive: 0xffd27a, emissiveIntensity: 0, roughness: 0.4 })); m.position.set(-0.165 + i * 0.03, 0.01, 0.325); g.add(m); beads.push(m); }
-  const pearl = new THREE.Group(); pearl.position.set(0, 0.24, 0.04); g.add(pearl);
-  const pm = new THREE.Mesh(new THREE.SphereGeometry(0.034, 28, 20), new THREE.MeshPhysicalMaterial({ color: 0xfff4d8, emissive: 0xffd27a, emissiveIntensity: 0.6, roughness: 0.1, clearcoat: 1, transparent: true, opacity: 0.95 })); pearl.add(pm);
-  const ph = glow(0xffd27a, 0.24, 0.6); pearl.add(ph);
-  S.touch(pearl, () => { ctx.ui.toast('اختر ما ينقص أصحابها بالضبط'); }, { color: 0xffd27a, size: 0.14, wake: 3.2 });
-  let cur = 0, done = 0, tagS = null, anim = null, closeT = -1; const seenBin = [false, false, false];
-  const homeP = new THREE.Vector3(0, 0.24, 0.04);
-  const showTag = () => { if (tagS) { g.remove(tagS); tagS.material.map.dispose(); tagS = null; } if (cur >= ORDER.length) return; const it = IT[ORDER[cur]]; tagS = tagSprite(it[0], 0.2, 0xd4ad55, { ppu: 2200 }); tagS.material.depthTest = false; tagS.renderOrder = 10; g.add(tagS); tagS.userData.k = 0; };
-  showTag(); ctx.ui.hud('أين يكمن السبب الأقوى؟');
-  bins.forEach((bn) => {
-    S.touch(bn.grp, () => {
-      if (cur >= ORDER.length || anim) return;
-      const it = IT[ORDER[cur]];
-      if (it[1] === bn.i) {
-        bn.pulse = S.now; ctx.sfx.good?.(); anim = { t0: S.now, from: pearl.position.clone(), to: bn.grp.position.clone().setY(0.12), bin: bn };
-        S.burst(bn.grp.position.clone().setY(0.12).multiplyScalar(0.9), bn.b.c, 24, 0.5);
-        if (!seenBin[bn.i]) { seenBin[bn.i] = true; ctx.ui.card({ tag: 'السبب الأقوى', title: bn.b.n, body: `${it[2]}؛ ${SAY[bn.i]}.`, color: bn.b.c }); } else ctx.ui.toast(SAY[bn.i]);
-      } else { bn.shake = S.now; ctx.sfx.bad?.(); ctx.ui.toast('فكّر فيما ينقص أصحابها بالضبط'); }
-    }, { color: bn.b.c, size: 0.32, at: new THREE.Vector3(0, 0.07, 0), wake: 3.4 });
-  });
+  }
+  const crown = new THREE.Mesh(new THREE.TorusGeometry(R + 0.03, 0.003, 8, 120), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, toneMapped: false })); crown.rotation.x = Math.PI / 2; crown.position.y = TH + 0.012; g.add(crown);
+  ctx.ui.hud('الفجوة الرقمية');
+  const gapTarget = () => G0 * (1 - solved / 6) + 0.0;
 
   S.loop((t, dt, e) => {
-    const k = easeBack((t - 1.6) / 0.8) * e;
-    if (anim) {
-      const u = clamp01((t - anim.t0) / 0.7); pearl.position.lerpVectors(anim.from, anim.to, ease(u)); pearl.position.y += Math.sin(u * Math.PI) * 0.1; pearl.scale.setScalar(Math.max(0.0001, 1 - 0.8 * ease(u)) * k);
-      if (u >= 1) { beads[done].material.emissiveIntensity = 1.4; beads[done].material.color.set(0xffe3a0); done++; cur++; anim = null; pearl.position.copy(homeP); if (cur >= ORDER.length) { closeT = t; ctx.ui.hud('سدَدتَ الفجوة'); if (tagS) { g.remove(tagS); tagS = null; } } else showTag(); }
-    } else { pearl.position.y = 0.24 + Math.sin(t * 1.8) * 0.007; pearl.scale.setScalar(Math.max(0.0001, k)); }
-    if (tagS) { tagS.position.set(0, 0.32, 0.04); tagS.userData.k = THREE.MathUtils.damp(tagS.userData.k, (anim || t < 2.6 ? 0 : 1) * e, 6, dt); tagS.visible = tagS.userData.k > 0.03; setSpr(tagS, 0.2, Math.min(tagS.userData.k, 1)); }
-    const c = closeT > 0 ? ease((t - closeT - 0.6) / 1.6) : 0;
-    L.position.x = -0.17 + 0.0 + 0.155 * c; Rr.position.x = 0.17 - 0.155 * c; crack.material.opacity = 0.55 * (1 - c) * (0.75 + 0.25 * Math.sin(t * 5)); crack.scale.x = 1 - c * 0.9; crackGlow.material.opacity = 0.4 * (1 - c);
-    shL.position.x = L.position.x; shR.position.x = Rr.position.x;
-    if (c >= 1) { const w = clamp01((t - closeT - 2.2) / 1.2); fxRing.material.opacity = 0.9 * (1 - w) * (w > 0 ? 1 : 0); fxRing.scale.setScalar(1 + w * 3.4); }
-    if (c >= 1 && !S.finished) { S.finished = true; S.burst(new THREE.Vector3(0, 0.16, 0), 0xffd27a, 60, 0.7, 0.045); ctx.ui.card({ tag: 'اكتمل التصنيف', title: 'أسباب الفجوة الرقمية', body: 'قلة الدخول إلى التقنية، وقلة المعرفة بكيفية استخدامها، وقلة المعرفة بفوائدها؛ ثلاثة أسباب حدّدها موليناري.', color: 0xd4ad55 }); ctx.ui.done(); }
-    bins.forEach((bn, i) => {
-      const o = bn.obj.userData;
-      if (o.gear) { o.gear.rotation.z = t * 0.8; o.g2.rotation.z = -t * 1.1; }
-      if (o.bulb) o.bulb.material.emissiveIntensity = 0.7 + 0.3 * Math.sin(t * 2.4) + clamp01(1 - (t - bn.pulse) / 0.8) * 1.2;
-      bn.grp.position.x = POS[i].x + clamp01(1 - (t - bn.shake) / 0.5) * Math.sin((t - bn.shake) * 55) * 0.012;
-      bn.obj.scale.y = 1.65 * (1 + clamp01(1 - (t - bn.pulse) / 0.5) * 0.12 * Math.sin((t - bn.pulse) * 14));
-      bn.obj.rotation.y = Math.sin(t * 0.7 + i) * 0.25;
-      bn.rim.material.emissiveIntensity = 0.5 + 0.25 * Math.sin(t * 2.4 + i) + clamp01(1 - (t - bn.pulse) / 0.8);
-    });
+    const bt = ease(t / 1.6);
+    const tg = t < 1.8 ? THREE.MathUtils.lerp(0.9, G0, bt) : gapTarget();
+    gap = t < 1.8 ? tg : THREE.MathUtils.damp(gap, tg, 2.6, dt);
+    farH.position.z = -gap / 2; nearH.position.z = gap / 2;
+    abyss.scale.set(Math.max(0.0001, gap + 0.14), R * 2.04, 1); abyss.material.opacity = 0.95 * clamp01(gap / 0.06);
+    seam.material.opacity = (1 - clamp01(gap / 0.05)) * (0.5 + 0.2 * Math.sin(t * 3)) * (solved ? 1 : 0);
+    planks.forEach((p, i) => { const u = p.userData; if (!p.visible) return; const k = easeBack((t - u.born) / 0.7); p.scale.set(Math.max(0.0001, k), Math.max(0.0001, k), 1); u.m.scale.z = gap + 0.09; u.stripe.scale.z = Math.max(0.2, gap + 0.07); p.position.y = TH + 0.007 + 0.01 * (1 - clamp01(k)); p.scale.z = 1; if (gap < 0.012) p.visible = (solved < 6) ? true : t - finT < 0.8; });
+    const yaw = faceYaw(g, cam);
+    tab.forEach((r) => { const bd = clamp01(1 - (t - r.bad) / 0.5); r.o.position.x = (r.i - 1) * 0.225 + Math.sin((t - r.bad) * 55) * 0.008 * bd; });
+    if (round < 0 && t > nextAt) { next(); nextAt = 1e9; }
+    if (card.visible) {
+      card.rotation.y = yaw;
+      if (fl) {
+        const u = sm((t - fl.t0) / 0.9); const tp = fl.r.o.position;
+        card.position.set(THREE.MathUtils.lerp(fl.from.x, tp.x, u), THREE.MathUtils.lerp(fl.from.y, TH + 0.16, u) + Math.sin(u * Math.PI) * 0.1, THREE.MathUtils.lerp(fl.from.z, tp.z, u));
+        card.scale.setScalar(Math.max(0.05, 1 - u * 0.9));
+        if (u >= 1) { card.visible = false; burstAt(S, fl.r.o, fl.r.b.c, 28, 0.5, 0.03); fl = null; pend = t + 0.7; }
+      } else if (fall) {
+        const u = clamp01((t - fall.t0) / 0.9);
+        card.position.set(fall.from.x * (1 - sm(u * 2)), THREE.MathUtils.lerp(fall.from.y, -0.1, u * u) + Math.sin(Math.min(1, u * 2) * Math.PI) * 0.04, THREE.MathUtils.lerp(fall.from.z, 0, sm(u * 2)));
+        card.scale.setScalar(Math.max(0.05, 1 - u * 0.7)); card.rotation.z = u * 1.6;
+        if (u >= 1) { card.rotation.z = 0; card.visible = true; card.position.copy(spawn); t0c = t; fall = null; }
+      } else {
+        card.rotation.z = 0; card.position.set(0, spawn.y + 0.01 * Math.sin(t * 2), spawn.z); card.scale.setScalar(Math.max(0.0001, easeBack((t - t0c) / 0.7)));
+        cg.material.opacity = 0.3 + 0.12 * Math.sin(t * 3);
+      }
+    }
+    if (pend && t > pend) { pend = 0; next(); }
+    if (finT > 0) {
+      const u = clamp01((t - finT) / 1.2); crown.material.opacity = 0.9 * u; crown.rotation.z = t * 0.4;
+      if (!fin && t - finT > 0.5) { fin = true; burstAt(S, farH, 0xffd27a, 60, 0.7, 0.045); ctx.sfx.good?.(); ctx.ui.card({ tag: 'الفجوة الرقمية', title: 'ثلاثة أسباب', body: 'قلة الدخول إلى التكنولوجيا، وقلة المعرفة في كيفية استخدامها، وقلة المعرفة في فوائدها (موليناري، ٢٠١٢).', color: 0x3b8fe0 }); ctx.ui.done(); }
+    }
   });
   return { update: S.update };
 }

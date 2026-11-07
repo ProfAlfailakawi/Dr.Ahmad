@@ -1,101 +1,110 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=16';
-import { inked } from '../../pencil.js?v=16';
-import { Rig, retext, V, TAU } from '../lib/a5-kit.js?v=16';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=17';
+import { Rig, V, TAU } from '../lib/b5-kit.js?v=17';
+import { lightPool } from '../../v2/common.js?v=17';
 
-export const meta = { free: true, center: [0.3, 0.72], typeLabel: 'نسيج التعلّم' };
+export const meta = { free: true, center: [0.5, 0.72], typeLabel: 'مقارنة بمنزلق' };
 
-const N = 9, CELL = 0.043;
-const ACC = [0x2a8fd0, 0xef8f2a, 0x2fa38a, 0xe3b23c, 0xe0452c, 0x5a6fd6].map((c) => new THREE.Color(c));
-const CREAM = new THREE.Color(0xe9dcc0), CREAM2 = new THREE.Color(0xd9c9a4);
+const DX = 0.1, R = 0.28; // disc centre x, radius
+const PLX = -0.37;       // plinth x
+const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 
-function gadTex() {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 160; const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 256, 160); gr.addColorStop(0, '#3f5fa8'); gr.addColorStop(1, '#1f2f63'); g.fillStyle = gr; g.fillRect(0, 0, 256, 160);
-  g.fillStyle = 'rgba(255,255,255,.55)'; for (let i = 0; i < 4; i++) { g.beginPath(); g.roundRect(24, 26 + i * 30, 120 - i * 14, 12, 6); g.fill(); }
-  g.fillStyle = '#ef8f2a'; g.beginPath(); g.arc(200, 60, 22, 0, Math.PI * 2); g.fill();
+function screenTex() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 180; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 256, 180); gr.addColorStop(0, '#2b8fb5'); gr.addColorStop(1, '#1b4f86'); g.fillStyle = gr; g.fillRect(0, 0, 256, 180);
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 7; g.lineCap = 'round'; g.beginPath(); g.moveTo(30, 130); g.lineTo(80, 90); g.lineTo(120, 110); g.lineTo(170, 60); g.lineTo(226, 40); g.stroke();
+  [[30, 130], [80, 90], [120, 110], [170, 60], [226, 40]].forEach(([x, y]) => { g.fillStyle = '#ffd27a'; g.beginPath(); g.arc(x, y, 9, 0, TAU); g.fill(); });
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-const BLK = [
-  { t: 'نسيج المجتمع', n: 'التكنولوجيا جزء من نسيج المجتمع أيضاً، لا مظهر خارجي للتقدّم.', c: 0x6fcf6a },
-  { t: 'ليست ترفاً', n: 'ليست مجرد ترف بل مكوّن أصيل في العملية التعليمية.', c: 0x2a8fd0 },
-  { t: 'فقر علمي', n: 'المعلم أو الإعلامي غير الملمّ بالمستحدثات يُعدّ في أحضان الفقر العلمي.', c: 0xe0452c },
-];
+
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(1.12); g.position.x += 0.08; ctx.stage.add(g);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(0.9); g.position.x += 0.1; ctx.stage.add(g);
   const rig = new Rig(ctx);
+  const pool = lightPool(0xd9a21f, 0.5, 0); pool.position.set(0, 0.002, 0); pool.scale.set(1.7, 1.7, 1.0); g.add(pool); rig.fn((p) => { pool.material.opacity = 0.25 * p; }, 0.1, 1);
 
-  // loom frame
-  const FR = N * CELL / 2 + 0.035;
-  const bars = [[0, -FR, FR * 2 + 0.03, 0.026], [0, FR, FR * 2 + 0.03, 0.026]].map(([x, z, w, d]) => { const b = inked(new RoundedBoxGeometry(w, 0.03, d, 2, 0.008), { color: 0xd8a96c }); b.position.set(x, 0.015, z); g.add(b); return b; });
-  const sides = [-FR, FR].map((x) => { const b = inked(new RoundedBoxGeometry(0.026, 0.03, FR * 2, 2, 0.008), { color: 0xd8a96c }); b.position.set(x, 0.015, 0); g.add(b); return b; });
-  [...bars, ...sides].forEach((b, i) => rig.ink(b, 0.1 + i * 0.12, 0.9));
+  // institution disc
+  const disc = new THREE.Group(); disc.position.set(DX, 0, 0); g.add(disc);
+  const dBase = new THREE.Mesh(new THREE.CylinderGeometry(R, R * 1.03, 0.03, 72), glossy(0xf4ead4, { roughness: 0.45 })); dBase.position.y = 0.015; disc.add(shadowed(dBase));
+  const dRim = new THREE.Mesh(new THREE.TorusGeometry(R * 1.01, 0.006, 10, 90), goldMat()); dRim.rotation.x = Math.PI / 2; dRim.position.y = 0.03; disc.add(dRim);
+  const dTop = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.96, R * 0.96, 0.004, 72), mat(0x20364f, { roughness: 0.6 })); dTop.position.y = 0.031; disc.add(dTop);
+  rig.add(disc, 0.1, 0.9, 'pop');
 
-  // woven cloth: instanced warp (along z) and weft (along x) pieces
-  const cnt = N * N;
-  const warp = new THREE.InstancedMesh(new RoundedBoxGeometry(0.03, 0.011, CELL * 1.2, 1, 0.004), new THREE.MeshStandardMaterial({ roughness: 0.75 }), cnt);
-  const weft = new THREE.InstancedMesh(new RoundedBoxGeometry(CELL * 1.2, 0.011, 0.03, 1, 0.004), new THREE.MeshStandardMaterial({ roughness: 0.75 }), cnt);
-  g.add(warp, weft); [warp, weft].forEach((m) => { m.castShadow = m.receiveShadow = true; });
-  const dm = new THREE.Object3D(), col = new THREE.Color();
-  const cells = []; for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) cells.push({ i, j, x: (i - (N - 1) / 2) * CELL, z: (j - (N - 1) / 2) * CELL, d: Math.hypot(i - (N - 1) / 2, j - (N - 1) / 2) });
-
-  // the gadget: laptop + toy blocks
-  const gad = new THREE.Group(); g.add(gad);
-  const lb = new THREE.Mesh(new RoundedBoxGeometry(0.1, 0.008, 0.07, 2, 0.003), glossy(0xdfe4ea)); lb.position.y = 0.004; gad.add(shadowed(lb));
-  const hg = new THREE.Group(); hg.position.set(0, 0.008, -0.034); hg.rotation.x = -0.35; gad.add(hg);
-  const ls = new THREE.Mesh(new RoundedBoxGeometry(0.1, 0.066, 0.006, 2, 0.003), glossy(0xdfe4ea)); ls.position.y = 0.033; hg.add(shadowed(ls));
-  const lf = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 0.056), new THREE.MeshBasicMaterial({ map: gadTex(), toneMapped: true })); lf.position.set(0, 0.033, 0.0035); hg.add(lf);
-  const bk = [[0x6fcf6a, -0.07, 0.03], [0x2a8fd0, 0.07, 0.035], [0xe0452c, 0.0, 0.075]].map(([c, x, z], i) => { const b = new THREE.Mesh(new RoundedBoxGeometry(0.03, 0.03, 0.03, 2, 0.004), glossy(c)); b.position.set(x, 0.015, z); b.rotation.y = i; gad.add(shadowed(b)); return b; });
-  const halo = glow(0xffd9a0, 0.2, 0.3); halo.position.y = 0.04; gad.add(halo);
-  const shuttle = new THREE.Group(); const sb = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.05, 6, 12), glossy(0xb06a2a)); sb.rotation.z = Math.PI / 2; shuttle.add(sb); const sp = new THREE.Mesh(new THREE.TorusGeometry(0.007, 0.002, 6, 12), goldMat()); shuttle.add(sp); g.add(shadowed(shuttle));
-
-  BLK.forEach((b, i) => { rig.touch(bk[i], (hh) => { taps.add('b' + i); ctx.sfx.pop?.(); ctx.fx.burst(bk[i].position.clone().setY(0.06), b.c, 18, 0.3, 0.03); ctx.ui.card({ tag: 'نظرة الدول المتقدمة', title: b.t, body: b.n, color: b.c }); chk(); hh.on = false; }, { color: b.c, size: 0.1, show: 4 + i * 0.3 }); });
-  const tag = sprite('مظهر خارجي', 0.22, { size: 50, width: 420, weight: 800, border: '#8fa6b5' }); tag.userData.w = 0.22; tag.position.set(0, 0.012, FR + 0.075); g.add(tag);
-
-  let taps = new Set(); let m = 0, mT = 0, now = 0, seenA = false, seenB = false, finished = false, autoAt = 3.0, auto = false, lastTag = '';
-  const info = (b) => {
-    if (b) { ctx.ui.card({ tag: 'نظرة الدول المتقدمة', title: 'جزء من نسيج التعلّم', body: 'التكنولوجيا جزء من نسيج العملية التعليمية والمجتمع، لا مجرد ترف ولا مظهر خارجي للتقدّم.', color: 0x2fa38a }); seenB = true; }
-    else { ctx.ui.card({ tag: 'الاعتقاد السائد', title: 'مستحدثات مستوردة', body: 'أن التكنولوجيا استيراد أجهزة ومواد، ومجاراة للتقدّم، ونوع من الرفاهية.', color: 0x8fa6b5 }); seenA = true; }
-    chk();
+  // woven fabric (instanced short threads)
+  const S = 0.046, cells = [];
+  for (let i = -6; i <= 6; i++) for (let j = -6; j <= 6; j++) { const x = i * S, z = j * S; if (Math.hypot(x, z) < R * 0.93) cells.push({ x, z, h: (i + j) & 1 }); }
+  const th = new THREE.InstancedMesh(new RoundedBoxGeometry(1, 1, 1, 2, 0.4), new THREE.MeshStandardMaterial({ roughness: 0.45 }), cells.length);
+  const cols = [0x1c8fa8, 0xe0a52f, 0x2b6fc0, 0xd9663f]; const colr = new THREE.Color();
+  cells.forEach((c, k) => { colr.setHex(cols[(c.h ? 0 : 2) + ((k * 7) % 2)]); th.setColorAt(k, colr); });
+  th.position.y = 0.036; disc.add(th); th.castShadow = true;
+  const dm = new THREE.Object3D();
+  const setThreads = (w, lp, t) => {
+    cells.forEach((c, k) => {
+      const d = Math.hypot(c.x - lp.x, c.z - lp.z) / R;
+      const p = clamp01(w * 1.6 - d * 0.9); const e = 0.2 + 0.8 * easeBack(p);
+      dm.position.set(c.x, (c.h ? 0.003 : -0.001) * e + Math.sin(t * 2 + c.x * 12 + c.z * 9) * 0.0012 * p, c.z);
+      dm.rotation.set(0, 0, 0);
+      if (c.h) dm.scale.set(S * 0.98 * e + 0.0001, 0.006 * e + 0.0001, S * 0.32 * e + 0.0001); else dm.scale.set(S * 0.32 * e + 0.0001, 0.006 * e + 0.0001, S * 0.98 * e + 0.0001);
+      dm.updateMatrix(); th.setMatrixAt(k, dm.matrix);
+    });
+    th.instanceMatrix.needsUpdate = true;
   };
-  const chk = () => { if (!finished && seenA && seenB && taps.size >= 4) { finished = true; setTimeout(() => ctx.ui.done(), 1000); } };
-  rig.touch(gad, (hh) => { mT = mT ? 0 : 1; auto = true; ctx.sfx.whoosh?.(); taps.add('g'); info(!!mT); hh.on = false; }, { color: 0x6fb0ff, size: 0.2, at: V(0, 0.04, 0), show: 6 });
-  rig.touch(shuttle, (hh) => { taps.add('s'); ctx.sfx.pop?.(); ctx.fx.burst(shuttle.position.clone().setY(0.06), 0xef8f2a, 18, 0.3, 0.03); ctx.ui.card({ tag: 'المكوك', title: 'خيط يدخل النسيج', body: 'حين يُنسج الخيط في القماش يصير جزءاً منه لا يُنزع كما تُنزع الزينة.', color: 0xef8f2a }); chk(); hh.on = false; }, { color: 0xef8f2a, size: 0.12, show: 6.4 });
-  const hit = new THREE.Mesh(new THREE.BoxGeometry(FR * 2, 0.02, FR * 2), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 0.02; g.add(hit);
-  ctx.tap(hit, () => { taps.add('c'); ctx.sfx.pop?.(); ctx.ui.card({ tag: 'المستفيد', title: 'المستفيد الحقيقي', body: 'في الاعتقاد السائد يُنسى المستفيد الحقيقي، أما في نظرة الدول المتقدمة فالتكنولوجيا في صميم العملية التعليمية.', color: 0xd4ad55 }); chk(); });
-  ctx.ui.hud('المس الجهاز: زينة أم نسيج؟');
+  setThreads(0, V(0, 0, 0), 0);
+
+  // plinth + glass case at the margin
+  const pl = new THREE.Group(); pl.position.set(PLX, 0, 0.0); g.add(pl);
+  const plb = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.1, 40), glossy(0xe0b85e, { roughness: 0.25, metalness: 0.3 })); plb.position.y = 0.05; pl.add(shadowed(plb));
+  const plt = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.014, 40), goldMat()); plt.position.y = 0.107; pl.add(plt);
+  const case_ = new THREE.Mesh(new THREE.SphereGeometry(0.13, 36, 18, 0, TAU, 0, Math.PI / 2), new THREE.MeshPhysicalMaterial({ color: 0xe6f1f6, transparent: true, opacity: 0.28, roughness: 0.04, side: THREE.DoubleSide, depthWrite: false })); case_.position.y = 0.114; pl.add(case_);
+  const caseRing = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.003, 6, 40), goldMat()); caseRing.rotation.x = Math.PI / 2; caseRing.position.y = 0.114; pl.add(caseRing);
+  rig.add(pl, 0.4, 0.9, 'pop');
+
+  // laptop
+  const lap = new THREE.Group(); g.add(lap);
+  const lb = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.012, 0.14, 3, 0.005), glossy(0xdfe3ea, { roughness: 0.3 })); lb.position.y = 0.006; lap.add(shadowed(lb));
+  const keys = new THREE.InstancedMesh(new RoundedBoxGeometry(0.014, 0.005, 0.014, 2, 0.002), mat(0x3a3f4a), 40); let kk = 0;
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 10; c++) { dm.position.set(-0.09 + c * 0.02, 0.014, -0.02 + r * 0.02 - 0.01); dm.scale.set(1, 1, 1); dm.rotation.set(0, 0, 0); dm.updateMatrix(); keys.setMatrixAt(kk++, dm.matrix); }
+  lap.add(keys);
+  const pad = new THREE.Mesh(new RoundedBoxGeometry(0.06, 0.002, 0.03, 2, 0.001), mat(0xc3c8d0)); pad.position.set(0, 0.0125, 0.052); lap.add(pad);
+  const hinge = new THREE.Group(); hinge.position.set(0, 0.012, -0.07); hinge.rotation.x = -0.28; lap.add(hinge);
+  const lid = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.14, 0.008, 3, 0.004), glossy(0xdfe3ea, { roughness: 0.3 })); lid.position.set(0, 0.07, 0); hinge.add(shadowed(lid));
+  const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.185, 0.127), new THREE.MeshBasicMaterial({ map: screenTex(), toneMapped: false })); sc.position.set(0, 0.07, 0.0045); hinge.add(sc);
+  const lgl = glow(0x6fd0ff, 0.34, 0.5); lgl.position.set(0, 0.07, 0.04); hinge.add(lgl);
+  rig.add(lap, 0.8, 0.8, 'pop');
+  // blocks (the learners' toys)
+  const blocks = new THREE.Group(); disc.add(blocks); rig.add(blocks, 1.1, 0.8, 'pop');
+  const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 3), glossy(0xe86fa6)); b1.rotation.z = Math.PI / 2; b1.position.set(-0.16, 0.06, 0.14); b1.rotation.set(0, 0.5, Math.PI / 2);
+  const b2 = new THREE.Mesh(new RoundedBoxGeometry(0.05, 0.06, 0.05, 3, 0.006), glossy(0x7ec34d)); b2.position.set(0.12, 0.066, 0.17); b2.rotation.y = 0.6;
+  const b3 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 28), glossy(0x2f8fe0)); b3.position.set(0.19, 0.06, -0.08);
+  [b1, b2, b3].forEach((b) => blocks.add(shadowed(b)));
+
+  const lab1 = sprite('على الهامش', 0.2, { size: 50, width: 420, weight: 800, border: '#d9a21f' }); lab1.position.set(PLX, 0.36, 0.0); g.add(lab1);
+  const lab2 = sprite('في الصميم', 0.19, { size: 50, width: 420, weight: 800, border: '#1c8fa8' }); lab2.position.set(DX, 0.34, -0.36); g.add(lab2);
+  lab1.userData.w = 0.2; lab2.userData.w = 0.19;
+
+  let s = 0, target = 0, now = 0, seen = new Set(), doneF = false, auto = true; let slideEl;
+  const LAP0 = V(PLX, 0.114, 0), LAP1 = V(DX, 0.035, 0.02);
+  const see = (k) => { seen.add(k); if (seen.size >= 4 && !doneF && s > 0.8) { doneF = true; setTimeout(() => ctx.ui.done(), 2500); } };
+  const setTarget = (v) => { target = v; auto = false; };
+  rig.touch(lap, () => { ctx.sfx.whoosh?.(); setTarget(target > 0.5 ? 0 : 1); if (target > 0.5) ctx.ui.card({ tag: 'نظرة الدول المتقدمة', title: 'جزء من النسيج', body: 'التكنولوجيا جزء من نسيج العملية التعليمية بل والمجتمع، وليست مجرد ترف.', color: 0x1c8fa8 }); else ctx.ui.card({ tag: 'الاعتقاد السائد', title: 'جهاز مستورد', body: 'ظنّوا أن استيراد الأجهزة والمواد وإدخالها في المدارس يحقق الحداثة.', color: 0xd9a21f }); see('l'); }, { color: 0x6fd0ff, size: 0.3, at: V(0, 0.07, 0), show: 3 });
+  rig.touch(pl, (h) => { ctx.sfx.pop?.(); h.on = false; ctx.ui.card({ tag: 'الاعتقاد السائد', title: 'نوع من الرفاهية', body: 'ينظر بعضهم إلى التكنولوجيا على أنها رفاهية، لا مكوّن أصيل في العملية التعليمية.', color: 0xd9a21f }); see('p'); }, { color: 0xe0b85e, size: 0.22, at: V(0, 0.12, 0), show: 3.4 });
+  rig.touch(blocks, (h) => { ctx.sfx.pop?.(); h.on = false; blocks.userData.bounce = now; ctx.ui.card({ tag: 'سؤال', title: 'أين المستفيد؟', body: 'يُنسى المستفيد الحقيقي من ذلك كله.', color: 0xe86fa6 }); see('b'); }, { color: 0xe86fa6, size: 0.2, at: V(0.0, 0.08, 0.1), show: 3.8 });
+  ctx.ui.slider?.({ label: 'الموقع', value: 0, onInput: (v) => { setTarget(v); } });
 
   return {
     update(t, dt, e) {
       now = t; rig.update(t, dt, e);
-      if (!auto && t > autoAt) { auto = true; mT = 1; }
-      m += (mT - m) * Math.min(1, dt * 0.9); const M = m;
-      const wave = M * 7;
-      const rise = (k) => stag(t, 0.3 + k * 0.012, 0.6, ease) * e;
-      cells.forEach((c, n) => {
-        const r = rise(c.d + (c.i % 3) * 0.2), par = (c.i + c.j) % 2 ? 1 : -1;
-        const w = clamp01((wave - c.d) / 1.8);
-        const undul = Math.sin(t * 1.2 + c.d * 0.8) * 0.0025 * w;
-        dm.position.set(c.x, 0.04 + par * 0.0065 + undul + (1 - r) * 0.1, c.z); dm.rotation.set(0, 0, 0); dm.scale.setScalar(Math.max(r, 0.0001)); dm.updateMatrix(); warp.setMatrixAt(n, dm.matrix);
-        dm.position.y = 0.04 - par * 0.0065 + undul + (1 - r) * 0.1; dm.updateMatrix(); weft.setMatrixAt(n, dm.matrix);
-        const a = ACC[(c.i * 2 + 1) % ACC.length], b = ACC[c.j % ACC.length];
-        col.copy(CREAM).lerp(a, w * ((c.i % 2) ? 0.2 : 0.0)); warp.setColorAt(n, col);
-        col.copy(CREAM2).lerp(b, w); weft.setColorAt(n, col);
-      });
-      warp.instanceMatrix.needsUpdate = weft.instanceMatrix.needsUpdate = true; warp.instanceColor.needsUpdate = weft.instanceColor.needsUpdate = true;
-      const L = ease(M);
-      const gk = stag(t, 0.9, 0.9, easeBack) * e;
-      gad.position.set(0, 0.17 * (1 - L) + 0.052 * L + Math.sin(t * 1.5) * 0.007 * (1 - L), 0); gad.scale.setScalar(Math.max(gk, 0.001)); gad.rotation.y = Math.sin(t * 0.5) * 0.6 * (1 - L);
-      halo.material.opacity = (0.25 + 0.2 * L + 0.1 * Math.sin(t * 2)) * gk;
-      bk.forEach((b, i) => { b.position.y = 0.015 + Math.sin(t * 1.3 + i) * 0.003 * (1 - L); });
-      const sx = Math.sin(t * 1.6) * (FR - 0.03) * (0.2 + 0.8 * L);
-      shuttle.position.set(sx, 0.05 + 0.02 * (1 - L), THREE.MathUtils.lerp(FR - 0.02, Math.sin(t * 0.7) * 0.5 * (FR - 0.04), L));
-      shuttle.scale.setScalar(Math.max(stag(t, 3.0, 0.6, easeBack) * e, 0.001));
-      const want = M > 0.5 ? 'جزء من النسيج' : 'مظهر خارجي';
-      if (want !== lastTag) { lastTag = want; retext(tag, want, 0.22, { size: 50, width: 420, weight: 800, border: M > 0.5 ? '#2fa38a' : '#8fa6b5' }); }
-      const tk = stag(t, 2.2, 0.6, easeBack) * e; tag.scale.set(tag.userData.w * tk + 0.0001, tag.userData.w * tag.userData.aspect * tk + 0.0001, 1);
-      g.rotation.y = Math.sin(t * 0.25) * 0.05;
+      if (auto && t > 4.2) target = 1;
+      s += (target - s) * Math.min(1, dt * 1.8); const k = ease(s);
+      lap.position.lerpVectors(LAP0, LAP1, k); lap.position.y += Math.sin(k * Math.PI) * 0.1 + (k < 0.02 ? Math.sin(t * 1.4) * 0.004 : 0); lap.rotation.y = (1 - k) * 0.35 + Math.sin(k * Math.PI) * 0.5;
+      lgl.material.opacity = 0.35 + 0.15 * Math.sin(t * 2);
+      const lw = lap.position.x - DX; setThreads(clamp01((k - 0.35) / 0.65) * e, V(lw * 0.2, 0, lap.position.z), t);
+      case_.material.opacity = 0.28; caseRing.visible = true;
+      const bb = clamp01(1 - (now - (blocks.userData.bounce ?? -9)) / 0.7); blocks.position.y = Math.sin(bb * Math.PI) * 0.03 + clamp01((k - 0.4) * 2) * 0.004;
+      b1.rotation.y = 0.5 + clamp01((k - 0.5) * 2) * Math.sin(t * 2) * 0.3; b2.rotation.y = 0.6 + (1 - Math.min(1, k * 2)) * 0;
+      const f1 = clamp01((t - 3.6) / 0.6) * (1 - k) * e, f2 = clamp01((t - 3.6) / 0.6) * k * e;
+      lab1.scale.set(lab1.userData.w * f1 + 0.0001, lab1.userData.w * lab1.userData.aspect * f1 + 0.0001, 1); lab2.scale.set(lab2.userData.w * f2 + 0.0001, lab2.userData.w * lab2.userData.aspect * f2 + 0.0001, 1);
+      lab1.visible = f1 > 0.05; lab2.visible = f2 > 0.05;
     },
   };
 }

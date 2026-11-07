@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
-} from './kit.js?v=16';
-import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=16';
-import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=16';
+} from './kit.js?v=17';
+import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=17';
+import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=17';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -849,7 +849,7 @@ export const EXPERIENCES = [
     center: [0.5, 0.5], free: false, crop: [0.19, 0.24, 0.81, 0.76], build: buildSecret,
   },
 ];
-import { SPEC_PAGES } from './v2/catalog.js?v=16';
+import { SPEC_PAGES } from './v2/catalog.js?v=17';
 import { specToExperience } from './v2/engine.js';
 // The hand-built showpieces first, then every spec-driven page in book order.
 EXPERIENCES.push(...SPEC_PAGES.map(specToExperience));
@@ -858,4 +858,4 @@ EXPERIENCES.sort((a, b) => ORDER(a) - ORDER(b));
 export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 
 // Recognition packs come from v2/catalog.js (generated). The camera cycles through them by itself.
-export { PACKS } from './v2/catalog.js?v=16';
+export { PACKS } from './v2/catalog.js?v=17';

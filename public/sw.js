@@ -173,7 +173,6 @@ self.addEventListener('fetch', (e) => {
   // إضافياً ويُبقي الفتح المباشر سريعاً قدر الإمكان.
   if (request.mode === 'navigate') {
     e.respondWith((async () => {
-      const cache = await caches.open(CACHE)
       try {
         const preload = e.preloadResponse ? await e.preloadResponse.catch(() => null) : null
         /* طلبات التنقل (HTML) دائماً من الشبكة وبـ no-store: الغلاف المخزّن يسمّي
@@ -181,19 +180,15 @@ self.addEventListener('fetch', (e) => {
         const response = preload || await fetch(request, { cache: 'no-store' })
         // 5xx هنا هو المنصّة تتبدّل أثناء النشر: صفحة التحديث تنتظر ثم تعيد فتح الرابط نفسه.
         if (isUpdatingStatus(response?.status)) return await updatingResponse() || response
-        if (response?.status === 200 && !response.redirected) {
-          await cache.put(request, response.clone())
-          void refillUpdatingPage()
-        }
+        if (response?.status === 200 && !response.redirected) void refillUpdatingPage()
         return response
       } catch {
-        // القراءة دون إنترنت أولاً: الصفحة المطلوبة نفسها إن حُفظت. وإلا فالجهاز
-        // يقول إنه متّصل والطلب انقطع — لحظة النشر نفسها — فصفحة التحديث.
-        return await cache.match(request)
-          || (self.navigator?.onLine !== false ? await updatingResponse() : null)
-          || await cache.match('/index.html')
-          || await cache.match('/')
+        // لا تُعرض أبداً صفحةٌ قديمة مخزّنة (رئيسية أو غلاف بلا تنسيق).
+        // الجهاز متّصل والطلب انقطع (تعلّق الموقع/النشر): صفحة «نُحدّث الموقع».
+        // الجهاز دون إنترنت: صفحة /offline.html المعتمدة.
+        return (self.navigator?.onLine !== false ? await updatingResponse() : null)
           || await caches.match('/offline.html')
+          || await updatingResponse()
           || new Response('Offline', { status: 503 })
       }
     })())

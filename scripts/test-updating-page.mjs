@@ -117,7 +117,7 @@ for (const status of [500, 502, 503, 504]) {
   await sw.request('/articles/read-before')
   down = true
   const again = await sw.request('/articles/read-before')
-  ok(again.response?.status === 200 && (await again.response.text()) === '<p>/articles/read-before</p>', 'U1 والصفحةُ المقروءة سابقاً تُفتح من الذاكرة قبل صفحة التحديث')
+  ok(await isUpdatingPage(again.response), 'U1 والصفحةُ المقروءة سابقاً لا تُعرض نسخةً قديمة من الذاكرة: صفحةُ التحديث بدلها')
 }
 {
   const sw = worker(withPage(async () => html('<p>the real page</p>')))
@@ -133,6 +133,7 @@ for (const status of [500, 502, 503, 504]) {
 {
   const offNet = async (p) => {
     if (p === '/' || p === '/index.html') return html('<p>shell</p>')
+    if (p === '/offline.html') return html('<p>offline page</p>')
     if (p === '/updating.html') return html(PAGE)
     if (p === '/updating.js') return js(SCRIPT)
     if (p.startsWith('/articles/')) throw new TypeError('offline')
@@ -141,7 +142,7 @@ for (const status of [500, 502, 503, 504]) {
   const offline = worker(offNet, { online: false, installNet: offNet })
   await offline.lifecycle('install')
   const shell = await offline.request('/articles/x')
-  ok(shell.response && (await shell.response.text()) === '<p>shell</p>', 'U1 ودون اتصالٍ حقيقي يبقى الاحتياط كما كان')
+  ok(shell.response && (await shell.response.text()) === '<p>offline page</p>', 'U1 ودون اتصالٍ حقيقي تُعرض صفحة offline المعتمدة لا نسخةٌ قديمة مخزّنة')
 }
 
 /* ══ U2 ══ */

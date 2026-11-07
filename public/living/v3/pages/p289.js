@@ -1,8 +1,8 @@
 // p289 (round 4): a 3D printer that builds the orange head layer by layer. Tap the head and its layers float apart; tap the print head to print again.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=18';
-import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=18';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=19';
+import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=19';
 
 export const meta = { free: true, center: [0.46, 0.52], typeLabel: 'مجسّم تفاعلي', title: 'الطباعة ثلاثية الأبعاد' };
 
@@ -70,24 +70,24 @@ export default function build(ctx) {
 
   // ---- three tokens on the front edge
   const toks = [
-    { w: 'STEM', c: '#e8873a', sub: 'علوم وهندسة', title: 'حيث تبرز التقنية', body: 'تبرز التقنية تحديداً في تعليم العلوم والتكنولوجيا والهندسة والرياضيات، وفي التعليم الطبي وتدريب موظفي الشركات والبحوث.' },
-    { w: 'VR', c: '#35b5a8', sub: 'واقع افتراضي', title: 'أساس العالم الافتراضي', body: 'تُعدّ تقنية ثلاثية الأبعاد أساس العالم الافتراضي الذي يخدم العملية التعليمية التعلمية.' },
-    { w: 'zSpace', c: '#8d6bd1', sub: 'مختبر ثلاثي', title: 'المختبر ثلاثي الأبعاد', body: 'مختبر zSpace STEM يتيح للطلاب التصوّر والتجربة والبناء بطرق غير ممكنة في بيئة الحوسبة التقليدية.' },
+    { w: 'STEM', c: '#e8873a', sub: 'علوم', title: 'حيث تبرز التقنية', body: 'تبرز التقنية تحديداً في تعليم العلوم والتكنولوجيا والهندسة والرياضيات، وفي التعليم الطبي وتدريب موظفي الشركات والبحوث.' },
+    { w: 'VR', c: '#35b5a8', sub: 'افتراضي', title: 'أساس العالم الافتراضي', body: 'تُعدّ تقنية ثلاثية الأبعاد أساس العالم الافتراضي الذي يخدم العملية التعليمية التعلمية.' },
+    { w: 'zSpace', c: '#8d6bd1', sub: 'مختبر', title: 'المختبر ثلاثي الأبعاد', body: 'مختبر zSpace STEM يتيح للطلاب التصوّر والتجربة والبناء بطرق غير ممكنة في بيئة الحوسبة التقليدية.' },
   ].map((T, i) => {
-    const grp = new THREE.Group(); grp.position.set((i - 1) * 0.22, 0.044, 0.29); g.add(grp);
+    const grp = new THREE.Group(); grp.position.set((i - 1) * 0.255, 0.044, 0.285); g.add(grp);
     const lean = new THREE.Group(); lean.rotation.x = -0.9; lean.position.y = 0.055; grp.add(lean);
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.014, 6), glossy(0xfbf7ee, { clearcoat: 0.5 })); body.rotation.x = Math.PI / 2; body.rotation.z = Math.PI / 6; lean.add(body);
     const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.081, 0.081, 0.01, 6), goldMat()); rim.rotation.x = Math.PI / 2; rim.rotation.z = Math.PI / 6; rim.position.z = -0.005; lean.add(rim);
-    const sc = screen(0.1, 0.1, 256); sc.draw((c, w, h) => {
+    const sc = screen(0.12, 0.12, 256); sc.draw((c, w, h) => {
       c.save(); c.translate(w / 2, h * 0.38); c.strokeStyle = T.c; c.fillStyle = T.c; c.lineWidth = 9; c.lineCap = 'round'; c.lineJoin = 'round';
       if (i === 0) { for (let k = 0; k < 3; k++) { c.save(); c.rotate(k * Math.PI / 3); c.beginPath(); c.ellipse(0, 0, 50, 19, 0, 0, TAU); c.stroke(); c.restore(); } c.beginPath(); c.arc(0, 0, 9, 0, TAU); c.fill(); }
       else if (i === 1) { c.beginPath(); c.roundRect(-46, -22, 92, 44, 16); c.stroke(); c.beginPath(); c.arc(-20, 0, 7, 0, TAU); c.arc(20, 0, 7, 0, TAU); c.fill(); c.beginPath(); c.moveTo(-46, -4); c.quadraticCurveTo(-60, -36, -30, -40); c.moveTo(46, -4); c.quadraticCurveTo(60, -36, 30, -40); c.stroke(); }
       else { c.beginPath(); c.moveTo(0, -42); c.lineTo(40, -20); c.lineTo(40, 24); c.lineTo(0, 46); c.lineTo(-40, 24); c.lineTo(-40, -20); c.closePath(); c.stroke(); c.beginPath(); c.moveTo(-40, -20); c.lineTo(0, 2); c.lineTo(40, -20); c.moveTo(0, 2); c.lineTo(0, 46); c.stroke(); }
       c.restore();
-      paintText(c, T.sub, w / 2, h * 0.8, w - 56, h * 0.24, { size: 44, color: '#2b2620' });
     });
-    sc.mesh.position.z = 0.0082; lean.add(sc.mesh); sc.mesh.renderOrder = 6;
-    shadowed(grp); rise.add(grp, 1.5 + i * 0.2, 0.1, 0.7);
+    sc.mesh.position.z = 0.0145; lean.add(sc.mesh); sc.mesh.renderOrder = 6;
+    const tag = sprite(T.sub, 0.16, { size: 92, color: '#2b2620', bg: 'rgba(255,251,242,.97)', border: T.c, radius: 30, pad: 14 }); tag.position.set(0, 0.035, 0.145); grp.add(tag);
+    grp.scale.setScalar(1.55); shadowed(grp); rise.add(grp, 1.5 + i * 0.2, 0.1, 0.7);
     const hh = hal.add(lean, 0xffe0a0, 0.2, [0, 0, 0.03], 4.2);
     const s = { T, grp, lean, hh, seen: false, lift: 0 };
     ctx.tap(grp, () => { s.seen = true; s.lift = 1; ctx.sfx.click?.(); ctx.ui.card({ tag: 'ثلاثية الأبعاد', title: T.title, body: T.body, color: parseInt(T.c.slice(1), 16) }); check(); });

@@ -1,7 +1,7 @@
 // p379: the mobile phone taken apart. A landscape phone floats open into five layers + a camera module; touch a part and it lifts, lights and tells the idea it carries.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, glow } from '../../kit.js?v=18';
-import { halos, liveTag, motes, blob, dais, canvasTex, TAU } from '../lib/a4-kit.js?v=18';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, glow } from '../../kit.js?v=19';
+import { halos, liveTag, motes, blob, dais, canvasTex, TAU } from '../lib/a4-kit.js?v=19';
 
 export const meta = { free: true, center: [0.45, 0.5], typeLabel: 'فكّك الجهاز', title: 'فكّك الجوال: التعلّم المتنقل' };
 

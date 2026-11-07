@@ -1,7 +1,7 @@
 // p369 — a standing phone whose screen is a bookshelf (a library in the pocket); small smart devices wait around it. Touch books, the phone, the devices.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=18';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, hexSlab } from '../lib/a7.js?v=18';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=19';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, hexSlab } from '../lib/a7.js?v=19';
 
 export const meta = { free: true, center: [0.4, 0.52], typeLabel: 'مجسّم تفاعلي' };
 

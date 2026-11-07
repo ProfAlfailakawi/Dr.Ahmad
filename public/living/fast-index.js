@@ -2,7 +2,7 @@
 // matches scatter. This worker downloads the pack itself, so nothing here touches the page's main thread.
 // SEL = the balanced descriptor bits used for hashing (6 tables of 23 bits), chosen offline from the book itself.
 const SEL = [[648,421,24,664,56,171,660,212,340,112,494,580,422,385,25,542,519,406,87,308,558,162,111],[635,459,47,535,224,32,348,159,261,322,379,440,248,292,355,323,103,550,203,0,600,485,1],[477,476,260,463,436,102,562,225,241,3,347,299,7,233,277,263,601,433,252,457,231,549,18],[661,78,278,482,649,240,227,270,311,16,200,267,9,137,179,565,557,296,222,36,27,54,10],[255,31,543,544,219,434,242,363,456,94,559,276,173,74,293,45,141,180,362,612,53,479,249],[386,611,419,628,121,93,220,183,442,172,428,420,629,164,466,603,46,291,556,89,215,184,120]];
-const W = 21, MAX_D = 100, TOP = 3, STEP_ANGLE = Math.PI / 6;
+const W = 21, MAX_D = 100, TOP = 8, STEP_ANGLE = Math.PI / 6;
 let n = 0, targets = 0, desc, lab, wx, wy, ws, wa, cx, cy, keys, items, seen, stamp = 0;
 const popcount = (v) => { v -= (v >>> 1) & 0x55555555; v = (v & 0x33333333) + ((v >>> 2) & 0x33333333); return (((v + (v >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; };
 const hash = (t, a, o, m) => { let h = m; const s = SEL[t]; for (let i = 0; i < s.length; i++) { const b = s[i]; h = (h * 2) + ((a[o + (b >> 5)] >>> (b & 31)) & 1); } return h; };

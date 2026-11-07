@@ -1,8 +1,8 @@
 // p245: escape the hall. A round vault door with four padlocks; three gem-keys at a time, only one opens the lock.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=18';
-import { rising, halos, liveTag, motes, blob, TAU, css } from '../lib/a4-kit.js?v=18';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=19';
+import { rising, halos, liveTag, motes, blob, TAU, css } from '../lib/a4-kit.js?v=19';
 
 export const meta = { free: true, center: [0.5, 0.68], typeLabel: 'لعبة هروب', title: 'اهرب من القاعة' };
 

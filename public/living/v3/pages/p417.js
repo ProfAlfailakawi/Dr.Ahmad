@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01 } from '../../kit.js?v=18';
-import { scene, TAU, contactShadow, lightPool } from '../lib/a8-kit.js?v=18';
+import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01 } from '../../kit.js?v=19';
+import { scene, TAU, contactShadow, lightPool } from '../lib/a8-kit.js?v=19';
 export const meta = { free: true, center: [0.47, 0.575], typeLabel: 'ركّب المستويات' };
 
 const GL = (c, i = 1) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: 0.3 });

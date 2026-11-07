@@ -8,12 +8,12 @@
 
 /* ── ١) الرأس: لا نصٌّ شبحيّ من تحته. مصمت تقريباً مع تمويه ─────────── */
 .site-nav.is-solid {
-  background: rgb(var(--c-canvas) / .995) !important;
+  background: rgb(var(--c-canvas)) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
   backdrop-filter: blur(20px) saturate(1.2) !important;
   box-shadow: 0 1px 0 var(--c-hair), 0 10px 24px -22px rgb(var(--c-ink) / .35);
 }
-html.dark .site-nav.is-solid { background: rgb(var(--c-canvas) / .995) !important; }
+html.dark .site-nav.is-solid { background: rgb(var(--c-canvas)) !important; }
 
 /* ── ٢) رأس الصفحة الداخلية: لا هوّة فارغة تحت المقدمة ──────────────── */
 @media (min-width: 600px) {
@@ -182,3 +182,41 @@ section[aria-labelledby="cv-downloads-title"] .grid > a {
 @media (prefers-reduced-motion: reduce) {
   .spatial-card, a.group, .site-footer__item { transition: none !important; }
 }
+
+/* ══ جولة الجمال ٣ ══════════════════════════════════════════════════════ */
+
+/* ── ١) الأزرار العائمة (مساحتي + أعلى) لا تغطّي المحتوى على الشاشة المتوسطة ──
+   على الهاتف (<640) لها معالجة قائمة (دائرة صغيرة خافتة ملاصقة للحافة). في المفتوح
+   الطولي والعرضي (640–1100) كانت كاملة الحجم فوق البطاقات والنص: نُطبّق المعالجة
+   نفسها (دائرة ٤٠px خافتة حتى تُلمس، منطقة اللمس ٤٤px) ونحجز في أسفل الصفحة
+   مساحةً فلا يُحجب آخر سطر ولا التذييل. */
+@media (min-width: 640px) and (max-width: 1100px) {
+  .floating-actions { right: .25rem !important; gap: 0 !important; }
+  .floating-actions > button,
+  .floating-actions > .my-space-trigger {
+    inline-size: 44px !important;
+    block-size: 44px !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    background-image: radial-gradient(circle at center, rgb(var(--c-canvas) / .94) 0 19px, var(--c-hair) 19px 20px, transparent 20.5px) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    opacity: .62;
+    transition: opacity .2s var(--E, cubic-bezier(.2,.7,.2,1));
+  }
+  .floating-actions > button:hover,
+  .floating-actions > button:focus-visible,
+  .floating-actions > button:active,
+  .floating-actions > .my-space-trigger:hover,
+  .floating-actions > .my-space-trigger:focus-visible { opacity: 1; }
+}
+/* حجز مساحة أسفل الصفحة لكل العروض: آخر محتوى والتذييل لا يختبئان تحت الأزرار */
+.site-footer, .home-social-footer {
+  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom)) !important;
+}
+
+/* ── ٢) رقاقات التذييل: لا قصّ سفلي ولا ارتفاع ثابت ───────────────────── */
+.site-footer__utility, .home-footer-tools { overflow: visible !important; }
+.site-footer__utility .site-footer__item,
+.home-footer-tools .site-footer__item { block-size: auto !important; min-block-size: 4.4rem; }

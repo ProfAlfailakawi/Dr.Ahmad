@@ -240,3 +240,25 @@ section[aria-labelledby="cv-downloads-title"] .grid > a {
 @media (max-width: 639px) {
   .research-editorial-row .measure { max-inline-size: none; }
 }
+
+/* ══ جولة الجمال ٤ ══════════════════════════════════════════════════════
+   رقاقات التذييل: حدّها السفلي كان يختفي. السبب بالقياس: border = 0.667px
+   (١px على DPR 1.5) بشفافية ٩٪ على صندوق ارتفاعه 80.5px وقمّته على كسر
+   (3297.47)، فيسقط الحدّ السفلي عند «التقاط البكسل». لا overflow يقصّ شيئاً.
+   العلاج: ارتفاع صحيح، وحلقة inset بـbox-shadow (تُرسم بتنعيم لا تُسقَط) بدل الحدّ. */
+@media (min-width: 600px) {
+  .home-footer-tools .site-footer__item,
+  .site-footer__utility .site-footer__item {
+    border: 0 !important;
+    block-size: 5rem !important;
+    min-block-size: 5rem;
+    box-sizing: border-box;
+    justify-content: center;
+    box-shadow: inset 0 0 0 1px rgb(var(--c-ink) / .13);
+    transition: box-shadow .3s var(--E, cubic-bezier(.2,.7,.2,1)), background-color .3s var(--E, cubic-bezier(.2,.7,.2,1));
+  }
+  html.dark .home-footer-tools .site-footer__item,
+  html.dark .site-footer__utility .site-footer__item { box-shadow: inset 0 0 0 1px rgb(var(--c-ink) / .16); }
+  .home-footer-tools .site-footer__item:hover,
+  .site-footer__utility .site-footer__item:hover { box-shadow: inset 0 0 0 1px rgb(var(--c-accent) / .55); }
+}

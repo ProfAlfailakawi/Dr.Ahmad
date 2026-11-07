@@ -232,7 +232,7 @@ section[aria-labelledby="cv-downloads-title"] .grid > a {
 }
 
 /* ── ٤) الاستماع: سطر الوصف لا يُقصّ من طرفه الخطأ في RTL بل يلتفّ ────── */
-.min-w-0.flex-1 > span.block.truncate {
+.min-w-0.flex-1 > span.block.truncate.mt-1 {
   white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.7;
 }
 

@@ -1,19 +1,19 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { Rig, hexCoin, retext, V, TAU } from '../lib/a5-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { Rig, hexCoin, retext, V, TAU } from '../lib/a5-kit.js?v=16';
 
 export const meta = { free: true, center: [0.33, 0.8], typeLabel: 'لعبة: سباق الزمن' };
 
 const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
 const EV = [
-  { t: 'خوذة سذرلاند', y: '1968', k: 'eye', c: 0x5a6fd6 },
+  { t: 'خوذة', y: '1968', k: 'eye', c: 0x5a6fd6 },
   { t: 'Videoplace', y: '1975', k: 'person', c: 0xef8f2a },
-  { t: 'مصطلح الواقع المعزز', y: '1990', k: 'plus', c: 0x2fa38a },
-  { t: 'جهاز تعقّب هجين', y: '1994', k: 'tower', c: 0xe0452c },
-  { t: 'فرع من الحاسب', y: 'أواخر التسعينيات', k: 'screen', c: 0x2a8fd0 },
-  { t: 'تطبيقات نقالة', y: '2008', k: 'wifi', c: 0xe3b23c },
+  { t: 'مصطلح', y: '1990', k: 'plus', c: 0x2fa38a },
+  { t: 'تعقّب', y: '1994', k: 'tower', c: 0xe0452c },
+  { t: 'حاسب', y: 'أواخر التسعينيات', k: 'screen', c: 0x2a8fd0 },
+  { t: 'نقّال', y: '2008', k: 'wifi', c: 0xe3b23c },
 ];
 const PERM = [3, 0, 5, 2, 4, 1];
 const RAIL_Z = 0.19, RAIL_X0 = 0.21, DX = 0.084;
@@ -28,7 +28,7 @@ function screenTex() {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(1.0); g.position.x += 0.08; g.position.z -= 0.11; ctx.stage.add(g);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(1.08); g.position.x += 0.11; g.position.z -= 0.11; ctx.stage.add(g);
   const rig = new Rig(ctx);
 
   // phone
@@ -63,11 +63,11 @@ export default function build(ctx) {
 
   // event coins on an arc behind
   const toks = EV.map((ev, ci) => { const pos = PERM.indexOf(ci); return { ev, ci, pos }; }).map((o) => {
-    const th = Math.PI * (0.1 + 0.8 * (o.pos / 5)); const x = Math.cos(th) * 0.27, y = 0.17 + (o.pos % 2) * 0.12, z = -0.11 - Math.sin(th) * 0.04 - 0.0;
+    const th = Math.PI * (0.1 + 0.8 * (o.pos / 5)); const x = Math.cos(th) * 0.25, y = 0.12 + (o.pos % 2) * 0.14, z = -0.1 - Math.sin(th) * 0.09 - 0.0;
     const grp = new THREE.Group(); const coin = hexCoin(o.ev.k, o.ev.c, 0.04, 0.015); coin.rotation.x = Math.PI / 2 * 0.7; grp.add(coin);
-    const lab = sprite(o.ev.t, 0.18, { size: 50, width: 480, weight: 800, border: hexc(o.ev.c) }); lab.userData.w = 0.18; lab.position.y = 0.07; grp.add(lab);
+    const lab = sprite(o.ev.t, 0.15, { size: 70, width: 340, weight: 800, border: hexc(o.ev.c) }); lab.userData.w = 0.15; lab.position.y = 0.065; grp.add(lab);
     grp.position.set(x, y, z); g.add(grp);
-    return { ...o, grp, coin, lab, home: grp.position.clone(), st: 'idle', t0: -9, w: 0.18 };
+    return { ...o, grp, coin, lab, home: grp.position.clone(), st: 'idle', t0: -9, w: 0.15 };
   });
 
   let next = 0, placed = 0, now = 0, finished = false;

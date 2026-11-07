@@ -1,9 +1,9 @@
 // p384 — a message travels phone → relay tower → phone; the slider turns it from plain text into a rich multimedia message.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=15';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, lerp } from '../lib/a7.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=16';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, lerp } from '../lib/a7.js?v=16';
 
-export const meta = { free: true, center: [0.62, 0.27], typeLabel: 'مقارنة بمنزلق' };
+export const meta = { free: true, center: [0.62, 0.28], typeLabel: 'مقارنة بمنزلق' };
 
 function photoTex() {
   return canvasTex(256, 176, (g, W, H) => {
@@ -23,88 +23,69 @@ function phoneModel(c) {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.95);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.92);
   const R = rig(), H = hints(g);
-  const seen = new Set(); let done = false, rich = 0, richTo = 0.1, userSlid = false, maxRich = 0, auto = true, now = 0;
+  const seen = new Set(); let done = false, rich = 0, richTo = 0.05, maxRich = 0, auto = true, prevRich = 0, now = 0, boomAt = -9;
   const finish = (id) => { seen.add(id); if (seen.size >= 3 && maxRich > 0.85 && !done) { done = true; setTimeout(() => { ctx.sfx.good?.(); ctx.ui.done(); }, 900); } };
+  const sh = lightPool(0x000000, 0.5, 0.25); sh.position.y = -0.002; sh.scale.set(1.6, 0.6, 1); g.add(sh);
 
-  const base = new THREE.Group(); g.add(base);
-  const strip = new THREE.Mesh(rbox(0.82, 0.016, 0.34, 0.01), glossy(0x4a9cc0, { roughness: 0.35 })); strip.position.set(0, 0.008, 0.02); base.add(strip);
-  const lane = new THREE.Mesh(rbox(0.74, 0.004, 0.06, 0.002), lit(0xd7f0f8)); lane.position.set(0, 0.017, -0.02); base.add(lane);
-  const sh = lightPool(0x000000, 0.55, 0.2); sh.position.y = -0.002; base.add(sh);
-  R.add(base, 0.1, { dur: 0.9, rise: 0.06 });
-  const TY = 0.016;
-
-  // ---- two phones and the relay tower
+  // ---- two phones at the sides
   const pa = phoneModel(0xdfe7f1), pb = phoneModel(0xdfe7f1);
-  const A = new THREE.Group(); A.scale.setScalar(1.2); A.position.set(-0.24, TY, 0.1); A.rotation.set(-0.12, 0.35, 0); A.add(pa.o); g.add(A);
-  const B = new THREE.Group(); B.scale.setScalar(1.2); B.position.set(0.24, TY, 0.1); B.rotation.set(-0.12, -0.35, 0); B.add(pb.o); g.add(B);
-  [A, B].forEach((p, i) => { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.012, 32), goldMat()); st.position.y = 0.006; p.add(st); R.add(p, 1.0 + i * 0.3, { dur: 0.8, rise: 0.1 }); shadowed(p); });
-  const tower = new THREE.Group(); tower.scale.setScalar(1.15); tower.position.set(0, TY, -0.1); g.add(tower);
-  const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.04, 0.26, 4), glossy(0xf4efe0)); tb.rotation.y = Math.PI / 4; tb.position.y = 0.13; tower.add(tb);
-  [0.07, 0.13, 0.19].forEach((y, i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.036 - i * 0.012, 0.0025, 6, 24), goldMat()); r.rotation.x = Math.PI / 2; r.position.y = y; tower.add(r); });
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.014, 16, 12), glossy(0xe8604c, { emissive: 0xe8604c, emissiveIntensity: 0.5 })); tip.position.y = 0.275; tower.add(tip);
-  const waves = [0, 1, 2].map(() => { const w = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.0016, 6, 40), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, toneMapped: false })); w.rotation.x = Math.PI / 2; w.position.y = 0.275; tower.add(w); return w; });
-  R.add(tower, 0.6, { dur: 0.9, rise: 0.1 }); shadowed(tower);
-  const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 0.14; tower.add(hit);
-  H.add(tip, 0xffd27a, 0.14, null, () => 1);
+  const A = new THREE.Group(); A.scale.setScalar(1.3); A.position.set(-0.34, 0.0, 0.04); A.rotation.set(-0.1, 0.5, 0); A.add(pa.o);
+  const B = new THREE.Group(); B.scale.setScalar(1.3); B.position.set(0.34, 0.0, 0.04); B.rotation.set(-0.1, -0.5, 0); B.add(pb.o);
+  g.add(A, B); [A, B].forEach((p, i) => { R.add(p, 0.4 + i * 0.25, { dur: 0.8, rise: 0.12 }); shadowed(p); });
 
-  const aTop = new THREE.Vector3(-0.24, TY + 0.2, 0.1), tTop = new THREE.Vector3(0, TY + 0.3, -0.1), bTop = new THREE.Vector3(0.24, TY + 0.2, 0.1);
-  const c1 = new THREE.CatmullRomCurve3([aTop, new THREE.Vector3(-0.15, TY + 0.36, 0.0), tTop]);
-  const c2 = new THREE.CatmullRomCurve3([tTop, new THREE.Vector3(0.15, TY + 0.36, 0.0), bTop]);
-  const t1 = lightTube(c1, { radius: 0.0035, color: 0xffffff, speed: 0.5, glass: false }), t2 = lightTube(c2, { radius: 0.0035, color: 0xffffff, speed: 0.5, glass: false });
-  [t1, t2].forEach((t) => { t.userData.core.material.opacity = 0.45; g.add(t); });
+  // ---- the message: one big card that grows from plain text into a rich message
+  const msg = new THREE.Group(); msg.position.set(0, 0.26, 0); g.add(msg);
+  const plate = new THREE.Mesh(rbox(0.5, 0.38, 0.05, 0.03), glossy(0xdfe3ea, { roughness: 0.3 })); msg.add(plate);
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.07, 4), glossy(0xdfe3ea, { roughness: 0.3 })); tail.rotation.set(Math.PI, 0.8, 0.5); tail.position.set(-0.17, -0.23, 0); msg.add(tail);
+  const lines = [0, 1, 2, 3].map(() => { const l = new THREE.Mesh(new THREE.BoxGeometry(1, 0.024, 0.004), lit(0x586070)); msg.add(l); return l; });
+  const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.2), new THREE.MeshBasicMaterial({ map: photoTex(), toneMapped: false })); msg.add(pic);
+  const play = new THREE.Group(); const pc = new THREE.Mesh(new THREE.CircleGeometry(0.036, 32), lit(0xffffff)); const pt = new THREE.Mesh(new THREE.CircleGeometry(0.02, 3), lit(0xe8604c)); pt.position.x = 0.004; play.add(pc, pt); msg.add(play);
+  const bars = [0, 1, 2].map((k) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1, 0.006), lit([0xe8604c, 0xf2c230, 0x3a8fe0][k])); msg.add(b); return b; });
+  const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), glossy(0xf2c230, { emissive: 0xf08a3a, emissiveIntensity: 0.5 })); star.scale.set(1, 1.3, 0.6); msg.add(star);
+  R.add(msg, 0.8, { dur: 1.0, rise: 0.15 });
+  H.add(plate, 0xffffff, 0.3, null, () => 1);
 
-  // ---- packets: plain text bubble that grows into a multimedia message
-  const photo = photoTex();
-  const packets = [0, 1, 2].map((i) => {
-    const p = new THREE.Group(); p.scale.setScalar(1.7); g.add(p);
-    const plate = new THREE.Mesh(rbox(0.1, 0.07, 0.01, 0.012), glossy(0xdfe3ea, { roughness: 0.35 })); p.add(plate);
-    const lines = [0, 1, 2].map((k) => { const l = new THREE.Mesh(new THREE.BoxGeometry(0.058 - k * 0.012, 0.006, 0.003), lit(0x586070)); l.position.set(-0.012 - k * 0.0, 0.016 - k * 0.014, 0.0065); p.add(l); return l; });
-    const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.034), new THREE.MeshBasicMaterial({ map: photo, toneMapped: false })); pic.position.set(-0.02, 0.012, 0.0075); p.add(pic);
-    const bars = [0, 1, 2].map((k) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.008, 1, 0.004), lit([0xe8604c, 0xf2c230, 0x4a8fd0][k])); b.position.set(0.026 + k * 0.011, -0.03, 0.0075); p.add(b); return b; });
-    R.add(p, 2.2 + i * 0.2, { dur: 0.6, fn: ease });
-    ctx.tap(p, () => { ctx.sfx.pop?.(); R.bounce(p); burstAt(ctx, p, 0xffffff, 12, 0.25, 0.02); H.seen(plate);
-      if (rich < 0.5) ctx.ui.card({ tag: 'SMS', title: 'نص مجرّد', body: 'رسائل نصية قصيرة بين المشتركين في شبكة الهاتف النقال.', color: 0x586070 });
-      else ctx.ui.card({ tag: 'MMS', title: 'نص وصورة ورسم', body: 'تدمج النص المرسَل بالرسوم والجرافيك والصور، فتتجاوز النص المجرد إلى مضمون أغنى بصرياً.', color: 0x2f9fc4 }); });
-    H.add(plate, 0xffffff, 0.14, null, () => 1);
-    return { p, plate, lines, pic, bars, i };
-  });
+  // threads of light from each phone to the card
+  const mk = (a, b) => lightTube(new THREE.CatmullRomCurve3([a, new THREE.Vector3((a.x + b.x) / 2, 0.42, 0.05), b]), { radius: 0.005, color: 0xffffff, speed: 0.5, glass: false });
+  const t1 = mk(new THREE.Vector3(-0.34, 0.26, 0.04), new THREE.Vector3(-0.26, 0.3, 0.02)), t2 = mk(new THREE.Vector3(0.26, 0.3, 0.02), new THREE.Vector3(0.34, 0.26, 0.04));
+  [t1, t2].forEach((t) => { t.userData.core.material.opacity = 0.5; g.add(t); });
 
   const card = (obj, tag, title, body, color, id) => { ctx.sfx.pop?.(); burstAt(ctx, obj, color, 18, 0.3, 0.024); ctx.ui.card({ tag, title, body, color }); finish(id); };
-  ctx.tap(A, () => { R.bounce(A); card(A, 'SMS', 'رسالة نصية قصيرة', 'تقدم فرصاً جيدة للتواصل بين المحاضرين والطلاب، وبها يمكن نقل البيانات ودخول صفحات الواب WAP.', 0x586070, 'a'); });
-  ctx.tap(B, () => { R.bounce(B); card(B, 'MMS', 'الوسائط المتعددة', 'خدمة إرسال الوسائط المتعددة، وهي تدمج النص بالرسوم والجرافيك والصور.', 0x2f9fc4, 'b'); });
-  ctx.tap(hit, () => { R.bounce(tower); wv = 1; card(tower, 'مركز الإرسال', 'يعالجها ويديرها', 'تعبر الرسائل القصيرة مركز الإرسال الرئيس الذي يعالجها ويديرها.', 0xe8604c, 't'); });
-  let wv = 0;
+  ctx.tap(A, () => { R.bounce(A); card(A, 'SMS', 'رسالة نصية قصيرة', 'رسائل نصية قصيرة بين المشتركين في شبكة الهاتف النقال، تقدم فرصاً جيدة للتواصل بين المحاضرين والطلاب.', 0x586070, 'a'); });
+  ctx.tap(B, () => { R.bounce(B); card(B, 'MMS', 'الوسائط المتعددة', 'خدمة إرسال الوسائط المتعددة، تدمج النص بالرسوم والجرافيك والصور.', 0x2f9fc4, 'b'); });
+  ctx.tap(msg, () => {
+    R.bounce(msg); H.seen(plate);
+    if (rich < 0.5) card(msg, 'SMS', 'نص مجرّد', 'تعبر الرسالة القصيرة مركز الإرسال الرئيس الذي يعالجها ويديرها.', 0x586070, 'm');
+    else card(msg, 'MMS', 'نص وصورة ورسم', 'تدمج النص المرسَل بالرسوم والجرافيك والصور، فتتجاوز النص المجرد إلى مضمون أغنى بصرياً.', 0x2f9fc4, 'm');
+  });
 
   ctx.ui.hud('حرّك المنزلق: من النص إلى الوسائط');
-  ctx.ui.slider({ label: 'نص ← وسائط', value: 0.1, onInput: (v) => { auto = false; richTo = v; userSlid = true; } });
-
-  const tmp = new THREE.Vector3();
+  ctx.ui.slider({ label: 'نص ← وسائط', value: 0.05, onInput: (v) => { auto = false; richTo = v; } });
+  const c0 = new THREE.Color(0xdfe3ea), c1 = new THREE.Color(0x35b0d4), col = new THREE.Color();
   return {
     update(t, dt, e) {
-      now = t; R.update(t, dt, e); H.update(t, e, stag(t, 4.0, 0.6));
-      if (auto && t > 3) richTo = 0.5 + 0.5 * Math.sin((t - 3) * 0.7 - 1.2);
+      now = t; R.update(t, dt, e); H.update(t, e, stag(t, 2.6, 0.6));
+      if (auto && t > 1.6) richTo = 0.5 + 0.5 * Math.sin((t - 1.6) * 0.8 - 1.5);
       rich = THREE.MathUtils.damp(rich, richTo, 5, dt); maxRich = Math.max(maxRich, rich);
-      const col = new THREE.Color(0xdfe3ea).lerp(new THREE.Color(0x35b0d4), clamp01(rich * 1.1));
-      packets.forEach((k) => {
-        const u = ((t * 0.12 + k.i / 3) % 1);
-        if (u < 0.45) c1.getPoint(u / 0.45, tmp); else if (u < 0.55) tmp.copy(tTop); else c2.getPoint((u - 0.55) / 0.45, tmp);
-        k.p.position.copy(tmp); k.p.position.y += 0.04;
-        const sc = (u > 0.45 && u < 0.55) ? 1 + 0.25 * Math.sin((u - 0.45) / 0.1 * Math.PI) : 1;
-        k.p.rotation.y = Math.sin(t * 0.8 + k.i) * 0.3;
-        k.plate.material.color.copy(col); const sz = 1 + rich * 0.6; k.plate.scale.z = sz; const fz = 0.005 * sz + 0.0025; k.pic.position.z = fz + 0.0005; k.bars.forEach((b) => { b.position.z = fz + 0.0005; });
-        k.pic.scale.setScalar(Math.max(0.0001, clamp01((rich - 0.2) / 0.5))); k.pic.visible = rich > 0.22;
-        k.bars.forEach((b, j) => { const h = Math.max(0.0001, 0.05 * clamp01((rich - 0.45 - j * 0.1) / 0.4)); b.scale.y = h; b.position.y = -0.028 + h / 2 - 0.0; b.visible = h > 0.001; });
-        k.lines.forEach((l, j) => { l.position.set(lerp(-0.012, -0.02, rich), lerp(0.016 - j * 0.014, -0.022 - j * 0.0075, rich), fz); l.scale.x = lerp(1, 0.55, rich); l.material.color.set(rich > 0.5 ? 0xffffff : 0x586070); });
-        k.p.scale.multiplyScalar(sc * (R.k(k.p) > 0.01 ? 1 : 1));
+      if (prevRich < 0.7 && rich >= 0.7) { burstAt(ctx, star, 0xffd27a, 26, 0.45, 0.035); boomAt = t; }
+      prevRich = rich;
+      const r = clamp01(rich * 1.1); col.copy(c0).lerp(c1, r); plate.material.color.copy(col); tail.material.color.copy(col);
+      const sz = 1 + rich * 0.8; plate.scale.z = sz; const fz = 0.025 * sz + 0.003;
+      const tw = (a, b, k) => a + (b - a) * k;
+      lines.forEach((l, j) => {
+        const w = tw([0.38, 0.32, 0.35, 0.22][j], [0.3, 0.26, 0.2, 0][j], clamp01(rich * 1.4)); l.scale.x = Math.max(0.0001, w);
+        l.position.set(tw(0, -0.0, rich) + tw(0, -0.0, rich), tw(0.12 - j * 0.075, -0.125 - j * 0.032, clamp01(rich * 1.5)), fz);
+        l.material.color.set(rich > 0.5 ? 0xffffff : 0x586070); l.visible = l.scale.x > 0.01;
       });
+      const pk = clamp01((rich - 0.15) / 0.45); pic.scale.setScalar(Math.max(0.0001, pk)); pic.position.set(-0.06, 0.05, fz + 0.001); pic.visible = pk > 0.01;
+      const pl = clamp01((rich - 0.55) / 0.3); play.scale.setScalar(Math.max(0.0001, pl * (1 + 0.1 * Math.sin(t * 5)))); play.position.set(-0.06, 0.05, fz + 0.004); play.visible = pl > 0.01;
+      bars.forEach((b, k) => { const h = Math.max(0.0001, [0.12, 0.2, 0.15][k] * clamp01((rich - 0.4 - k * 0.1) / 0.35)); b.scale.y = h; b.position.set(0.16 + k * 0.05, -0.085 + h / 2, fz + 0.001); b.visible = h > 0.001; });
+      const sk = clamp01((rich - 0.78) / 0.2); star.scale.setScalar(Math.max(0.0001, sk)); star.position.set(0.2, 0.17, fz + 0.02); star.rotation.y += dt * 2; star.visible = sk > 0.01;
+      msg.rotation.y = Math.sin(t * 0.55) * 0.3; msg.rotation.x = -0.08 + Math.sin(t * 0.8) * 0.03; msg.position.y = 0.26 + Math.sin(t * 1.2) * 0.008;
       pb.s.material.color.copy(col).lerp(new THREE.Color(0xffffff), 0.5);
-      const w = Math.max(wv, 0.25 + 0.2 * rich); wv = Math.max(0, wv - dt * 0.5);
-      waves.forEach((m, i) => { const k = (t * 0.5 + i / 3) % 1; m.scale.setScalar(0.6 + k * 2.4); m.material.opacity = (1 - k) * 0.7 * w * e; });
-      t1.userData.update(dt); t2.userData.update(dt);
-      const lite = 0.35 + 0.5 * rich; t1.userData.core.material.opacity = lite; t2.userData.core.material.opacity = lite;
-      tip.material.emissiveIntensity = 0.4 + 0.3 * Math.sin(t * 4);
+      t1.userData.update(dt); t2.userData.update(dt); const lite = 0.4 + 0.5 * rich; t1.userData.core.material.opacity = lite; t2.userData.core.material.opacity = lite;
     },
   };
 }

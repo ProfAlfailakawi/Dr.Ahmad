@@ -1,11 +1,11 @@
 // p441 — brainstorming: a glass bulb above a hex stage; six idea-gems orbit it, each rule is a gem that you send into the filament.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
 
-export const meta = { free: true, center: [0.3, 0.247], typeLabel: 'مصباح الأفكار', title: 'أضئ المصباح بالأفكار' };
+export const meta = { free: true, center: [0.5, 0.247], typeLabel: 'مصباح الأفكار', title: 'أضئ المصباح بالأفكار' };
 
 const RULES = [
   { t: 'تشجيع الأفكار المغالية', tag: 'أفكار مغالية', b: 'الأفكار كالفرس الجموح: ترويضها وتهذيبها أيسر من إنتاج فكرة جديدة صالحة.', c: 0xe0562f },
@@ -27,7 +27,7 @@ function gemMesh(i, color) {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.74);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.0);
   const seq = new Seq(), hints = new Hints(g, 4.2), tag = new Tag(g, 0.22);
   const brass = goldMat();
   const BY = 0.33; // bulb centre height

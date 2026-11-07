@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { TAU, revealer, bumper, hintGlow, pulseHint, setSpr, retext, burstAt } from '../lib/a6-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { TAU, revealer, bumper, hintGlow, pulseHint, setSpr, retext, burstAt } from '../lib/a6-kit.js?v=16';
 
 export const meta = { free: true, center: [0.5, 0.52], typeLabel: 'خريطة بأعمدة' };
 

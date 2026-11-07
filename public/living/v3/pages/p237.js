@@ -1,8 +1,8 @@
 // p237 (round 2): a big glossy laptop opens, books drop in, three decision orbs; each choice grows a plant out of the books and lights the student on screen.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { halos, liveTag, motes, canvasTex, blob, TAU, css, arcPoint } from '../lib/a4-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { halos, liveTag, motes, canvasTex, blob, TAU, css, arcPoint } from '../lib/a4-kit.js?v=16';
 
 export const meta = { free: true, center: [0.5, 0.7], typeLabel: 'قرار المعلّم', title: 'معلّم أمام طالب متعثّر' };
 
@@ -20,7 +20,7 @@ const STEPS = [
     { t: 'أنشطة بلا متابعة', s: 1, fb: 'الجاذبية تثير الانتباه، لكن غياب التغذية الراجعة لا يعمّق التعلم.' },
     { t: 'جهاز دون متابعة', s: 0, fb: 'الجاذبية وحدها لا تكفي؛ فالعمل بالحاسوب يحتاج إلى خبرة وكفايات لدى المعلم والمتعلم.' }] },
 ];
-const ORB_COL = [0x2fb5a8, 0xf0902a, 0x3a86d6];
+const ORB_COL = [0x2fb5a8, 0xf0902a, 0x3a86d6], ORB_INK = ['#0d6a60', '#a8530a', '#1c5497'];
 const LEAF = [0xc2a878, 0xb5c44a, 0x5fb54a];
 
 function drawScreen(g, w, h, score, t = 0) {
@@ -110,15 +110,17 @@ export default function build(ctx) {
   // ---- three option orbs (big)
   const slots = [-0.27, 0, 0.27].map((x, i) => {
     const grp = new THREE.Group(); grp.position.set(x, 0.12, 0.26); g.add(grp);
-    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.058, 32, 22), glossy(ORB_COL[i], { emissive: ORB_COL[i], emissiveIntensity: 0.4, clearcoat: 1 })); grp.add(orb);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.078, 0.004, 8, 48), goldMat()); ring.rotation.x = Math.PI / 2.4; grp.add(ring);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.056, 32, 22), glossy(ORB_COL[i], { emissive: ORB_COL[i], emissiveIntensity: 0.25, clearcoat: 1, transparent: true, opacity: 0.55, depthWrite: false })); orb.renderOrder = 5; grp.add(orb);
+    const core = glow(ORB_COL[i], 0.12, 0.95); core.renderOrder = 6; grp.add(core); const core2 = glow(0xffffff, 0.05, 1); core2.renderOrder = 7; grp.add(core2);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.076, 0.0025, 8, 48), goldMat()); ring.rotation.x = Math.PI / 2.4; grp.add(ring);
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.076, 0.0018, 8, 48), goldMat()); ring2.rotation.x = Math.PI / 2.4; ring2.rotation.y = 1.1; grp.add(ring2);
     const hl = hal.add(grp, ORB_COL[i], 0.3, [0, 0, 0], 9999);
-    const slot = { grp, orb, ring, hl, home: new THREE.Vector3(x, 0.12, 0.26), tag: liveTag(0.25, ORB_COL[i], { size: 54, fixed: 1, style: 'solid' }), opt: null, state: 'off', k: 0, fly: 0, from: new THREE.Vector3(), i };
-    slot.tag.set('برنامج'); g.add(slot.tag.sp); slot.tag.sp.position.set(x, 0.28, 0.3); slot.tag.apply(0);
+    const slot = { grp, orb, ring, hl, home: new THREE.Vector3(x, 0.12, 0.26), tag: liveTag(0.25, ORB_COL[i], { size: 58, style: 'halo', ink: ORB_INK[i] }), opt: null, state: 'off', k: 0, fly: 0, from: new THREE.Vector3(), i };
+    slot.tag.set('برنامج'); g.add(slot.tag.sp); slot.tag.sp.position.set(x, 0.3, 0.27); slot.tag.apply(0);
     ctx.tap(grp, () => choose(slot)); grp.visible = false; return slot;
   });
 
-  let now = 0, phase = 'build', stepI = 0, total = 0, tPhase = 0, chosen = null, finished = false, lidK = 0;
+  let trail = 0, now = 0, phase = 'build', stepI = 0, total = 0, tPhase = 0, chosen = null, finished = false, lidK = 0;
   const tmp = new THREE.Vector3(), tip = new THREE.Vector3();
   const plantTop = () => tip.set(0.3, potY + 0.1 + stepI * 0.1, -0.02);
   function startStep(i) {
@@ -156,14 +158,14 @@ export default function build(ctx) {
       bookMeshes.forEach((b, i) => { const k = stag(t, 0.5 + i * 0.25, 0.7, easeBack) * e; b.scale.setScalar(Math.max(0.0001, k)); b.position.y = b.userData.y + (1 - stag(t, 0.5 + i * 0.25, 0.7)) * 0.3; });
       const pk = stag(t, 1.6, 0.6, easeBack) * e; pot.scale.setScalar(Math.max(0.0001, pk)); cap.scale.setScalar(Math.max(0.0001, stag(t, 1.8, 0.6, easeBack) * e));
       stem.scale.y = Math.max(0.001, THREE.MathUtils.damp(stem.scale.y, finished ? 1 : (0.2 + (stepI + (phase === 'react' && chosen && chosen.state === 'gone' ? 1 : 0)) * 0.27), 3, dt));
-      leaves.forEach((l) => { l.k = THREE.MathUtils.damp(l.k, l.to, 4, dt); l.m.scale.setScalar(Math.max(0.0001, l.k * e)); });
+      leaves.forEach((l) => { l.k = THREE.MathUtils.damp(l.k, l.to, 4, dt); l.m.scale.setScalar(Math.max(0.0001, l.k * e)); l.m.rotation.z += Math.sin(t * 1.7 + l.st * 2) * 0.0009; });
       flower.scale.setScalar(Math.max(0.0001, THREE.MathUtils.damp(flower.scale.x, (finished && total >= 4 ? 1 : 0) * e, 3, dt))); flower.rotation.y += dt * 0.4;
       bud.material.opacity = (finished ? 0.7 : 0.0) * (0.7 + 0.3 * Math.sin(t * 3));
       slots.forEach((s, i) => {
         if (s.state === 'idle') { s.k = Math.min(1, s.k + dt * 2); s.grp.position.y = s.home.y + Math.sin(t * 1.8 + i * 2) * 0.01; }
         if (s.state === 'fade') s.k = Math.max(0, s.k - dt * 2.4);
         if (s.state === 'gone') s.k = Math.max(0, s.k - dt * 3);
-        if (s.state === 'fly') { s.fly = Math.min(1, s.fly + dt / 0.9); plantTop(); arcPoint(tmp, s.from, tip, ease(s.fly), 0.16); s.grp.position.copy(tmp); s.grp.scale.setScalar(1 - 0.5 * s.fly); if (s.fly >= 1) { s.state = 'gone'; arrive(s); } }
+        if (s.state === 'fly') { s.fly = Math.min(1, s.fly + dt / 0.9); trail += dt; if (trail > 0.07) { trail = 0; ctx.fx.burst(g.position.clone().add(s.grp.position), ORB_COL[s.i], 2, 0.08, 0.035); } plantTop(); arcPoint(tmp, s.from, tip, ease(s.fly), 0.16); s.grp.position.copy(tmp); s.grp.scale.setScalar(1 - 0.5 * s.fly); if (s.fly >= 1) { s.state = 'gone'; arrive(s); } }
         s.grp.visible = s.state !== 'off' && (s.state === 'fly' || s.k > 0.01);
         if (s.state !== 'fly') s.grp.scale.setScalar(Math.max(0.0001, easeBack(s.k)));
         s.hl.on = s.state === 'idle' || s.state === 'fly' ? 1 : 0; s.orb.rotation.y += dt; s.ring.rotation.z += dt * 0.8;

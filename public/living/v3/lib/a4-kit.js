@@ -1,7 +1,7 @@
 // Shared helpers of the builder "a4" (pages 237-275): rise-in sequencer, touch halos, ring dais, tags, motes.
 import * as THREE from 'three';
-import { ease, easeBack, clamp01, stag, mat, goldMat, glow } from '../../kit.js?v=15';
-import { tagSprite, solidTag, setSpr } from '../../v2/common.js?v=15';
+import { ease, easeBack, clamp01, stag, mat, goldMat, glow } from '../../kit.js?v=16';
+import { tagSprite, solidTag, setSpr } from '../../v2/common.js?v=16';
 
 export { tagSprite, solidTag, setSpr };
 export const TAU = Math.PI * 2;
@@ -71,13 +71,30 @@ export function fitTag(text, color, o = {}) {
   const s = tagSprite(text, w, color, { size, weight: 800, radius: 30, pad: 24, ...st, ...rest });
   s.userData.w = w; return s;
 }
+// Text with no box: dark ink with a soft pale halo, so it floats lightly on the print (round 3).
+export function haloText(text, { size = 56, color = '#1f2b36', halo = '#ffffff', weight = 800 } = {}) {
+  const col = typeof color === 'number' ? css(color) : color;
+  let lines = [text];
+  const words = text.split(' ');
+  if (text.length > 12 && words.length > 1) { let best = 1, bd = 1e9; for (let k = 1; k < words.length; k++) { const a = words.slice(0, k).join(' ').length, b = words.slice(k).join(' ').length; if (Math.abs(a - b) < bd) { bd = Math.abs(a - b); best = k; } } lines = [words.slice(0, best).join(' '), words.slice(best).join(' ')]; }
+  const c = document.createElement('canvas'); const g = c.getContext('2d');
+  const font = `${weight} ${size}px Tajawal, sans-serif`; g.font = font;
+  const lh = Math.ceil(size * 1.3), w = Math.ceil(Math.max(...lines.map((l) => g.measureText(l).width))) + Math.round(size * 0.9), h = lh * lines.length + Math.round(size * 0.3);
+  c.width = w; c.height = h; g.font = font; g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = size * 0.3; g.strokeStyle = halo;
+  lines.forEach((l, k) => { const y = size * 0.15 + lh * (k + 0.5); g.globalAlpha = 0.96; g.strokeText(l, w / 2, y); g.globalAlpha = 1; g.fillStyle = col; g.fillText(l, w / 2, y); });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false }));
+  const wu = w / 1900; sp.scale.set(wu, wu * h / w, 1); sp.userData.aspect = h / w; sp.userData.w = wu; sp.renderOrder = 6;
+  return sp;
+}
+
 // A label whose text can change (tapped-item tags, counters). w0 only matters with o.fixed.
 export function liveTag(w0, color, o = {}) {
   const holder = { sp: null, text: '', w: w0, color, o, k: 0 };
   holder.set = (text, col = holder.color) => {
     if (holder.text === text && col === holder.color && holder.sp) return;
     holder.text = text; holder.color = col;
-    const fresh = fitTag(text, col, { ...o, fixed: o.fixed ? w0 : 0 });
+    const fresh = o.style === 'halo' ? haloText(text, { size: o.size || 56, color: o.ink || '#1f2b36' }) : fitTag(text, col, { ...o, fixed: o.fixed ? w0 : 0 });
     holder.w = fresh.userData.w;
     if (!holder.sp) { holder.sp = fresh; holder.sp.visible = false; return; }
     holder.sp.material.map.dispose(); holder.sp.material.map = fresh.material.map; holder.sp.userData.aspect = fresh.userData.aspect; holder.sp.material.needsUpdate = true;

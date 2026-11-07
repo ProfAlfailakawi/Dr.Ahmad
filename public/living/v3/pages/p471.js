@@ -1,11 +1,11 @@
 // p471 — «أن توقد شمعة خير من أن تلعن الظلام»: a brass candelabra whose six candles are the solutions; touch a candle to light it.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
 
-export const meta = { free: true, center: [0.38, 0.247], typeLabel: 'شمعدان الحلول', title: 'أنِر شموع الحلول' };
+export const meta = { free: true, center: [0.5, 0.275], typeLabel: 'شمعدان الحلول', title: 'أنِر شموع الحلول' };
 
 const SOL = [
   { t: 'مراكز البحث', tag: 'مراكز البحث', b: 'تدعيم مراكز البحث بالإمكانات المادية والبشرية المتخصصة، مع تنسيق سبل الاتصال والتعاون بينها.', c: 0xef8f2a },
@@ -17,7 +17,7 @@ const SOL = [
 ];
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.92);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.0);
   const seq = new Seq(), hints = new Hints(g, 5.0), tag = new Tag(g, 0.2);
   const brass = goldMat();
 

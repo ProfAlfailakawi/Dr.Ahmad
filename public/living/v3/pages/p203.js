@@ -1,138 +1,114 @@
-// p203 — Fleming's cycle of information: a chalk-slate disc under a hanging lamp, four little machines on a ring, and a spark of information that travels round them.
+// p203 — Fleming's cycle of information as one hero object: a chalkboard Ferris wheel whose four cabins (receive, organise, record, retrieve) ride round and round under chasing lights.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=15';
-import { tagSprite, setSpr, softLight, lightPool } from '../../v2/common.js?v=15';
-import { hints, finder, blobShadow } from '../lib/a3-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=16';
+import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=16';
 
-export const meta = { free: true, center: [0.43, 0.66], typeLabel: 'دورة تفاعلية' };
+export const meta = { free: true, center: [0.43, 0.64], typeLabel: 'دورة تفاعلية' };
 
-const TAU = Math.PI * 2, RR = 0.18;
+const TAU = Math.PI * 2, R = 0.27, HUB = 0.39;
 const ST = [
-  { n: 'يستقبل', c: 0x45b6e8, card: ['المحطة الأولى', 'يستقبل', 'الطريقة التي يستقبل بها المتعلم المعرفة والمعلومات والخبرات.'] },
-  { n: 'يرتّب وينظّم', c: 0xf0a030, card: ['المحطة الثانية', 'يرتّب وينظّم', 'الطريقة التي يرتّب وينظّم بها هذه المعلومات.'] },
-  { n: 'يسجّل ويرمّز', c: 0x8ac04a, card: ['المحطة الثالثة', 'يسجّل ويرمّز', 'يسجّل المعلومات ويرمّزها ويدمجها ويحتفظ بها في مخزونه المعرفي.'] },
-  { n: 'يسترجع ويعبّر', c: 0xe0605a, card: ['المحطة الرابعة', 'يسترجع ويعبّر', 'يسترجع المعلومات والخبرات بالطريقة التي تمثل طريقته في التعبير عنها.'] },
+  { n: 'يستقبل', c: 0x2f9fd8, card: ['المحطة الأولى', 'يستقبل', 'الطريقة التي يستقبل بها المتعلم المعرفة والمعلومات والخبرات.'] },
+  { n: 'يرتّب وينظّم', c: 0xf0902a, card: ['المحطة الثانية', 'يرتّب وينظّم', 'الطريقة التي يرتّب وينظّم بها هذه المعلومات.'] },
+  { n: 'يسجّل ويرمّز', c: 0x4fae4a, card: ['المحطة الثالثة', 'يسجّل ويرمّز', 'يسجّل المعلومات ويرمّزها ويدمجها ويحتفظ بها في مخزونه المعرفي.'] },
+  { n: 'يسترجع ويعبّر', c: 0xe0524a, card: ['المحطة الرابعة', 'يسترجع ويعبّر', 'يسترجع المعلومات والخبرات بالطريقة التي تمثل طريقته في التعبير عنها.'] },
 ];
 
 function chalkTex() {
   const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
-  const gr = g.createRadialGradient(256, 256, 20, 256, 256, 256); gr.addColorStop(0, '#4a5256'); gr.addColorStop(1, '#2b3235'); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
-  g.strokeStyle = 'rgba(255,255,255,.2)'; g.fillStyle = 'rgba(255,255,255,.22)'; g.lineWidth = 2; g.font = '700 26px Georgia, serif';
-  const w = ['x² + y²', 'Σ', 'π', 'a/b', '∫ f', 'E=mc²', '√25', '△', '∞', 'n+1'];
-  for (let i = 0; i < 26; i++) { const x = 40 + Math.random() * 430, y = 40 + Math.random() * 430; if (Math.hypot(x - 256, y - 256) > 235) continue; g.save(); g.translate(x, y); g.rotate((Math.random() - 0.5) * 0.7); g.fillText(w[i % w.length], 0, 0); g.restore(); }
-  for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(80 + Math.random() * 350, 80 + Math.random() * 350); g.lineTo(80 + Math.random() * 350, 80 + Math.random() * 350); g.stroke(); }
+  const gr = g.createRadialGradient(256, 256, 20, 256, 256, 256); gr.addColorStop(0, '#46535a'); gr.addColorStop(1, '#2b3639'); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  g.fillStyle = 'rgba(255,255,248,.35)'; g.strokeStyle = 'rgba(255,255,248,.3)'; g.lineWidth = 3; g.font = '700 38px Georgia, serif';
+  const w = ['x²+y²', 'Σ', 'π', 'a/b', '∫f', 'E=mc²', '√25', '△', '∞', 'n+1'];
+  for (let i = 0; i < 24; i++) { const x = 60 + Math.random() * 390, y = 60 + Math.random() * 390; if (Math.hypot(x - 256, y - 256) > 215) continue; g.save(); g.translate(x, y); g.rotate((Math.random() - 0.5) * 0.7); g.fillText(w[i % w.length], 0, 0); g.restore(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
+function glyphTex(k, color) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 192; const g = c.getContext('2d');
+  g.fillStyle = '#' + color.toString(16).padStart(6, '0'); g.fillRect(0, 0, 256, 192);
+  g.strokeStyle = '#fff'; g.fillStyle = '#fff'; g.lineWidth = 16; g.lineCap = 'round'; g.lineJoin = 'round';
+  if (k === 0) { g.beginPath(); g.moveTo(128, 30); g.lineTo(128, 120); g.moveTo(90, 86); g.lineTo(128, 124); g.lineTo(166, 86); g.stroke(); g.beginPath(); g.moveTo(66, 150); g.lineTo(190, 150); g.stroke(); }
+  else if (k === 1) { [[96, 60], [150, 100], [66, 140]].forEach(([w, y]) => { g.beginPath(); g.moveTo(40, y); g.lineTo(40 + w + 40, y); g.stroke(); }); g.beginPath(); g.moveTo(210, 40); g.lineTo(210, 150); g.stroke(); }
+  else if (k === 2) { g.beginPath(); g.roundRect(70, 84, 116, 78, 14); g.fill(); g.beginPath(); g.arc(128, 80, 36, Math.PI, 0); g.stroke(); g.fillStyle = '#' + color.toString(16).padStart(6, '0'); g.beginPath(); g.arc(128, 118, 11, 0, TAU); g.fill(); }
+  else { g.beginPath(); g.moveTo(128, 150); g.lineTo(128, 60); g.moveTo(90, 94); g.lineTo(128, 56); g.lineTo(166, 94); g.stroke(); g.beginPath(); g.moveTo(66, 30); g.lineTo(190, 30); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+const beam = (a, b, r, m) => {
+  const d = b.clone().sub(a), len = d.length(); const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.15, len, 12), m);
+  mesh.position.copy(a).addScaledVector(d, 0.5); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return mesh;
+};
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(0.43, 0.66)); g.scale.setScalar(0.84); ctx.stage.add(g);
+  const g = new THREE.Group(); g.position.copy(P(0.43, 0.64)); g.scale.setScalar(0.9); ctx.stage.add(g);
   const H = hints(), found = finder(ctx, 4);
-  // a round chalk table on three legs (the one raised stage of this set)
-  const TH = 0.15, Y = TH;
-  const base = new THREE.Group(); g.add(base);
-  const wood = mat(0xc98f55, { roughness: 0.5 });
-  const topD = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 72), wood); topD.position.y = TH - 0.016; base.add(topD);
-  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.255, 0.26, 0.026, 60), mat(0x9a6a38)); skirt.position.y = TH - 0.046; base.add(skirt);
-  const rimG = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.007, 10, 90), goldMat()); rimG.rotation.x = Math.PI / 2; rimG.position.y = TH - 0.002; base.add(rimG);
-  [0, 1, 2].forEach((k) => { const a = k * TAU / 3 + 0.5; const L = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.02, TH - 0.03, 12), wood); L.position.set(Math.cos(a) * 0.19, (TH - 0.03) / 2, Math.sin(a) * 0.19); L.rotation.z = -Math.cos(a) * 0.12; L.rotation.x = Math.sin(a) * 0.12; base.add(L); });
-  const slate = new THREE.Mesh(new THREE.CircleGeometry(0.275, 64), new THREE.MeshStandardMaterial({ map: chalkTex(), roughness: 0.9 })); slate.rotation.x = -Math.PI / 2; slate.position.y = TH + 0.0005; g.add(slate);
-  const tsh = blobShadow(0.78, 0.78, 0.32); g.add(tsh);
-  // chalk ring
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(RR, 0.0045, 8, 90), new THREE.MeshStandardMaterial({ color: 0xf6f1e4, roughness: 0.9, emissive: 0xf6f1e4, emissiveIntensity: 0.15 })); ring.rotation.x = Math.PI / 2; ring.position.y = Y + 0.003; g.add(ring);
-  const arrows = ST.map((s, k) => {
-    const a = -Math.PI / 2 + (k + 0.5) * TAU / 4;
-    const c = new THREE.Mesh(new THREE.ConeGeometry(0.011, 0.026, 12), mat(0xf6f1e4, { emissive: 0xf6f1e4, emissiveIntensity: 0.2 }));
-    c.position.set(Math.cos(a) * RR, Y + 0.008, Math.sin(a) * RR); c.rotation.x = Math.PI / 2; c.rotation.z = 0;
-    const w = new THREE.Group(); w.add(c); w.position.copy(c.position); c.position.set(0, 0, 0); w.rotation.y = -(a + Math.PI / 2) + Math.PI; g.add(w); return w;
+  const sh = blobShadow(0.62, 0.34, 0.32); g.add(sh);
+  const wood = mat(0xb9803f, { roughness: 0.55 });
+  // the A-frame stand
+  const stand = new THREE.Group(); g.add(stand);
+  [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => stand.add(beam(new THREE.Vector3(sx * 0.045, HUB, 0), new THREE.Vector3(sx * 0.12, 0.004, sz * 0.15), 0.012, wood))));
+  [-1, 1].forEach((sx) => stand.add(beam(new THREE.Vector3(sx * 0.082, 0.07, -0.075), new THREE.Vector3(sx * 0.082, 0.07, 0.075), 0.008, wood)));
+  [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => { const f = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.022, 0.012, 14), goldMat()); f.position.set(sx * 0.12, 0.006, sz * 0.15); stand.add(f); }));
+  // the wheel
+  const wheel = new THREE.Group(); wheel.position.set(0, HUB, 0); g.add(wheel);
+  const slate = new THREE.Mesh(new THREE.CircleGeometry(R, 72), new THREE.MeshStandardMaterial({ map: chalkTex(), roughness: 0.9 })); slate.position.z = -0.012; wheel.add(slate);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R, 0.013, 14, 90), mat(0xf4efe0, { roughness: 0.35 })); wheel.add(rim);
+  const rim2 = new THREE.Mesh(new THREE.TorusGeometry(R * 0.5, 0.006, 10, 60), goldMat()); wheel.add(rim2);
+  for (let i = 0; i < 8; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.008, R, 0.008), mat(0xf4efe0, { roughness: 0.4 })); s.geometry.translate(0, R / 2, 0); s.rotation.z = i / 8 * TAU; wheel.add(s); }
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 28), goldMat()); hub.rotation.x = Math.PI / 2; wheel.add(hub);
+  const hubGlow = softLight(0xffd27a, 0.2, 0.6); hubGlow.position.z = 0.03; wheel.add(hubGlow);
+  const lights = Array.from({ length: 28 }, (_, i) => { const a = i / 28 * TAU; const b = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe08a, toneMapped: false })); b.position.set(Math.cos(a) * R, Math.sin(a) * R, 0.012); wheel.add(b); return b; });
+  // four cabins
+  const cabins = ST.map((s, k) => {
+    const a = Math.PI / 2 + k * TAU / 4;
+    const pivot = new THREE.Group(); pivot.position.set(Math.cos(a) * R, Math.sin(a) * R, 0); wheel.add(pivot);
+    const cab = new THREE.Group(); pivot.add(cab);
+    [-0.03, 0.03].forEach((x) => cab.add(Object.assign(beam(new THREE.Vector3(x * 0.4, 0, 0), new THREE.Vector3(x, -0.045, 0), 0.0025, goldMat()), {})));
+    const body = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.095, 0.07, 4, 0.014), glossy(s.c)); body.position.y = -0.095; cab.add(body);
+    const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.135, 16, 1, false, 0, Math.PI), goldMat()); roof.rotation.z = Math.PI / 2; roof.position.y = -0.045; roof.scale.set(1, 1.0, 1.05); cab.add(roof);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.075), new THREE.MeshBasicMaterial({ map: glyphTex(k, s.c), toneMapped: false })); face.position.set(0, -0.095, 0.0365); cab.add(face);
+    const faceB = face.clone(); faceB.rotation.y = Math.PI; faceB.position.z = -0.0365; cab.add(faceB);
+    const rimF = new THREE.Mesh(new THREE.TorusGeometry(0.0, 0.0, 4, 4), goldMat()); cab.add(rimF);
+    cab.add(hitSphere(0.085, [0, -0.09, 0]));
+    const halo = softLight(s.c, 0.26, 0); halo.position.set(0, -0.09, 0.05); cab.add(halo);
+    shadowed(cab);
+    ctx.tap(cab, () => pick(k));
+    const hint = H.add(cab, 0xffe08a, 0.2, [0, -0.09, 0.06], 2.4 + k * 0.2);
+    return { k, pivot, cab, halo, hint, a, pop: 0 };
   });
-
-  // hanging lamp + light pool
-  const lamp = new THREE.Group(); lamp.position.y = 0.7; g.add(lamp);
-  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.3, 6), mat(0xb08a4a)); cord.position.y = 0.15; lamp.add(cord);
-  const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.07, 0.05, 36, 1, true), new THREE.MeshStandardMaterial({ color: 0xf0d79c, roughness: 0.3, metalness: 0.5, side: THREE.DoubleSide })); shade.position.y = -0.02; lamp.add(shade);
-  const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.068, 0.049, 36, 1, true), new THREE.MeshBasicMaterial({ color: 0xffe3a0, side: THREE.BackSide, toneMapped: false })); inner.position.y = -0.02; lamp.add(inner);
-  const bulb = softLight(0xffd27a, 0.15, 0.9); bulb.position.y = -0.045; lamp.add(bulb);
-  const pool = lightPool(0xffd9a0, 0.3, 0.0); pool.position.y = TH + 0.004; g.add(pool);
-  ctx.tap(lamp, () => { ctx.sfx.pop?.(); ctx.ui.card({ tag: 'نموذج فارك', title: 'أنماط التعلم المفضلة', body: 'عرّفها فليمنج وبونويل بأنها الطريقة التي يستقبل بها المتعلم المعلومات ثم يرتّبها ويرمّزها ويسترجعها.', color: 0xd4ad55 }); });
-
-  // ---- stations
-  const stations = ST.map((s, k) => {
-    const a = -Math.PI / 2 + k * TAU / 4;
-    const grp = new THREE.Group(); grp.position.set(Math.cos(a) * RR, Y, Math.sin(a) * RR); grp.userData.k = 1.3; g.add(grp);
-    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.012, 36), glossy(s.c)); pad.position.y = 0.006; grp.add(pad);
-    const part = { grp, pad, k, a, act: 0, anim: [] };
-    if (k === 0) { // funnel + falling motes
-      const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.01, 0.06, 28, 1, true), new THREE.MeshStandardMaterial({ color: 0xe9f6ff, metalness: 0.6, roughness: 0.25, side: THREE.DoubleSide })); cone.position.y = 0.055; grp.add(cone);
-      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.025, 12), goldMat()); tube.position.y = 0.02; grp.add(tube);
-      part.motes = Array.from({ length: 6 }, (_, i) => { const m = softLight(0x7fd4ff, 0.026, 0.9); grp.add(m); return { m, o: i / 6, x: (Math.random() - 0.5) * 0.06, z: (Math.random() - 0.5) * 0.06 }; });
-    } else if (k === 1) { // sorting shelf
-      const rack = new THREE.Mesh(new RoundedBoxGeometry(0.1, 0.01, 0.04, 2, 0.003), goldMat()); rack.position.y = 0.03; grp.add(rack);
-      part.cubes = [0xe0605a, 0x45b6e8, 0x8ac04a].map((c, i) => { const m = new THREE.Mesh(new RoundedBoxGeometry(0.026, 0.026, 0.026, 2, 0.004), glossy(c)); grp.add(m); return { m, i, from: [2, 0, 1][i] }; });
-    } else if (k === 2) { // glass jar with a gold bead
-      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.075, 28), new THREE.MeshPhysicalMaterial({ color: 0xeaffe0, transparent: true, opacity: 0.28, roughness: 0.05, clearcoat: 1, depthWrite: false })); jar.position.y = 0.05; jar.renderOrder = 5; grp.add(jar);
-      const lid = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.004, 8, 32), goldMat()); lid.rotation.x = Math.PI / 2; lid.position.y = 0.088; grp.add(lid);
-      part.bead = new THREE.Mesh(new THREE.SphereGeometry(0.012, 18, 14), glossy(0xf1c25a, { emissive: 0xffb300, emissiveIntensity: 0.5, metalness: 0.5 })); grp.add(part.bead);
-      part.beadGlow = softLight(0xffc24a, 0.07, 0); part.bead.add(part.beadGlow);
-      part.lidT = 0;
-    } else { // megaphone
-      const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.015, 0.075, 28, 1, true), new THREE.MeshStandardMaterial({ color: s.c, roughness: 0.3, metalness: 0.2, side: THREE.DoubleSide })); horn.rotation.z = Math.PI / 2; horn.position.set(0, 0.05, 0); grp.add(horn);
-      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 10), mat(0x2b2620)); handle.position.set(-0.03, 0.03, 0); grp.add(handle);
-      part.waves = Array.from({ length: 3 }, (_, i) => { const w = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.002, 6, 30), new THREE.MeshBasicMaterial({ color: s.c, transparent: true, opacity: 0, toneMapped: false })); w.rotation.y = Math.PI / 2; grp.add(w); return { w, o: i / 3 }; });
-      horn.userData.horn = true; part.horn = horn;
-    }
-    shadowed(grp);
-    const tg = tagSprite(s.n, 0.15 / 1.3, s.c); tg.position.set(Math.cos(a) * 0.1, 0.1, Math.sin(a) * 0.1); grp.add(tg); part.tg = tg;
-    ctx.tap(grp, () => jumpTo(k));
-    part.hint = H.add(grp, s.c, 0.15, [0, 0.06, 0], 4.4 + k * 0.25);
-    return part;
-  });
-
-  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.014, 18, 14), glossy(0xfff0b0, { emissive: 0xffc24a, emissiveIntensity: 1 })); g.add(orb);
-  orb.add(softLight(0xffc24a, 0.12, 0.7));
-  const trail = Array.from({ length: 10 }, (_, i) => { const s = softLight(0xffc24a, 0.04 * (1 - i / 12), 0.5 * (1 - i / 10)); g.add(s); return s; });
-  let ang = -Math.PI / 2, speed = 0.55, hold = 0, holdAt = -1, now = 0;
-  const nearIdx = () => { const k = Math.round(((ang + Math.PI / 2) / (TAU / 4))); return ((k % 4) + 4) % 4; };
-  function jumpTo(k) {
-    ctx.sfx.pop?.(); const tAng = -Math.PI / 2 + k * TAU / 4;
-    let d = ((tAng - ang) % TAU + TAU) % TAU; ang += d; hold = 3.2; holdAt = k; // teleports forward along ring: quick hop
-    const [a, b, c] = ST[k].card; ctx.ui.card({ tag: a, title: b, body: c, color: ST[k].c });
-    stations[k].hint.calm = true; found(k);
-    ctx.fx.burst(new THREE.Vector3(Math.cos(tAng) * RR, 0.09, Math.sin(tAng) * RR).add(g.position), ST[k].c, 22, 0.35, 0.03);
-    ctx.ui.hud('المعلومة تدور من محطة إلى التي تليها');
-  }
-  ctx.ui.hud('تتبّع دورة المعلومة وامسّ كل محطة');
+  const tag = tagSprite(ST[0].n, 0.24, ST[0].c); tag.visible = false; tag.userData.nm = ''; g.add(tag);
+  let spin = 2.6, hold = 0, targetRot = null, lastK = -1, now = 0;
   const v = new THREE.Vector3();
+  function pick(k) {
+    const c = cabins[k]; ctx.sfx.pop?.(); c.pop = 1; c.hint.calm = true; found(k); lastK = k;
+    // turn the wheel so this cabin hangs at the front-bottom, where it reads best
+    const want = -(c.a - (-Math.PI / 2)); let d = ((want - wheel.rotation.z) % TAU + TAU) % TAU; if (d > Math.PI) d -= TAU; targetRot = wheel.rotation.z + d; hold = 4;
+    ctx.fx.burst(new THREE.Vector3(0, HUB - R * 0.9, 0.06).add(g.position), ST[k].c, 24, 0.35, 0.03);
+    const [a, b, t] = ST[k].card; ctx.ui.card({ tag: a, title: b, body: t, color: ST[k].c });
+    ctx.ui.hud('الدورة تعود إلى أولها');
+  }
+  ctx.ui.hud('أدِر دورة المعلومة وامسّ كل مقصورة');
   return {
     update(t, dt, e) {
       now = t;
-      { const k = Math.max(stag(t, 0.1, 0.8, easeBack) * e, 0.001); base.scale.set(k, k, k); slate.scale.set(k, k, k); tsh.material.opacity = 0.32 * e; }
-      ring.scale.setScalar(Math.max(stag(t, 0.6, 1.0) * e, 0.001));
-      arrows.forEach((w, i) => w.scale.setScalar(Math.max(stag(t, 1.4 + i * 0.15, 0.5, easeBack) * e, 0.001)));
-      lamp.position.y = 0.58 + 0.14 * (1 - easeBack(clamp01((t - 0.2) / 0.9))) + (1 - e) * 0.14; lamp.rotation.z = Math.sin(t * 0.9) * 0.025;
-      pool.material.opacity = 0.45 * clamp01((t - 1.2) * 0.8) * e * (0.92 + 0.08 * Math.sin(t * 5));
-      pool.position.x = Math.sin(t * 0.9) * 0.01;
-      // orb travel
-      if (t > 1.4) {
-        if (hold > 0) hold -= dt; else { ang += dt * speed; holdAt = -1; }
-        // slow down near stations so each one gets its moment
-        const nr = ang + Math.PI / 2, ph = ((nr % (TAU / 4)) + TAU / 4) % (TAU / 4); const near = Math.min(ph, TAU / 4 - ph);
-        speed = 0.35 + clamp01(near / 0.5) * 0.9;
-      }
-      orb.position.set(Math.cos(ang) * RR, Y + 0.035 + Math.sin(t * 4) * 0.004, Math.sin(ang) * RR);
-      orb.scale.setScalar(Math.max(stag(t, 1.2, 0.6, easeBack) * e, 0.001));
-      trail.forEach((s, i) => { const a = ang - (i + 1) * 0.07; s.position.set(Math.cos(a) * RR, Y + 0.035, Math.sin(a) * RR); s.visible = t > 1.6; });
-      stations.forEach((s, i) => {
-        s.grp.scale.setScalar(Math.max(stag(t, 0.5 + i * 0.18, 0.7, easeBack) * e, 0.001) * 1.3);
-        let d = Math.abs(((ang - s.a + Math.PI) % TAU + TAU) % TAU - Math.PI);
-        const want = t > 1.4 ? clamp01(1 - d / 0.7) : 0; s.act += (want - s.act) * Math.min(1, dt * 6);
-        s.pad.material.emissive.setHex(ST[i].c); s.pad.material.emissiveIntensity = s.act * 0.5;
-        if (s.motes) s.motes.forEach((m) => { const p = (t * 0.7 + m.o) % 1; m.m.position.set(m.x * (1 - p), 0.12 - p * 0.1, m.z * (1 - p)); m.m.material.opacity = 0.9 * (0.3 + s.act * 0.7) * Math.sin(p * Math.PI) * e; });
-        if (s.cubes) s.cubes.forEach((c) => { const slot = (n) => (n - 1) * 0.034; const x = slot(c.from) * (1 - ease(s.act)) + slot(c.i) * ease(s.act); c.m.position.set(x, 0.048 + Math.sin(s.act * Math.PI) * 0.02 * (c.i === 1 ? 0 : 1), 0); c.m.rotation.y = s.act * 0.8; });
-        if (s.bead) { const p = ease(s.act); s.bead.position.y = 0.13 - p * 0.09 + Math.sin(t * 3) * 0.002; s.beadGlow.material.opacity = p * 0.8; }
-        if (s.waves) s.waves.forEach((w) => { const p = (t * 0.9 + w.o) % 1; w.w.position.x = 0.05 + p * 0.1; w.w.scale.setScalar(0.5 + p * 1.2); w.w.material.opacity = (1 - p) * 0.7 * s.act; });
-        s.tg.visible = t > 1.8; setSpr(s.tg, 0.15 / 1.3, clamp01((t - 1.8 - i * 0.12) * 1.6) * e);
+      sh.material.opacity = 0.32 * e;
+      const sk = Math.max(stag(t, 0.1, 0.8, easeBack) * e, 0.001); stand.scale.set(sk, sk, sk);
+      const wk = Math.max(stag(t, 0.3, 0.9, easeBack) * e, 0.001); wheel.scale.set(wk, wk, wk);
+      // spin: fast at first, then calm; a touched cabin brings the wheel to rest for a moment
+      if (hold > 0 && targetRot !== null) { hold -= dt; wheel.rotation.z += (targetRot - wheel.rotation.z) * Math.min(1, dt * 4); spin = 0; }
+      else { targetRot = null; spin += (0.3 - spin) * Math.min(1, dt * 0.9); wheel.rotation.z += dt * spin; }
+      lights.forEach((b, i) => { const k = 0.35 + 0.65 * Math.max(0, Math.sin(t * 5 - i * 0.55)); b.material.color.setRGB(1 * k + 0.25, 0.85 * k + 0.2, 0.5 * k + 0.1); b.scale.setScalar(0.7 + k * 0.6); b.visible = t > 0.8; });
+      hubGlow.material.opacity = 0.35 + 0.15 * Math.sin(t * 3);
+      cabins.forEach((c, i) => {
+        c.cab.rotation.z = -wheel.rotation.z + Math.sin(t * 1.7 + i) * 0.05;
+        c.pop = Math.max(0, c.pop - dt * 0.4);
+        const ck = Math.max(stag(t, 0.8 + i * 0.15, 0.7, easeBack) * e, 0.001); c.cab.scale.setScalar(ck * (1 + c.pop * 0.18));
+        c.halo.material.opacity = c.pop * 0.7;
       });
+      if (lastK >= 0 && t - 0 > 0) {
+        const c = cabins[lastK]; c.cab.getWorldPosition(v); g.worldToLocal(v); tag.position.set(v.x, v.y + 0.13, v.z + 0.02); tag.visible = c.pop > 0.02 || hold > 0;
+        if (tag.userData.nm !== ST[lastK].n) { tag.userData.nm = ST[lastK].n; const nt = tagSprite(ST[lastK].n, 0.24, ST[lastK].c); tag.material.map = nt.material.map; tag.userData.aspect = nt.userData.aspect; }
+        setSpr(tag, 0.24, e);
+      }
       H.update(t, e);
     },
   };

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=15';
-import { scene, RoundedBox, TAU, setSpr, tagSprite, contactShadow } from '../lib/a8-kit.js?v=15';
-export const meta = { free: true, center: [0.36, 0.641], typeLabel: 'لعبة تصنيف' };
+import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=16';
+import { scene, RoundedBox, TAU, setSpr, tagSprite, contactShadow } from '../lib/a8-kit.js?v=16';
+export const meta = { free: true, center: [0.4, 0.641], typeLabel: 'لعبة تصنيف' };
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 const GL = (c, i = 1) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: 0.3 });
 const BIN = [
@@ -48,11 +48,11 @@ function tornShape(w, h, side) { // side: +1 tooth edge on the right, -1 on the 
 }
 function paperTex() {
   const c = document.createElement('canvas'); c.width = 512; c.height = 640; const x = c.getContext('2d');
-  x.fillStyle = '#fbf6ea'; x.fillRect(0, 0, 512, 640);
-  x.strokeStyle = '#8fb4e3'; x.lineWidth = 2; for (let y = 90; y < 640; y += 38) { x.beginPath(); x.moveTo(0, y); x.lineTo(512, y); x.stroke(); }
-  x.strokeStyle = '#e07a7a'; x.lineWidth = 3; x.beginPath(); x.moveTo(70, 0); x.lineTo(70, 640); x.stroke();
-  x.fillStyle = '#2b2620'; x.font = '800 62px Tajawal, sans-serif'; x.textAlign = 'center'; x.direction = 'rtl'; x.fillText('الفجوة الرقمية', 290, 190);
-  x.font = '700 40px Tajawal, sans-serif'; x.fillStyle = '#8a7a66'; x.fillText('قلة · معرفة · دخول', 290, 262);
+  const gr = x.createLinearGradient(0, 0, 512, 640); gr.addColorStop(0, '#d2a465'); gr.addColorStop(1, '#b98846'); x.fillStyle = gr; x.fillRect(0, 0, 512, 640);
+  x.strokeStyle = 'rgba(80,50,20,.18)'; x.lineWidth = 2; for (let y = 8; y < 640; y += 10) { x.beginPath(); x.moveTo(0, y + (y % 20)); x.lineTo(512, y + (y % 20)); x.stroke(); }
+  x.setLineDash([14, 10]); x.strokeStyle = '#f6e3b0'; x.lineWidth = 5; x.strokeRect(34, 34, 444, 572); x.setLineDash([]);
+  x.fillStyle = '#fbf6ea'; x.beginPath(); x.roundRect(86, 150, 340, 190, 14); x.fill(); x.strokeStyle = '#2b2620'; x.lineWidth = 3; x.stroke();
+  x.fillStyle = '#2b2620'; x.font = '800 66px Tajawal, sans-serif'; x.textAlign = 'center'; x.direction = 'rtl'; x.fillText('الفجوة', 256, 218); x.fillText('الرقمية', 256, 300);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.repeat.set(1 / 0.28, 1 / 0.36); t.offset.set(0.5, 0.5); return t;
 }
 function screenTex2() {
@@ -66,7 +66,7 @@ function screenTex2() {
 }
 
 export default function build(ctx) {
-  const S = scene(ctx, meta), g0 = S.g; const g = new THREE.Group(); g.scale.setScalar(0.82); g0.add(g);
+  const S = scene(ctx, meta), g0 = S.g; const g = new THREE.Group(); g.scale.setScalar(0.9); g0.add(g);
   // ---- the divide: a ruled notebook and a glowing tablet, torn apart by a bright crack
   const mkSlab = (right) => {
     const geo = new THREE.ExtrudeGeometry(tornShape(0.28, 0.36, right ? -1 : 1), { depth: 0.032, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.003, bevelSegments: 2, curveSegments: 6 });
@@ -81,14 +81,15 @@ export default function build(ctx) {
   const shL = contactShadow(0.34, 0.18, 0.35); shL.position.set(-0.17, 0.0015, -0.08); g.add(shL); const shR = contactShadow(0.34, 0.18, 0.35); shR.position.set(0.17, 0.0015, -0.08); g.add(shR);
   const crack = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.36, 0.01), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.55, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false })); crack.position.set(0, 0.18, -0.1); g.add(crack);
   const crackGlow = glow(0xffd27a, 0.3, 0.4); crackGlow.position.set(0, 0.18, -0.08); g.add(crackGlow);
+  const fxRing = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.006, 8, 56), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); fxRing.position.set(0, 0.18, -0.07); g.add(fxRing);
   S.part(L, 0.1, { rise: 0.15 }); S.part(Rr, 0.25, { rise: 0.15 });
 
   // ---- three bins in front: a plug, a gear, a bulb, each on its own pad
-  const POS = [new THREE.Vector3(-0.22, 0, 0.17), new THREE.Vector3(0, 0, 0.2), new THREE.Vector3(0.22, 0, 0.17)];
+  const POS = [new THREE.Vector3(-0.24, 0, 0.19), new THREE.Vector3(0, 0, 0.23), new THREE.Vector3(0.24, 0, 0.19)];
   const bins = BIN.map((b, i) => {
     const grp = new THREE.Group(); grp.position.copy(POS[i]); g.add(grp);
-    const padm = new THREE.Mesh(new RoundedBox(0.17, 0.01, 0.15, 0.03), glossy(0x2d3f5c)); padm.position.y = 0.005; grp.add(padm);
-    const rim = new THREE.Mesh(new RoundedBox(0.176, 0.004, 0.156, 0.032), GL(b.c, 0.7)); rim.position.y = 0.0025; grp.add(rim);
+    const padm = new THREE.Mesh(new RoundedBox(0.2, 0.01, 0.17, 0.034), glossy(0x2d3f5c)); padm.position.y = 0.005; grp.add(padm);
+    const rim = new THREE.Mesh(new RoundedBox(0.208, 0.004, 0.178, 0.036), GL(b.c, 0.7)); rim.position.y = 0.0025; grp.add(rim);
     let obj;
     if (i === 0) {
       obj = new THREE.Group(); const bx = new THREE.Mesh(new RoundedBox(0.1, 0.08, 0.045, 0.014), glossy(b.c)); bx.position.y = 0.05; obj.add(bx);
@@ -103,9 +104,9 @@ export default function build(ctx) {
       const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.03, 16), goldMat()); nk.position.y = 0.04; obj.add(nk); obj.userData.bulb = bu;
       const hh = glow(b.c, 0.26, 0.5); hh.position.y = 0.088; obj.add(hh);
     }
-    obj.position.y = 0.01; obj.scale.setScalar(1.3); grp.add(shadowed(obj));
+    obj.position.y = 0.01; obj.scale.setScalar(1.65); grp.add(shadowed(obj));
     const lamp = glow(b.c, 0.3, 0); lamp.position.y = 0.07; grp.add(lamp);
-    const plate = label(b.n, 0.15, { size: 50, width: 480, weight: 800, border: hex(b.c), pad: 16, radius: 18 }); plate.rotation.x = -1.0; plate.position.set(0, 0.012, 0.1); grp.add(plate);
+    const plate = label(b.n, 0.19, { size: 50, width: 480, weight: 800, border: hex(b.c), pad: 16, radius: 18 }); plate.rotation.x = -1.0; plate.position.set(0, 0.012, 0.115); grp.add(plate);
     S.part(grp, 0.6 + i * 0.3, { rise: 0.14 });
     return { grp, obj, lamp, rim, b, i, shake: -9, pulse: -9 };
   });
@@ -127,7 +128,7 @@ export default function build(ctx) {
       const it = IT[ORDER[cur]];
       if (it[1] === bn.i) {
         bn.pulse = S.now; ctx.sfx.good?.(); anim = { t0: S.now, from: pearl.position.clone(), to: bn.grp.position.clone().setY(0.12), bin: bn };
-        S.burst(bn.grp.position.clone().setY(0.12).multiplyScalar(0.82), bn.b.c, 24, 0.5);
+        S.burst(bn.grp.position.clone().setY(0.12).multiplyScalar(0.9), bn.b.c, 24, 0.5);
         if (!seenBin[bn.i]) { seenBin[bn.i] = true; ctx.ui.card({ tag: 'السبب الأقوى', title: bn.b.n, body: `${it[2]}؛ ${SAY[bn.i]}.`, color: bn.b.c }); } else ctx.ui.toast(SAY[bn.i]);
       } else { bn.shake = S.now; ctx.sfx.bad?.(); ctx.ui.toast('فكّر فيما ينقص أصحابها بالضبط'); }
     }, { color: bn.b.c, size: 0.32, at: new THREE.Vector3(0, 0.07, 0), wake: 3.4 });
@@ -143,13 +144,14 @@ export default function build(ctx) {
     const c = closeT > 0 ? ease((t - closeT - 0.6) / 1.6) : 0;
     L.position.x = -0.17 + 0.0 + 0.155 * c; Rr.position.x = 0.17 - 0.155 * c; crack.material.opacity = 0.55 * (1 - c) * (0.75 + 0.25 * Math.sin(t * 5)); crack.scale.x = 1 - c * 0.9; crackGlow.material.opacity = 0.4 * (1 - c);
     shL.position.x = L.position.x; shR.position.x = Rr.position.x;
+    if (c >= 1) { const w = clamp01((t - closeT - 2.2) / 1.2); fxRing.material.opacity = 0.9 * (1 - w) * (w > 0 ? 1 : 0); fxRing.scale.setScalar(1 + w * 3.4); }
     if (c >= 1 && !S.finished) { S.finished = true; S.burst(new THREE.Vector3(0, 0.16, 0), 0xffd27a, 60, 0.7, 0.045); ctx.ui.card({ tag: 'اكتمل التصنيف', title: 'أسباب الفجوة الرقمية', body: 'قلة الدخول إلى التقنية، وقلة المعرفة بكيفية استخدامها، وقلة المعرفة بفوائدها؛ ثلاثة أسباب حدّدها موليناري.', color: 0xd4ad55 }); ctx.ui.done(); }
     bins.forEach((bn, i) => {
       const o = bn.obj.userData;
       if (o.gear) { o.gear.rotation.z = t * 0.8; o.g2.rotation.z = -t * 1.1; }
       if (o.bulb) o.bulb.material.emissiveIntensity = 0.7 + 0.3 * Math.sin(t * 2.4) + clamp01(1 - (t - bn.pulse) / 0.8) * 1.2;
       bn.grp.position.x = POS[i].x + clamp01(1 - (t - bn.shake) / 0.5) * Math.sin((t - bn.shake) * 55) * 0.012;
-      bn.obj.scale.y = 1.3 * (1 + clamp01(1 - (t - bn.pulse) / 0.5) * 0.12 * Math.sin((t - bn.pulse) * 14));
+      bn.obj.scale.y = 1.65 * (1 + clamp01(1 - (t - bn.pulse) / 0.5) * 0.12 * Math.sin((t - bn.pulse) * 14));
       bn.obj.rotation.y = Math.sin(t * 0.7 + i) * 0.25;
       bn.rim.material.emissiveIntensity = 0.5 + 0.25 * Math.sin(t * 2.4 + i) + clamp01(1 - (t - bn.pulse) / 0.8);
     });

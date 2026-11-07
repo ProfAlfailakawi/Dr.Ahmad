@@ -1,11 +1,11 @@
 // p431 — Arab ICT indicators: a night-city disc, a glowing tower for Dubai (its ranks float at the height of their rank), and two glass gauges: Bahrain's internet and Kuwait's phones that overflow 100%.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
-import { Seq, Hints, Tag, TAU, V, wpos } from '../lib/a9-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
+import { Seq, Hints, Tag, TAU, V, wpos } from '../lib/a9-kit.js?v=16';
 
-export const meta = { free: true, center: [0.28, 0.608], typeLabel: 'أبراج المؤشرات', title: 'مؤشرات المنطقة العربية' };
+export const meta = { free: true, center: [0.5, 0.608], typeLabel: 'أبراج المؤشرات', title: 'مؤشرات المنطقة العربية' };
 
 const C = {
   bh: { t: 'البحرين أولى خليجياً', tag: 'إنترنت ٧٤٫١٥٪', b: 'جاءت البحرين أولى بعد أن سجلت ٧٤٫١٥٪ في معدلات استخدام شبكة الإنترنت عام ٢٠١٥.', c: 0x2fc7c0 },
@@ -18,7 +18,7 @@ const C = {
 const UNIT = 0.2; // height of 100 %
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.72);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.12);
   const seq = new Seq(), hints = new Hints(g, 6.0), tag = new Tag(g, 0.23);
   const brass = goldMat(), seen = new Set(); let finished = false, now = 0;
 

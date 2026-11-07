@@ -1,12 +1,12 @@
 // p211 — the two halves of the brain as one big split globe: a chalk-slate left half and a painted right half, held apart by a gold bridge; touch a half and its kind of thinking floats out.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=15';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=15';
-import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=16';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=16';
+import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=16';
 
-export const meta = { free: true, center: [0.47, 0.68], typeLabel: 'مجسّم تفاعلي' };
+export const meta = { free: true, center: [0.46, 0.68], typeLabel: 'مجسّم تفاعلي' };
 
-const TAU = Math.PI * 2, R = 0.215;
+const TAU = Math.PI * 2, R = 0.2;
 function foldTex() {
   const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
   g.fillStyle = '#7a7a7a'; g.fillRect(0, 0, 512, 512); g.lineCap = 'round';
@@ -15,27 +15,26 @@ function foldTex() {
 }
 function slateTex() {
   const c = document.createElement('canvas'); c.width = 512; c.height = 512; const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 512, 512); gr.addColorStop(0, '#6f8c96'); gr.addColorStop(1, '#4d6870'); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
-  g.fillStyle = 'rgba(255,255,248,.92)'; g.strokeStyle = 'rgba(255,255,248,.9)'; g.lineWidth = 3; g.font = '700 54px Georgia, serif';
-  const w = ['x²+y²', 'Σ', 'π', '7+5', '∫f', '√25', '△', '12', 'a/b', '=', '%', '∞', 'n+1', 'Δx'];
-  for (let i = 0; i < 30; i++) { g.save(); g.translate(Math.random() * 512, Math.random() * 512); g.rotate((Math.random() - 0.5) * 0.7); g.fillText(w[i % w.length], 0, 0); g.restore(); }
-  for (let i = 0; i < 8; i++) { g.beginPath(); g.moveTo(Math.random() * 512, Math.random() * 512); g.lineTo(Math.random() * 512, Math.random() * 512); g.stroke(); }
+  const gr = g.createLinearGradient(0, 0, 512, 512); gr.addColorStop(0, '#6f8f99'); gr.addColorStop(1, '#3f5a63'); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  g.fillStyle = 'rgba(255,255,250,.95)'; g.strokeStyle = 'rgba(255,255,250,.9)'; g.lineWidth = 6; g.font = '700 96px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  [['Σ', 90, 90], ['π', 250, 170], ['7+5', 410, 90], ['∞', 110, 300], ['√x', 300, 380], ['=', 450, 260], ['△', 70, 450]].forEach(([w, x, y]) => g.fillText(w, x, y));
+  g.beginPath(); g.moveTo(150, 460); g.lineTo(480, 440); g.stroke();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 function paintTex() {
   const c = document.createElement('canvas'); c.width = 512; c.height = 512; const g = c.getContext('2d');
-  g.fillStyle = '#38b062'; g.fillRect(0, 0, 512, 512);
-  const cols = ['#f6c73a', '#e8602c', '#d63a8c', '#7a4fc0', '#2aa0e0', '#ef8a2a', '#8ac04a', '#fbf1d0'];
-  for (let i = 0; i < 60; i++) { g.fillStyle = cols[i % cols.length]; g.beginPath(); g.ellipse(Math.random() * 512, Math.random() * 512, 24 + Math.random() * 60, 14 + Math.random() * 36, Math.random() * 3, 0, TAU); g.fill(); }
-  g.lineWidth = 9; for (let i = 0; i < 12; i++) { g.strokeStyle = cols[(i * 3) % cols.length]; g.beginPath(); const x = Math.random() * 512, y = Math.random() * 512; g.moveTo(x, y); g.bezierCurveTo(x + 80, y - 80, x + 160, y + 80, x + 240, y); g.stroke(); }
+  const gr = g.createLinearGradient(0, 0, 512, 512); gr.addColorStop(0, '#f6c73a'); gr.addColorStop(0.5, '#ef6a2c'); gr.addColorStop(1, '#d63a8c'); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  const cols = ['#2aa0e0', '#38b062', '#7a4fc0', '#fbf1d0', '#f6c73a', '#d63a8c'];
+  for (let i = 0; i < 14; i++) { const x = Math.random() * 512, y = Math.random() * 512, r = 40 + Math.random() * 60; const rg = g.createRadialGradient(x, y, 2, x, y, r); rg.addColorStop(0, cols[i % cols.length]); rg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+  g.lineWidth = 14; g.lineCap = 'round'; for (let i = 0; i < 5; i++) { g.strokeStyle = cols[(i * 2) % cols.length]; g.beginPath(); const x = 20 + Math.random() * 200, y = 40 + i * 90; g.moveTo(x, y); g.bezierCurveTo(x + 100, y - 60, x + 200, y + 60, x + 330, y - 10); g.stroke(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 function half(sign, map, bump) {
   const geo = new THREE.SphereGeometry(1, 64, 44, sign > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI, 0, Math.PI);
   const grp = new THREE.Group();
-  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map, bumpMap: bump, bumpScale: 2.2, roughness: 0.5, metalness: 0.02 }));
+  const m = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ map, roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.25 }));
   grp.add(m);
-  const cap = new THREE.Mesh(new THREE.CircleGeometry(1, 56), new THREE.MeshStandardMaterial({ color: 0xf2d4cb, bumpMap: bump, bumpScale: 1.4, roughness: 0.6, side: THREE.DoubleSide }));
+  const cap = new THREE.Mesh(new THREE.CircleGeometry(1, 56), new THREE.MeshStandardMaterial({ color: 0xf0b9ae, roughness: 0.55, side: THREE.DoubleSide }));
   cap.rotation.y = Math.PI / 2; grp.add(cap);
   grp.scale.set(R, R * 0.9, R * 1.12); return { grp, m, cap };
 }
@@ -50,11 +49,11 @@ function glyphSprite(ch, color) {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(0.47, 0.68)); g.scale.setScalar(0.88); ctx.stage.add(g);
+  const g = new THREE.Group(); g.position.copy(P(0.46, 0.68)); g.scale.setScalar(0.78); ctx.stage.add(g);
   const H = hints(), found = finder(ctx, 3);
   const sh = blobShadow(0.62, 0.52, 0.3); g.add(sh);
   const BY = 0.28;
-  const bump = foldTex();
+  const bump = null;
   const brain = new THREE.Group(); brain.position.y = BY; g.add(brain);
   const sides = [
     { ...half(-1, slateTex(), bump), sign: -1, kick: 0, ch: ['Σ', 'π', '7', '+', '=', '√', '△', '%'], cols: ['#fbf8ea'], card: ['النصف الأيسر', 'الكلمات والأعداد والتسلسل', 'يختص بالتحليل والمنطق، وفيه نمط التفكير اليساري: التتابع واللفظ والتحليل.'], c: 0x5d7a86 },

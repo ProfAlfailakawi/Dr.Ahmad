@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=15';
-import { scene, RoundedBox, TAU, contactShadow } from '../lib/a8-kit.js?v=15';
+import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=16';
+import { scene, RoundedBox, TAU, contactShadow } from '../lib/a8-kit.js?v=16';
 export const meta = { free: true, center: [0.375, 0.666], typeLabel: 'لعبة مطابقة' };
 
 const GLASS = (c, o = 0.5) => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.05, transparent: true, opacity: o, clearcoat: 1, emissive: c, emissiveIntensity: 0.35 });
@@ -50,86 +50,75 @@ function mkDevice(i) {
 }
 
 
+
 export default function build(ctx) {
-  const S = scene(ctx, meta), g0 = S.g; const g = new THREE.Group(); g.scale.setScalar(0.78); g0.add(g);
-  // ---- the laptop: aluminium deck with keys, a lid that opens, a screen that asks the question
-  const deck = new THREE.Group(); g.add(deck);
-  const slab = new THREE.Mesh(new RoundedBox(0.74, 0.03, 0.44, 0.02), glossy(0xc8ccd2, { metalness: 0.55, roughness: 0.3 })); slab.position.set(0, 0.015, 0.07); deck.add(slab);
-  const keys = new THREE.InstancedMesh(new RoundedBox(0.04, 0.008, 0.04, 0.004), new THREE.MeshStandardMaterial({ color: 0x2b2f38, roughness: 0.4 }), 17 * 5);
-  const d = new THREE.Object3D(); let ki = 0;
-  for (let r = 0; r < 5; r++) for (let c = 0; c < 17; c++) { d.position.set(-0.32 + c * 0.04, 0.032, -0.07 + r * 0.043); d.updateMatrix(); keys.setMatrixAt(ki++, d.matrix); }
-  deck.add(keys);
-  const pad = new THREE.Mesh(new RoundedBox(0.2, 0.004, 0.09, 0.01), glossy(0xaab0b8, { metalness: 0.4 })); pad.position.set(0, 0.031, 0.235); deck.add(pad);
-  shadowed(deck);
-  const sh0 = contactShadow(0.84, 0.54, 0.4); sh0.position.set(0, 0.0015, 0.08); g.add(sh0);
-  S.part(deck, 0.1, { rise: 0.04 });
-  const lid = new THREE.Group(); lid.position.set(0, 0.03, -0.15); g.add(lid);
-  const shell = new THREE.Mesh(new RoundedBox(0.74, 0.46, 0.016, 0.012), glossy(0xc8ccd2, { metalness: 0.55, roughness: 0.3 })); shell.position.y = 0.23; lid.add(shell);
-  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 640; const cx = cv.getContext('2d');
+  const S = scene(ctx, meta), g0 = S.g; const g = new THREE.Group(); g.scale.setScalar(0.95); g0.add(g);
+  // ---- a floating glass screen carries the question
+  const panel = new THREE.Group(); panel.position.set(0, 0.31, -0.05); g.add(panel);
+  const frame = new THREE.Mesh(new RoundedBox(0.5, 0.16, 0.014, 0.016), glossy(0x1d2430, { roughness: 0.25 })); panel.add(frame);
+  const rim = new THREE.Mesh(new RoundedBox(0.512, 0.172, 0.008, 0.018), goldMat()); rim.position.z = -0.005; panel.add(rim);
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 266; const cx = cv.getContext('2d');
   const stex = new THREE.CanvasTexture(cv); stex.colorSpace = THREE.SRGBColorSpace;
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.69, 0.43), new THREE.MeshBasicMaterial({ map: stex, toneMapped: false })); screen.position.set(0, 0.23, 0.0085); lid.add(screen);
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.47, 0.13), new THREE.MeshBasicMaterial({ map: stex, toneMapped: false })); screen.position.z = 0.0078; panel.add(screen);
   const SC = { text: '', done: 0, flash: 0, c: 0xd4ad55 };
   const draw = () => {
-    const gr = cx.createLinearGradient(0, 0, 1024, 640); gr.addColorStop(0, '#16345a'); gr.addColorStop(1, '#0b1a30'); cx.fillStyle = gr; cx.fillRect(0, 0, 1024, 640);
-    cx.fillStyle = 'rgba(255,255,255,.07)'; for (let i = 0; i < 9; i++) cx.fillRect(0, i * 80, 1024, 2);
-    // five progress lamps
-    for (let i = 0; i < 5; i++) { cx.beginPath(); cx.arc(312 + i * 100, 96, 24, 0, TAU); cx.fillStyle = i < SC.done ? hex(DEV[ORDER[i]].c) : 'rgba(255,255,255,.18)'; cx.fill(); }
+    const gr = cx.createLinearGradient(0, 0, 1024, 266); gr.addColorStop(0, '#16345a'); gr.addColorStop(1, '#0b1a30'); cx.fillStyle = gr; cx.fillRect(0, 0, 1024, 266);
+    for (let i = 0; i < 5; i++) { cx.beginPath(); cx.arc(412 + i * 50, 40, 13, 0, TAU); cx.fillStyle = i < SC.done ? hex(DEV[ORDER[i]].c) : 'rgba(255,255,255,.2)'; cx.fill(); }
     cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.direction = 'rtl';
-    cx.fillStyle = 'rgba(255,255,255,.55)'; cx.font = '700 46px Tajawal, sans-serif'; cx.fillText(SC.text ? 'أي ابتكار يؤدي هذه الوظيفة؟' : '', 512, 210);
-    cx.fillStyle = '#ffe3a0'; cx.font = '800 84px Tajawal, sans-serif'; cx.shadowColor = hex(SC.c); cx.shadowBlur = 36; cx.fillText(SC.text, 512, 360); cx.shadowBlur = 0;
-    if (SC.flash > 0) { cx.fillStyle = `rgba(255,255,255,${0.22 * SC.flash})`; cx.fillRect(0, 0, 1024, 640); }
+    cx.fillStyle = '#ffe3a0'; cx.font = '800 92px Tajawal, sans-serif'; cx.shadowColor = hex(SC.c); cx.shadowBlur = 36; cx.fillText(SC.text, 512, 160); cx.shadowBlur = 0;
+    if (SC.flash > 0) { cx.fillStyle = `rgba(255,255,255,${0.3 * SC.flash})`; cx.fillRect(0, 0, 1024, 266); }
     stex.needsUpdate = true;
   };
-  const hinge = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.012, 0.02), goldMat()); hinge.position.set(0, 0.0, 0.0); lid.add(hinge);
-  const sglow = glow(0x5aa8ff, 0.9, 0.0); sglow.position.set(0, 0.23, 0.05); lid.add(sglow);
-  lid.rotation.x = 1.45;
+  const sglow = glow(0x5aa8ff, 0.7, 0.0); sglow.position.set(0, 0, 0.05); panel.add(sglow);
+  const shP = contactShadow(0.5, 0.2, 0.25); shP.position.set(0, 0.0015, -0.04); g.add(shP);
+  S.part(panel, 0.5, { rise: 0.1 });
 
-  // ---- five real devices on the deck, each on a pad that carries its name
-  const spots = [[-0.23, -0.02], [0.0, -0.04], [0.23, -0.02], [-0.12, 0.14], [0.12, 0.14]];
+  // ---- five podiums, each lifts a device
+  const xs = [-0.26, -0.13, 0, 0.13, 0.26], zs = [0.07, 0.03, 0.0, 0.03, 0.07];
   const devs = DEV.map((dv, i) => {
-    const grp = new THREE.Group(); grp.position.set(spots[i][0], 0.036, spots[i][1]); g.add(grp);
-    const padm = new THREE.Mesh(new RoundedBox(0.17, 0.008, 0.15, 0.02), glossy(0xf6efdf)); padm.position.y = 0.004; grp.add(padm);
-    const rimm = new THREE.Mesh(new RoundedBox(0.176, 0.003, 0.156, 0.022), new THREE.MeshStandardMaterial({ color: dv.c, emissive: dv.c, emissiveIntensity: 0.7 })); rimm.position.y = 0.0015; grp.add(rimm);
-    const m = mkDevice(i); m.position.y = 0.008; m.scale.setScalar(1.7); grp.add(m);
-    const plate = label(dv.n, 0.15, { size: 54, width: 420, weight: 800, border: hex(dv.c), pad: 18, radius: 20 }); plate.rotation.x = -1.0; plate.position.set(0, 0.014, 0.095); grp.add(plate);
-    const lamp = glow(dv.c, 0.3, 0); lamp.position.y = 0.1; grp.add(lamp);
-    shadowed(grp); S.part(grp, 1.0 + i * 0.28, { rise: 0.16 });
-    return { grp, m, lamp, rimm, d: dv, i, state: 'idle', shake: -9, up: 0 };
+    const grp = new THREE.Group(); grp.position.set(xs[i], 0, zs[i] + 0.05); g.add(grp);
+    const sh = contactShadow(0.2, 0.18, 0.4); sh.position.y = 0.0015; grp.add(sh);
+    const pod = new THREE.Mesh(new RoundedBox(0.118, 0.06, 0.11, 0.02), glossy(dv.c, { roughness: 0.28 })); pod.position.y = 0.03; grp.add(pod);
+    const top = new THREE.Mesh(new RoundedBox(0.124, 0.008, 0.116, 0.022), goldMat()); top.position.y = 0.062; grp.add(top);
+    const m = mkDevice(i); m.position.y = 0.07; m.scale.setScalar(1.35); grp.add(m);
+    const plate = label(dv.n, 0.11, { size: 54, width: 420, weight: 800, border: hex(dv.c), pad: 16, radius: 18 }); plate.rotation.x = -0.45; plate.position.set(0, 0.026, 0.056); grp.add(plate);
+    const lamp = glow(dv.c, 0.28, 0); lamp.position.y = 0.13; grp.add(lamp);
+    shadowed(grp); S.part(grp, 0.2 + i * 0.14, { rise: 0.16 });
+    return { grp, m, lamp, pod, d: dv, i, state: 'idle', shake: -9, up: 0, x: xs[i], z: zs[i] + 0.05 };
   });
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 8), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); g.add(beam);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 1, 8), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); g.add(beam);
 
-  let round = 0, done = 0, bt = -9; const tmp = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), tgt = new THREE.Vector3();
+  let round = 0, done = 0, bt = -9; const Y = new THREE.Vector3(0, 1, 0), tgt = new THREE.Vector3(), to = new THREE.Vector3(0, 0.24, -0.05), dir = new THREE.Vector3();
   SC.text = DEV[ORDER[0]].f; SC.c = DEV[ORDER[0]].c; draw();
   devs.forEach((v) => {
     S.touch(v.grp, () => {
       if (v.state === 'done') { ctx.ui.card({ tag: 'ابتكار', title: v.d.n, body: v.d.body, color: v.d.c }); return; }
       if (round >= ORDER.length) return;
       if (ORDER[round] === v.i) {
-        v.state = 'done'; round++; done++; v.lamp.material.opacity = 0.6; bt = S.now; tgt.copy(v.grp.position); SC.flash = 1; SC.done = done;
-        S.burst(new THREE.Vector3(v.grp.position.x, 0.16, v.grp.position.z).multiplyScalar(0.78), v.d.c, 32, 0.55);
+        v.state = 'done'; round++; done++; v.lamp.material.opacity = 0.6; bt = S.now; tgt.set(v.x, 0.17, v.z); SC.flash = 1; SC.done = done;
+        S.burst(new THREE.Vector3(v.x, 0.18, v.z).multiplyScalar(0.95), v.d.c, 32, 0.55);
         ctx.sfx.good?.(); ctx.ui.card({ tag: 'ابتكار', title: v.d.n, body: v.d.body, color: v.d.c });
         if (round >= ORDER.length) { SC.text = 'طابقتَ الخمسة'; SC.c = 0xffe3a0; ctx.ui.hud('طابقتَ الابتكارات الخمسة'); setTimeout(() => ctx.ui.done(), 1800); }
         else { SC.text = DEV[ORDER[round]].f; SC.c = DEV[ORDER[round]].c; ctx.ui.hud(['', 'أحسنت', 'متقدّم', 'قاربت', 'الأخيرة'][done]); }
         draw();
       } else { v.shake = S.now; ctx.sfx.bad?.(); ctx.ui.toast('ليس هذا الابتكار، جرّب غيره'); }
-    }, { color: v.d.c, size: 0.34, at: new THREE.Vector3(0, 0.1, 0), wake: 3.6 });
+    }, { color: v.d.c, size: 0.3, at: new THREE.Vector3(0, 0.13, 0), wake: 3.0 });
   });
   ctx.ui.hud('أي ابتكار يؤدي هذه الوظيفة؟');
 
   S.loop((t, dt, e) => {
-    lid.rotation.x = 1.45 - 1.7 * easeBack(clamp01((t - 0.1) / 1.3));  // opens to -0.25
-    sglow.material.opacity = 0.35 * ease((t - 1.2) / 0.8) * e;
+    sglow.material.opacity = 0.3 * ease((t - 0.8) / 0.8) * e; panel.position.y = 0.31 + Math.sin(t * 1.2) * 0.005;
     if (SC.flash > 0) { SC.flash = Math.max(0, SC.flash - dt * 2.2); draw(); }
     devs.forEach((v, i) => {
       v.up = THREE.MathUtils.damp(v.up, v.state === 'done' ? 1 : 0, 5, dt);
-      v.m.rotation.y = Math.sin(t * 0.6 + i * 1.3) * 0.5 + (v.state === 'done' ? t * 0.9 : 0);
-      v.m.position.y = 0.008 + Math.sin(t * 1.6 + i * 1.3) * 0.004 + v.up * 0.03;
-      v.grp.rotation.z = clamp01(1 - (t - v.shake) / 0.5) * Math.sin((t - v.shake) * 55) * 0.05;
-      v.rimm.material.emissiveIntensity = 0.5 + 0.3 * Math.sin(t * 2.4 + i) + v.up;
-      if (v.state === 'idle') v.lamp.material.opacity = t > 3.6 ? 0.18 + 0.1 * Math.sin(t * 2.4 + i) : 0;
+      v.m.rotation.y = Math.sin(t * 0.6 + i * 1.3) * 0.6 + (v.state === 'done' ? t * 1.0 : 0);
+      v.m.position.y = 0.07 + Math.sin(t * 1.6 + i * 1.3) * 0.005 + v.up * 0.035;
+      v.grp.position.x = v.x + clamp01(1 - (t - v.shake) / 0.5) * Math.sin((t - v.shake) * 55) * 0.01;
+      v.pod.material.emissive.set(v.d.c); v.pod.material.emissiveIntensity = 0.1 + v.up * 0.5 + 0.08 * Math.sin(t * 2.4 + i);
+      if (v.state === 'idle') v.lamp.material.opacity = t > 3.0 ? 0.16 + 0.08 * Math.sin(t * 2.4 + i) : 0;
     });
     const u = clamp01((t - bt) / 0.9);
-    if (u > 0 && u < 1) { tmp.set(tgt.x, 0.16, tgt.z); const to = new THREE.Vector3(0, 0.3, -0.2); const dir = to.clone().sub(tmp); beam.position.copy(tmp).addScaledVector(dir, 0.5); beam.scale.set(1, dir.length(), 1); beam.quaternion.setFromUnitVectors(up, dir.normalize()); beam.material.opacity = 0.7 * Math.sin(u * Math.PI); beam.visible = true; } else beam.visible = false;
+    if (u > 0 && u < 1) { dir.subVectors(to, tgt); beam.position.copy(tgt).addScaledVector(dir, 0.5); beam.scale.set(1, dir.length(), 1); beam.quaternion.setFromUnitVectors(Y, dir.clone().normalize()); beam.material.opacity = 0.7 * Math.sin(u * Math.PI); beam.visible = true; } else beam.visible = false;
   });
   return { update: S.update };
 }

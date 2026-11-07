@@ -1,6 +1,6 @@
 // Small helpers shared by the pages built by builder a6 (p314..p345).
 import * as THREE from 'three';
-import { clamp01, ease, easeBack, stag, sprite, glow } from '../../kit.js?v=15';
+import { clamp01, ease, easeBack, stag, sprite, glow } from '../../kit.js?v=16';
 
 export const TAU = Math.PI * 2;
 export const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);

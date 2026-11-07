@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=15';
-import { Rig, hexCoin, badge, V, TAU } from '../lib/a5-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=16';
+import { Rig, hexCoin, badge, V, TAU } from '../lib/a5-kit.js?v=16';
 
 export const meta = { free: true, center: [0.55, 0.57], typeLabel: 'بين عصرين' };
 
@@ -12,11 +12,11 @@ const TOK = [
 ];
 
 function readerScreen() {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 340; const g = c.getContext('2d');
-  g.fillStyle = '#f6f8fb'; g.fillRect(0, 0, 256, 340);
-  g.fillStyle = '#c3cdd9'; for (let i = 0; i < 11; i++) g.fillRect(26, 54 + i * 24, i % 4 === 3 ? 110 : 204, 9);
-  g.fillStyle = '#2a8fd0'; g.fillRect(26, 22, 80, 12);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  const c = document.createElement('canvas'); c.width = 256; c.height = 512; const g = c.getContext('2d');
+  g.fillStyle = '#12203f'; g.fillRect(0, 0, 256, 512);
+  const cl = ['#2a6fd0', '#ef8f2a', '#2fb3b8', '#e0452c', '#e3b23c', '#5a6fd6'];
+  for (let row = 0; row < 4; row++) { let x = 10; for (let i = 0; i < 9; i++) { const w = 18 + ((i * 7 + row * 3) % 4) * 6, h = 70 + ((i * 5 + row * 11) % 5) * 12; g.fillStyle = cl[(i + row * 2) % 6]; g.fillRect(x, row * 128 + 120 - h, w, h); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x, row * 128 + 120 - h, w, 5); x += w + 4; } g.fillStyle = '#c9a15a'; g.fillRect(0, row * 128 + 120, 256, 6); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapT = THREE.RepeatWrapping; return t;
 }
 function pageTex() {
   const c = document.createElement('canvas'); c.width = 128; c.height = 160; const g = c.getContext('2d');
@@ -25,12 +25,12 @@ function pageTex() {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(1.18); ctx.stage.add(g);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(1.2); g.position.x -= 0.04; ctx.stage.add(g);
   const rig = new Rig(ctx);
 
   // wooden table (the photo's table)
-  const table = new THREE.Mesh(new RoundedBoxGeometry(0.72, 0.03, 0.5, 3, 0.012), glossy(0xc98f55, { roughness: 0.5 })); table.position.y = 0.015; g.add(shadowed(table));
-  const gc = document.createElement('canvas'); gc.width = 256; gc.height = 256; { const x = gc.getContext('2d'); x.fillStyle = '#d9a468'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 70; i++) { x.strokeStyle = `rgba(120,70,30,${0.05 + (i % 5) * 0.03})`; x.lineWidth = 1 + (i % 3); x.beginPath(); const y = (i / 70) * 256; x.moveTo(0, y); x.bezierCurveTo(80, y + 6 * Math.sin(i), 170, y - 8 * Math.cos(i), 256, y + 4); x.stroke(); } }
+  const table = new THREE.Mesh(new RoundedBoxGeometry(0.72, 0.03, 0.5, 3, 0.012), glossy(0x5a3520, { roughness: 0.4 })); table.position.y = 0.015; g.add(shadowed(table));
+  const gc = document.createElement('canvas'); gc.width = 256; gc.height = 256; { const x = gc.getContext('2d'); x.fillStyle = '#8a5a32'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 70; i++) { x.strokeStyle = `rgba(40,20,8,${0.05 + (i % 5) * 0.03})`; x.lineWidth = 1 + (i % 3); x.beginPath(); const y = (i / 70) * 256; x.moveTo(0, y); x.bezierCurveTo(80, y + 6 * Math.sin(i), 170, y - 8 * Math.cos(i), 256, y + 4); x.stroke(); } }
   const grain = new THREE.CanvasTexture(gc); grain.colorSpace = THREE.SRGBColorSpace;
   const inlay = new THREE.Mesh(new RoundedBoxGeometry(0.66, 0.004, 0.44, 2, 0.004), new THREE.MeshStandardMaterial({ map: grain, roughness: 0.6 })); inlay.position.y = 0.031; g.add(inlay);
   const TY = 0.033;
@@ -51,12 +51,13 @@ export default function build(ctx) {
   const flips = []; for (let i = 0; i < 4; i++) { const pg = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.19), new THREE.MeshStandardMaterial({ map: pageTex().clone ? pageTex() : null, side: THREE.DoubleSide, roughness: 0.9 })); pg.position.y = 0.03; bk.add(pg); flips.push(pg); }
 
   // e-reader
-  const rd = new THREE.Group(); rd.position.set(0.2, TY, 0.06); g.add(rd);
-  const tilt = new THREE.Group(); tilt.rotation.x = -0.34; tilt.position.y = 0.11; rd.add(tilt);
+  const rd = new THREE.Group(); rd.position.set(0.17, TY, 0.04); g.add(rd);
+  const tilt = new THREE.Group(); tilt.rotation.x = -0.34; tilt.position.y = 0.15; tilt.scale.setScalar(1.35); rd.add(tilt);
   const slab = new THREE.Mesh(new RoundedBoxGeometry(0.17, 0.23, 0.016, 4, 0.01), glossy(0x2b3440, { roughness: 0.3 })); tilt.add(shadowed(slab));
-  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.19), new THREE.MeshBasicMaterial({ map: readerScreen(), toneMapped: false })); scr.position.z = 0.0085; tilt.add(scr);
+  const scrTex = readerScreen(); const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.19), new THREE.MeshBasicMaterial({ map: scrTex, toneMapped: false })); scr.position.z = 0.0085; tilt.add(scr);
   const dim = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.19), new THREE.MeshBasicMaterial({ color: 0x3a0f10, transparent: true, opacity: 0, toneMapped: false, depthWrite: false })); dim.position.z = 0.0095; tilt.add(dim);
-  const foot = new THREE.Mesh(new RoundedBoxGeometry(0.1, 0.02, 0.06, 2, 0.006), glossy(0x2b3440)); foot.position.set(0, 0.01, 0.0); rd.add(foot);
+  const foot = new THREE.Mesh(new RoundedBoxGeometry(0.13, 0.02, 0.08, 2, 0.006), glossy(0x2b3440)); foot.position.set(0, 0.01, 0.0); rd.add(foot);
+  const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.2, 0.5, 36, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false })); cone.position.set(0, 0.26, 0.04); rd.add(cone);
   const rglow = glow(0x6fb0ff, 0.34, 0.3); rglow.position.set(0, 0.0, 0.03); tilt.add(rglow);
   const bands = TOK.map((tk, i) => { const grp = new THREE.Group(); grp.position.y = -0.07 + i * 0.07; const r = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.006, 8, 40), new THREE.MeshStandardMaterial({ color: tk.c, emissive: tk.c, emissiveIntensity: 0.5, metalness: 0.5, roughness: 0.3 })); r.scale.set(0.9, 0.2, 1); r.rotation.x = Math.PI / 2; grp.add(r); const pl = hexCoin('lock', tk.c, 0.022, 0.01); pl.rotation.x = Math.PI / 2; pl.position.set(0, 0.0, 0.03); grp.add(pl); tilt.add(grp); grp.scale.setScalar(0.0001); grp.visible = false; return grp; });
   const lib = new THREE.InstancedMesh(new RoundedBoxGeometry(0.02, 0.028, 0.016, 1, 0.003), mat(0xffffff, { roughness: 0.4 }), 20);
@@ -86,6 +87,7 @@ export default function build(ctx) {
   return {
     update(t, dt, e) {
       now = t; rig.update(t, dt, e);
+      scrTex.offset.y = (t * 0.12) % 1; cone.material.opacity = 0.1 * stag(t, 1, 1) * e * (0.85 + 0.15 * Math.sin(t * 1.5));
       table.scale.set(Math.max(stag(t, 0.1, 0.7) * e, 0.001), 1, 1); inlay.visible = table.scale.x > 0.5;
       stacks.forEach((s, i) => { const p = stag(t, 0.4 + i * 0.2, 0.8, easeBack) * e; s.scale.setScalar(Math.max(p, 0.001)); });
       const bp = stag(t, 0.6, 0.8, easeBack) * e; bk.scale.setScalar(Math.max(bp, 0.001));

@@ -1,8 +1,8 @@
-// p239 (round 2): a big glass head crowded with tasks floats over the print; tap a task and it flies out into its own glowing window, the head cools down.
+// p239 (round 3): one big glass head crowded with six tools. Tap a tool and it flies out and docks on a slowly turning gold ring; the head calms down.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { halos, liveTag, motes, canvasTex, blob, arcPoint, TAU, css } from '../lib/a4-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { halos, liveTag, motes, canvasTex, blob, arcPoint, TAU, css } from '../lib/a4-kit.js?v=16';
 
 export const meta = { free: true, center: [0.5, 0.42], typeLabel: 'نوافذ ضوئية', title: 'تعدّد المهام وعبء المعلم' };
 
@@ -61,104 +61,100 @@ function toolMesh(k) {
 export default function build(ctx) {
   const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g);
   const hal = halos();
-  const mo = motes(g, 20, { r: 0.4, h: 0.6, color: 0xffe9b0 });
-  const sh = blob(0.34, 0.3); g.add(sh);
+  const mo = motes(g, 16, { r: 0.42, h: 0.6, color: 0xffe9b0 });
+  const sh = blob(0.3, 0.3); g.add(sh);
 
-  // ---- the teacher: brown jacket, green tie, floating glass head
-  const bust = new THREE.Group(); g.add(bust);
-  const jacket = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.12, 10, 24), glossy(0x6b3d1d, { clearcoat: 0.3 })); jacket.rotation.z = Math.PI / 2; jacket.position.y = 0.055; jacket.scale.set(1, 1, 0.75); bust.add(jacket);
-  const lap1 = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.09, 4), mat(0x55300f)); lap1.rotation.set(Math.PI, 0, 0.5); lap1.scale.z = 0.3; lap1.position.set(-0.022, 0.07, 0.04); bust.add(lap1);
-  const lap2 = lap1.clone(); lap2.rotation.z = -0.5; lap2.position.x = 0.03; bust.add(lap2);
-  const tie = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.11, 4), glossy(0x6f8f2a)); tie.rotation.x = Math.PI; tie.scale.z = 0.35; tie.position.set(0, 0.065, 0.045); bust.add(tie);
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.032, 0.11, 18), mat(0xf0c29a)); neck.position.y = 0.12; bust.add(neck);
-  shadowed(bust); bust.scale.setScalar(0.0001);
-
-  const HEAD_Y = 0.37, HR = 0.19;
+  // ---- one hero: a glass head on a slim gold stand
+  const HEAD_Y = 0.34, HR = 0.24;
+  const stand = new THREE.Group(); g.add(stand);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.024, 36), glossy(0x6b3d1d, { clearcoat: 0.5 })); foot.position.y = 0.012; stand.add(foot);
+  const footR = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.006, 8, 40), goldMat()); footR.rotation.x = Math.PI / 2; footR.position.y = 0.024; stand.add(footR);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.12, 20), goldMat()); stem.position.y = 0.085; stand.add(stem);
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.045, 0.04, 32), goldMat()); cup.position.y = HEAD_Y - HR + 0.01; stand.add(cup);
+  shadowed(stand); stand.scale.setScalar(0.0001);
   const head = new THREE.Group(); head.position.y = HEAD_Y; g.add(head);
-  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xdff4ff, roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
-  const shell = new THREE.Mesh(new THREE.SphereGeometry(HR, 44, 30), glassMat); shell.renderOrder = 6; head.add(shell);
-  const core = glow(0xff5a3c, 0.6, 0.9); core.renderOrder = 3; head.add(core);
-  const glasses = new THREE.Group(); glasses.position.set(0, 0.03, HR - 0.002); head.add(glasses);
-  [-0.06, 0.06].forEach((x) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.0028, 8, 30), mat(0x23262d)); r.position.x = x * 0.85; glasses.add(r); });
-  const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.005, 0.005), mat(0x23262d)); glasses.add(bridge);
-  hal.add(head, 0xff8a60, 0.8, [0, 0, 0], 1.0);
+  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xdff4ff, roughness: 0.04, clearcoat: 1, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(HR, 48, 32), glassMat); shell.renderOrder = 6; head.add(shell);
+  const core = glow(0xff5a3c, 0.8, 0.9); core.renderOrder = 3; head.add(core);
+  hal.add(head, 0xff8a60, 1.0, [0, 0, 0], 0.8);
 
-  // ---- tools tangled in the head (big)
+  // ---- six tools tangled inside
   const tools = TASKS.map((td, i) => {
     const mesh = toolMesh(td.k); mesh.scale.setScalar(0.0001); head.add(mesh);
-    const a = (i / 6) * TAU, rr = 0.1;
-    const home = new THREE.Vector3(Math.cos(a) * rr, (i % 2 ? 0.07 : -0.06), Math.sin(a) * rr);
-    const o = { td, mesh, home, state: 'in', slot: i, fly: 0, from: new THREE.Vector3(), ph: i * 1.7 + 0.4, spin: new THREE.Vector3(0.7 + i * 0.2, 0.9, 0.5 - i * 0.1), rest: new THREE.Vector3() };
+    const a = (i / 6) * TAU, rr = 0.125;
+    const home = new THREE.Vector3(Math.cos(a) * rr, (i % 2 ? 0.07 : -0.07), Math.sin(a) * rr);
+    const o = { td, mesh, home, state: 'in', slot: i, fly: 0, from: new THREE.Vector3(), ph: i * 1.7 + 0.4, spin: new THREE.Vector3(0.7 + i * 0.2, 0.9, 0.5 - i * 0.1), rest: new THREE.Vector3(), a: 0 };
     mesh.position.copy(home); ctx.tap(mesh, () => pick(o)); return o;
   });
 
-  // ---- six large glowing windows around
-  const R = 0.34;
-  const slots = TASKS.map((td, i) => {
-    const a = Math.PI * 0.5 + (i / 6) * TAU + 0.52, sx = Math.cos(a) * R, sz = Math.sin(a) * R * 0.78;
-    const grp = new THREE.Group(); grp.position.set(sx, 0, sz); grp.rotation.y = Math.atan2(sx, sz) + Math.PI; g.add(grp);
-    const W = 0.15, H = 0.17, T = 0.009, Y0 = 0.02;
-    const fm = glossy(0xe0b85e, { metalness: 0.7, roughness: 0.25 });
-    [[0, H + Y0], [0, Y0]].forEach(([x, y]) => { const b = new THREE.Mesh(new RoundedBoxGeometry(W + T, T, T * 1.4, 2, 0.003), fm); b.position.set(x, y, 0); grp.add(b); });
-    [-W / 2, W / 2].forEach((x) => { const b = new THREE.Mesh(new RoundedBoxGeometry(T, H, T * 1.4, 2, 0.003), fm); b.position.set(x, Y0 + H / 2, 0); grp.add(b); });
-    const pane = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ color: td.c, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })); pane.position.y = Y0 + H / 2; grp.add(pane);
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.058, 0.014, 28), glossy(0xf4efe3)); base.position.set(0, 0.007, -0.04); grp.add(base);
-    const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.003, 18), new THREE.MeshBasicMaterial({ color: td.c, toneMapped: false })); dot.position.set(0, 0.0155, -0.04); grp.add(dot);
-    shadowed(grp); grp.scale.setScalar(0.0001);
-    const rest = new THREE.Vector3(sx, 0.15, sz).add(new THREE.Vector3(Math.sin(Math.atan2(sx, sz)) * 0.04, 0, Math.cos(Math.atan2(sx, sz)) * 0.04));
-    // the tool floats in front of the pane, between pane and head
-    rest.set(sx - Math.sin(Math.atan2(sx, sz)) * 0.04, 0.12, sz - Math.cos(Math.atan2(sx, sz)) * 0.04);
-    return { grp, pane, dot, rest, td, filled: 0 };
+  // ---- one gold ring around the base with six sockets (the only other object)
+  const RR = 0.325;
+  const ringG = new THREE.Group(); ringG.position.y = 0.1; ringG.rotation.x = 0.12; g.add(ringG);
+  const spinG = new THREE.Group(); ringG.add(spinG);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(RR, 0.012, 14, 96), goldMat()); ring.rotation.x = Math.PI / 2; spinG.add(ring);
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(RR, 0.005, 10, 96), new THREE.MeshBasicMaterial({ color: 0xfff0c0, toneMapped: false, transparent: true, opacity: 0.8 })); ring2.rotation.x = Math.PI / 2; ring2.position.y = 0.014; spinG.add(ring2);
+  const sockets = TASKS.map((td, i) => {
+    const a = (i / 6) * TAU + 0.5;
+    const grp = new THREE.Group(); grp.position.set(Math.cos(a) * RR, 0, Math.sin(a) * RR); spinG.add(grp);
+    const dock = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.02, 28), glossy(0xf4efe3)); dock.position.y = 0.005; grp.add(dock);
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.004, 22), new THREE.MeshBasicMaterial({ color: td.c, toneMapped: false })); lamp.position.y = 0.017; grp.add(lamp);
+    const beamUp = glow(td.c, 0.12, 0); beamUp.position.y = 0.06; grp.add(beamUp);
+    shadowed(grp); return { grp, lamp, beamUp, a, filled: 0, td };
   });
-  tools.forEach((o, i) => o.rest.copy(slots[i].rest));
+  ringG.scale.setScalar(0.0001);
 
-  const tag = liveTag(0.25, 0xd4ad55, { size: 60 }); tag.set('تفريغ المعلم'); g.add(tag.sp); tag.apply(0);
-  let tagPos = new THREE.Vector3(), tagK = 0, tagT = 0, now = 0, ready = false, placedN = 0, finished = false;
+  const tag = liveTag(0.25, 0xd4ad55, { size: 58 }); tag.set('تفريغ المعلم'); g.add(tag.sp); tag.apply(0);
+  let tagPos = new THREE.Vector3(), tagK = 0, tagT = 0, now = 0, ready = false, placedN = 0, finished = false, spinV = 0.12, spinA = 0;
   ctx.ui.hud('أخرج المهام من رأس المعلم');
+  const wp = new THREE.Vector3();
+  const restOf = (o, out) => { const sk = sockets[o.slot]; sk.grp.getWorldPosition(out); g.worldToLocal(out); out.y += 0.1; return out; };
 
   function pick(o) {
     if (!ready) return;
     if (o.state === 'in') { o.state = 'fly'; o.fly = 0; o.from.copy(o.mesh.position).applyMatrix4(head.matrixWorld); g.worldToLocal(o.from); head.remove(o.mesh); g.add(o.mesh); o.mesh.position.copy(o.from); ctx.sfx.whoosh?.(); }
-    else if (o.state === 'rest') { ctx.fx.burst(g.position.clone().add(o.rest), o.td.c, 10, 0.2, 0.03); ctx.sfx.pop?.(); show(o); }
+    else if (o.state === 'rest') { ctx.fx.burst(g.position.clone().add(restOf(o, wp)), o.td.c, 10, 0.2, 0.03); ctx.sfx.pop?.(); show(o); }
   }
-  function show(o) { tag.set(o.td.t, o.td.c); tagPos.copy(o.rest); tagPos.y += 0.14; tagTarget(); ctx.ui.card({ tag: 'ما يخفّفه الحاسب', title: o.td.t, body: o.td.body, color: o.td.c }); }
-  function tagTarget() { tagT = 1; tagK = 0; }
+  function show(o) { tag.set(o.td.t, o.td.c); tagFollow = o; tagT = 1; tagK = 0; ctx.ui.card({ tag: 'ما يخفّفه الحاسب', title: o.td.t, body: o.td.body, color: o.td.c }); }
+  let tagFollow = null;
   function land(o) {
-    o.state = 'rest'; placedN++; slots[o.slot].filled = 1; ctx.sfx.good?.(); ctx.fx.burst(g.position.clone().add(o.rest), o.td.c, 22, 0.32, 0.04); show(o);
-    if (placedN === 6 && !finished) { finished = true; setTimeout(() => { ctx.fx.burst(g.position.clone().setY(0.45), 0xffd27a, 46, 0.5, 0.05); ctx.ui.hud('رأس هادئ ووقت للتربية'); ctx.ui.done(); }, 1200); }
+    o.state = 'rest'; placedN++; sockets[o.slot].filled = 1; ctx.sfx.good?.(); ctx.fx.burst(g.position.clone().add(restOf(o, wp)), o.td.c, 22, 0.32, 0.04); show(o); spinV += 0.05;
+    if (placedN === 6 && !finished) { finished = true; spinV = 0.6; setTimeout(() => { ctx.fx.burst(g.position.clone().setY(0.4), 0xffd27a, 46, 0.5, 0.05); ctx.ui.hud('رأس هادئ ووقت للتربية'); ctx.ui.done(); }, 1200); }
     else ctx.ui.hud(`بقي ${['', 'مهمة واحدة', 'مهمتان', '٣ مهام', '٤ مهام', '٥ مهام'][6 - placedN]}`);
   }
-  ctx.tap(bust, () => ctx.ui.card({ tag: 'العبء المعرفي', title: 'ذاكرة تتزاحم فيها المهام', body: 'حين تتزاحم المهام يثقل العبء. وللحاسب أن يرفع جزءاً منه.', color: 0xb9783a }));
+  ctx.tap(stand, () => ctx.ui.card({ tag: 'العبء المعرفي', title: 'ذاكرة تتزاحم فيها المهام', body: 'حين تتزاحم المهام يثقل العبء. وللحاسب أن يرفع جزءاً منه.', color: 0xb9783a }));
 
   const tmp = new THREE.Vector3(), q = new THREE.Vector3();
   return {
     update(t, dt, e) {
       now = t; hal.update(t, e); mo.update(t, dt, e);
-      if (!ready && t > 3.2) ready = true;
+      if (!ready && t > 2.6) ready = true;
       const load = (6 - placedN) / 6, calm = 1 - load;
       sh.material.opacity = 0.3 * e;
-      bust.scale.setScalar(Math.max(0.0001, stag(t, 0.1, 0.8, easeBack) * e));
-      head.scale.setScalar(Math.max(0.0001, stag(t, 0.3, 0.8, easeBack) * e));
+      stand.scale.setScalar(Math.max(0.0001, stag(t, 0.1, 0.7, easeBack) * e));
+      head.scale.setScalar(Math.max(0.0001, stag(t, 0.25, 0.8, easeBack) * e));
+      ringG.scale.setScalar(Math.max(0.0001, stag(t, 0.7, 0.9, easeBack) * e));
       head.position.y = HEAD_Y + Math.sin(t * 1.2) * 0.008;
+      spinA += dt * spinV; spinG.rotation.y = spinA;
       core.material.color.copy(HOT).lerp(finished ? GOLD : COOL, finished ? 1 : calm);
-      core.material.opacity = (0.55 + 0.25 * Math.sin(t * (6 - calm * 4))) * e; core.scale.setScalar(0.65 + calm * 0.2);
-      glassMat.opacity = 0.16 + 0.05 * Math.sin(t); head.rotation.y = Math.sin(t * 0.35) * 0.25;
+      core.material.opacity = (0.55 + 0.25 * Math.sin(t * (7 - calm * 5))) * e; core.scale.setScalar(0.8 + calm * 0.25);
+      glassMat.opacity = 0.18 + 0.05 * Math.sin(t); head.rotation.y = Math.sin(t * 0.35) * 0.25;
+      sockets.forEach((s, i) => { s.beamUp.material.opacity = (s.filled ? 0.7 : 0.25 + 0.25 * Math.sin(t * 3 + i)) * e; s.beamUp.scale.setScalar(0.12 + s.filled * 0.06); });
       tools.forEach((o, i) => {
-        const m = o.mesh, hk = stag(t, 0.7 + i * 0.1, 0.5, easeBack);
+        const m = o.mesh, hk = stag(t, 0.5 + i * 0.1, 0.5, easeBack);
         if (o.state === 'in') {
-          const amp = 0.006 + 0.026 * load;
+          const amp = 0.008 + 0.034 * load;
           m.position.set(o.home.x + Math.sin(t * (3 + i) + o.ph) * amp, o.home.y + Math.sin(t * (2.3 + i * 0.4) + o.ph) * amp, o.home.z + Math.cos(t * (2.7 + i * 0.3)) * amp);
           m.rotation.x += o.spin.x * dt * (0.3 + load); m.rotation.y += o.spin.y * dt * (0.3 + load); m.rotation.z += o.spin.z * dt * (0.3 + load);
-          m.scale.setScalar(Math.max(0.0001, hk * e * 1.55));
+          m.scale.setScalar(Math.max(0.0001, hk * e * 1.9));
         } else if (o.state === 'fly') {
-          o.fly = Math.min(1, o.fly + dt / 1.0); tmp.copy(o.from); q.copy(o.rest); arcPoint(m.position, tmp, q, ease(o.fly), 0.16); m.rotation.y += dt * 6; m.scale.setScalar(1.55 + 0.3 * Math.sin(Math.PI * o.fly));
+          o.fly = Math.min(1, o.fly + dt / 1.0); restOf(o, q); tmp.copy(o.from); arcPoint(m.position, tmp, q, ease(o.fly), 0.2); m.rotation.y += dt * 6; m.scale.setScalar(1.9 + 0.3 * Math.sin(Math.PI * o.fly));
           if (o.fly >= 1) land(o);
-        } else { m.position.set(o.rest.x, o.rest.y + Math.sin(t * 1.6 + i) * 0.008, o.rest.z); m.rotation.y += dt * 0.8; m.rotation.x = THREE.MathUtils.damp(m.rotation.x, 0, 4, dt); m.rotation.z = THREE.MathUtils.damp(m.rotation.z, 0, 4, dt); m.scale.setScalar(THREE.MathUtils.damp(m.scale.x, 1.45, 5, dt)); }
+        } else { restOf(o, q); m.position.set(q.x, q.y + Math.sin(t * 1.6 + i) * 0.008, q.z); m.rotation.y += dt * 0.8; m.rotation.x = THREE.MathUtils.damp(m.rotation.x, 0, 4, dt); m.rotation.z = THREE.MathUtils.damp(m.rotation.z, 0, 4, dt); m.scale.setScalar(THREE.MathUtils.damp(m.scale.x, 1.7, 5, dt)); }
         if (o.td.k === 'clock') o.mesh.userData.minute.rotation.z -= dt * (o.state === 'in' ? 6 : 0.4);
-        const s = slots[i]; s.grp.scale.setScalar(Math.max(0.0001, stag(t, 0.9 + i * 0.15, 0.7, easeBack) * e));
-        s.pane.material.opacity = THREE.MathUtils.damp(s.pane.material.opacity, 0.1 + s.filled * 0.22, 4, dt);
       });
-      tagK = THREE.MathUtils.damp(tagK, tagT, 6, dt); tag.sp.position.copy(tagPos); tag.apply(easeBack(tagK) * e);
+      tagK = THREE.MathUtils.damp(tagK, tagT, 6, dt);
+      if (tagFollow) { restOf(tagFollow, tagPos); tagPos.y += 0.13; }
+      tag.sp.position.copy(tagPos); tag.apply(easeBack(tagK) * e);
     },
   };
 }

@@ -1,7 +1,7 @@
 // p107 — the other face of technology: a bright laptop ringed by the things it steals (time, sleep of lessons, the phone, endless chat).
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=15';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, desk, at, TAU, INK, GOLD } from '../lib/a2.js?v=15';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=16';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, desk, at, TAU, INK, GOLD } from '../lib/a2.js?v=16';
 
 export const meta = { free: true, center: [0.5, 0.66], typeLabel: 'مجسّم تفاعلي' };
 

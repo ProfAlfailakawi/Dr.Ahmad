@@ -1,12 +1,12 @@
 // p459 — BYOD: four letter-blocks spell the word; each turns over to its meaning and the tote bag answers (it is carried, it is yours, devices come out).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
 
-export const meta = { free: true, center: [0.31, 0.616], typeLabel: 'مكعبات الاختصار', title: 'BYOD: أحضر جهازك' };
+export const meta = { free: true, center: [0.5, 0.616], typeLabel: 'مكعبات الاختصار', title: 'BYOD: أحضر جهازك' };
 
 const LET = [
   { l: 'B', w: 'Bring', c: 0xd9453b }, { l: 'Y', w: 'Your', c: 0x2a8fd0 }, { l: 'O', w: 'Own', c: 0xef8f2a }, { l: 'D', w: 'Device', c: 0x3a5aa8 },
@@ -26,6 +26,7 @@ function faceTex(text, bg, fg, size) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
+const deep = (c, k = 0.66) => new THREE.Color(c).multiplyScalar(k);
 
 function device(kind) {
   const g = new THREE.Group(); const dk = glossy(0x25272e, { roughness: 0.3 });
@@ -40,7 +41,7 @@ function device(kind) {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.88);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.2);
   const seq = new Seq(), hints = new Hints(g, 5.6), tag = new Tag(g, 0.2);
   const seen = new Set(); let finished = false, now = 0;
 
@@ -69,8 +70,8 @@ export default function build(ctx) {
   const blocks = LET.map((L, i) => {
     const outer = new THREE.Group(); outer.position.set((i - 1.5) * 0.13, 0.19, -0.12); outer.rotation.x = -0.62; g.add(outer);
     const spin = new THREE.Group(); outer.add(spin);
-    const sideM = new THREE.MeshStandardMaterial({ color: L.c, roughness: 0.35 });
-    const mats = [sideM, sideM, sideM, sideM, new THREE.MeshStandardMaterial({ map: faceTex(L.l, hex(L.c), '#ffffff', 190), roughness: 0.35 }), new THREE.MeshStandardMaterial({ map: faceTex(L.w, '#fbf6e8', hex(L.c), L.w.length > 4 ? 66 : 84), roughness: 0.5 })];
+    const sideM = new THREE.MeshStandardMaterial({ color: deep(L.c), roughness: 0.45 });
+    const mats = [sideM, sideM, sideM, sideM, new THREE.MeshStandardMaterial({ map: faceTex(L.l, '#' + deep(L.c).getHexString(), '#ffffff', 190), roughness: 0.45 }), new THREE.MeshStandardMaterial({ map: faceTex(L.w, '#f3ecd8', '#' + deep(L.c, 0.8).getHexString(), L.w.length > 4 ? 66 : 84), roughness: 0.5 })];
     const cube = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.105, 0.105), mats); spin.add(shadowed(cube));
     const edge = new THREE.Mesh(new THREE.EdgesGeometry(cube.geometry), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })); spin.add(edge);
     const h = hints.add(outer.position.clone(), L.c, 0.16);

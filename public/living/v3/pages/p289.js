@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { Rig, badge, V, TAU } from '../lib/a5-kit.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { Rig, badge, V, TAU } from '../lib/a5-kit.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
 
 export const meta = { free: true, center: [0.3, 0.68], typeLabel: 'مجسّم يُطبع' };
 

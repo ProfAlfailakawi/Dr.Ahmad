@@ -1,7 +1,7 @@
 // p359 — a QR code built of raised blocks on a yellow hexagon; light its three corner eyes, a phone scans, and the code releases what it holds.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=15';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab } from '../lib/a7.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab } from '../lib/a7.js?v=16';
 
 export const meta = { free: true, center: [0.38, 0.54], typeLabel: 'مجسّم تفاعلي' };
 

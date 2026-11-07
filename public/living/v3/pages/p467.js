@@ -1,12 +1,12 @@
 // p467 — a society without school: a pencil-drawn school stands on a disc; touch its props and each one turns into its digital twin, until only the social heart of the school remains.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
 
-export const meta = { free: true, center: [0.27, 0.592], typeLabel: 'مقارنة تفاعلية', title: 'مجتمع بلا مدرسة' };
+export const meta = { free: true, center: [0.5, 0.592], typeLabel: 'مقارنة تفاعلية', title: 'مجتمع بلا مدرسة' };
 
 const TXT = {
   clock: { a: { t: 'المدرسة التقليدية', tag: 'أوقات محددة', b: 'مبنى مدرسي يقصده الطلبة في أوقات محددة.' }, b: { t: 'مراكز على مدار الساعة', tag: '٢٤ ساعة', b: 'مراكز تعمل على مدار ٢٤ ساعة في اليوم و٧ أيام في الأسبوع.' } },
@@ -25,7 +25,7 @@ function figureTex() {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.64);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.0);
   const seq = new Seq(), hints = new Hints(g, 6.0), tag = new Tag(g, 0.2);
   let now = 0, finished = false;
   const done = new Set();

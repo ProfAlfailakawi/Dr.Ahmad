@@ -19,7 +19,7 @@ function chalkTex() {
   x.strokeStyle = 'rgba(255,255,255,.88)'; x.lineWidth = 7; x.lineCap = 'round'; x.lineJoin = 'round';
   x.beginPath(); x.roundRect(120, 150, 272, 150, 10); x.stroke();            // laptop screen
   x.beginPath(); x.moveTo(90, 330); x.lineTo(422, 330); x.lineTo(396, 306); x.lineTo(116, 306); x.closePath(); x.stroke();
-  x.font = '700 46px Arial'; x.fillStyle = 'rgba(255,255,255,.92)'; x.textAlign = 'center'; x.fillText('HTTP://WWW', 256, 240);
+  x.font = '700 46px Arial'; x.fillStyle = 'rgba(255,255,255,.92)'; x.textAlign = 'center'; x.fillText('WWW', 256, 240);
   x.beginPath(); x.arc(256, 395, 16, 0, TAU); x.stroke(); x.beginPath(); x.moveTo(256, 411); x.lineTo(256, 450); x.stroke();
   const t = new THREE.CanvasTexture(x.canvas); t.colorSpace = THREE.SRGBColorSpace; return t;
 }

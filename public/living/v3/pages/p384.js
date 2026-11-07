@@ -1,91 +1,135 @@
-// p384 — a message travels phone → relay tower → phone; the slider turns it from plain text into a rich multimedia message.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=16';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, lerp } from '../lib/a7.js?v=16';
+import { scene, contactShadow, paintTex, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, drawText } from '../lib/b7-kit.js?v=17';
+export const meta = { free: true, center: [0.52, 0.26], typeLabel: 'مجسّم تفاعلي' };
 
-export const meta = { free: true, center: [0.62, 0.28], typeLabel: 'مقارنة بمنزلق' };
+// A message travels phone -> relay tower -> phone. Two discs choose what it carries: bare text (SMS) or text + picture (MMS).
+const INK = '#2b2620', BLUE = 0x3b8fe0, GOLD = 0xd4ad55, ORG = 0xf29a2e;
 
-function photoTex() {
-  return canvasTex(256, 176, (g, W, H) => {
-    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#7fd0f0'); gr.addColorStop(1, '#e9f6fb'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#ffd35a'; g.beginPath(); g.arc(196, 46, 24, 0, TAU); g.fill();
-    g.fillStyle = '#4f9a6b'; g.beginPath(); g.moveTo(0, H); g.lineTo(70, 62); g.lineTo(140, H); g.fill();
-    g.fillStyle = '#3a7f57'; g.beginPath(); g.moveTo(90, H); g.lineTo(168, 84); g.lineTo(256, H); g.fill();
-  });
+function lines(x, px, py, w, n, col = '#8a8176', h = 12, gap = 24) { for (let i = 0; i < n; i++) { rr(x, px, py + i * gap, i === n - 1 ? w * 0.6 : w, h, 6); x.fillStyle = col; x.fill(); } }
+function photo(x, px, py, w, h) {
+  const gr = x.createLinearGradient(0, py, 0, py + h); gr.addColorStop(0, '#79bdf0'); gr.addColorStop(1, '#e9f3fb');
+  rr(x, px, py, w, h, 14); x.fillStyle = gr; x.fill();
+  x.save(); x.beginPath(); x.roundRect(px, py, w, h, 14); x.clip();
+  x.fillStyle = '#ffd27a'; x.beginPath(); x.arc(px + w * 0.74, py + h * 0.32, h * 0.14, 0, TAU); x.fill();
+  x.fillStyle = '#3f8f6a'; x.beginPath(); x.moveTo(px, py + h); x.lineTo(px + w * 0.34, py + h * 0.42); x.lineTo(px + w * 0.58, py + h * 0.74); x.lineTo(px + w * 0.78, py + h * 0.5); x.lineTo(px + w, py + h * 0.88); x.lineTo(px + w, py + h); x.closePath(); x.fill();
+  x.fillStyle = '#2f6f52'; x.beginPath(); x.moveTo(px, py + h); x.lineTo(px + w * 0.2, py + h * 0.66); x.lineTo(px + w * 0.46, py + h); x.closePath(); x.fill();
+  x.restore();
 }
+const phoneTex = (mode) => paintTex(240, 480, (x) => {
+  rr(x, 0, 0, 240, 480, 30); x.fillStyle = '#f5f1e8'; x.fill();
+  x.fillStyle = mode ? (mode === 'sms' ? '#3b8fe0' : '#f29a2e') : '#2b3a52'; x.fillRect(0, 0, 240, 62);
+  rr(x, 90, 16, 60, 12, 6); x.fillStyle = 'rgba(0,0,0,.35)'; x.fill();
+  if (mode === 'sms') { rr(x, 22, 110, 196, 112, 24); x.fillStyle = '#ffffff'; x.fill(); x.strokeStyle = '#d9d2c3'; x.lineWidth = 3; x.stroke(); lines(x, 44, 138, 150, 3); }
+  else if (mode === 'mms') { rr(x, 22, 96, 196, 238, 24); x.fillStyle = '#ffffff'; x.fill(); x.strokeStyle = '#d9d2c3'; x.lineWidth = 3; x.stroke(); photo(x, 38, 112, 164, 120); lines(x, 44, 254, 150, 2); }
+  else { x.fillStyle = 'rgba(0,0,0,.05)'; for (let i = 0; i < 3; i++) { rr(x, 22, 110 + i * 90, 150, 60, 20); x.fill(); } }
+});
+const packTex = (mode) => paintTex(256, mode === 'mms' ? 256 : 160, (x, w, h) => {
+  rr(x, 6, 6, w - 12, h - 12, 34); x.fillStyle = '#ffffff'; x.fill(); x.lineWidth = 8; x.strokeStyle = mode === 'mms' ? '#f29a2e' : '#3b8fe0'; x.stroke();
+  if (mode === 'mms') { photo(x, 28, 28, 200, 128); lines(x, 36, 176, 184, 2, '#8a8176', 14, 30); } else lines(x, 36, 44, 184, 3, '#8a8176', 16, 36);
+});
+const discTex = (mode) => paintTex(256, 256, (x) => {
+  const c = mode === 'sms' ? ['#ffffff', '#e7efff'] : ['#ffe3b3', '#ffc269'];
+  const gr = x.createRadialGradient(100, 90, 10, 128, 128, 140); gr.addColorStop(0, c[0]); gr.addColorStop(1, c[1]);
+  x.fillStyle = gr; x.beginPath(); x.arc(128, 128, 126, 0, TAU); x.fill();
+  if (mode === 'sms') { x.fillStyle = '#2b2620'; x.font = '800 44px Tajawal'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('SMS', 128, 70); lines(x, 62, 118, 132, 3, '#3b8fe0', 13, 28); }
+  else { x.fillStyle = '#2b2620'; x.font = '800 44px Tajawal'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('MMS', 128, 56); photo(x, 62, 86, 132, 96); lines(x, 66, 198, 124, 1, '#8a5a12', 12, 20); }
+});
 
-function phoneModel(c) {
-  const o = new THREE.Group();
-  const b = new THREE.Mesh(rbox(0.1, 0.19, 0.013, 0.014), glossy(0x1c2230)); b.position.y = 0.095; o.add(b);
-  const s = new THREE.Mesh(new THREE.PlaneGeometry(0.088, 0.17), new THREE.MeshBasicMaterial({ color: c, toneMapped: false })); s.position.set(0, 0.095, 0.0072); o.add(s);
-  const bar = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.006), lit(0xffffff)); bar.position.set(0, 0.17, 0.0076); o.add(bar);
-  return { o, s };
+function phoneMesh(texIdle, ry) {
+  const g = new THREE.Group(); const pw = 0.1, ph = 0.2, pd = 0.012;
+  const b = new THREE.Mesh(RB(pw, ph, pd, 0.016), glossy(0xe9e2d2, { roughness: 0.25 })); b.position.y = ph / 2 + 0.01; g.add(b);
+  const e = new THREE.Mesh(RB(pw + 0.003, ph + 0.003, pd * 0.3, 0.017), goldMat()); e.position.y = ph / 2 + 0.01; g.add(e);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(pw * 0.93, ph * 0.955), new THREE.MeshBasicMaterial({ map: texIdle, toneMapped: false })); scr.position.set(0, ph / 2 + 0.01, pd / 2 + 0.0008); g.add(scr);
+  const bk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.003, 28), goldMat()); bk.rotation.x = Math.PI / 2; bk.position.set(0, ph / 2 + 0.03, -pd / 2 - 0.0016); g.add(bk);
+  const foot = new THREE.Mesh(RB(0.07, 0.01, 0.05, 0.005), goldMat()); foot.position.y = 0.005; g.add(foot);
+  g.scale.setScalar(1.25); g.userData.scr = scr; g.userData.top = ph + 0.01; g.rotation.x = -0.1; g.rotation.y = ry;
+  return shadowed(g);
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.92);
-  const R = rig(), H = hints(g);
-  const seen = new Set(); let done = false, rich = 0, richTo = 0.05, maxRich = 0, auto = true, prevRich = 0, now = 0, boomAt = -9;
-  const finish = (id) => { seen.add(id); if (seen.size >= 3 && maxRich > 0.85 && !done) { done = true; setTimeout(() => { ctx.sfx.good?.(); ctx.ui.done(); }, 900); } };
-  const sh = lightPool(0x000000, 0.5, 0.25); sh.position.y = -0.002; sh.scale.set(1.6, 0.6, 1); g.add(sh);
+  const S = scene(ctx, meta, 1.22), g = S.g;
+  // tray
+  const tray = new THREE.Group(); g.add(tray);
+  const slab = new THREE.Mesh(RB(0.64, 0.02, 0.28, 0.05), glossy(0x24405f, { roughness: 0.4, clearcoat: 0.5 })); slab.position.y = 0.01; tray.add(slab);
+  const trim = new THREE.Mesh(RB(0.648, 0.006, 0.288, 0.052), goldMat()); trim.position.y = 0.011; tray.add(trim);
+  const foot = new THREE.Mesh(RB(0.54, 0.012, 0.2, 0.04), mat(0x3a332b)); foot.position.y = -0.002; tray.add(foot);
+  shadowed(tray); S.part(tray, 0.1, { rise: 0.0, dur: 0.8 });
+  g.add(Object.assign(contactShadow(0.95, 0.5, 0.4), {}));
+  const wash = lightPool(0x5aa8ff, 0.4, 0.0); wash.scale.set(0.9, 0.9, 1); wash.position.y = 0.023; g.add(wash);
+  const top = 0.022;
 
-  // ---- two phones at the sides
-  const pa = phoneModel(0xdfe7f1), pb = phoneModel(0xdfe7f1);
-  const A = new THREE.Group(); A.scale.setScalar(1.3); A.position.set(-0.34, 0.0, 0.04); A.rotation.set(-0.1, 0.5, 0); A.add(pa.o);
-  const B = new THREE.Group(); B.scale.setScalar(1.3); B.position.set(0.34, 0.0, 0.04); B.rotation.set(-0.1, -0.5, 0); B.add(pb.o);
-  g.add(A, B); [A, B].forEach((p, i) => { R.add(p, 0.4 + i * 0.25, { dur: 0.8, rise: 0.12 }); shadowed(p); });
+  const T = { idle: phoneTex(null), sms: phoneTex('sms'), mms: phoneTex('mms') };
+  const snd = phoneMesh(T.idle, 0.38); snd.position.set(-0.22, top, 0.0); g.add(snd); S.part(snd, 0.8, { rise: 0.1 });
+  const rcv = phoneMesh(T.idle, -0.38); rcv.position.set(0.22, top, 0.0); g.add(rcv); S.part(rcv, 1.0, { rise: 0.1 });
 
-  // ---- the message: one big card that grows from plain text into a rich message
-  const msg = new THREE.Group(); msg.position.set(0, 0.26, 0); g.add(msg);
-  const plate = new THREE.Mesh(rbox(0.5, 0.38, 0.05, 0.03), glossy(0xdfe3ea, { roughness: 0.3 })); msg.add(plate);
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.07, 4), glossy(0xdfe3ea, { roughness: 0.3 })); tail.rotation.set(Math.PI, 0.8, 0.5); tail.position.set(-0.17, -0.23, 0); msg.add(tail);
-  const lines = [0, 1, 2, 3].map(() => { const l = new THREE.Mesh(new THREE.BoxGeometry(1, 0.024, 0.004), lit(0x586070)); msg.add(l); return l; });
-  const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.2), new THREE.MeshBasicMaterial({ map: photoTex(), toneMapped: false })); msg.add(pic);
-  const play = new THREE.Group(); const pc = new THREE.Mesh(new THREE.CircleGeometry(0.036, 32), lit(0xffffff)); const pt = new THREE.Mesh(new THREE.CircleGeometry(0.02, 3), lit(0xe8604c)); pt.position.x = 0.004; play.add(pc, pt); msg.add(play);
-  const bars = [0, 1, 2].map((k) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1, 0.006), lit([0xe8604c, 0xf2c230, 0x3a8fe0][k])); msg.add(b); return b; });
-  const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), glossy(0xf2c230, { emissive: 0xf08a3a, emissiveIntensity: 0.5 })); star.scale.set(1, 1.3, 0.6); msg.add(star);
-  R.add(msg, 0.8, { dur: 1.0, rise: 0.15 });
-  H.add(plate, 0xffffff, 0.3, null, () => 1);
+  // relay tower (centre)
+  const tw = new THREE.Group(); tw.position.y = top; g.add(tw);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.02, 0.3, 16), glossy(0xe9e2d2, { roughness: 0.35 })); mast.position.y = 0.15; tw.add(mast);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.02, 28), goldMat()); base.position.y = 0.01; tw.add(base);
+  [0.09, 0.17, 0.24].forEach((y, i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.034 - i * 0.009, 0.003, 8, 36), goldMat()); r.rotation.x = Math.PI / 2; r.position.y = y; tw.add(r); });
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.019, 22, 16), GL(0xffe3a0, 0.9)); ball.position.y = 0.32; tw.add(ball);
+  const bglow = glow(0xffd27a, 0.15, 0.7); bglow.position.y = 0.32; tw.add(bglow);
+  shadowed(tw); S.part(tw, 1.2, { rise: 0.1 });
+  const sig = [0, 1].map((i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.0015, 8, 48), new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true, opacity: 0, toneMapped: false, depthWrite: false })); r.position.y = top + 0.32; g.add(r); return r; });
 
-  // threads of light from each phone to the card
-  const mk = (a, b) => lightTube(new THREE.CatmullRomCurve3([a, new THREE.Vector3((a.x + b.x) / 2, 0.42, 0.05), b]), { radius: 0.005, color: 0xffffff, speed: 0.5, glass: false });
-  const t1 = mk(new THREE.Vector3(-0.34, 0.26, 0.04), new THREE.Vector3(-0.26, 0.3, 0.02)), t2 = mk(new THREE.Vector3(0.26, 0.3, 0.02), new THREE.Vector3(0.34, 0.26, 0.04));
-  [t1, t2].forEach((t) => { t.userData.core.material.opacity = 0.5; g.add(t); });
-
-  const card = (obj, tag, title, body, color, id) => { ctx.sfx.pop?.(); burstAt(ctx, obj, color, 18, 0.3, 0.024); ctx.ui.card({ tag, title, body, color }); finish(id); };
-  ctx.tap(A, () => { R.bounce(A); card(A, 'SMS', 'رسالة نصية قصيرة', 'رسائل نصية قصيرة بين المشتركين في شبكة الهاتف النقال، تقدم فرصاً جيدة للتواصل بين المحاضرين والطلاب.', 0x586070, 'a'); });
-  ctx.tap(B, () => { R.bounce(B); card(B, 'MMS', 'الوسائط المتعددة', 'خدمة إرسال الوسائط المتعددة، تدمج النص بالرسوم والجرافيك والصور.', 0x2f9fc4, 'b'); });
-  ctx.tap(msg, () => {
-    R.bounce(msg); H.seen(plate);
-    if (rich < 0.5) card(msg, 'SMS', 'نص مجرّد', 'تعبر الرسالة القصيرة مركز الإرسال الرئيس الذي يعالجها ويديرها.', 0x586070, 'm');
-    else card(msg, 'MMS', 'نص وصورة ورسم', 'تدمج النص المرسَل بالرسوم والجرافيك والصور، فتتجاوز النص المجرد إلى مضمون أغنى بصرياً.', 0x2f9fc4, 'm');
-  });
-
-  ctx.ui.hud('حرّك المنزلق: من النص إلى الوسائط');
-  ctx.ui.slider({ label: 'نص ← وسائط', value: 0.05, onInput: (v) => { auto = false; richTo = v; } });
-  const c0 = new THREE.Color(0xdfe3ea), c1 = new THREE.Color(0x35b0d4), col = new THREE.Color();
-  return {
-    update(t, dt, e) {
-      now = t; R.update(t, dt, e); H.update(t, e, stag(t, 2.6, 0.6));
-      if (auto && t > 1.6) richTo = 0.5 + 0.5 * Math.sin((t - 1.6) * 0.8 - 1.5);
-      rich = THREE.MathUtils.damp(rich, richTo, 5, dt); maxRich = Math.max(maxRich, rich);
-      if (prevRich < 0.7 && rich >= 0.7) { burstAt(ctx, star, 0xffd27a, 26, 0.45, 0.035); boomAt = t; }
-      prevRich = rich;
-      const r = clamp01(rich * 1.1); col.copy(c0).lerp(c1, r); plate.material.color.copy(col); tail.material.color.copy(col);
-      const sz = 1 + rich * 0.8; plate.scale.z = sz; const fz = 0.025 * sz + 0.003;
-      const tw = (a, b, k) => a + (b - a) * k;
-      lines.forEach((l, j) => {
-        const w = tw([0.38, 0.32, 0.35, 0.22][j], [0.3, 0.26, 0.2, 0][j], clamp01(rich * 1.4)); l.scale.x = Math.max(0.0001, w);
-        l.position.set(tw(0, -0.0, rich) + tw(0, -0.0, rich), tw(0.12 - j * 0.075, -0.125 - j * 0.032, clamp01(rich * 1.5)), fz);
-        l.material.color.set(rich > 0.5 ? 0xffffff : 0x586070); l.visible = l.scale.x > 0.01;
-      });
-      const pk = clamp01((rich - 0.15) / 0.45); pic.scale.setScalar(Math.max(0.0001, pk)); pic.position.set(-0.06, 0.05, fz + 0.001); pic.visible = pk > 0.01;
-      const pl = clamp01((rich - 0.55) / 0.3); play.scale.setScalar(Math.max(0.0001, pl * (1 + 0.1 * Math.sin(t * 5)))); play.position.set(-0.06, 0.05, fz + 0.004); play.visible = pl > 0.01;
-      bars.forEach((b, k) => { const h = Math.max(0.0001, [0.12, 0.2, 0.15][k] * clamp01((rich - 0.4 - k * 0.1) / 0.35)); b.scale.y = h; b.position.set(0.16 + k * 0.05, -0.085 + h / 2, fz + 0.001); b.visible = h > 0.001; });
-      const sk = clamp01((rich - 0.78) / 0.2); star.scale.setScalar(Math.max(0.0001, sk)); star.position.set(0.2, 0.17, fz + 0.02); star.rotation.y += dt * 2; star.visible = sk > 0.01;
-      msg.rotation.y = Math.sin(t * 0.55) * 0.3; msg.rotation.x = -0.08 + Math.sin(t * 0.8) * 0.03; msg.position.y = 0.26 + Math.sin(t * 1.2) * 0.008;
-      pb.s.material.color.copy(col).lerp(new THREE.Color(0xffffff), 0.5);
-      t1.userData.update(dt); t2.userData.update(dt); const lite = 0.4 + 0.5 * rich; t1.userData.core.material.opacity = lite; t2.userData.core.material.opacity = lite;
-    },
+  // mode discs (front of the tray)
+  const mkDisc = (mode, x, col) => {
+    const o = new THREE.Group(); o.position.set(x, top, 0.2); g.add(o); const d = new THREE.Group(); o.add(d);
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.056, 0.018, 48), glossy(0xf6efdf, { roughness: 0.3 })); body.position.y = 0.009; d.add(body);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.0525, 0.004, 10, 56), goldMat()); rim.rotation.x = Math.PI / 2; rim.position.y = 0.018; d.add(rim);
+    const face = new THREE.Mesh(new THREE.CircleGeometry(0.047, 48), new THREE.MeshBasicMaterial({ map: discTex(mode), toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); face.rotation.x = -Math.PI / 2; face.position.y = 0.0186; d.add(face);
+    shadowed(d); S.part(o, 2.0 + (mode === 'mms' ? 0.2 : 0), { rise: 0.06 });
+    return { o, d, mode, col };
   };
+  const dSms = mkDisc('sms', -0.1, BLUE), dMms = mkDisc('mms', 0.1, ORG);
+
+  // packets
+  const mkPack = (mode, w, h) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: packTex(mode), transparent: true, side: THREE.DoubleSide, toneMapped: false })); m.visible = false; m.renderOrder = 7; g.add(m); return m; };
+  const pk = { sms: mkPack('sms', 0.056, 0.035), mms: mkPack('mms', 0.07, 0.07) };
+  const trail = glow(0xffd27a, 0.08, 0); g.add(trail);
+  const A = new THREE.Vector3(-0.22, top + 0.17, 0.03), Tp = new THREE.Vector3(0, top + 0.32, 0.01), R = new THREE.Vector3(0.22, top + 0.17, 0.03);
+  const c1 = new THREE.QuadraticBezierCurve3(A, new THREE.Vector3(-0.13, top + 0.4, 0.04), Tp), c2 = new THREE.QuadraticBezierCurve3(Tp, new THREE.Vector3(0.13, top + 0.4, 0.04), R);
+
+  let mode = 'sms', sent = 0, lastLaunch = 3.0, flying = null, arrivedMode = null, seen = { sms: false, mms: false, tower: false }, fin = false;
+  const press = { sms: 0, mms: 0 };
+  const upd = () => { snd.userData.scr.material.map = T[mode]; };
+  function pick(m) {
+    mode = m; seen[m] = true; press[m] = 1; upd(); (m === 'sms' ? dSms : dMms).d.userData.k = 1;
+    burstAt(S, (m === 'sms' ? dSms : dMms).o, m === 'sms' ? BLUE : ORG, 22, 0.35, 0.028); lastLaunch = Math.min(lastLaunch, S.now - 1.0);
+    if (m === 'sms') ctx.ui.card({ tag: 'رسائل نصية قصيرة', title: 'SMS', body: 'رسائل نصية قصيرة بين المشتركين في شبكة الهاتف النقال، ويمكن بها نقل البيانات ودخول صفحات الواب WAP.', color: BLUE });
+    else ctx.ui.card({ tag: 'وسائط متعددة', title: 'MMS', body: 'خدمة إرسال الوسائط المتعددة، تدمج النص المرسَل بالرسوم والجرافيك والصور.', color: ORG });
+    ctx.ui.hud(m === 'sms' ? 'نص مجرّد' : 'نص وصورة');
+    check();
+  }
+  function check() { if (!fin && seen.sms && seen.mms && seen.tower) { fin = true; ctx.ui.done(); } }
+  S.touch(dSms.o, () => pick('sms'), { color: BLUE, size: 0.15, wake: 3.2 });
+  S.touch(dMms.o, () => pick('mms'), { color: ORG, size: 0.15, wake: 3.4 });
+  S.touch(tw, () => {
+    seen.tower = true; burstAt(S, ball, 0xffd27a, 30, 0.5, 0.03); sigK = 1;
+    ctx.ui.card({ tag: 'مركز الإرسال', title: 'الرسالة تعبر المركز', body: 'تعبر الرسائل مركز الإرسال الرئيس الذي يعالجها ويديرها قبل أن تصل إلى المستلم.', color: GOLD }); check();
+  }, { color: 0xffd27a, size: 0.2, at: new THREE.Vector3(0, 0.28, 0), wake: 3.6 });
+  S.touch(rcv, () => { burstAt(S, rcv, 0xffd27a, 18, 0.3, 0.025); ctx.ui.card({ tag: 'التواصل', title: 'محاضر وطالب', body: 'تقدم الرسائل النصية والوسائط المتعددة فرصاً جيدة للتواصل بين المحاضرين والطلاب.', color: GOLD }); }, { color: 0xffd27a, size: 0.17, at: new THREE.Vector3(0, 0.12, 0.02), wake: 4.0 });
+  let sigK = 0;
+  ctx.ui.hud('اختر ما تحمله الرسالة');
+
+  S.loop((t, dt, e) => {
+    wash.material.opacity = 0.4 * ease((t - 0.5) / 1.2) * e;
+    bglow.material.opacity = 0.55 + 0.25 * Math.sin(t * 3);
+    sigK = Math.max(0, sigK - dt * 0.6);
+    sig.forEach((r, i) => { const u = (t * 0.6 + i * 0.5) % 1; r.rotation.x = Math.PI / 2; r.scale.setScalar(0.4 + u * 1.5); r.material.opacity = (0.4 + sigK * 0.5) * (1 - u) * ease((t - 1.5) / 1) * e; r.visible = r.material.opacity > 0.01; });
+    [dSms, dMms].forEach((d) => { const on = mode === d.mode; const k = d.d.userData.k || 0; d.d.userData.k = Math.max(0, k - dt * 3); d.d.position.y = (on ? -0.004 : 0) - 0.006 * Math.sin(Math.min(1, d.d.userData.k) * Math.PI); d.d.scale.setScalar(on ? 1.06 : 0.95); });
+    // flight
+    if (!flying && t - lastLaunch > 3.4 && t > 3.0) { flying = { t0: t, mode }; lastLaunch = t; sent++; }
+    if (flying) {
+      const u = (t - flying.t0) / 3.0, P_ = pk[flying.mode], o = pk[flying.mode === 'sms' ? 'mms' : 'sms']; o.visible = false;
+      if (u >= 1) { P_.visible = false; trail.material.opacity = 0; rcv.userData.scr.material.map = T[flying.mode]; arrivedMode = flying.mode; burstAt(S, rcv, flying.mode === 'sms' ? BLUE : ORG, flying.mode === 'sms' ? 8 : 30, 0.3, 0.022); flying = null; }
+      else {
+        const k = sm(u); const pos = k < 0.5 ? c1.getPoint(k * 2) : c2.getPoint((k - 0.5) * 2);
+        P_.visible = true; P_.position.copy(pos); P_.rotation.z = Math.sin(u * 8) * 0.1; const pop = u < 0.12 ? sm(u / 0.12) : 1; P_.scale.setScalar(1.7 * pop * (0.9 + 0.1 * Math.sin(u * 20))); P_.position.y += 0.002;
+        trail.position.copy(pos); trail.material.opacity = 0.5; trail.material.color.setHex(flying.mode === 'sms' ? BLUE : ORG);
+        if (u > 0.47 && u < 0.53) { sigK = Math.max(sigK, 0.5); }
+      }
+    }
+  });
+  return { update: S.update };
 }

@@ -1,123 +1,124 @@
-// p179 — "what does a theory do?": one tree of knowledge whose four branches end in four fruits, each doing one job of a theory (gather, explain, predict, guide).
+// p179 — "theory" as a crystal lantern held by four brass instruments (collect, explain, predict, guide); a situation appears, tap the instrument that performs that function and a light beam feeds the crystal.
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=16';
-import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=16';
+import { P, ease, easeBack, clamp01, glow, lightTube } from '../../kit.js?v=17';
+import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, plinth, blob, at, shuffled, TAU } from '../lib/a2.js?v=17';
+import { plate, damp } from '../lib/b3-kit.js?v=17';
 
-export const meta = { free: true, center: [0.47, 0.64], typeLabel: 'شجرة المعرفة' };
+export const meta = { free: true, center: [0.39, 0.66], typeLabel: 'أسئلة تطبيقية' };
 
-const TAU = Math.PI * 2;
-const COL = { gather: 0x7fae2a, explain: 0xf08a2a, predict: 0x3b8fd0, guide: 0xd04a3a };
-const INFO = {
-  gather: ['وظيفة ١', 'تجميع الحقائق', 'تجمع الحقائق والمفاهيم وتُرتّبها في بناء منظّم، فيصير لها معنى وقيمة.'],
-  explain: ['وظيفة ٢', 'التوضيح والتفسير', 'تقدّم توضيحاً وتفسيراً لعدد من الظواهر الطبيعية والإنسانية والكونية.'],
-  predict: ['وظيفة ٣', 'التنبؤ', 'تساعد في توقّع الظواهر وحدوثها أو عدمه في ظل معطيات ومؤشرات معينة.'],
-  guide: ['وظيفة ٤', 'توجيه الفكر العلمي', 'هي بمثابة الموجِّه لإجراءات البحث العلمي وعمليات الاستدلال العقلي.'],
-};
-const TIPS = [['gather', -0.25, 0.37, 0.04], ['explain', 0.25, 0.4, 0.03], ['predict', -0.12, 0.6, -0.04], ['guide', 0.14, 0.63, 0.04]];
+const F = [
+  { k: 'collect', t: 'تجميع الحقائق', col: 0x3a7bd5, x: 0.14, z: 0.13, hi: 0, q: 'معلم يجمع ملاحظات في إطار واحد', title: 'تجميع الحقائق', body: 'تجمع النظرية الحقائق والمفاهيم والمبادئ في بناء منظم منسق، فيصير لها معنى وقيمة.' },
+  { k: 'explain', t: 'تفسير الظواهر', col: 0xe8a020, x: -0.14, z: 0.13, hi: 0, q: 'باحث يسأل عن سبب ظاهرة تعلّم', title: 'التفسير', body: 'تقدّم النظرية توضيحاً وتفسيراً لعدد من الظواهر والأحداث الطبيعية والإنسانية والكونية.' },
+  { k: 'predict', t: 'التنبؤ', col: 0xd9483b, x: 0.14, z: -0.13, hi: 0.03, q: 'باحث يتوقع النتيجة قبل التجريب', title: 'التنبؤ', body: 'تساعد في التنبؤ بالظواهر وتوقع حدوثها أو عدمه في ظل معطيات ومؤشرات معينة.' },
+  { k: 'guide', t: 'توجيه البحث', col: 0x2fa36b, x: -0.14, z: -0.13, hi: 0.03, q: 'باحث يحتاج موجّهاً لإجراءات بحثه', title: 'توجيه الفكر العلمي', body: 'هي بمثابة الموجّه لإجراءات البحث العلمي وعمليات الاستدلال العقلي.' },
+];
+const CRY_Y = 0.3;
+
+function gearGeo(R = 0.05, r = 0.039, n = 10) {
+  const s = new THREE.Shape();
+  for (let i = 0; i < n * 4; i++) {
+    const a = (i / (n * 4)) * TAU, rr = (i % 4 === 1 || i % 4 === 2) ? R : r;
+    const x = Math.cos(a) * rr, y = Math.sin(a) * rr; i ? s.lineTo(x, y) : s.moveTo(x, y);
+  }
+  const h = new THREE.Path(); h.absarc(0, 0, 0.014, 0, TAU, true); s.holes.push(h);
+  return new THREE.ExtrudeGeometry(s, { depth: 0.014, bevelEnabled: true, bevelSize: 0.003, bevelThickness: 0.003, bevelSegments: 2, curveSegments: 6 });
+}
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(0.47, 0.64)); g.scale.setScalar(0.88); ctx.stage.add(g);
-  const H = hints(), found = finder(ctx, 4);
-  const sh = blobShadow(0.7, 0.42, 0.3); g.add(sh);
-  const bark = mat(0x7b4f2e, { roughness: 0.85 });
-  const tree = new THREE.Group(); g.add(tree);
-  // trunk (lathe) and roots
-  const trunk = new THREE.Mesh(new THREE.LatheGeometry([[0.07, 0], [0.05, 0.03], [0.036, 0.1], [0.028, 0.2], [0.024, 0.3]].map(([r, y]) => new THREE.Vector2(r, y)), 28), bark); tree.add(trunk);
-  for (let i = 0; i < 5; i++) { const a = i / 5 * TAU + 0.4; const r = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.02, 0.1, 8), bark); r.position.set(Math.cos(a) * 0.055, 0.015, Math.sin(a) * 0.055); r.rotation.z = Math.cos(a) * 1.15; r.rotation.x = -Math.sin(a) * 1.15; tree.add(r); }
-  // branches
-  const curves = TIPS.map(([, x, y, z], i) => new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.22 + (i > 1 ? 0.06 : 0), 0), new THREE.Vector3(x * 0.35, 0.28 + (y - 0.3) * 0.5, z * 0.4), new THREE.Vector3(x * 0.75, y - 0.03, z * 0.8), new THREE.Vector3(x, y - 0.045, z)]));
-  curves.forEach((c) => { const b = new THREE.Mesh(new THREE.TubeGeometry(c, 30, 0.012, 8), bark); tree.add(b); });
-  // leaves
-  const leaves = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 6), mat(0xffffff, { roughness: 0.6 }), 150); const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3(), cc = new THREE.Color();
-  const greens = [0x5d9a2e, 0x86b03a, 0x3f8a3a, 0xb2c43a, 0x6aa84a]; let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 150; i++) {
-    const c = curves[i % 4]; const t = 0.25 + rnd() * 0.5; c.getPoint(t, pos);
-    pos.x += (rnd() - 0.5) * 0.1; pos.y += (rnd() - 0.3) * 0.08; pos.z += (rnd() - 0.75) * 0.08;
-    const s = 0.013 + rnd() * 0.014; sc.set(s * 1.3, s * 0.7, s); q.setFromEuler(new THREE.Euler(rnd() * 3, rnd() * 3, rnd() * 3)); mx.compose(pos, q, sc); leaves.setMatrixAt(i, mx);
-    leaves.setColorAt(i, cc.setHex(i % 23 === 0 ? 0xef8a2a : greens[i % greens.length]));
-  }
-  leaves.castShadow = true; tree.add(leaves);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.1);
+  const seq = new Seq(), pulse = new Pulse();
+  blob(g, 0.8, 0.7, 0.3, 0, 0);
+  const base = plinth(g, 0.3, { h: 0.018 }); seq.add(base, 0.0, 0.8, { rise: 0.03 });
+  // orbit ring + spokes on the plinth
+  const ring = add(g, new THREE.TorusGeometry(0.2, 0.004, 8, 80), brass(), 0, 0.03, 0); ring.rotation.x = Math.PI / 2; seq.add(ring, 0.4, 0.8, { rise: 0.02 });
+  // central column + crystal cradle
+  const col = grp(g, 0, 0.018, 0);
+  add(col, lathe([[0, 0], [0.045, 0], [0.05, 0.012], [0.03, 0.03], [0.018, 0.1], [0.022, 0.2], [0.04, 0.245], [0.0, 0.245]], 40), std(0xf1e6cf, { roughness: 0.45 }), 0, 0, 0, true);
+  const cr = add(col, new THREE.TorusGeometry(0.043, 0.0048, 8, 40), brass(), 0, 0.247, 0); cr.rotation.x = Math.PI / 2;
+  seq.add(col, 0.5, 0.9, { rise: 0.06 });
+  const crystalMat = new THREE.MeshPhysicalMaterial({ color: 0xffa51f, emissive: 0xff7a00, emissiveIntensity: 0.25, roughness: 0.2, metalness: 0.0, transparent: true, opacity: 0.95, clearcoat: 0.3, flatShading: true });
+  const crystal = grp(g, 0, CRY_Y + 0.0, 0);
+  add(crystal, new THREE.OctahedronGeometry(0.075, 0), crystalMat, 0, 0, 0, true).scale.set(0.85, 1.25, 0.85);
+  const cHalo = glow(0xffb040, 0.4, 0.55); crystal.add(cHalo);
+  seq.add(crystal, 1.1, 1.0, { rise: 0.08 });
 
-  // ---- the four fruits, one at the end of each branch
-  const fruits = {}, order = [];
-  const mkFruit = (id, x, y, z) => {
-    const grp = new THREE.Group(); grp.position.set(x, y, z); tree.add(grp);
-    const k = { id, grp, act: 0, t0: -9, update: null }; fruits[id] = k; order.push(k);
-    return k;
-  };
-  // gather: loose cubes that snap into an ordered block
-  {
-    const f = mkFruit('gather', ...TIPS[0].slice(1)); const cols = [0x7fae2a, 0xef8a2a, 0x3b8fd0, 0xd4ad55, 0xd04a3a, 0x6aa89a];
-    const cubes = cols.map((c, i) => { const m = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.04, 0.04, 3, 0.008), glossy(c)); f.grp.add(m); const a = i * 1.7; return { m, home: new THREE.Vector3(((i % 3) - 1) * 0.046, 0.0 + Math.floor(i / 3) * 0.046, 0), loose: new THREE.Vector3(Math.cos(a) * 0.08, 0.04 + (i % 3) * 0.04, Math.sin(a) * 0.06), ph: i * 1.3 }; });
-    let asm = 0;
-    f.hit = hitSphere(0.1, [0, 0.02, 0]); f.grp.add(f.hit);
-    f.update = (t, dt) => { asm += ((f.act > 0 ? 1 : 0) - asm) * Math.min(1, dt * 3); cubes.forEach((c) => { pos.lerpVectors(c.loose, c.home, ease(asm)); pos.y += (1 - asm) * Math.sin(t * 1.4 + c.ph) * 0.012; c.m.position.copy(pos); c.m.rotation.set((1 - asm) * Math.sin(t * 0.8 + c.ph), (1 - asm) * (t + c.ph) * 0.5, 0); }); };
-  }
-  // explain: a bulb
-  {
-    const f = mkFruit('explain', ...TIPS[1].slice(1));
-    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.034, 20), goldMat()); foot.position.y = -0.03; f.grp.add(foot);
-    const glass = new THREE.Mesh(new THREE.SphereGeometry(0.05, 28, 20), new THREE.MeshPhysicalMaterial({ color: 0xfff6dd, transparent: true, opacity: 0.4, roughness: 0.05, clearcoat: 1, depthWrite: false })); glass.position.y = 0.03; f.grp.add(glass);
-    const fil = new THREE.Mesh(new THREE.SphereGeometry(0.03, 20, 14), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.2, toneMapped: false })); fil.position.y = 0.03; f.grp.add(fil);
-    const rays = Array.from({ length: 10 }, (_, i) => { const r = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.005, 0.005), new THREE.MeshBasicMaterial({ color: 0xffc24a, toneMapped: false })); r.userData.a = i / 10 * TAU; f.grp.add(r); return r; });
-    const gl = softLight(0xffc24a, 0.3, 0); gl.position.y = 0.03; f.grp.add(gl); let on = 0;
-    f.hit = hitSphere(0.09, [0, 0.02, 0]); f.grp.add(f.hit);
-    f.update = (t, dt) => { on += ((f.act > 0 ? 1 : 0.15 + 0.1 * Math.sin(t * 2)) - on) * Math.min(1, dt * 5); fil.material.opacity = 0.15 + on * 0.85; gl.material.opacity = on * 0.8; rays.forEach((r) => { const a = r.userData.a + t * 0.3, d = 0.07 + on * 0.03; r.position.set(Math.cos(a) * d, 0.03 + Math.sin(a) * d, 0); r.rotation.z = a; r.scale.setScalar(Math.max(on * (f.act > 0 ? 1 : 0), 0.001)); }); };
-  }
-  // predict: an arrow that flies on a dotted path to a flag and comes back
-  {
-    const f = mkFruit('predict', ...TIPS[2].slice(1));
-    const arrow = new THREE.Group(); const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.07, 8), mat(0xf1e6c9)); shaft.rotation.z = Math.PI / 2; const head = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.03, 12), glossy(0x3b8fd0)); head.rotation.z = -Math.PI / 2; head.position.x = 0.05; const fl = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.014, 0.003), glossy(0x3b8fd0)); fl.position.x = -0.035; arrow.add(shaft, head, fl); f.grp.add(arrow);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.12, 8), mat(0x3a3f45)); pole.position.set(0.19, 0.0, 0); f.grp.add(pole);
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.036), new THREE.MeshStandardMaterial({ color: 0x3b8fd0, side: THREE.DoubleSide })); flag.position.set(0.222, 0.042, 0); f.grp.add(flag);
-    const dots = Array.from({ length: 9 }, () => { const s = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 8, 6), new THREE.MeshBasicMaterial({ color: 0x3b8fd0, transparent: true, opacity: 0.45 })); f.grp.add(s); return s; });
-    const arc = (k, out) => out.set(0.0 + k * 0.17, Math.sin(k * Math.PI) * 0.06, 0);
-    f.hit = hitSphere(0.1, [0.08, 0.0, 0]); f.grp.add(f.hit);
-    f.update = (t) => { const fk = clamp01((t - f.t0) / 1.2); dots.forEach((s, i) => { arc((i + 1) / 10, s.position); s.material.opacity = 0.25 + 0.3 * Math.sin(t * 3 - i * 0.6); });
-      if (fk > 0 && fk < 1) { arc(fk, arrow.position); arrow.rotation.z = Math.atan2(Math.cos(fk * Math.PI) * Math.PI * 0.06, 0.17); } else { arrow.position.set(0, 0.012 + Math.sin(t * 2) * 0.006, 0); arrow.rotation.z = 0.25; } };
-  }
-  // guide: a compass
-  {
-    const f = mkFruit('guide', ...TIPS[3].slice(1));
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.062, 0.016, 40), mat(0xf6efe0)); disc.rotation.x = Math.PI / 2; f.grp.add(disc);
-    const bez = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.006, 10, 48), goldMat()); f.grp.add(bez);
-    const needle = new THREE.Group(); needle.position.z = 0.012; f.grp.add(needle);
-    const n1 = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.055, 4), glossy(0xd04a3a)); n1.position.y = 0.0275; const n2 = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.055, 4), glossy(0xf1e6c9)); n2.rotation.z = Math.PI; n2.position.y = -0.0275; needle.add(n1, n2, new THREE.Mesh(new THREE.SphereGeometry(0.006, 10, 8), goldMat()));
-    let a = 1.2, vel = 0; f.kick = () => { vel = 14; };
-    f.hit = hitSphere(0.09, [0, 0, 0]); f.grp.add(f.hit);
-    f.update = (t, dt) => { vel *= Math.exp(-dt * 1.6); a += vel * dt; if (f.act > 0 && vel < 1.5) a += Math.atan2(Math.sin(-a), Math.cos(-a)) * Math.min(1, dt * 3); else if (f.act <= 0) a += Math.sin(t * 0.7) * dt * 0.5; needle.rotation.z = a; };
-  }
-  order.forEach((f, i) => {
-    f.grp.scale.setScalar(1);
-    ctx.tap(f.grp, () => touch(f.id));
-    f.hint = H.add(f.grp, COL[f.id], 0.2, [0, 0.02, 0.02], 2.6 + i * 0.2);
+  // the four instruments
+  const inst = F.map((f, i) => {
+    const s = grp(g, f.x, 0.018 + f.hi, f.z);
+    const ped = add(s, rb(0.16, 0.062, 0.1, 0.012, 3), gloss(f.col, { roughness: 0.3 }), 0, 0.031, 0, true);
+    add(s, rb(0.168, 0.006, 0.108, 0.004, 2), brass(), 0, 0.064, 0);
+    const p1 = plate(f.t, 0.146, 0.05, { fg: '#fffaf0', lines: 1 }); p1.position.set(0, 0.031, 0.0507); s.add(p1);
+    const p2 = plate(f.t, 0.146, 0.05, { fg: '#fffaf0', lines: 1 }); p2.position.set(0, 0.031, -0.0507); p2.rotation.y = Math.PI; s.add(p2);
+    const tool = grp(s, 0, 0.068, 0); let spin = null, bits = [];
+    if (f.k === 'collect') {
+      const cs = [0xe86f5a, 0x3a7bd5, 0xf2c14a, 0x56b48a, 0xb06bd0, 0xf08a4b];
+      [[-0.035, 0], [0, 0], [0.035, 0], [-0.0175, 1], [0.0175, 1], [0, 2]].forEach(([x, y], j) => { const b = add(tool, rb(0.032, 0.032, 0.05, 0.006, 2), gloss(cs[j]), x, 0.016 + y * 0.033, 0, true); bits.push(b); });
+    } else if (f.k === 'explain') {
+      spin = add(tool, gearGeo(), std(0xe0b85e, { roughness: 0.3, metalness: 0.8 }), 0, 0.058, -0.007, true);
+      add(tool, new THREE.CylinderGeometry(0.01, 0.01, 0.07, 12), std(0x6b4f3f), 0, 0.03, 0);
+      const g2 = add(tool, gearGeo(0.03, 0.022, 7), std(0xc99d3e, { roughness: 0.3, metalness: 0.8 }), 0.074, 0.03, -0.007, true); bits.push(g2);
+    } else if (f.k === 'predict') {
+      const piv = grp(tool, 0, 0.03, 0); spin = piv;
+      add(tool, new THREE.SphereGeometry(0.018, 16, 12), brass(), 0, 0.03, 0);
+      add(piv, new THREE.CylinderGeometry(0.006, 0.006, 0.09, 10), std(0xf4ede0, { roughness: 0.4 }), 0.0, 0.045, 0).rotation.z = 0;
+      add(piv, new THREE.ConeGeometry(0.02, 0.05, 14), gloss(0xd9483b), 0, 0.115, 0);
+      add(tool, new THREE.CylinderGeometry(0.004, 0.004, 0.03, 8), std(0x6b4f3f), 0, 0.012, 0);
+    } else {
+      const piv = grp(tool, 0, 0.07, 0); spin = piv; piv.rotation.x = -0.5;
+      add(piv, new THREE.CylinderGeometry(0.014, 0.018, 0.11, 18), std(0x2f4d46, { roughness: 0.35 }), 0, 0.0, 0).rotation.x = Math.PI / 2;
+      const ln = add(piv, new THREE.TorusGeometry(0.019, 0.004, 8, 24), brass(), 0, 0, 0.056);
+      add(piv, new THREE.CylinderGeometry(0.0125, 0.0125, 0.004, 18), std(0x9fe0d0, { roughness: 0.05, emissive: 0x2fa36b, emissiveIntensity: 0.5 }), 0, 0, 0.057).rotation.x = Math.PI / 2;
+      [0, 1, 2].forEach((j) => { const a = j * TAU / 3 + 0.5; const l = add(tool, new THREE.CylinderGeometry(0.004, 0.004, 0.075, 6), brass(), Math.cos(a) * 0.022, 0.035, Math.sin(a) * 0.022); l.rotation.set(Math.sin(a) * 0.35, 0, -Math.cos(a) * 0.35); });
+    }
+    const lampG = glow(0xffc860, 0.2, 0.0); lampG.position.y = 0.09; s.add(lampG);
+    hit(s, 0.085, 0, 0.06, 0);
+    pulse.add(s, f.col, 0.2, 0, 0.1, 0, { op: 0.4 });
+    s.scale.setScalar(1.08); seq.add(s, 0.8 + i * 0.25, 0.8, { rise: 0.07 });
+    // spoke from the ring to the pedestal
+    const sp = new THREE.CatmullRomCurve3([new THREE.Vector3(f.x * 0.6, 0.075, f.z * 0.6), new THREE.Vector3(f.x * 0.3, 0.2, f.z * 0.3), new THREE.Vector3(0, CRY_Y - 0.03, 0)]);
+    const beam = lightTube(sp, { radius: 0.006, color: f.col, speed: 0.8 }); beam.userData.fill(0); g.add(beam);
+    return { f, s, spin, bits, lampG, beam, fill: 0, solved: false, shake: -1, boost: 0, base: tool };
   });
-  shadowed(tree);
-  const tag = tagSprite('تجميع الحقائق', 0.25, COL.gather); tag.visible = false; tag.userData.nm = ''; g.add(tag);
-  let lastId = null, now = 0;
-  function touch(id) {
-    const f = fruits[id]; f.act = 1; f.t0 = now; f.hint.calm = true; ctx.sfx.pop?.(); f.kick?.(); found(id); lastId = id;
-    ctx.ui.card({ tag: INFO[id][0], title: INFO[id][1], body: INFO[id][2], color: COL[id] });
-    ctx.fx.burst(f.grp.getWorldPosition(new THREE.Vector3()).sub(ctx.stage.position), COL[id], 20, 0.35, 0.03);
-    ctx.ui.hud('المس بقية الثمار');
-  }
-  // light packets climbing the trunk to each fruit
-  const packets = curves.map((c, i) => { const s = softLight(COL[TIPS[i][0]], 0.07, 0.9); tree.add(s); return { s, c, o: i * 0.27 }; });
-  ctx.ui.hud('المس ثمار الشجرة الأربع');
+
+  const order = shuffled([0, 1, 2, 3], 5);
+  let qi = -1, state = 'wait', tt = 0, solved = 0, energy = 0.25;
+  const ask = () => { state = 'idle'; ctx.ui.hud(F[order[qi]].q); };
+  inst.forEach((it, i) => touch(ctx, it.s, () => {
+    if (state !== 'idle') return;
+    if (order[qi] === i) {
+      it.solved = true; it.boost = 1; solved++; state = 'pause'; tt = 0; ctx.sfx.good?.();
+      ctx.ui.card({ tag: 'وظيفة النظرية', title: it.f.title, body: it.f.body, color: it.f.col });
+      ctx.fx.burst(new THREE.Vector3(0, CRY_Y + 0.0, 0).add(g.position), it.f.col, 18, 0.35, 0.03);
+    } else { it.shake = 0; ctx.sfx.bad?.(); ctx.ui.toast('ليست هذه الوظيفة'); }
+  }, F[i].col));
+
   return {
     update(t, dt, e) {
-      now = t;
-      sh.material.opacity = 0.3 * e;
-      const tk = Math.max(stag(t, 0.1, 0.9, easeBack) * e, 0.001); tree.scale.set(tk, tk, tk);
-      tree.rotation.y = Math.sin(t * 0.4) * 0.12;
-      order.forEach((f, i) => { f.act = f.act > 0 && t - f.t0 > 4 ? 0 : f.act; const k = Math.max(stag(t, 0.7 + i * 0.15, 0.7, easeBack) * e, 0.001); f.grp.scale.setScalar(k * 1.65); f.grp.position.y = TIPS[i][2] + Math.sin(t * 1.3 + i) * 0.006; f.update?.(t, dt); });
-      packets.forEach((p) => { const k = ((t * 0.33 + p.o) % 1); p.c.getPoint(Math.min(0.98, k), p.s.position); p.s.material.opacity = Math.sin(k * Math.PI) * 0.9 * clamp01((t - 0.5) * 2) * e; });
-      if (lastId) { const f = fruits[lastId]; f.grp.getWorldPosition(pos); g.worldToLocal(pos); tag.position.set(pos.x, pos.y + 0.12, pos.z + 0.02); tag.visible = t - f.t0 < 5;
-        if (tag.userData.nm !== lastId) { tag.userData.nm = lastId; const nm = INFO[lastId][1].length > 12 ? 'توجيه الفكر' : INFO[lastId][1]; const nt = tagSprite(nm, 0.25, COL[lastId]); tag.material.map = nt.material.map; tag.userData.aspect = nt.userData.aspect; }
-        setSpr(tag, 0.25, e); }
-      H.update(t, e);
+      seq.update(t, e); pulse.update(t, e);
+      energy = damp(energy, 0.25 + solved * 0.25, 2, dt);
+      crystal.rotation.y = t * (0.5 + solved * 0.35); crystal.position.y = CRY_Y + Math.sin(t * 1.6) * 0.008;
+      crystalMat.emissiveIntensity = 0.2 + energy * (0.6 + 0.2 * Math.sin(t * 3)); cHalo.material.opacity = (0.12 + energy * 0.3) * e; cHalo.scale.setScalar(0.24 + energy * 0.14);
+      inst.forEach((it, i) => {
+        it.boost = damp(it.boost, 0, 1.2, dt); let sx = 0;
+        if (it.shake >= 0) { it.shake += dt; sx = Math.sin(it.shake * 60) * 0.008 * (1 - clamp01(it.shake / 0.4)); if (it.shake > 0.45) it.shake = -1; }
+        it.s.position.x = it.f.x + sx;
+        it.fill = damp(it.fill, it.solved ? 1 : 0, 1.8, dt); it.beam.userData.fill(it.fill * e); it.beam.userData.update(dt);
+        it.lampG.material.opacity = (it.solved ? 0.75 : 0) * e * (0.8 + 0.2 * Math.sin(t * 3 + i));
+        const k = it.f.k, b = it.boost;
+        if (k === 'explain') { it.spin.rotation.z = t * (0.6 + b * 6 + (it.solved ? 0.8 : 0)); it.bits[0].rotation.z = -t * (1.0 + b * 8) + 0.3; }
+        else if (k === 'predict') it.spin.rotation.z = -0.5 + Math.sin(t * 1.4) * 0.35 - (it.solved ? 0.4 : 0) + b * Math.sin(t * 20) * 0.2;
+        else if (k === 'guide') { it.spin.rotation.x = -0.5 - Math.sin(t * 0.9) * 0.18 - b * 0.4; it.spin.rotation.y = Math.sin(t * 0.7) * 0.5; }
+        else it.bits.forEach((c, j) => { c.position.z = Math.sin(t * 2 + j) * 0.002; c.scale.y = 1 + b * 0.25 * Math.sin(t * 16 + j * 1.3); });
+      });
+      if (state === 'wait' && t > 3.2) { qi = 0; ask(); }
+      if (state === 'pause') {
+        tt += dt;
+        if (tt > 2.6) {
+          ctx.ui.hideCard(); qi++;
+          if (qi >= 4) { state = 'end'; ctx.ui.card({ tag: 'تكنولوجيا التعليم', title: 'أوسع من الأجهزة', body: 'مفهومها لا يقتصر على معدات وأجهزة، بل يتسع لتطبيق فكر النظم في تصميم البرامج وتقويمها وتطويرها.', color: 0xd4ad55 }); ctx.ui.hud('النظرية تضيء الطريق'); ctx.ui.done(); }
+          else ask();
+        }
+      }
     },
   };
 }

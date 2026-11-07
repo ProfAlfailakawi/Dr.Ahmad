@@ -1,129 +1,99 @@
-// p463 — technophilia: a phone feeds a drip into an arm. Six glass bubbles hold statements; find the three false ones and the line unplugs.
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=16';
-import { inked } from '../../pencil.js?v=16';
-import { lightPool } from '../../v2/common.js?v=16';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
+import { mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01 } from '../../kit.js?v=17';
+import { scene, RoundedBox, TAU, contactShadow, lightPool, paint, smooth, GL, plinth, textPlane } from '../lib/b8-kit.js?v=17';
+export const meta = { free: true, center: [0.5, 0.6], typeLabel: 'لعبة اكتشاف' };
 
-export const meta = { free: true, center: [0.5, 0.666], typeLabel: 'لعبة اكتشاف الخطأ', title: 'اكتشف الخطأ' };
-
-const S = [
-  { t: 'يشير هوس التكنولوجيا إلى الحماسة والتعلق الشديد بالتكنولوجيا، وخاصة الجديدة منها.' },
-  { t: 'من مظاهر الإدمان التكنولوجي فقدان الإحساس بالوقت أمام الهاتف أو الإنترنت أو الحاسب.' },
-  { t: 'يُستخدم مصطلح هوس التكنولوجيا في علم النفس السريري وحده.', wrong: 1, fix: 'يستخدمه علم الاجتماع عند دراسة تفاعل الأفراد مع محيطهم، مقارناً برهاب التكنولوجيا (بايم).' },
-  { t: 'يتأخر المصاب عن واجباته، ويلجأ إلى الأكاذيب الواهية عند سؤاله عن السبب.' },
-  { t: 'من مظاهره شعور بقرب أكبر من الأهل والأصدقاء بفضل الاتصال الدائم.', wrong: 1, fix: 'من مظاهره الشعور بالوحدة والبعد عن الأهل والأصدقاء.' },
-  { t: 'من يخاف التكنولوجيا يتخلص من خوفه بالابتعاد عنها تماماً.', wrong: 1, fix: 'عليهم الاعتراف بمشكلتهم أولاً، والاقتناع بأنه لا داعي للخوف أو الحرج.' },
+const TEAL = 0x4fc3c8, RED = 0xe8412c, GOLD = 0xd4ad55;
+const AR = ['١', '٢', '٣', '٤', '٥', '٦', '٧'];
+const SENT = [
+  { t: 'يشير هوس التكنولوجيا إلى الحماسة العامة والتعلق الشديد بالتكنولوجيا، وخاصة الجديدة منها.', wrong: false },
+  { t: 'من مظاهر الإدمان التكنولوجي فقدان الإحساس بالوقت أمام الهاتف أو الإنترنت أو الحاسب.', wrong: false },
+  { t: 'يُستخدم مصطلح هوس التكنولوجيا في علم النفس السريري وحده عند تشخيص الاضطرابات.', wrong: true, fix: 'يستخدمه علم الاجتماع عند دراسة تفاعل الأفراد مع محيطهم، وخاصة حين يقارن بنقيضه رهاب التكنولوجيا.' },
+  { t: 'يتأخر المصاب عن الواجبات أو وظائف العمل، ويلجأ إلى الحجج والأكاذيب الواهية.', wrong: false },
+  { t: 'من مظاهره شعور بقرب أكبر من الأهل والأصدقاء بفضل الاتصال الدائم.', wrong: true, fix: 'من مظاهره الشعور بالوحدة والبعد عن الأهل والأصدقاء.' },
+  { t: 'من يخاف التكنولوجيا يتخلص من خوفه بالابتعاد عنها تماماً.', wrong: true, fix: 'عليهم أن يعترفوا بمشكلتهم أولاً ويقتنعوا بأنه ليس هناك ما يدعو للخوف، وأن بالإمكان التخلص منه.' },
+  { t: 'من مظاهره الإحساس بالذنب بسبب تضييع الوقت.', wrong: false },
 ];
-
-function screenTex() {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 480; const x = c.getContext('2d');
-  x.fillStyle = '#f7f1e2'; x.fillRect(0, 0, 256, 480);
-  x.fillStyle = '#2a6fa8'; x.fillRect(30, 150, 196, 90);
-  x.fillStyle = '#fff'; x.font = '800 40px Tajawal, sans-serif'; x.textAlign = 'center'; x.fillText('SOCIAL', 128, 190); x.fillText('MEDIA', 128, 232);
-  x.fillStyle = '#7ccbc6'; x.fillRect(95, 40, 66, 110);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
+const phoneScreen = () => paint(256, 512, (x, w, h) => {
+  const gr = x.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#6fd6d6'); gr.addColorStop(1, '#3aa8b8'); x.fillStyle = gr; x.fillRect(0, 0, w, h);
+  x.fillStyle = '#fff'; x.beginPath(); x.roundRect(88, 40, 80, 24, 12); x.fill();
+  x.fillStyle = '#2f7fbf'; x.beginPath(); x.roundRect(52, 90, 152, 250, 40); x.fill(); x.fillStyle = 'rgba(255,255,255,.28)'; x.beginPath(); x.roundRect(66, 106, 30, 190, 15); x.fill();
+  x.fillStyle = '#1f4f87'; x.fillRect(52, 190, 152, 62); x.fillStyle = '#fff'; x.font = '800 30px Tajawal, sans-serif'; x.textAlign = 'center'; x.fillText('SOCIAL', 128, 218); x.fillText('MEDIA', 128, 246);
+  x.fillStyle = '#9bd7ea'; x.fillRect(122, 340, 12, 90); x.fillStyle = '#e8412c'; x.beginPath(); x.roundRect(60, 450, 136, 28, 14); x.fill();
+});
+const numTex = (n) => paint(128, 128, (x, w, h) => { x.fillStyle = '#f4e3b0'; x.fillRect(0, 0, w, h); x.fillStyle = '#2b2620'; x.font = '800 92px Tajawal, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(n, w / 2, h / 2 + 6); });
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.15);
-  const seq = new Seq(), hints = new Hints(g, 5.8), tag = new Tag(g, 0.2);
-  let now = 0, found = 0, freed = 0, finished = false, current = -1;
+  const S = scene(ctx, meta), g = S.g;
+  const pl = plinth(0.4, { h: 0.026, color: 0x2f8a8c }); g.add(pl); S.part(pl, 0.1, { rise: 0.06 });
+  const shd = contactShadow(0.92, 0.92, 0.3); g.add(shd);
+  const top = 0.03;
+  // phone
+  const ph = new THREE.Group(); ph.position.set(0, top, -0.12); ph.scale.setScalar(1.12); g.add(ph);
+  const foot = new THREE.Mesh(new RoundedBox(0.2, 0.018, 0.12, 0.008), goldMat()); foot.position.y = 0.009; ph.add(foot);
+  const body = new THREE.Mesh(new RoundedBox(0.23, 0.38, 0.03, 0.03), glossy(RED, { roughness: 0.3 })); body.position.y = 0.21; ph.add(body);
+  const sm = new THREE.MeshStandardMaterial({ map: phoneScreen(), emissive: 0xffffff, emissiveIntensity: 0.45, roughness: 0.25 }); sm.emissiveMap = sm.map;
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.345), sm); scr.position.set(0, 0.215, 0.0155); ph.add(scr);
+  const cam = new THREE.Mesh(new THREE.CircleGeometry(0.006, 14), mat(0x1b1a18)); cam.position.set(0, 0.388, 0.0156); ph.add(cam);
+  const bk = new THREE.Mesh(new RoundedBox(0.07, 0.07, 0.004, 0.02), goldMat()); bk.position.set(0, 0.26, -0.0155); ph.add(bk);
+  const drops = [0, 1, 2].map((i) => { const d = new THREE.Mesh(new THREE.SphereGeometry(0.007, 12, 10), GL(0x9bd7ea, 0.9)); d.position.set(0, 0.2, 0.02); ph.add(d); return d; });
+  shadowed(ph); S.part(ph, 0.5, { rise: 0.08 });
+  const halo = glow(RED, 0.5, 0.0); halo.position.set(0, 0.21, 0.0); ph.add(halo);
+  // pips: three errors to find
+  const pips = [-1, 0, 1].map((k, i) => { const p = new THREE.Mesh(new THREE.SphereGeometry(0.014, 18, 14), GL(0x8a8378, 0.0, { color: 0x8a8378 })); p.position.set(k * 0.06, 0.46, -0.1); g.add(p); const r = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.0025, 8, 32), goldMat()); r.position.copy(p.position); g.add(r); S.part(p, 2.2 + i * 0.15, { rise: 0.05 }); S.part(r, 2.2 + i * 0.15, { rise: 0.05 }); return { p, r, lit: 0 }; });
 
-  const shadow = softShadow(0.6, 0.45, 0.3); g.add(shadow);
-
-  // the phone, upright, leaning back
-  const phone = new THREE.Group(); phone.position.set(-0.08, 0.004, -0.04); phone.rotation.x = -0.18; phone.scale.setScalar(1.3); g.add(phone);
-  const pb = new THREE.Mesh(new RoundedBoxGeometry(0.15, 0.27, 0.024, 4, 0.012), glossy(0xe8472b)); pb.position.y = 0.135; phone.add(shadowed(pb));
-  const ps = new THREE.Mesh(new THREE.PlaneGeometry(0.128, 0.24), new THREE.MeshBasicMaterial({ map: screenTex(), toneMapped: false })); ps.position.set(0, 0.138, 0.0125); phone.add(ps);
-  const drip = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.05, 6, 14), new THREE.MeshPhysicalMaterial({ color: 0x3a8fd0, transparent: true, opacity: 0.8, roughness: 0.1, clearcoat: 1 })); drip.position.set(0, 0.185, 0.02); phone.add(drip);
-  const foot = new THREE.Mesh(new RoundedBoxGeometry(0.17, 0.02, 0.1, 3, 0.008), glossy(0x2b2620)); foot.position.set(0, 0.012, 0.02); phone.add(foot);
-  // the arm and its two bandages
-  const arm = new THREE.Group(); arm.position.set(0.1, 0.04, 0.13); arm.rotation.y = -0.25; arm.scale.setScalar(1.25); g.add(arm);
-  const skin = glossy(0xf1bd96, { roughness: 0.5, clearcoat: 0.2 });
-  const forearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.036, 0.2, 8, 20), skin); forearm.rotation.z = Math.PI / 2; arm.add(shadowed(forearm));
-  const hand = new THREE.Mesh(new THREE.SphereGeometry(0.04, 18, 12), skin); hand.scale.set(1.2, 0.8, 1); hand.position.x = 0.14; arm.add(hand);
-  [-0.03, -0.01, 0.01, 0.03].forEach((z, i) => { const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.03, 4, 8), skin); f.rotation.z = Math.PI / 2; f.position.set(0.19 + (i === 1 || i === 2 ? 0.008 : 0), 0, z); arm.add(f); });
-  const bands = [-0.03, 0.015].map((x) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.012, 0.09), mat(0xf6f1e1)); b.position.set(x, 0.033, 0); b.rotation.y = 0.35; arm.add(b); return b; });
-  const port = new THREE.Mesh(new THREE.SphereGeometry(0.008, 10, 8), mat(0xe8472b)); port.position.set(-0.045, 0.04, 0.012); arm.add(port);
-
-  // the glowing line phone -> arm
-  const a0 = V(-0.08, 0.075, 0.03), a1 = V(0.03, 0.04, 0.2), a2 = V(0.04, 0.1, 0.23);
-  const portW = V(0.1 - 0.045 * Math.cos(-0.25), 0.1, 0.13 + 0.045 * Math.sin(-0.25) * -1);
-  const curve = new THREE.CatmullRomCurve3([a0, V(-0.1, 0.045, 0.1), V(-0.03, 0.04, 0.2), V(0.04, 0.05, 0.2), V(0.056, 0.1, 0.14)]);
-  const tube = lightTube(curve, { radius: 0.0095, color: 0x1f78d8, speed: 0.5 }); g.add(tube);
-  const calm = glow(0x6fe0a6, 0.5, 0); calm.position.set(0, 0.15, 0.0); g.add(calm);
-  const pool = lightPool(0xffe9c8, 0.3, 0.4); pool.position.y = 0.003; g.add(pool);
-
-  // two stamps: tap one to judge the chosen bubble
-  function glyphTex(ch, bg) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, 128, 128); x.strokeStyle = '#fff'; x.lineWidth = 16; x.lineCap = 'round'; x.beginPath(); if (ch === 'ok') { x.moveTo(30, 66); x.lineTo(54, 92); x.lineTo(98, 38); } else { x.moveTo(38, 38); x.lineTo(90, 90); x.moveTo(90, 38); x.lineTo(38, 90); } x.stroke(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
-  const stamps = [['ok', 0x2fae8f, -0.13, false, '#2fae8f'], ['no', 0xe0562f, 0.13, true, '#e0562f']].map(([k, col, x, saysWrong, bg]) => {
-    const grp = new THREE.Group(); grp.position.set(x, 0.004, 0.36); g.add(grp);
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.026, 32), glossy(col, { roughness: 0.3 })); base.position.y = 0.013; grp.add(shadowed(base));
-    const top = new THREE.Mesh(new THREE.CircleGeometry(0.038, 32), new THREE.MeshBasicMaterial({ map: glyphTex(k, bg), toneMapped: false })); top.rotation.x = -Math.PI / 2; top.position.y = 0.0275; grp.add(top);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.047, 0.0035, 8, 40), goldMat()); ring.rotation.x = Math.PI / 2; ring.position.y = 0.026; grp.add(ring);
-    const h = glow(col, 0.16, 0); h.position.y = 0.04; grp.add(h);
-    seq.add(grp, 1.8, 0.7);
-    return { grp, h, saysWrong, press: -9, col };
+  // rack and vials
+  const R = 0.285, TH = 0.95, n = SENT.length;
+  const rail = new THREE.Mesh(new THREE.TorusGeometry(R, 0.016, 10, 80, TH * 2 + 0.3), glossy(0xe0b85e, { metalness: 0.7, roughness: 0.3 })); rail.rotation.x = Math.PI / 2; rail.rotation.z = Math.PI / 2 - TH - 0.15; rail.position.y = top + 0.016; g.add(shadowed(rail)); S.part(rail, 0.8, { rise: 0.05 });
+  const vials = SENT.map((s, i) => {
+    const th = -TH + (i / (n - 1)) * TH * 2, hold = new THREE.Group(), vial = new THREE.Group(); hold.add(vial);
+    const homeP = new THREE.Vector3(Math.sin(th) * R, top + 0.03, Math.cos(th) * R);
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.1, 22, 1, true), new THREE.MeshPhysicalMaterial({ color: 0xdff7f8, transparent: true, opacity: 0.28, roughness: 0.05, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false })); glass.position.y = 0.06; vial.add(glass);
+    const bot = new THREE.Mesh(new THREE.SphereGeometry(0.019, 18, 10, 0, TAU, Math.PI / 2, Math.PI / 2), glass.material); bot.position.y = 0.01; vial.add(bot);
+    const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.0155, 0.0155, 0.06, 20), new THREE.MeshStandardMaterial({ color: 0xcfd7d6, emissive: 0xcfd7d6, emissiveIntensity: 0.15, roughness: 0.2 })); liq.position.y = 0.04; vial.add(liq);
+    const lb = new THREE.Mesh(new THREE.SphereGeometry(0.0155, 16, 10, 0, TAU, Math.PI / 2, Math.PI / 2), liq.material); lb.position.y = 0.01; vial.add(lb);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.0215, 0.0215, 0.016, 22), goldMat()); cap.position.y = 0.114; vial.add(cap);
+    const plate = new THREE.Mesh(new THREE.CircleGeometry(0.0145, 20), new THREE.MeshBasicMaterial({ map: numTex(AR[i]), toneMapped: false })); plate.position.set(0, 0.072, 0.0195); vial.add(plate);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0145, 0.0016, 8, 24), goldMat()); ring.position.copy(plate.position); ring.position.z += 0.0004; vial.add(ring);
+    shadowed(vial); hold.position.copy(homeP); hold.rotation.y = th; g.add(hold); S.part(vial, 1.1 + i * 0.14, { rise: 0.06 });
+    return { hold, vial, liq, th, homeP, i, state: 'idle', lift: 0, shake: -9, done: false, color: 0xcfd7d6 };
   });
-  // six bubbles, one statement each
-  const bubbles = S.map((s, i) => {
-    const grp = new THREE.Group(); g.add(grp);
-    const gl = new THREE.Mesh(new THREE.SphereGeometry(0.05, 24, 16), new THREE.MeshPhysicalMaterial({ color: 0xb9e3f2, transparent: true, opacity: 0.6, roughness: 0.05, clearcoat: 1, depthWrite: false })); gl.renderOrder = 4; grp.add(gl);
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.024, 16, 12), new THREE.MeshBasicMaterial({ color: 0xff9a3c, toneMapped: false })); grp.add(core);
-    const halo = glow(0xffd27a, 0.1, 0.25); grp.add(halo);
-    seq.add(grp, 2.0 + i * 0.25, 0.8);
-    const h = hints.add(V(), 0xffd27a, 0.1);
-    return { grp, gl, core, halo, s, i, state: 0, h, shake: -9, a: (i / 6) * TAU + 0.5 };
-  });
+  vials.forEach((v) => v.hold.scale.multiplyScalar(1.5)); vials.forEach((v) => { v.hold.scale.set(1, 1, 1); });
 
-  seq.add(phone, 0.7, 0.9); seq.add(arm, 1.0, 0.9); seq.add(tube, 1.3, 0.1);
-
-  function choose(b, saysWrong) {
-    const isWrong = !!b.s.wrong;
-    if (saysWrong === isWrong) {
-      b.state = 1; b.h.on = false;
-      if (isWrong) { found++; b.core.material.color.set(0xf2b632); b.halo.material.color.set(0xf2b632); ctx.sfx.good?.(); ctx.ui.card({ tag: 'خطأ مكتشَف', title: 'والصحيح هو', body: b.s.fix, color: 0xf2b632 }); ctx.fx.burst(wpos(g, b.grp.position), 0xf2b632, 20, 0.3, 0.03); }
-      else { b.core.material.color.set(0x4cc38f); b.halo.material.color.set(0x4cc38f); ctx.sfx.pop?.(); ctx.ui.card({ tag: 'عبارة دقيقة', title: 'أحسنت', body: 'هذه العبارة صحيحة بحسب ما يعرضه الكتاب.', color: 0x4cc38f }); }
-      tag.hide();
-      if (found === 3 && !finished) { finished = true; setTimeout(() => { freed = now; ctx.sfx.good?.(); ctx.ui.hud('انفكّ الارتباط'); ctx.ui.done(); ctx.fx.burst(wpos(g, V(0, 0.2, 0)), 0x6fe0a6, 50, 0.5, 0.04); }, 1200); }
-    } else {
-      b.shake = now; ctx.sfx.bad?.();
-      ctx.ui.card({ tag: 'أعد النظر', title: isWrong ? 'هذه العبارة غير دقيقة' : 'هذه العبارة دقيقة', body: 'تأمّل صياغتها مرة أخرى، ثم احكم.', color: 0xc0504a });
-    }
-  }
-  let selected = null;
-  bubbles.forEach((b) => ctx.tap(b.grp, () => {
-    if (b.state || finished) return;
-    ctx.sfx.pop?.(); selected = b;
-    ctx.ui.card({ tag: 'اختبر العبارة', title: 'صحيحة أم غير دقيقة؟', body: b.s.t, color: 0xd4ad55 });
-  }));
-  stamps.forEach((st) => ctx.tap(st.grp, () => {
-    st.press = now; if (finished) return;
-    if (!selected) { ctx.sfx.bad?.(); ctx.ui.toast('اختر عبارة أولاً'); return; }
-    const b = selected; selected = null; choose(b, st.saysWrong);
-  }));
-  ctx.ui.hud('اختر عبارة ثم اضغط الختم');
-
-  return {
-    update(t, dt, e) {
-      now = t; seq.update(t, e); hints.update(t, e); tag.update(dt, e);
-      const f = freed ? ease((t - freed) / 1.2) : 0;
-      stamps.forEach((st) => { const d = clamp01(1 - (t - st.press) / 0.3); st.grp.children[0].position.y = 0.013 - 0.008 * d; st.h.material.opacity = (selected ? 0.5 + 0.3 * Math.sin(t * 5) : 0.1) * e; });
-      bubbles.forEach((b) => {
-        const a = b.a + t * 0.22, r = 0.28;
-        b.grp.position.set(Math.cos(a) * r * 1.05 + 0.0, 0.18 + Math.sin(t * 1.3 + b.i) * 0.014, Math.sin(a) * r * 0.9 + 0.02);
-        if (t - b.shake < 0.5) b.grp.position.x += Math.sin((t - b.shake) * 50) * 0.01;
-        b.h.h.position.copy(b.grp.position); b.halo.scale.setScalar(0.1 + 0.012 * Math.sin(t * 3 + b.i));
-        b.core.scale.setScalar(1 + 0.08 * Math.sin(t * 4 + b.i));
-      });
-      tube.userData.fill(stag(t, 1.4, 1.2, clamp01) * e); tube.userData.update(dt);
-      tube.userData.core.material.opacity = 0.95 * (1 - f);
-      tube.position.y = f * 0.0; tube.visible = f < 0.98 || true;
-      arm.position.x = 0.1 + 0.05 * f; bands.forEach((b, i) => { b.position.y = 0.033 + 0.12 * f * (1 + i * 0.4); b.rotation.x = f * 1.5; });
-      drip.material.opacity = 0.8 - 0.45 * f; ps.material.color.setScalar(1 - 0.0 * f);
-      calm.material.opacity = 0.6 * f * e; pool.material.opacity = 0.4;
-    },
+  let cur = null, found = 0, finished = false;
+  const setPip = () => pips.forEach((p, i) => { p.lit = i < found ? 1 : 0; });
+  const release = (v) => { if (!v) return; v.state = 'idle'; if (cur === v) cur = null; ctx.ui.choices([]); };
+  const verdict = (v, saysWrong) => {
+    const s = SENT[v.i], right = saysWrong === s.wrong; ctx.ui.choices([]);
+    if (!right) { v.shake = S.now; ctx.sfx.bad?.(); ctx.ui.toast(s.wrong ? 'فكّر ثانية: فيها خطأ' : 'هذه العبارة دقيقة'); setTimeout(() => release(v), 900); return; }
+    ctx.sfx.good?.(); v.done = true; v.state = 'idle'; cur = null;
+    const col = s.wrong ? RED : 0x4cc38a; v.color = col; v.liq.material.color.setHex(col); v.liq.material.emissive.setHex(col); v.liq.material.emissiveIntensity = 0.55;
+    S.burst(v.hold.position.clone().add(new THREE.Vector3(0, 0.12, 0)), col, 24, 0.45);
+    if (s.wrong) { found++; setPip(); ctx.ui.card({ tag: 'خطأ مكتشف', title: 'التصحيح', body: s.fix, color: RED }); } else ctx.ui.card({ tag: 'عبارة دقيقة', title: 'صحيحة', body: s.t, color: 0x4cc38a });
+    ctx.ui.hud(found < 3 ? `وجدت ${['', 'خطأً واحداً', 'خطأين'][found] || 'لا شيء'} من ثلاثة` : 'وجدت الأخطاء الثلاثة');
+    if (found >= 3 && !finished) { finished = true; setTimeout(() => ctx.ui.done(), 2200); }
   };
+  vials.forEach((v) => S.touch(v.hold, () => {
+    if (v.done) { ctx.ui.card({ tag: v.liq.material.color.getHex() === RED ? 'خطأ' : 'صحيحة', title: `العبارة ${AR[v.i]}`, body: SENT[v.i].wrong ? SENT[v.i].fix : SENT[v.i].t, color: v.color }); return; }
+    if (cur && cur !== v) release(cur);
+    cur = v; v.state = 'up'; v.lift = 0;
+    ctx.ui.card({ tag: `العبارة ${AR[v.i]}`, title: 'صحيحة أم خاطئة؟', body: SENT[v.i].t, color: GOLD });
+    ctx.ui.choices([{ label: 'صحيحة', primary: true, onPick: () => verdict(v, false) }, { label: 'خاطئة', onPick: () => verdict(v, true) }]);
+  }, { color: 0xffe3a0, size: 0.1, at: new THREE.Vector3(0, 0.06, 0), wake: 4.4 }));
+  ctx.ui.hud('اكتشف ثلاث عبارات خاطئة');
+
+  S.loop((t, dt, e) => {
+    const sf = clamp01(found / 3); sm.emissiveIntensity = 0.45 + 0.15 * Math.sin(t * 2);
+    halo.material.opacity = 0.35 * (1 - sf) * clamp01((t - 2) / 1.5) * (0.7 + 0.3 * Math.sin(t * 3));
+    drops.forEach((d, i) => { const f = (t * 0.6 + i / 3) % 1; d.position.y = 0.2 - f * 0.12; d.position.x = 0; d.material.emissiveIntensity = 1 - f; d.visible = true; });
+    ph.rotation.y = Math.sin(t * 0.5) * 0.08;
+    pips.forEach((p, i) => { p.p.material.emissiveIntensity = p.lit ? 1.2 + 0.4 * Math.sin(t * 3) : 0; p.p.material.color.setHex(p.lit ? 0xffd27a : 0x8a8378); p.p.material.emissive.setHex(0xffc24a); p.p.position.y = 0.46 + Math.sin(t * 2 + i) * 0.004; p.r.position.y = p.p.position.y; });
+    vials.forEach((v) => {
+      v.lift = THREE.MathUtils.damp(v.lift, v.state === 'up' ? 1 : 0, 6, dt); const k = smooth(v.lift);
+      v.hold.position.set(v.homeP.x * (1 - k * 0.7), v.homeP.y + k * 0.22, v.homeP.z + k * 0.0 + k * 0.1); v.hold.scale.setScalar(1.3 + k * 0.7);
+      const sh = clamp01(1 - (t - v.shake) / 0.5); v.hold.rotation.set(0, v.th * (1 - k) + Math.sin(t * 2.5) * 0.12 * k, Math.sin((t - v.shake) * 50) * sh * 0.2);
+      if (!v.done) v.liq.material.emissiveIntensity = 0.12 + 0.1 * k + (k > 0.5 ? 0.15 * Math.sin(t * 5) : 0);
+    });
+  });
+  return { update: S.update };
 }

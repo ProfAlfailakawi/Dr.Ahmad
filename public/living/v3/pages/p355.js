@@ -1,7 +1,7 @@
 // p355 — a small night city on a navy hexagon; three signal balloons drift to whichever situation you touch and name the Google tool it needs.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, twinkles } from '../lib/a7.js?v=16';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=17';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, twinkles } from '../lib/a7.js?v=17';
 
 export const meta = { free: true, center: [0.5, 0.52], typeLabel: 'مجسّم تفاعلي' };
 

@@ -56,6 +56,9 @@ const residentEntry = path.join(residentApp, 'cli.mjs')
 
 /* ملفات المشروع التي يقرأها فهرس المحتوى — تُنسخ ليعمل الفهرس بلا المجلد الأصلي */
 const CONTENT_SNAPSHOT = [
+  /* وحدتان يستوردهما الفهرس بمسار ../ — بدونهما ينهار البوت المقيم عند الإقلاع */
+  'src/lib/archive-scale.mjs',
+  'scripts/canonical-cms.mjs',
   'src/data.ts',
   'src/data-curated.ts',
   'src/data/research-papers.ts',

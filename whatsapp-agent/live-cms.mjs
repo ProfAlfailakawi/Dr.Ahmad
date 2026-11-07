@@ -17,7 +17,7 @@ const FIRESTORE_PROJECT = process.env.WHATSAPP_FIRESTORE_PROJECT || process.env.
 const FIRESTORE_KEY = process.env.WHATSAPP_FIRESTORE_KEY || process.env.VITE_FIREBASE_API_KEY || 'AIzaSyCoQijLO3VLX5gFLSNjDPulsU98CLoXb2M'
 const PAGE_SIZE = 300
 const REQUEST_TIMEOUT_MS = 10_000
-const LIVE_TTL_MS = Math.max(60_000, Number(process.env.WHATSAPP_CMS_REFRESH_MS || 5 * 60 * 1000))
+const LIVE_TTL_MS = Math.max(60_000, Number(process.env.WHATSAPP_CMS_REFRESH_MS || 30 * 60 * 1000))
 let inFlight = null
 let lastFetch = 0
 

@@ -52,7 +52,7 @@ export function migrate(input) {
 
 export const compactItem = (item) => {
   const out = {}
-  for (const k of ['id', 'title', 'url', 'source', 'sourceId', 'type', 'language', 'published', 'year', 'month', 'fetched', 'description', 'keywords', 'venue', 'deadline', 'eventStart', 'eventEnd', 'location', 'mode', 'officialUrl', 'deadlineNote']) if (item[k] !== undefined && item[k] !== null && item[k] !== '') out[k] = item[k]
+  for (const k of ['id', 'title', 'titleAr', 'url', 'source', 'sourceId', 'type', 'language', 'published', 'year', 'month', 'fetched', 'description', 'keywords', 'venue', 'deadline', 'eventStart', 'eventEnd', 'location', 'mode', 'officialUrl', 'deadlineNote']) if (item[k] !== undefined && item[k] !== null && item[k] !== '') out[k] = item[k]
   if (out.description) out.description = String(out.description).slice(0, 300)
   return out
 }

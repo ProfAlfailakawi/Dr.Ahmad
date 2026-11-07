@@ -307,6 +307,7 @@ async function main() {
   const nonConf = merged.filter((i) => i.type !== 'مؤتمر')
   const rest = [...nonConf.filter((i) => i.type === 'بحث').slice(0, 300), ...nonConf.filter((i) => i.type !== 'بحث').slice(0, 180)].slice(0, MAX_ITEMS - confs.length)
   const finalItems = [...rest, ...confs]
+  await addArabicTitles(finalItems, previous.items)
   for (const s of sourceStatuses) s.kept = finalItems.filter((i) => i.sourceId === s.id).length
 
   const meta = {
@@ -318,6 +319,36 @@ async function main() {
   if (DRY) { writeFileSync(process.env.MIHWAR_DRY_OUT || '/tmp/mihwar-feed-dry.json', JSON.stringify({ meta, items: finalItems }, null, 1)); return }
   if (!sourceStatuses.some((s) => s.ok)) throw new Error('فشلت كل المصادر؛ لا كتابة (تبقى البيانات السابقة).')
   await writeFirestore(meta, finalItems)
+}
+
+// ---------- ترجمة العناوين الإنجليزية (سطر عربي واحد، مجاناً بلا مفتاح) ----------
+
+const TRANSLATE_PER_RUN = 160
+
+export async function translateToArabic(title) {
+  const url = 'https://api.mymemory.translated.net/get?langpair=en%7Car&q=' + encodeURIComponent(title.slice(0, 300))
+  const data = JSON.parse(await getText(url, { timeout: 12000, retries: 0, max: 200_000 }))
+  const out = String(data?.responseData?.translatedText || '').replace(/\s+/g, ' ').trim()
+  // إجابات الحصة/الأخطاء تأتي كنص إنجليزي؛ لا نقبل إلا ما فيه حروف عربية فعلاً.
+  if (Number(data?.responseStatus) !== 200 || /MYMEMORY|QUERY LENGTH|INVALID/i.test(out) || !/[؀-ۿ]/.test(out)) return ''
+  return out.slice(0, 300)
+}
+
+export async function addArabicTitles(items, previousItems, translate = translateToArabic) {
+  const prior = new Map(previousItems.filter((p) => p.titleAr).map((p) => [p.id, p.titleAr]))
+  let budget = TRANSLATE_PER_RUN, done = 0
+  for (const item of items) {
+    if (item.language !== 'en') continue
+    if (prior.has(item.id)) { item.titleAr = prior.get(item.id); continue }
+    if (budget <= 0) continue
+    budget--
+    try {
+      const ar = await translate(item.title)
+      if (ar) { item.titleAr = ar; done++ } else if (done === 0 && budget < TRANSLATE_PER_RUN - 5) break // الخدمة رفضت الطلبات الأولى: نتوقف حتى الجلسة القادمة
+    } catch (error) { console.warn('تعذرت الترجمة:', error.message); if (done === 0 && budget < TRANSLATE_PER_RUN - 5) break }
+    await sleep(350)
+  }
+  console.log(`ترجمة العناوين: ${done} جديدة، ${prior.size} محفوظة.`)
 }
 
 function isExpired(item) {
@@ -394,6 +425,11 @@ function selfTest() {
   assert(deadlineStatus({ deadline: '2020-01-01' }).code === 'expired' && deadlineStatus({}).code === 'unknown', 'حالة الموعد')
   const dd = dedupe([sanitizeItem({ title: 'Generative AI in higher education: a long enough title here', url: 'https://a.org/x?utm_source=1', source: 'A' }), sanitizeItem({ title: 'Generative AI in higher education: a long enough title here', url: 'https://b.org/y', source: 'B' })])
   assert(dd.length === 1 && dd[0].alsoIn?.includes('B'), 'إزالة التكرار بالعنوان عبر المصادر')
+  const titled = [{ id: 'a', language: 'en', title: 'New English title' }, { id: 'b', language: 'en', title: 'Old English title' }, { id: 'c', language: 'ar', title: 'عنوان عربي' }]
+  const calls = []
+  addArabicTitles(titled, [{ id: 'b', titleAr: 'عنوان قديم' }], async (t) => { calls.push(t); return 'عنوان جديد' }).then(() => {
+    assert(titled[0].titleAr === 'عنوان جديد' && titled[1].titleAr === 'عنوان قديم' && !titled[2].titleAr && calls.length === 1, 'ترجمة العناوين: إعادة استخدام المحفوظ، وترجمة الجديد الإنجليزي فقط')
+  })
 }
 
 const isMain = process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).href

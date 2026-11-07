@@ -347,6 +347,7 @@ export function initMihwar(root, bridge) {
     if (x.published) m.append(el('span', '', fmtDate(x.published))); else if (x.year) m.append(el('span', '', approxLabel(x)))
     if (x.type === 'مؤتمر') { m.append(chipStatus(deadlineStatus(x))); if (x.location) m.append(el('span', '', x.location)) }
     row.append(m, button(x.title || 'بلا عنوان', () => openItem(x), 'row-title', { dir: x.language === 'en' ? 'auto' : 'rtl' }))
+    if (x.language === 'en' && x.titleAr) row.append(el('p', 'title-ar', x.titleAr, { dir: 'rtl', lang: 'ar' }))
     if (x.type === 'مؤتمر') { const bits = []; if (x.deadline) bits.push('آخر موعد: ' + fmtDate(x.deadline)); if (x.eventStart) bits.push('الانعقاد: ' + fmtDate(x.eventStart, true) + (x.eventEnd && x.eventEnd !== x.eventStart ? ' – ' + fmtDate(x.eventEnd, true) : '')); if (x.mode && x.mode !== 'غير محدد') bits.push(x.mode); if (bits.length) row.append(el('p', 'desc', bits.join(' · '))) }
     else if (x.description) row.append(el('p', 'desc', x.description.slice(0, 200) + (x.description.length > 200 ? '…' : ''), { dir: 'auto' }))
     if (r.reasons?.length) row.append(el('span', 'reason', reasonText(r.reasons)))

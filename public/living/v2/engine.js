@@ -4,6 +4,7 @@
 //   - the template starts drawing itself near the end of the intro and already has a pulsing light;
 //   - its interactive layer wakes (tpl.ready()) when the intro completes.
 import { playIntro } from './intros.js';
+import { BUILDERS, READY, META, loadPage } from '../v3/registry.js?v=15';
 import { INTRO_T, smooth } from './common.js';
 import { buildPopup } from './templates/popup.js';
 import { buildHotspots } from './templates/hotspots.js';
@@ -50,10 +51,23 @@ export function buildFromSpec(spec) {
 // An EXPERIENCES-style catalogue entry for a spec (so app.js can list/launch it unchanged).
 const TYPE_OF = { popup: 'hotspots', hotspots: 'hotspots', diagram: 'infographic', cycle: 'animation', timeline: 'timeline', compare: 'balance', quiz: 'quiz', game: 'game' };
 export function specToExperience(spec) {
+  const has = READY.includes(spec.page);                       // a hand-built scene exists for this page
+  const meta = (k, d) => META[spec.page]?.[k] ?? d;
   return {
-    id: spec.id, kind: 'page', door: spec.door, chapter: spec.chapter, page: 'p' + spec.page, pageNo: '', title: spec.title,
-    type: TYPE_OF[spec.template] || 'hotspots', typeLabel: spec.typeLabel, video: spec.video || null,
-    center: spec.center, crop: spec.crop, free: false, behind: spec.behind, build: buildFromSpec(spec),
+    id: spec.id, kind: 'page', door: spec.door, chapter: spec.chapter, page: 'p' + spec.page, pageNo: '',
+    get title() { return meta('title', spec.title); }, type: TYPE_OF[spec.template] || 'hotspots',
+    get typeLabel() { return meta('typeLabel', spec.typeLabel); }, video: spec.video || null,
+    get center() { return meta('center', spec.center); }, crop: spec.crop,
+    get free() { return meta('free', false); }, behind: spec.behind,
+    build: (ctx) => {
+      if (!has) return buildFromSpec(spec)(ctx);
+      const m = BUILDERS.get(spec.page);
+      if (m) return m.default(ctx);
+      // First time on this phone: the scene's file is fetched now (a fraction of a second); the scene starts the moment it arrives.
+      let inst = null, t0 = null, dead = false;
+      loadPage(spec.page).then((mod) => { if (!dead) { try { inst = mod.default(ctx); } catch (err) { console.error('[v3] p' + spec.page, err); } } });
+      return { update(t, dt, e) { if (!inst) return; if (t0 === null) t0 = t; inst.update(t - t0, dt, e); }, onLost() { inst?.onLost?.(); } };
+    },
   };
 }
 export { playIntro };

@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
-} from './kit.js?v=14';
-import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=14';
-import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=14';
+} from './kit.js?v=15';
+import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=15';
+import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=15';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -542,14 +542,14 @@ function buildGame(ctx) {
   });
 
   const darts = [];
-  let state = 'idle', score = 0, hits = 0, timeLeft = 45, now = 0, finale = -1;
+  let state = 'idle', score = 0, hits = 0, timeLeft = 45, now = 0, finale = -1, startAt = -1;
   const TRUE_COUNT = SHOTS.filter((s) => s.ok).length;
 
   function hud() { ctx.ui.hud(`⏱ ${toAr(Math.ceil(timeLeft))}   ·   ⭐ ${toAr(score)}   ·   🎯 ${toAr(hits)} / ${toAr(TRUE_COUNT)}`); }
   function intro() {
     state = 'idle';
     ctx.ui.hud('أصب فوائد تخطيط التدريس فقط');
-    ctx.ui.choices([{ label: '🎯 ابدأ اللعب', primary: true, onPick: startGame }]);
+    startAt = now + 3.6;   // no start button: the game begins by itself once the board has drawn
   }
   function startGame() {
     state = 'play'; score = 0; hits = 0; timeLeft = 45; finale = -1;
@@ -558,7 +558,7 @@ function buildGame(ctx) {
     ctx.ui.choices([]); ctx.ui.hideCard(); hud();
   }
   function shoot(i) {
-    if (state !== 'play') { if (state === 'idle') ctx.ui.toast('اضغط «ابدأ اللعب» أولاً'); return; }
+    if (state !== 'play') { if (state === 'idle') startAt = now; return; }
     const x = balloons[i]; if (x.popped || x.flying) return;
     const mesh = dartMesh();
     const from = P(0.5, 1.15, 0.35);
@@ -598,6 +598,7 @@ function buildGame(ctx) {
   return {
     update(t, dt, e) {
       now = t;
+      if (state === 'idle' && startAt >= 0 && now >= startAt) { startAt = -1; startGame(); }
       const a = stag(t, 0.2, 0.8, easeBack) * e;
       const stand = stag(t, 0.7, 0.8);
       board.scale.setScalar(Math.max(a, 0.001));
@@ -848,7 +849,7 @@ export const EXPERIENCES = [
     center: [0.5, 0.5], free: false, crop: [0.19, 0.24, 0.81, 0.76], build: buildSecret,
   },
 ];
-import { SPEC_PAGES } from './v2/catalog.js?v=14';
+import { SPEC_PAGES } from './v2/catalog.js?v=15';
 import { specToExperience } from './v2/engine.js';
 // The hand-built showpieces first, then every spec-driven page in book order.
 EXPERIENCES.push(...SPEC_PAGES.map(specToExperience));
@@ -857,4 +858,4 @@ EXPERIENCES.sort((a, b) => ORDER(a) - ORDER(b));
 export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 
 // Recognition packs come from v2/catalog.js (generated). The camera cycles through them by itself.
-export { PACKS } from './v2/catalog.js?v=14';
+export { PACKS } from './v2/catalog.js?v=15';

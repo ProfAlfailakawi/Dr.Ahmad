@@ -4,7 +4,7 @@
 //   - the template starts drawing itself near the end of the intro and already has a pulsing light;
 //   - its interactive layer wakes (tpl.ready()) when the intro completes.
 import { playIntro } from './intros.js';
-import { BUILDERS, READY, META, loadPage } from '../v3/registry.js?v=17';
+import { BUILDERS, READY, META, loadPage } from '../v3/registry.js?v=18';
 import { INTRO_T, smooth } from './common.js';
 import { buildPopup } from './templates/popup.js';
 import { buildHotspots } from './templates/hotspots.js';
@@ -68,6 +68,16 @@ export function specToExperience(spec) {
       loadPage(spec.page).then((mod) => { if (!dead) { try { inst = mod.default(ctx); } catch (err) { console.error('[v3] p' + spec.page, err); } } });
       return { update(t, dt, e) { if (!inst) return; if (t0 === null) t0 = t; inst.update(t - t0, dt, e); }, onLost() { inst?.onLost?.(); } };
     },
+  };
+}
+// The build function for a page that has a hand-built v3 scene (also used to replace the older hand-built showpieces).
+export function v3Build(page) {
+  return (ctx) => {
+    const m = BUILDERS.get(page);
+    if (m) return m.default(ctx);
+    let inst = null, t0 = null, dead = false;
+    loadPage(page).then((mod) => { if (!dead) { try { inst = mod.default(ctx); } catch (err) { console.error('[v3] p' + page, err); } } });
+    return { update(t, dt, e) { if (!inst) return; if (t0 === null) t0 = t; inst.update(t - t0, dt, e); }, onLost() { inst?.onLost?.(); } };
   };
 }
 export { playIntro };

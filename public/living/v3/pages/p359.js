@@ -1,7 +1,7 @@
 // p359 — a QR code built of raised blocks on a yellow hexagon; light its three corner eyes, a phone scans, and the code releases what it holds.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=17';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab } from '../lib/a7.js?v=17';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=18';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab } from '../lib/a7.js?v=18';
 
 export const meta = { free: true, center: [0.38, 0.54], typeLabel: 'مجسّم تفاعلي' };
 
@@ -30,23 +30,20 @@ function badgeMini() {
   const card = new THREE.Mesh(rbox(0.08, 0.1, 0.008, 0.008), glossy(0xfbf9f0)); o.add(card);
   const head = new THREE.Mesh(new THREE.CircleGeometry(0.017, 28), new THREE.MeshBasicMaterial({ color: 0xe8b23a, toneMapped: false })); head.position.set(0, 0.02, 0.0045); o.add(head);
   const sh = new THREE.Mesh(new THREE.CircleGeometry(0.026, 28, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x2d6fd0, toneMapped: false })); sh.position.set(0, -0.012, 0.0045); o.add(sh);
-  [-1, 0, 1].forEach((i) => { const s = new THREE.Mesh(new THREE.CircleGeometry(0.0055, 5), new THREE.MeshBasicMaterial({ color: 0xe8b23a, toneMapped: false })); s.position.set(i * 0.016, -0.035, 0.0045); o.add(s); });
+  [].forEach((i) => { const s = new THREE.Mesh(new THREE.CircleGeometry(0.0055, 5), new THREE.MeshBasicMaterial({ color: 0xe8b23a, toneMapped: false })); s.position.set(i * 0.016, -0.035, 0.0045); o.add(s); });
   const clip = new THREE.Mesh(rbox(0.02, 0.008, 0.01, 0.003), goldMat()); clip.position.y = 0.054; o.add(clip);
   return o;
 }
 function certMini() {
   const o = new THREE.Group();
   const sheet = new THREE.Mesh(rbox(0.11, 0.08, 0.004, 0.002), glossy(0xfffaf0)); o.add(sheet);
-  const bord = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.07), new THREE.MeshBasicMaterial({ color: 0xe8d9ae, toneMapped: false })); bord.position.z = 0.0024; o.add(bord);
-  const inner = new THREE.Mesh(new THREE.PlaneGeometry(0.094, 0.064), new THREE.MeshBasicMaterial({ color: 0xfffaf0, toneMapped: false })); inner.position.z = 0.0026; o.add(inner);
-  [0.012, 0.0, -0.012].forEach((y, i) => { const l = new THREE.Mesh(new THREE.PlaneGeometry(0.05 - i * 0.012, 0.003), new THREE.MeshBasicMaterial({ color: 0x9aa4b8, toneMapped: false })); l.position.set(-0.012, y + 0.008, 0.0028); o.add(l); });
+  [0.004].forEach((y, i) => { const l = new THREE.Mesh(new THREE.PlaneGeometry(0.05 - i * 0.012, 0.003), new THREE.MeshBasicMaterial({ color: 0x9aa4b8, toneMapped: false })); l.position.set(-0.012, y + 0.008, 0.0028); o.add(l); });
   const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.004, 24), goldMat()); seal.rotation.x = Math.PI / 2; seal.position.set(0.03, -0.016, 0.005); o.add(seal);
-  [-1, 1].forEach((s) => { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.02, 0.002), glossy(0xe0605a)); rb.position.set(0.03 + s * 0.007, -0.034, 0.004); rb.rotation.z = s * 0.25; o.add(rb); });
   return o;
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.95);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.88);
   const R = rig(), H = hints(g);
   const lit3 = [false, false, false], read = new Set();
   let scanStart = -1, now = 0, finished = false;
@@ -83,6 +80,7 @@ export default function build(ctx) {
     const halo = lightPool(0xffc233, 0.1, 0); halo.position.y = 0.026; grp.add(halo);
     R.add(grp, 0.9 + i * 0.35, { dur: 0.8, rise: 0.12 });
     H.add(core, 0xffc233, 0.16, null, () => (finished ? 0 : 1));
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(7 * CELL + 0.04, 0.05, 7 * CELL + 0.04), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 0.02; grp.add(hit); // generous touch area
     const e = { grp, coreMat, halo, i, k: 0 };
     ctx.tap(grp, () => touchEye(e));
     return e;
@@ -100,11 +98,11 @@ export default function build(ctx) {
   }
 
   // ---- phone hovering above, scanning
-  const phone = new THREE.Group(); phone.position.set(0, 0.33, 0.02); phone.rotation.x = -0.25; g.add(phone);
+  const phone = new THREE.Group(); phone.position.set(0.31, 0.3, 0.02); phone.rotation.x = -0.25; phone.scale.setScalar(0.8); g.add(phone);
   const body = new THREE.Mesh(rbox(0.11, 0.2, 0.01, 0.014), glossy(0x1d2430)); phone.add(body);
   const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.098, 0.186), new THREE.MeshBasicMaterial({ color: 0x172033, toneMapped: false })); scr.position.z = 0.0055; phone.add(scr);
   const brackets = new THREE.Group(); brackets.position.z = 0.006; phone.add(brackets);
-  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([a, b]) => { [[0.022, 0.003, 0.0], [0.003, 0.022, 0.0]].forEach(([w, h], k) => { const l = new THREE.Mesh(new THREE.PlaneGeometry(w, h), lit(0xffc233)); l.position.set(a * (0.03 - (k ? 0 : 0.0095)), b * (0.05 - (k ? 0.0095 : 0)), 0); brackets.add(l); }); });
+  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([a, b]) => { const l = new THREE.Mesh(new THREE.PlaneGeometry(0.014, 0.014), lit(0xffc233)); l.position.set(a * 0.03, b * 0.052, 0); brackets.add(l); });
   const scan = new THREE.Mesh(new THREE.PlaneGeometry(0.086, 0.004), lit(0x6fe0ff)); scan.position.z = 0.007; phone.add(scan);
   R.add(phone, 2.2, { dur: 1.0, rise: 0.15 });
   const beamMat = new THREE.MeshBasicMaterial({ color: 0x7fe6ff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false });
@@ -116,9 +114,8 @@ export default function build(ctx) {
     { k: 'badge', mk: badgeMini, x: 0, c: 0xe8b23a, tag: 'سجلّ الإنجازات', t: 'رمز لكل طالب', b: 'يحفظ كل طالب في رمزه إنجازاته المتنوعة، فيسهل تقديمها للمعلم والاطلاع عليها.' },
     { k: 'cert', mk: certMini, x: 0.19, c: 0xe0605a, tag: 'الشهادات', t: 'شهادة لا تُزيَّف', b: 'يُضاف الرمز إلى شهادات الطلاب لضمان عدم فقدان الأصل الورقي أو تزييفه.' },
   ].map((d, i) => {
-    const o = d.mk(); o.position.set(d.x, TY + 0.02, 0.1); o.scale.setScalar(0.0001); g.add(o); shadowed(o);
-    const halo = lightPool(d.c, 0.08, 0.45); halo.rotation.x = -Math.PI / 2; halo.position.y = 0; // pool lies on the code
-    const pool = lightPool(d.c, 0.09, 0); pool.position.set(d.x, TY + 0.001, 0.1); g.add(pool);
+    const o = d.mk(); o.position.set(d.x, TY + 0.02, 0.1); o.scale.setScalar(0.0001); g.add(o); o.children[0].castShadow = true;
+    const pool = { material: { opacity: 0 } };
     ctx.tap(o, () => {
       ctx.sfx.pop?.(); burstAt(ctx, o, d.c, 20, 0.3, 0.025); read.add(d.k); thing.bn = 1; H.seen(o);
       ctx.ui.card({ tag: d.tag, title: d.t, body: d.b, color: d.c });
@@ -148,7 +145,7 @@ export default function build(ctx) {
         ey.coreMat.emissiveIntensity = ey.k * (1.2 + 0.4 * Math.sin(t * 5 + i)); ey.halo.material.opacity = 0.7 * ey.k;
       });
       // phone sweeps back and forth, brackets pulse
-      const pk = R.k(phone); phone.position.y = 0.33 + Math.sin(t * 1.1) * 0.01 - (scanStart >= 0 ? 0.01 : 0);
+      const pk = R.k(phone); phone.position.y = 0.3 + Math.sin(t * 1.1) * 0.01 - (scanStart >= 0 ? 0.01 : 0);
       phone.rotation.y = Math.sin(t * 0.5) * 0.25;
       const sp = scanStart >= 0 ? (t - scanStart) : -1;
       scan.position.y = Math.sin(t * 2.2) * 0.07; scan.visible = pk > 0.8;

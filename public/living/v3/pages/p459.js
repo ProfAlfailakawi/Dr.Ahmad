@@ -1,10 +1,10 @@
 // p459 — BYOD: four letter-blocks spell the word; each turns over to its meaning and the tote bag answers (it is carried, it is yours, devices come out).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=17';
-import { inked } from '../../pencil.js?v=17';
-import { lightPool } from '../../v2/common.js?v=17';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=17';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=18';
+import { inked } from '../../pencil.js?v=18';
+import { lightPool } from '../../v2/common.js?v=18';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=18';
 
 export const meta = { free: true, center: [0.5, 0.616], typeLabel: 'مكعبات الاختصار', title: 'BYOD: أحضر جهازك' };
 

@@ -1,8 +1,8 @@
 // p162 — two nested vessels: the wide cyan bowl (تصميم التعليم) holds the small purple cup (تصميم التدريس); property tiles hover, tap the vessel they belong to.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow } from '../../kit.js?v=17';
-import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, plinth, blob, at, shuffled, TAU } from '../lib/a2.js?v=17';
-import { plate, damp } from '../lib/b3-kit.js?v=17';
+import { P, ease, easeBack, clamp01, glow } from '../../kit.js?v=18';
+import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, plinth, blob, at, shuffled, TAU } from '../lib/a2.js?v=18';
+import { plate, damp } from '../lib/b3-kit.js?v=18';
 
 export const meta = { free: true, center: [0.5, 0.4], typeLabel: 'لعبة تصنيف' };
 
@@ -21,18 +21,17 @@ const CY = 0x14b4ee, PU = 0x5d2a8c;
 export default function build(ctx) {
   const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g);
   const seq = new Seq(), pulse = new Pulse();
-  blob(g, 1.0, 0.8, 0.28, 0, 0.02);
-  const base = plinth(g, 0.43, { h: 0.016 }); seq.add(base, 0.0, 0.8, { rise: 0.03 });
+  blob(g, 0.85, 0.7, 0.28, 0, 0.02);
+  const base = plinth(g, 0.38, { h: 0.016 }); seq.add(base, 0.0, 0.8, { rise: 0.03 });
 
   // wide bowl
-  const bowl = grp(g, 0, 0.016, 0);
+  const bowl = grp(g, 0, 0.016, 0); bowl.userData.k = 1;
   const bowlMat = gloss(CY, { roughness: 0.22, side: THREE.DoubleSide, emissive: CY, emissiveIntensity: 0.0 });
   add(bowl, lathe([[0, 0.0], [0.17, 0.0], [0.27, 0.026], [0.335, 0.105], [0.342, 0.122], [0.328, 0.124], [0.318, 0.108], [0.255, 0.05], [0.16, 0.026], [0, 0.026]], 72), bowlMat, 0, 0, 0, true);
   const rim = add(bowl, new THREE.TorusGeometry(0.335, 0.0075, 10, 96), brass(), 0, 0.118, 0); rim.rotation.x = Math.PI / 2;
   const bl1 = plate('تصميم التعليم', 0.2, 0.05, { fg: '#06324d', px: 512, lines: 1 }); bl1.position.set(0, 0.062, 0.314); bl1.rotation.x = -0.58; bowl.add(bl1);
   const bl2 = bl1.clone(); bl2.position.set(0, 0.062, -0.314); bl2.rotation.set(-0.58, Math.PI, 0); bowl.add(bl2);
-  hit(bowl, 0.001, 0, 0, 0);
-  seq.add(bowl, 0.35, 0.9, { rise: 0.06 });
+    seq.add(bowl, 0.35, 0.9, { rise: 0.06 });
 
   // small cup
   const cup = grp(g, 0, 0.044, 0);
@@ -50,18 +49,23 @@ export default function build(ctx) {
 
   // tile pool (one per round)
   const order = shuffled([0, 1, 2, 3, 4, 5, 6], 17).slice(0, 7).map((p, i) => { const k = (p * 7 + i * 3) % 2; return ITEMS[p * 2 + k]; });
-  const tiles = order.map((it) => {
-    const t = grp(g, 0, 0.5, 0.0); t.userData.big = 1.3;
-    add(t, rb(0.25, 0.1, 0.014, 0.012, 3), gloss(0xfff8ea, { roughness: 0.3 }), 0, 0, 0, true);
-    add(t, rb(0.262, 0.108, 0.008, 0.012, 2), brass(), 0, 0, 0);
-    const a = plate(it[0], 0.23, 0.086, { fg: '#2b2620', lines: 2 }); a.position.z = 0.0105; t.add(a);
-    const b = plate(it[0], 0.23, 0.086, { fg: '#2b2620', lines: 2 }); b.position.z = -0.0105; b.rotation.y = Math.PI; t.add(b);
-    t.visible = false; return t;
-  });
+  // ONE tile is reused for every round (only its two text plates swap material): few meshes
+  const T0 = grp(g, 0, 0.44, 0.0);
+  add(T0, rb(0.25, 0.1, 0.014, 0.012, 2), gloss(0xfff8ea, { roughness: 0.3 }), 0, 0, 0, true);
+  add(T0, rb(0.262, 0.108, 0.008, 0.012, 1), brass(), 0, 0, 0);
+  const mats = order.map((it) => plate(it[0], 0.23, 0.086, { fg: '#2b2620', lines: 2 }).material);
+  const pa = plate(order[0][0], 0.23, 0.086, { fg: '#2b2620', lines: 2 }); pa.position.z = 0.0105; T0.add(pa);
+  const pb = new THREE.Mesh(pa.geometry, pa.material); pb.position.z = -0.0105; pb.rotation.y = Math.PI; T0.add(pb);
+  const useTile = (i) => { pa.material = mats[i]; pb.material = mats[i]; };
+  T0.visible = false;
+  const tiles = order.map(() => T0);
+  // landed tiles stay as small coloured chips in their vessel (one instanced mesh)
+  const chips = new THREE.InstancedMesh(rb(0.085, 0.028, 0.012, 0.005, 1), std(0xffffff, { roughness: 0.4 }), 8); chips.count = 0; g.add(chips);
+  const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(1, 1, 1), _c = new THREE.Color();
   const halo = glow(0xffd27a, 0.3, 0.0); g.add(halo);
 
   let ri = -1, state = 'wait', tt = 0, shake = -1, wrong = 0, cnt = [0, 0], next = 2.6, from = new THREE.Vector3(), dest = new THREE.Vector3();
-  const rest = new THREE.Vector3(0, 0.5, 0.0);
+  const rest = new THREE.Vector3(0, 0.44, 0.0);
   const cur = () => tiles[ri];
   const answer = (bin) => {
     if (state !== 'idle') return;
@@ -73,21 +77,21 @@ export default function build(ctx) {
       ctx.ui.card({ tag: 'الجدول المطبوع', title: bin ? 'تصميم التدريس' : 'تصميم التعليم', body: it[2], color: bin ? PU : CY });
     } else { shake = 0; wrong++; ctx.sfx.bad?.(); ctx.ui.toast('ليست هنا، جرّب الآخر'); }
   };
+  // fat invisible targets: a wide flat disc for the bowl, a sphere for the cup (the cup is nearer to the finger, so it wins inside its own outline)
+  const bowlHit = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.12, 20), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); bowlHit.position.y = 0.06; bowl.add(bowlHit);
   touch(ctx, bowl, () => answer(0), CY);
-  touch(ctx, cup, () => answer(1), PU);
-  // an extra invisible-fat target over the cup so the thumb never misses the small vessel
-  const cupHit = hit(cup, 0.14, 0, 0.1, 0); ctx.tap(cupHit, () => answer(1));
+  hit(cup, 0.13, 0, 0.1, 0); touch(ctx, cup, () => answer(1), PU);
 
   return {
     update(t, dt, e) {
       seq.update(t, e); pulse.update(t, e);
-      sparks.forEach((s, i) => { const a = t * (0.7 + i * 0.25) + i * 3.1, r = 0.37 + i * 0.05; s.position.set(Math.cos(a) * r, 0.2 + Math.sin(t * 1.3 + i) * 0.04 + i * 0.05, Math.sin(a) * r); s.material.opacity = 0.8 * e; });
+      sparks.forEach((s, i) => { const a = t * (0.7 + i * 0.25) + i * 3.1, r = 0.34 + i * 0.04; s.position.set(Math.cos(a) * r, 0.2 + Math.sin(t * 1.3 + i) * 0.04 + i * 0.05, Math.sin(a) * r); s.material.opacity = 0.8 * e; });
       bowlMat.emissiveIntensity = damp(bowlMat.emissiveIntensity, 0.06 + 0.22 * cnt[0] / 4, 4, dt);
       cupMat.emissiveIntensity = damp(cupMat.emissiveIntensity, 0.06 + 0.25 * cnt[1] / 4, 4, dt);
-      if (state === 'wait' && t > next) { ri = 0; state = 'appear'; tt = 0; cur().visible = true; ctx.ui.hud('أين تنتمي هذه الخاصية؟'); }
+      if (state === 'wait' && t > next) { ri = 0; state = 'appear'; tt = 0; useTile(0); cur().visible = true; ctx.ui.hud('أين تنتمي هذه الخاصية؟'); }
       if (state === 'appear' || state === 'idle') {
         tt += dt; const T = cur(), k = easeBack(clamp01(tt / 0.6)) * e;
-        T.scale.setScalar(Math.max(k * 1.3, 1e-4)); let sx = 0;
+        T.scale.setScalar(Math.max(k * 1.15, 1e-4)); let sx = 0;
         if (shake >= 0) { shake += dt; sx = Math.sin(shake * 60) * 0.012 * (1 - clamp01(shake / 0.4)); if (shake > 0.45) shake = -1; }
         T.position.set(rest.x + sx, rest.y + Math.sin(t * 1.9) * 0.012, rest.z); T.rotation.y = Math.sin(t * 0.9) * 0.28;
         halo.position.set(rest.x, rest.y, rest.z); halo.material.opacity = (0.45 + 0.2 * Math.sin(t * 3)) * e * k;
@@ -95,17 +99,19 @@ export default function build(ctx) {
       } else if (state === 'fly') {
         tt += dt; const T = cur(), k = clamp01(tt / 0.75), kk = ease(k);
         T.position.set(from.x + (dest.x - from.x) * kk, from.y + (dest.y - from.y) * kk + Math.sin(k * Math.PI) * 0.12, from.z + (dest.z - from.z) * kk);
-        T.scale.setScalar(Math.max((1.3 - 1.0 * kk) * e, 1e-4)); T.rotation.set(kk * 1.3, T.rotation.y + dt * 5, 0); halo.material.opacity *= 0.8;
+        T.scale.setScalar(Math.max((1.15 - 0.85 * kk) * e, 1e-4)); T.rotation.set(kk * 1.3, T.rotation.y + dt * 5, 0); halo.material.opacity *= 0.8;
         if (k >= 1) {
-          const bin = order[ri][1]; cnt[bin]++; state = 'pause'; tt = 0; T.rotation.set(1.3 + ri * 0.4, ri, 0.3);
+          const bin = order[ri][1]; cnt[bin]++; state = 'pause'; tt = 0; T.visible = false;
+          _e.set(1.2, ri * 1.7, 0.3 * ri); _q.setFromEuler(_e); _m.compose(dest, _q, _s); chips.setMatrixAt(chips.count, _m); chips.setColorAt(chips.count, _c.setHex(bin ? 0xb58be0 : 0x7fd6f6)); chips.count++;
+          chips.instanceMatrix.needsUpdate = true; if (chips.instanceColor) chips.instanceColor.needsUpdate = true;
           ctx.fx.burst(dest.clone().add(g.position), bin ? PU : CY, 14, 0.3, 0.028);
         }
       } else if (state === 'pause') {
         tt += dt;
-        if (tt > 2.3) {
+        if (tt > 1.9) {
           ctx.ui.hideCard(); ri++;
           if (ri >= tiles.length) { state = 'end'; ctx.ui.hud('الأوسع يحتوي الأضيق'); ctx.ui.done(); halo.material.opacity = 0; }
-          else { state = 'appear'; tt = 0; tiles[ri].visible = true; tiles[ri].scale.setScalar(1e-4); }
+          else { state = 'appear'; tt = 0; useTile(ri); tiles[ri].visible = true; tiles[ri].scale.setScalar(1e-4); }
         }
       }
     },

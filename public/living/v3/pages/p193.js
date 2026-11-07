@@ -1,9 +1,10 @@
 // p193 — Gagné's nine events as nine distinct little objects on nine coloured terraced plinths-of-their-own: a bell, a target, books, a screen, a signpost, a pencil, a speech bubble, a clipboard and a graduation cap pop up one by one as a spark counts 1 to 9.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=17';
-import { softLight } from '../../v2/common.js?v=17';
-import { hints, finder, toAr, slabText, blobShadow, hitSphere } from '../lib/a3-kit.js?v=17';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=18';
+import { softLight } from '../../v2/common.js?v=18';
+import { hints, finder, toAr, slabText, blobShadow, hitSphere } from '../lib/a3-kit.js?v=18';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'أحداث التعليم' };
 
@@ -54,6 +55,23 @@ const ICONS = [
     g.add(cyl(0.0035, 0.0035, 0.002, goldMat(), 0, 0.061, 0, 8)); const cord = cyl(0.002, 0.002, 0.07, goldMat(), 0.045, 0.062, 0.0, 6); cord.rotation.z = -0.1; const tas = new THREE.Mesh(new THREE.SphereGeometry(0.009, 10, 8), goldMat()); tas.position.set(0.058, 0.02, 0.0); g.add(cord, tas); g.userData.tas = tas; return g; },
 ];
 
+// merge an icon's many little meshes into ONE vertex-coloured mesh (+ the screen picture as its own plane)
+const ICON_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.34, metalness: 0.12 });
+function bake(icon) {
+  icon.updateMatrixWorld(true); const list = [], out = new THREE.Group(), tc = new THREE.Color();
+  icon.traverse((m) => {
+    if (!m.isMesh) return;
+    if (m.material.map) { const sc = m.clone(); sc.position.copy(m.getWorldPosition(new THREE.Vector3())); out.add(sc); return; }
+    let geo = m.geometry.clone(); if (geo.index) geo = geo.toNonIndexed(); geo.applyMatrix4(m.matrixWorld);
+    for (const k of Object.keys(geo.attributes)) if (k !== 'position' && k !== 'normal') geo.deleteAttribute(k);
+    const n = geo.attributes.position.count, col = new Float32Array(n * 3); tc.copy(m.material.color);
+    for (let i = 0; i < n; i++) { col[i * 3] = tc.r; col[i * 3 + 1] = tc.g; col[i * 3 + 2] = tc.b; }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); list.push(geo);
+  });
+  if (list.length) out.add(new THREE.Mesh(mergeGeometries(list), ICON_MAT));
+  return out;
+}
+
 export default function build(ctx) {
   const g = new THREE.Group(); g.position.copy(P(0.5, 0.5)); ctx.stage.add(g);
   const H = hints(), found = finder(ctx, 6);
@@ -66,17 +84,14 @@ export default function build(ctx) {
     const h = 0.045 + r * 0.04;
     const grp = new THREE.Group(); grp.position.set(x, 0, z); g.add(grp);
     const bm = glossy(PAL[i], { roughness: 0.35 });
-    const body = new THREE.Mesh(new RoundedBoxGeometry(W, h, W, 4, 0.02), bm); body.position.y = h / 2; grp.add(body);
-    const topP = new THREE.Mesh(new RoundedBoxGeometry(W * 0.84, 0.01, W * 0.84, 3, 0.01), mat(0xfbf6e8, { roughness: 0.4 })); topP.position.y = h + 0.002; grp.add(topP);
-    const face = slabText(toAr(i + 1), 0.07, 0.05, { fg: PAL[i] === 0xf2c230 ? '#7a5a00' : '#ffffff', bg: '#' + PAL[i].toString(16).padStart(6, '0'), flat: false, size: 0.8 }); face.material.polygonOffset = false; face.position.set(0, h * 0.46, W / 2 + 0.002);
-    const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.072, 0.05), new THREE.MeshBasicMaterial({ color: 0xfbf6e8, toneMapped: false })); plate.position.set(0, h * 0.46, W / 2 + 0.001); grp.add(plate, face);
-    face.material.depthTest = true; face.position.z += 0.0015;
-    const icon = ICONS[i](); icon.position.y = h + 0.008; grp.add(icon); shadowed(icon);
-    const halo = softLight(0xffd27a, 0.3, 0); halo.position.y = h + 0.08; grp.add(halo);
+    const body = new THREE.Mesh(new RoundedBoxGeometry(W, h, W, 2, 0.02), bm); body.position.y = h / 2; body.castShadow = true; grp.add(body);
+    const face = slabText(toAr(i + 1), 0.07, 0.05, { fg: '#2b2620', bg: '#fbf6e8', flat: false, size: 0.8 }); face.material.polygonOffset = false; face.position.set(0, h * 0.46, W / 2 + 0.003);
+    grp.add(face); face.position.z += 0.0015;
+    const icon = bake(ICONS[i]()); icon.position.y = h + 0.008; grp.add(icon);
     grp.add(hitSphere(0.1, [0, h + 0.05, 0]));
     ctx.tap(grp, () => pick(i));
     const hint = H.add(grp, 0xffe08a, 0.16, [0, h + 0.08, 0.02], 5.2 + i * 0.08);
-    return { i, x, z, h, grp, bm, icon, halo, lit: 0, pop: 0, popTo: 0, hint, born: 0.1 + i * 0.07, appeared: false };
+    return { i, x, z, h, grp, bm, icon, lit: 0, pop: 0, popTo: 0, hint, born: 0.1 + i * 0.07, appeared: false };
   });
   const orb = new THREE.Mesh(new THREE.SphereGeometry(0.02, 22, 16), glossy(0xfff0b0, { emissive: 0xffc24a, emissiveIntensity: 0.9 })); g.add(orb);
   orb.add(softLight(0xffc24a, 0.2, 0.7));
@@ -111,7 +126,6 @@ export default function build(ctx) {
         f.icon.rotation.y = Math.sin(t * 0.9 + i) * 0.35 + f.pop * 1.2;
         f.icon.position.y = f.h + 0.008 + Math.sin(t * 1.6 + i) * 0.003;
         const u = f.icon.userData; if (u.sway) { u.sway.rotation.z = Math.sin(t * 4 + i) * 0.12 * (0.3 + f.pop + (i === tgt ? 1 : 0)); } if (u.dart) u.dart.position.x = 0.012 + Math.sin(t * 6) * 0.0015 * (i === tgt ? 3 : 1); if (u.pen) u.pen.rotation.z = -0.5 + Math.sin(t * 5) * 0.12 * (0.4 + f.pop); if (u.tas) u.tas.position.x = 0.058 + Math.sin(t * 3 + i) * 0.006;
-        f.halo.material.opacity = (i === tgt ? 0.3 : 0) * f.lit * e;
       });
       if (p < 1) { p = Math.min(1, p + dt / 0.34); topOf(tgt, to); q.lerpVectors(from, to, ease(p)); q.y += Math.sin(p * Math.PI) * 0.06; orb.position.copy(q); }
       else { topOf(tgt < 0 ? 0 : tgt, to); orb.position.copy(to); orb.position.y += Math.sin(t * 5) * 0.006; }

@@ -14,7 +14,7 @@
 const FIRESTORE_PROJECT = process.env.WHATSAPP_FIRESTORE_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID || 'drahmad-8e9e2'
 const FIRESTORE_KEY = process.env.WHATSAPP_FIRESTORE_KEY || process.env.VITE_FIREBASE_API_KEY || 'AIzaSyCoQijLO3VLX5gFLSNjDPulsU98CLoXb2M'
 const DOC_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents/bot_messages/templates?key=${FIRESTORE_KEY}`
-const TTL_MS = 5 * 60 * 1000
+const TTL_MS = 30 * 60 * 1000
 
 /* البدائل المضمّنة — نسخةٌ حرفيةٌ من النصوص الأصلية؛ لا تُغيَّر إلا بقصدٍ صريح.
    أيُّ تعديلٍ هنا يجب أن يوازيه تعديلٌ في القالب على Firestore، والعكس ليس لازماً. */

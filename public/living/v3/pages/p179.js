@@ -1,8 +1,8 @@
 // p179 — "theory" as a crystal lantern held by four brass instruments (collect, explain, predict, guide); a situation appears, tap the instrument that performs that function and a light beam feeds the crystal.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow, lightTube } from '../../kit.js?v=17';
-import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, plinth, blob, at, shuffled, TAU } from '../lib/a2.js?v=17';
-import { plate, damp } from '../lib/b3-kit.js?v=17';
+import { P, ease, easeBack, clamp01, glow, lightTube } from '../../kit.js?v=18';
+import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, plinth, blob, at, shuffled, TAU } from '../lib/a2.js?v=18';
+import { plate, damp } from '../lib/b3-kit.js?v=18';
 
 export const meta = { free: true, center: [0.39, 0.66], typeLabel: 'أسئلة تطبيقية' };
 

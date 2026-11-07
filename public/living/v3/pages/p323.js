@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=17';
-import { inked } from '../../pencil.js?v=17';
-import { TAU, revealer, bumper, canvasTex, faceMat, fillText, hintGlow, pulseHint, setSpr, retext, burstAt } from '../lib/a6-kit.js?v=17';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=18';
+import { inked } from '../../pencil.js?v=18';
+import { TAU, revealer, bumper, canvasTex, faceMat, fillText, hintGlow, pulseHint, setSpr, retext, burstAt } from '../lib/a6-kit.js?v=18';
 
 export const meta = { free: true, center: [0.46, 0.37], typeLabel: 'أدلة تدور' };
 

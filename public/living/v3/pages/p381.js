@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, plinth, contactShadow, textPlate, paintTex, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool } from '../lib/b7-kit.js?v=17';
+import { scene, plinth, contactShadow, textPlate, paintTex, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool } from '../lib/b7-kit.js?v=18';
 export const meta = { free: true, center: [0.5, 0.6], typeLabel: 'مجسّم تفاعلي' };
 
 // Six benefits orbit a phone like wireless signals; each one docks into the screen. Full screen -> the mortarboard rises.

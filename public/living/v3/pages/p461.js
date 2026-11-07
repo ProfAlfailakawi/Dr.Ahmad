@@ -1,10 +1,10 @@
 // p461 — design a BYOD policy: four decisions, each a choice of three gems; the right one becomes a glowing layer of protection over the phone, then a lock closes.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=17';
-import { inked } from '../../pencil.js?v=17';
-import { lightPool } from '../../v2/common.js?v=17';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=17';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=18';
+import { inked } from '../../pencil.js?v=18';
+import { lightPool } from '../../v2/common.js?v=18';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=18';
 
 export const meta = { free: true, center: [0.5, 0.271], typeLabel: 'لعبة تصميم', title: 'صمّم سياسة BYOD' };
 

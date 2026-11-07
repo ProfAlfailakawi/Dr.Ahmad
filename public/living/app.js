@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=17';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=17';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=17';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=17';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=18';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=18';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=18';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=18';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -114,7 +114,7 @@ function renderMap() {
     const chapters = CHAPTERS.filter(([cd]) => cd === d).map(([, start, title]) => {
       const pages = PAGES.filter((x) => x.door === d && chapterOf(x)?.[1] === start);
       const stars = pages.length
-        ? pages.map((x) => `<button class="star ${stamps.has(x.id) ? 'found' : ''}" data-open="${x.id}">✦ ${x.title}</button>`).join('')
+        ? pages.map((x) => `<button class="star ${stamps.has(x.id) ? 'found' : ''}" data-open="${x.id}">✦ ${x.title}<span class="no">${toAr(+String(x.page).replace(/\D/g, ''))}</span></button>`).join('')
         : '<span class="star soon">قريباً</span>';
       return `<div class="chap"><b>${title}</b>${stars}</div>`;
     }).join('');
@@ -270,6 +270,31 @@ function stopExperience() {
   current = null;
 }
 
+// Keeps the whole scene on the screen: it shrinks (never beyond 0.5) when the phone is held close, and grows back when it moves away.
+const fitBox = new THREE.Box3(), fitV = new THREE.Vector3();
+function fitScene(c, dt) {
+  if (c.fit === undefined) { c.fit = 1; c.fitT = 1; c.fitN = 0; }
+  if (c.t > 1.5 && c.e > 0.95 && !c.drag && ++c.fitN % 20 === 0 && Math.abs(c.yaw) < 0.07 && Math.abs(c.pitch) < 0.07 && Math.abs(c.zoom - 1) < 0.05) {
+    c.pivot.updateMatrixWorld(true);
+    fitBox.setFromObject(c.pivot.children[0]);
+    if (!fitBox.isEmpty()) {
+      const W = activeCanvas?.clientWidth || innerWidth, H = activeCanvas?.clientHeight || innerHeight;
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, ok = true;
+      for (let i = 0; i < 8; i++) {
+        fitV.set(i & 1 ? fitBox.max.x : fitBox.min.x, i & 2 ? fitBox.max.y : fitBox.min.y, i & 4 ? fitBox.max.z : fitBox.min.z).project(c.camera);
+        if (!(fitV.z < 1)) ok = false;
+        const px = (fitV.x * 0.5 + 0.5) * W, py = (-fitV.y * 0.5 + 0.5) * H;
+        x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+      }
+      if (ok && x1 - x0 > 20 && y1 - y0 > 20) {
+        const r = Math.min((0.9 * W) / (x1 - x0), Math.max(200, H - 300) / (y1 - y0));
+        c.fitT = THREE.MathUtils.clamp(c.fit * r, 0.5, 1);
+      }
+    }
+  }
+  c.fit = THREE.MathUtils.damp(c.fit, c.fitT, 2.5, dt);
+}
+
 function tick(dt) {
   const c = current; if (!c) return;
   if (activeCanvas) syncLines(activeCanvas.clientWidth || 1, activeCanvas.clientHeight || 1);
@@ -283,7 +308,8 @@ function tick(dt) {
     if (!c.exp.free) { c.yaw = THREE.MathUtils.damp(c.yaw, 0, 4, dt); c.pitch = THREE.MathUtils.damp(c.pitch, 0, 4, dt); c.zoom = THREE.MathUtils.damp(c.zoom, 1, 4, dt); }
   }
   c.pivot.rotation.order = 'YXZ'; c.pivot.rotation.x = c.pitch; c.pivot.rotation.y = c.yaw;
-  c.pivot.scale.setScalar(c.zoom);
+  fitScene(c, dt);
+  c.pivot.scale.setScalar(c.zoom * c.fit);
   c.inst.update(c.t, dt, ease(c.e));
   c.fx.update(dt);
 }
@@ -556,7 +582,7 @@ async function startAR(id = packId) {
     [100, 600, 1500].forEach((ms) => setTimeout(() => dispatchEvent(new Event('resize')), ms));
     $('loading').classList.add('hidden');
     $('scan').classList.remove('hidden');
-    $('packPill').classList.remove('hidden'); $('packPill').querySelector('span').textContent = 'خريطة الكتاب ▾';
+    $('packPill').classList.remove('hidden');
     $('photoBtn').classList.remove('hidden');
     if (test) { test.since = performance.now(); renderTest(); }
   } catch (err) {

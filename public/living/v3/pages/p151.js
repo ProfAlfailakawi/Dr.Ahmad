@@ -1,7 +1,7 @@
 // p151 — a cramped classroom model: analyse first (loupe finds the hidden limits), then the room opens up, then the right tool fits.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=17';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, blob, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=17';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=18';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, blob, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=18';
 
 export const meta = { free: true, center: [0.5, 0.34], typeLabel: 'لعبة قرار' };
 

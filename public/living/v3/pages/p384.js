@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, contactShadow, paintTex, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, drawText } from '../lib/b7-kit.js?v=17';
+import { scene, contactShadow, paintTex, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, drawText } from '../lib/b7-kit.js?v=18';
 export const meta = { free: true, center: [0.52, 0.26], typeLabel: 'مجسّم تفاعلي' };
 
 // A message travels phone -> relay tower -> phone. Two discs choose what it carries: bare text (SMS) or text + picture (MMS).
@@ -43,17 +43,17 @@ function phoneMesh(texIdle, ry) {
   const bk = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.003, 28), goldMat()); bk.rotation.x = Math.PI / 2; bk.position.set(0, ph / 2 + 0.03, -pd / 2 - 0.0016); g.add(bk);
   const foot = new THREE.Mesh(RB(0.07, 0.01, 0.05, 0.005), goldMat()); foot.position.y = 0.005; g.add(foot);
   g.scale.setScalar(1.25); g.userData.scr = scr; g.userData.top = ph + 0.01; g.rotation.x = -0.1; g.rotation.y = ry;
-  return shadowed(g);
+  b.castShadow = true; return g;
 }
 
 export default function build(ctx) {
-  const S = scene(ctx, meta, 1.22), g = S.g;
+  const S = scene(ctx, meta, 0.98), g = S.g;
   // tray
   const tray = new THREE.Group(); g.add(tray);
   const slab = new THREE.Mesh(RB(0.64, 0.02, 0.28, 0.05), glossy(0x24405f, { roughness: 0.4, clearcoat: 0.5 })); slab.position.y = 0.01; tray.add(slab);
   const trim = new THREE.Mesh(RB(0.648, 0.006, 0.288, 0.052), goldMat()); trim.position.y = 0.011; tray.add(trim);
   const foot = new THREE.Mesh(RB(0.54, 0.012, 0.2, 0.04), mat(0x3a332b)); foot.position.y = -0.002; tray.add(foot);
-  shadowed(tray); S.part(tray, 0.1, { rise: 0.0, dur: 0.8 });
+  slab.castShadow = true; S.part(tray, 0.1, { rise: 0.0, dur: 0.8 });
   g.add(Object.assign(contactShadow(0.95, 0.5, 0.4), {}));
   const wash = lightPool(0x5aa8ff, 0.4, 0.0); wash.scale.set(0.9, 0.9, 1); wash.position.y = 0.023; g.add(wash);
   const top = 0.022;
@@ -69,7 +69,9 @@ export default function build(ctx) {
   [0.09, 0.17, 0.24].forEach((y, i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.034 - i * 0.009, 0.003, 8, 36), goldMat()); r.rotation.x = Math.PI / 2; r.position.y = y; tw.add(r); });
   const ball = new THREE.Mesh(new THREE.SphereGeometry(0.019, 22, 16), GL(0xffe3a0, 0.9)); ball.position.y = 0.32; tw.add(ball);
   const bglow = glow(0xffd27a, 0.15, 0.7); bglow.position.y = 0.32; tw.add(bglow);
-  shadowed(tw); S.part(tw, 1.2, { rise: 0.1 });
+  mast.castShadow = true; base.castShadow = true;
+  const twHit = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.4, 0.16), new THREE.MeshBasicMaterial({ visible: false })); twHit.position.y = 0.18; tw.add(twHit);
+  S.part(tw, 1.2, { rise: 0.1 });
   const sig = [0, 1].map((i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.0015, 8, 48), new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true, opacity: 0, toneMapped: false, depthWrite: false })); r.position.y = top + 0.32; g.add(r); return r; });
 
   // mode discs (front of the tray)
@@ -78,7 +80,9 @@ export default function build(ctx) {
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.056, 0.018, 48), glossy(0xf6efdf, { roughness: 0.3 })); body.position.y = 0.009; d.add(body);
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.0525, 0.004, 10, 56), goldMat()); rim.rotation.x = Math.PI / 2; rim.position.y = 0.018; d.add(rim);
     const face = new THREE.Mesh(new THREE.CircleGeometry(0.047, 48), new THREE.MeshBasicMaterial({ map: discTex(mode), toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); face.rotation.x = -Math.PI / 2; face.position.y = 0.0186; d.add(face);
-    shadowed(d); S.part(o, 2.0 + (mode === 'mms' ? 0.2 : 0), { rise: 0.06 });
+    body.castShadow = true;
+    const dHit = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.06, 12), new THREE.MeshBasicMaterial({ visible: false })); dHit.position.y = 0.02; o.add(dHit);
+    S.part(o, 2.0 + (mode === 'mms' ? 0.2 : 0), { rise: 0.06 });
     return { o, d, mode, col };
   };
   const dSms = mkDisc('sms', -0.1, BLUE), dMms = mkDisc('mms', 0.1, ORG);
@@ -98,7 +102,7 @@ export default function build(ctx) {
     burstAt(S, (m === 'sms' ? dSms : dMms).o, m === 'sms' ? BLUE : ORG, 22, 0.35, 0.028); lastLaunch = Math.min(lastLaunch, S.now - 1.0);
     if (m === 'sms') ctx.ui.card({ tag: 'رسائل نصية قصيرة', title: 'SMS', body: 'رسائل نصية قصيرة بين المشتركين في شبكة الهاتف النقال، ويمكن بها نقل البيانات ودخول صفحات الواب WAP.', color: BLUE });
     else ctx.ui.card({ tag: 'وسائط متعددة', title: 'MMS', body: 'خدمة إرسال الوسائط المتعددة، تدمج النص المرسَل بالرسوم والجرافيك والصور.', color: ORG });
-    ctx.ui.hud(m === 'sms' ? 'نص مجرّد' : 'نص وصورة');
+    ctx.ui.hud(seen.sms && seen.mms && !seen.tower ? 'المس برج الإرسال' : (m === 'sms' ? 'نص مجرّد' : 'نص وصورة'));
     check();
   }
   function check() { if (!fin && seen.sms && seen.mms && seen.tower) { fin = true; ctx.ui.done(); } }

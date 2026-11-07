@@ -220,3 +220,23 @@ section[aria-labelledby="cv-downloads-title"] .grid > a {
 .site-footer__utility, .home-footer-tools { overflow: visible !important; }
 .site-footer__utility .site-footer__item,
 .home-footer-tools .site-footer__item { block-size: auto !important; min-block-size: 4.4rem; }
+
+/* ── ٣) الوسائط: الصورة تملأ إطارها (لا شريط رمادي ولا لوح فارغ) ────────── */
+.media-feature-card .spatial-media { background: rgb(var(--c-wash)); }
+.media-feature-card .spatial-media > img,
+.media-feature-card .spatial-media img.complete-media-image {
+  inline-size: 100%; block-size: 100%; object-fit: cover; object-position: center;
+}
+@media (min-width: 600px) and (max-width: 1100px) {
+  .media-feature-card.is-secondary > a > div:last-child { padding: 1.1rem 1.25rem; justify-content: center; }
+}
+
+/* ── ٤) الاستماع: سطر الوصف لا يُقصّ من طرفه الخطأ في RTL بل يلتفّ ────── */
+.min-w-0.flex-1 > span.block.truncate {
+  white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.7;
+}
+
+/* ── ٥) الأبحاث على الهاتف/المطوي: العنوان يأخذ العرض كله ──────────────── */
+@media (max-width: 639px) {
+  .research-editorial-row .measure { max-inline-size: none; }
+}

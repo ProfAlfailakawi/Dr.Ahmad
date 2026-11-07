@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { animator, canvasTexture, softLight, shadowBlob, V, TAU } from '../lib/a1-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { animator, canvasTexture, softLight, shadowBlob, V, TAU } from '../lib/a1-kit.js?v=16';
 
 export const meta = { free: true, center: [0.55, 0.65], typeLabel: 'مجسّم تفاعلي' };
 

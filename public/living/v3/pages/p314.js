@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=15';
-import { revealer, hintGlow, pulseHint, bumper, canvasTex, faceMat, setSpr, burstAt } from '../lib/a6-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=16';
+import { toAr, revealer, hintGlow, pulseHint, bumper, canvasTex, faceMat, setSpr, burstAt, retext, fillText } from '../lib/a6-kit.js?v=16';
 
 export const meta = { free: true, center: [0.5, 0.72], typeLabel: 'خط زمني مجسّم' };
 
@@ -11,8 +11,8 @@ const ERAS = [
   { when: 'بعد الحرب الثانية', t: 'الألعاب في الأعمال والإدارة', c: 0x2a8fd0, b: 'مع تعدد استعمالات الحاسوب استعمل الاقتصاديون ورجال الأعمال الألعاب لتوضيح العمليات، ونقل الواقع إلى موقع التدريب.' },
   { when: 'نهاية الخمسينيات', t: 'اتساع المجال التعليمي', c: 0x7aa13a, b: 'أدخل التربويون الألعاب في مساقات العلوم السياسية لطلبة الدراسات العليا، وفي مجال التدريب والتعليم.' },
 ];
-const POS = [[0.27, 0.07], [0.09, -0.06], [-0.09, 0.07], [-0.27, -0.06]];
-const IS = 1.9;
+const POS = [[0.33, 0.06], [0.11, -0.06], [-0.11, 0.06], [-0.33, -0.06]];
+const IS = 1.75;
 
 function pawnGeo(s = 1) {
   const pts = [[0, 0], [0.022, 0], [0.024, 0.005], [0.013, 0.012], [0.009, 0.03], [0.017, 0.034], [0.017, 0.038], [0.009, 0.042], [0.015, 0.05], [0.011, 0.06], [0.003, 0.066], [0, 0.067]].map(([x, y]) => new THREE.Vector2(x * s, y * s));
@@ -34,10 +34,14 @@ export default function build(ctx) {
     const item = new THREE.Group(); item.scale.setScalar(IS); inner.add(item);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.0035, 8, 48), new THREE.MeshBasicMaterial({ color: era.c, toneMapped: false, transparent: true, opacity: 0.85 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.004; inner.add(ring);
     const hint = hintGlow(era.c, 0.28); hint.position.y = 0.06; inner.add(hint);
-    const tag = sprite(era.when, 0.2, { size: 40, width: 400, weight: 800, border: '#' + era.c.toString(16).padStart(6, '0'), color: '#2b2620', bg: 'rgba(251,248,240,.97)' });
-    tag.userData.ty = i % 2 ? 0.27 : 0.2; s.add(tag);
+    const hxc = '#' + era.c.toString(16).padStart(6, '0');
+    const numTex = canvasTex(128, 128, (c) => { c.fillStyle = hxc; c.beginPath(); c.arc(64, 64, 58, 0, Math.PI * 2); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 6; c.beginPath(); c.arc(64, 64, 52, 0, Math.PI * 2); c.stroke(); fillText(c, toAr(i + 1), 64, 70, 78, '#ffffff', 800, '"Reem Kufi", Tajawal'); });
+    const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.085, 0.085), new THREE.MeshBasicMaterial({ map: numTex, transparent: true, depthWrite: false, toneMapped: false })); tag.rotation.x = -Math.PI / 2; tag.position.set(0, 0.006, 0.15); s.add(tag);
     return { s, inner, item, ring, hint, tag, era };
   });
+
+  const lab = sprite('قبل ١٥٠٠ سنة', 0.3, { size: 44, width: 560, weight: 800, border: '#d4ad55', color: '#2b2620', bg: 'rgba(251,248,240,.98)' }); g.add(lab);
+  let labAt = -1, labT = -9;
 
   // 1 chess
   {
@@ -133,8 +137,7 @@ export default function build(ctx) {
         const k = stag(t, 0.3 + i * 0.45, 0.8, easeBack) * e;
         st.inner.scale.setScalar(Math.max(k, 0.001)); st.s.visible = k > 0.01;
         st.item.rotation.y = 0.2 * Math.sin(t * 0.6 + i);
-        setSpr(st.tag, 0.2, stag(t, 0.9 + i * 0.45, 0.5, easeBack) * e);
-        st.tag.position.y = st.tag.userData.ty + 0.005 * Math.sin(t * 1.6 + i);
+        st.tag.scale.setScalar(Math.max(stag(t, 0.7 + i * 0.4, 0.5, easeBack) * e * (1 + 0.08 * Math.sin(t * 2 + i)), 0.001));
         pulseHint(st.hint, t, i * 1.3, visited.has(i) ? 0.25 : 1, 0.4);
         st.ring.material.opacity = visited.has(i) || i === at ? 0.95 : 0.45;
       });
@@ -148,6 +151,9 @@ export default function build(ctx) {
         v3.copy(stPos(to)); trav.position.lerpVectors(from, v3, ease(p)); trav.position.y += Math.sin(p * Math.PI) * 0.1;
         const sq = 1 + 0.15 * Math.sin(p * Math.PI); trav.scale.set(sq, 2 - sq, sq);
       } else { at = to; trav.position.copy(stPos(at)); trav.scale.setScalar(1); }
+      if (p >= 1 && labAt !== at) { labAt = at; labT = t; const era = ERAS[at]; retext(lab, era.when, 0.3, { size: 44, width: 560, weight: 800, border: '#' + era.c.toString(16).padStart(6, '0'), color: '#2b2620', bg: 'rgba(251,248,240,.98)' }); }
+      if (p < 1) labAt = -1;
+      lab.position.set(THREE.MathUtils.clamp(POS[at][0], -0.2, 0.2), 0.36, POS[at][1]); setSpr(lab, 0.3, labAt === at ? stag(t, labT, 0.45, easeBack) * stag(t, 1.4, 0.4) * e : 0);
       const tk = stag(t, 1.0, 0.7, easeBack) * e; trav.visible = tk > 0.01; tp.scale.setScalar(Math.max(tk, 0.001));
       tglow.material.opacity = 0.45 * tk * (0.8 + 0.2 * Math.sin(t * 5));
     },

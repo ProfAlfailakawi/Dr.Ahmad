@@ -1,12 +1,12 @@
 // p461 — design a BYOD policy: four decisions, each a choice of three gems; the right one becomes a glowing layer of protection over the phone, then a lock closes.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
 
-export const meta = { free: true, center: [0.29, 0.271], typeLabel: 'لعبة تصميم', title: 'صمّم سياسة BYOD' };
+export const meta = { free: true, center: [0.5, 0.271], typeLabel: 'لعبة تصميم', title: 'صمّم سياسة BYOD' };
 
 const ROUNDS = [
   { hud: 'ماذا يسبق السماح بالأجهزة؟', col: 0xef8f2a, name: 'التخطيط', opts: [
@@ -32,7 +32,7 @@ const LAYER_Y = [0.08, 0.14, 0.2, 0.26];
 function gemGeo(i) { return i === 0 ? new THREE.IcosahedronGeometry(0.034, 0) : i === 1 ? new THREE.BoxGeometry(0.052, 0.052, 0.052) : new THREE.OctahedronGeometry(0.04); }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.85);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.1);
   const seq = new Seq(), hints = new Hints(g, 4.2);
   let round = 0, locked = 0, now = 0, finished = false, wait = 0;
 

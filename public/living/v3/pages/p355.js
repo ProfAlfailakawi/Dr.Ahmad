@@ -1,9 +1,9 @@
 // p355 — a small night city on a navy hexagon; three signal balloons drift to whichever situation you touch and name the Google tool it needs.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=15';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, twinkles } from '../lib/a7.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, twinkles } from '../lib/a7.js?v=16';
 
-export const meta = { free: true, center: [0.4, 0.5], typeLabel: 'مجسّم تفاعلي' };
+export const meta = { free: true, center: [0.5, 0.52], typeLabel: 'مجسّم تفاعلي' };
 
 const TOOLS = [
   { k: 'earth', tool: 'Google Earth', t: 'جولة بصرية حول العالم', b: 'يصطحب المدرّس طلابه في جولة بصرية لمختلف أنحاء العالم.', c: 0x3aa0e8 },
@@ -32,22 +32,13 @@ function galleryTex() {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.0);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g);
   const R = rig(), H = hints(g);
   const seen = new Set(); let done = false;
-
-  // ---- navy hexagon with a light-blue frame, like the printed one, and a mint hill on top
-  const base = new THREE.Group(); g.add(base);
-  const plate = new THREE.Mesh(rbox(0.68, 0.03, 0.5, 0.03), glossy(0x7fd3cc, { roughness: 0.45 })); plate.position.y = 0.015; base.add(plate);
-  const roadA = new THREE.Mesh(rbox(0.66, 0.003, 0.05, 0.001), mat(0x3f9f9c)); roadA.position.set(0, 0.031, 0); base.add(roadA);
-  const roadB = new THREE.Mesh(rbox(0.05, 0.003, 0.48, 0.001), mat(0x3f9f9c)); roadB.position.set(0, 0.031, 0); base.add(roadB);
-  const sh = lightPool(0x000000, 0.5, 0.22); sh.position.y = -0.002; base.add(sh);
-  R.add(base, 0.1, { dur: 0.9, rise: 0.06 });
-  const GY = 0.032;
-  const stars = twinkles(g, 14, 0.62, 0.42, 0.5, 0xffe9a6, 0.03);
-
-  // ---- six little situations, each a tiny model on its own pad
-  const pad = (r = 0.047, c = 0xf8fbfb) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.05, 0.008, 36), glossy(c)); m.position.y = 0.004; return m; };
+  const sh = lightPool(0x000000, 0.6, 0.25); sh.position.y = -0.002; sh.scale.set(1.5, 0.5, 1); g.add(sh);
+  const stars = twinkles(g, 10, 0.8, 0.5, 0.2, 0xffe9a6, 0.03);
+  const GY = 0;
+  const pad = () => new THREE.Group();
   const makers = {
     earth() {
       const o = new THREE.Group(); o.add(pad());
@@ -87,72 +78,62 @@ export default function build(ctx) {
       [-0.025, 0.025].forEach((x) => { const lg = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.03, 8), goldMat()); lg.position.set(x, 0.015, -0.006); o.add(lg); }); return o;
     },
   };
-  const spots = TOOLS.map((_, i) => { return new THREE.Vector3(((i % 3) - 1) * 0.22, GY, (Math.floor(i / 3) - 0.5) * 0.2 + 0.02); });
+
+  const winTex = (c) => canvasTex(128, 256, (x, W, H2) => { x.fillStyle = c; x.fillRect(0, 0, W, H2); x.fillStyle = 'rgba(255,255,255,.85)'; for (let r = 0; r < 8; r++) for (let k = 0; k < 3; k++) x.fillRect(14 + k * 38, 16 + r * 30, 24, 16); });
+  const HT = [0.2, 0.15, 0.25, 0.18, 0.13, 0.22], BW = 0.118;
   const items = TOOLS.map((d, i) => {
-    const o = makers[d.k](); o.position.copy(spots[i]); o.scale.setScalar(1.7); g.add(o); shadowed(o);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.003, 8, 40), lit(d.c, 0)); ring.rotation.x = Math.PI / 2; ring.position.y = 0.01; o.add(ring);
-    R.add(o, 1.0 + i * 0.2, { dur: 0.7, rise: 0.1 });
-    H.add(o.children[0], d.c, 0.15);
-    const it = { d, o, ring, lit: 0 };
-    ctx.tap(o, () => pick(it));
+    const gp = new THREE.Group(); gp.position.set((i - 2.5) * 0.136, 0, 0.0); g.add(gp);
+    const body = new THREE.Mesh(rbox(BW, HT[i], 0.1, 0.012), new THREE.MeshStandardMaterial({ map: winTex('#' + d.c.toString(16).padStart(6, '0')), roughness: 0.4 })); body.position.y = HT[i] / 2; gp.add(body);
+    const roof = new THREE.Mesh(rbox(BW + 0.012, 0.014, 0.112, 0.006), glossy(0xfdfaf2)); roof.position.y = HT[i] + 0.007; gp.add(roof);
+    const o = makers[d.k](); o.scale.setScalar(1.45); o.position.y = HT[i] + 0.04; gp.add(o); shadowed(gp);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.004, 8, 40), lit(d.c, 0)); ring.rotation.x = Math.PI / 2; ring.position.y = 0.01; gp.add(ring);
+    R.add(gp, 0.4 + i * 0.16, { dur: 0.7, rise: -0.12 });
+    H.add(body, 0xffffff, 0.16, new THREE.Vector3(gp.position.x, HT[i] * 0.55, 0.06));
+    const it = { d, gp, o, ring, lit: 0, h: HT[i] };
+    ctx.tap(gp, () => pick(it));
     return it;
   });
 
-  // ---- three balloons with antennas
-  const balloons = [[-0.2, 0.4, -0.12, 1.0], [0.02, 0.5, -0.02, 1.35], [0.22, 0.38, -0.12, 0.9]].map(([x, y, z, s], i) => {
+  const balloons = [[-0.25, 0.46, 0.0, 1.0], [0.0, 0.56, -0.02, 1.3], [0.27, 0.45, 0.0, 0.95]].map(([x, y, z, s], i) => {
     const b = new THREE.Group(); b.position.set(x, y, z); b.scale.setScalar(s); g.add(b);
-    const env = new THREE.Mesh(new THREE.SphereGeometry(0.058, 32, 24), new THREE.MeshPhysicalMaterial({ color: 0xdfe9fb, roughness: 0.15, transmission: 0, clearcoat: 1, transparent: true, opacity: 0.88 })); env.scale.y = 1.2; b.add(env);
-    for (let k = 0; k < 4; k++) { const seam = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.0011, 6, 48), mat(0x8da6d8)); seam.rotation.y = (k / 4) * Math.PI; seam.scale.y = 1.2; b.add(seam); }
-    const bs = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.011, 0.016, 16), goldMat()); bs.position.y = -0.09; b.add(bs);
-    [-1, 1].forEach((sx) => { const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.0007, 0.0007, 0.032, 4), mat(0x6a7aa0)); ln.position.set(sx * 0.016, -0.066, 0); ln.rotation.z = sx * 0.4; b.add(ln); });
-    const an = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0018, 0.04, 6), goldMat()); an.position.y = 0.092; b.add(an);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.005, 12, 8), lit(0xffd27a)); tip.position.y = 0.114; b.add(tip);
-    const rings = [0, 1, 2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.0016, 6, 40), new THREE.MeshBasicMaterial({ color: 0xffe9a6, transparent: true, opacity: 0, depthWrite: false, toneMapped: false })); r.position.y = 0.114; r.rotation.x = Math.PI / 2; b.add(r); return r; });
-    R.add(b, 2.0 + i * 0.3, { dur: 1.0, rise: 0.2 });
-    return { b, home: new THREE.Vector3(x, y, z), tgt: new THREE.Vector3(x, y, z), s, rings, ph: i * 2, boost: 0 };
+    const env = new THREE.Mesh(new THREE.SphereGeometry(0.07, 36, 28), glossy(0xf4f6ff, { roughness: 0.2 })); env.scale.y = 1.2; b.add(env);
+    for (let k = 0; k < 4; k++) { const seam = new THREE.Mesh(new THREE.TorusGeometry(0.0705, 0.0035, 8, 56), mat(i === 1 ? 0xe8604c : 0x3a7be0)); seam.rotation.y = (k / 4) * Math.PI; seam.scale.y = 1.2; b.add(seam); }
+    const bs = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.013, 0.02, 16), goldMat()); bs.position.y = -0.11; b.add(bs);
+    [-1, 1].forEach((sx) => { const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.001, 0.001, 0.04, 4), mat(0x6a7aa0)); ln.position.set(sx * 0.02, -0.082, 0); ln.rotation.z = sx * 0.4; b.add(ln); });
+    const an = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.05, 6), goldMat()); an.position.y = 0.11; b.add(an);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.007, 12, 8), lit(0xffb02a)); tip.position.y = 0.138; b.add(tip);
+    const rings = [0, 1, 2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.0022, 6, 40), new THREE.MeshBasicMaterial({ color: 0xffb02a, transparent: true, opacity: 0, depthWrite: false, toneMapped: false })); r.position.y = 0.138; r.rotation.x = Math.PI / 2; b.add(r); return r; });
+    R.add(b, 0.9 + i * 0.25, { dur: 1.0, rise: 0.25 });
+    return { b, home: new THREE.Vector3(x, y, z), tgt: new THREE.Vector3(x, y, z), rings, ph: i * 2, boost: 0 };
   });
-
-  const tag = tagSprite('Google Earth', 0.3, 0x3aa0e8, { size: 36, pad: 16 }); tag.visible = false; g.add(tag);
+  const tag = tagSprite('Google Earth', 0.3, 0x3aa0e8, { size: 40, pad: 16 }); tag.visible = false; g.add(tag);
   let cur = null, tagT = 0;
-  function retag(text, color) {
-    const s = tagSprite(text, 0.3, color, { size: 40, pad: 16 });
-    tag.material.map.dispose(); tag.material.map = s.material.map; tag.userData.aspect = s.userData.aspect; tag.material.needsUpdate = true;
-  }
+  function retag(text, color) { const s = tagSprite(text, 0.3, color, { size: 40, pad: 16 }); tag.material.map.dispose(); tag.material.map = s.material.map; tag.userData.aspect = s.userData.aspect; tag.material.needsUpdate = true; }
   function pick(it) {
-    ctx.sfx.pop?.(); H.seen(it.o.children[0]); R.bounce(it.o); burstAt(ctx, it.o, it.d.c, 18, 0.3, 0.025);
+    ctx.sfx.pop?.(); H.seen(it.gp.children[0]); R.bounce(it.gp); burstAt(ctx, it.o, it.d.c, 18, 0.3, 0.025);
     cur = it; tagT = 0; retag(it.d.tool, it.d.c); it.lit = 1;
-    // nearest balloon floats over it
-    let best = balloons[0], bd = 9;
-    balloons.forEach((bl) => { const d = bl.home.distanceTo(it.o.position); if (d < bd) { bd = d; best = bl; } });
+    let best = balloons[0], bd = 9; balloons.forEach((bl) => { const d = Math.abs(bl.home.x - it.gp.position.x); if (d < bd) { bd = d; best = bl; } });
     balloons.forEach((bl) => { bl.tgt.copy(bl.home); bl.boost = 0; });
-    best.tgt.set(it.o.position.x * 0.85, 0.4, it.o.position.z * 0.85); best.boost = 1; cur.bl = best;
+    best.tgt.set(it.gp.position.x, it.h + 0.3, 0.02); best.boost = 1;
     ctx.ui.card({ tag: it.d.tool, title: it.d.t, body: it.d.b, color: it.d.c });
-    seen.add(it.d.k);
-    if (seen.size === 6 && !done) { done = true; setTimeout(() => { ctx.sfx.good?.(); ctx.ui.done(); }, 1200); }
+    seen.add(it.d.k); if (seen.size === 6 && !done) { done = true; setTimeout(() => { ctx.sfx.good?.(); ctx.ui.done(); }, 1200); }
   }
-
   ctx.ui.hud('المس موقفاً لتصله الأداة');
   return {
     update(t, dt, e) {
-      R.update(t, dt, e); H.update(t, e, stag(t, 3.4, 0.6)); stars.update(t, e);
+      R.update(t, dt, e); H.update(t, e, stag(t, 2.6, 0.6)); stars.update(t, e);
       balloons.forEach((bl) => {
         bl.b.position.x = THREE.MathUtils.damp(bl.b.position.x, bl.tgt.x + Math.sin(t * 0.6 + bl.ph) * 0.012, 1.8, dt);
-        bl.b.position.y = THREE.MathUtils.damp(bl.b.position.y, bl.tgt.y + Math.sin(t * 0.9 + bl.ph) * 0.01, 1.8, dt);
+        bl.b.position.y = THREE.MathUtils.damp(bl.b.position.y, bl.tgt.y + Math.sin(t * 0.9 + bl.ph) * 0.012, 1.8, dt);
         bl.b.position.z = THREE.MathUtils.damp(bl.b.position.z, bl.tgt.z, 1.8, dt);
-        bl.rings.forEach((r, i) => { const k = ((t * 0.45 + i / 3 + bl.ph) % 1); const sc = 0.5 + k * 2.2; r.scale.setScalar(sc); r.material.opacity = (1 - k) * (bl.boost ? 0.9 : 0.4) * clamp01((t - 2.6) / 0.6) * e; });
+        bl.rings.forEach((r, i) => { const k = (t * 0.45 + i / 3 + bl.ph) % 1; r.scale.setScalar(0.5 + k * 2.2); r.material.opacity = (1 - k) * (bl.boost ? 0.95 : 0.5) * clamp01((t - 1.6) / 0.6) * e; });
       });
       items.forEach((it) => {
         it.lit = it === cur ? 1 : Math.max(0, it.lit - dt * 0.2);
-        it.ring.material.opacity = it.lit * 0.9 * (0.7 + 0.3 * Math.sin(t * 5)); it.ring.visible = it.lit > 0.02;
-        if (it.o.userData.spin) it.o.userData.spin.rotation.y += dt * 0.8;
-        if (it.o.userData.cloud) it.o.userData.cloud.position.y = 0.08 + Math.sin(t * 1.4) * 0.004;
-        if (it.o.userData.b) it.o.userData.b.forEach((b, i) => { b.position.y += Math.sin(t * 1.6 + i * 2) * 0.00008; });
+        it.ring.material.opacity = it.lit * 0.9; it.ring.visible = it.lit > 0.02;
+        it.o.rotation.y += dt * 0.9; it.o.position.y = it.h + 0.045 + Math.sin(t * 1.6 + it.d.c) * 0.006;
       });
-      if (cur) {
-        tagT = Math.min(1, tagT + dt * 3);
-        tag.visible = true; tag.position.set(cur.o.position.x, GY + 0.3, cur.o.position.z);
-        setSpr(tag, 0.3, easeBack(tagT));
-      }
+      if (cur) { tagT = Math.min(1, tagT + dt * 3); tag.visible = true; tag.position.set(cur.gp.position.x, cur.h + 0.2, 0.06); setSpr(tag, 0.3, easeBack(tagT)); }
     },
   };
 }

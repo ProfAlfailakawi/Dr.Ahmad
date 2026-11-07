@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { revealer, bumper, canvasTex, faceMat, setSpr, pulseHint, hintGlow, burstAt } from '../lib/a6-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { revealer, bumper, canvasTex, faceMat, setSpr, pulseHint, hintGlow, burstAt, retext } from '../lib/a6-kit.js?v=16';
 
 export const meta = { free: true, center: [0.5, 0.76], typeLabel: 'مخطط ينمو' };
 
-const CELL = 0.04, COLS = 8, ROWS = 9, WD = 0.075;
+const CELL = 0.05, COLS = 8, ROWS = 6, WD = 0.09;
 const W = COLS * CELL, H = ROWS * CELL, FY = 0.034;
 const NODES = [
   { id: 'game', w: 'اللعب', tag: 'الأصل', c: 0x2a8fd0, cells: [[0, 0], [1, 0], [2, 0], [3, 0]], side: -1, lr: 0.4,
@@ -26,7 +26,7 @@ const bounce = (x) => { x = clamp01(x); const n = 7.5625, d = 2.75; if (x < 1 / 
 const hx = (c) => '#' + c.toString(16).padStart(6, '0');
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(1.02); ctx.stage.add(g);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); g.scale.setScalar(1.05); ctx.stage.add(g);
   const R = revealer(), B = bumper();
 
   // a glass Tetris well standing on its own tray; no plinth, the print stays visible around it
@@ -59,19 +59,18 @@ export default function build(ctx) {
     shadowed(inner);
     const halo = glow(n.c, 0.2, 0); halo.position.set(0, 0, WD * 0.5); inner.add(halo);
     const hint = hintGlow(n.c, 0.17); hint.position.set(0, 0, WD * 0.5 + 0.012); inner.add(hint);
-    const lw = n.w.length > 12 ? 0.19 : 0.15;
-    const lab = sprite(n.w, lw, { size: 42, width: Math.round(lw * 1900), weight: 800, border: hx(n.c), color: '#2b2620', bg: 'rgba(251,248,240,.97)' });
-    const lx = n.side * (W / 2 + 0.05 + lw / 2);
-    lab.position.set(lx, n.pos === 'top' ? FY + H + 0.085 : n.pos === 'bottom' ? 0.02 : FY + (n.lr + 0.5) * CELL, n.pos === 'bottom' ? WD / 2 + 0.09 : 0.04); lab.userData.lw = lw; g.add(lab);
-    return { n, holder, inner, halo, hint, lab, landed: false, lift: 0, lw };
+    return { n, holder, inner, halo, hint, landed: false, lift: 0 };
   });
 
+  const lab = sprite('اللعب', 0.26, { size: 46, width: 420, weight: 800, border: '#2a8fd0', color: '#2b2620', bg: 'rgba(251,248,240,.98)' }); g.add(lab);
+  let labT = -9, labW = 0.26;
   let now = 0, touched = new Set(), sel = -1, done = false;
   const landAt = (i) => 0.9 + i * 0.8;
   function touch(i) {
     const p = pieces[i]; if (now < landAt(i) + 0.9) return;
     sel = i; touched.add(i); ctx.sfx.pop?.(); B.hit(p.inner, now, 0.1);
     burstAt(ctx, g, new THREE.Vector3(p.holder.position.x, p.holder.position.y + 0.03, 0.06), p.n.c, 24, 0.38, 0.034);
+    labT = now; retext(lab, p.n.w, p.n.w.length > 12 ? 0.34 : 0.26, { size: 46, width: p.n.w.length > 12 ? 540 : 420, weight: 800, border: hx(p.n.c), color: '#2b2620', bg: 'rgba(251,248,240,.98)' }); labW = p.n.w.length > 12 ? 0.34 : 0.26; lab.position.set(p.holder.position.x, FY + H + 0.1, 0.05);
     ctx.ui.card({ tag: p.n.tag, title: p.n.w, body: p.n.b, color: p.n.c });
     if (touched.size === NODES.length && !done) { done = true; setTimeout(() => { ctx.sfx.good?.(); ctx.ui.done(); }, 1500); }
   }
@@ -93,8 +92,8 @@ export default function build(ctx) {
         const seen = touched.has(i), on = sel === i;
         p.halo.material.opacity = (on ? 0.65 : seen ? 0.2 : 0) * (0.8 + 0.2 * Math.sin(t * 4));
         pulseHint(p.hint, t, i * 1.4, landed && !seen ? 1 : 0, 0.3);
-        const lk = stag(t, landAt(i) + 0.6, 0.5, easeBack) * e; setSpr(p.lab, p.lw, lk);
       });
+      const lkk = t - labT < 3.5 ? stag(t, labT, 0.4, easeBack) : Math.max(0, 1 - (t - labT - 3.5) / 0.4); setSpr(lab, labW, lkk * e);
       pieces[5].inner.children.forEach((c) => { if (c.isMesh) c.material.emissiveIntensity = 0.2 + 0.14 * Math.sin(t * 2.5); });
     },
   };

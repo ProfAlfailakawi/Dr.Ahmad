@@ -1,9 +1,9 @@
 // p381 — a graduation cap sprouts six glowing branches; each ends in a glass orb holding one benefit of mobile learning.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube, glow } from '../../kit.js?v=15';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, glass } from '../lib/a7.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube, glow } from '../../kit.js?v=16';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab, glass } from '../lib/a7.js?v=16';
 
-export const meta = { free: true, center: [0.4, 0.55], typeLabel: 'مخطط ينمو' };
+export const meta = { free: true, center: [0.5, 0.52], typeLabel: 'مخطط ينمو' };
 
 const NODES = [
   { k: 'com', l: 'الاتصال والتفاعل', c: 0x4a8fd0, b: 'اتصال وتفاعل بين أطراف المجتمع التعليمي دون الحاجة للجلوس في أماكن وأوقات محددة أمام الشاشات الكبيرة.' },
@@ -30,19 +30,16 @@ export default function build(ctx) {
   const finish = (id) => { seen.add(id); if (seen.size >= 7 && !done) { done = true; setTimeout(() => { ctx.sfx.good?.(); ctx.ui.done(); }, 1000); } };
 
   const base = new THREE.Group(); g.add(base);
-  const gridTex = canvasTex(512, 384, (c, W, H) => { c.fillStyle = '#fbf7ea'; c.fillRect(0, 0, W, H); c.strokeStyle = 'rgba(70,110,170,.22)'; c.lineWidth = 2; for (let x = 0; x <= W; x += 32) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); } for (let y = 0; y <= H; y += 32) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); } });
-  const sheet = new THREE.Mesh(rbox(0.8, 0.014, 0.6, 0.006), new THREE.MeshStandardMaterial({ map: gridTex, roughness: 0.8 })); sheet.position.y = 0.007; base.add(sheet);
-  const binder = new THREE.Mesh(rbox(0.03, 0.02, 0.6, 0.008), glossy(0xe8604c)); binder.position.set(-0.4, 0.01, 0); base.add(binder);
   const sh = lightPool(0x000000, 0.55, 0.2); sh.position.y = -0.002; base.add(sh);
   R.add(base, 0.1, { dur: 0.9, rise: 0.06 });
-  const TY = 0.014;
+  const TY = 0.01;
 
   // ---- graduation cap on a gold stand
   const hub = new THREE.Group(); hub.position.set(0, TY, 0); g.add(hub);
   const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.09, 32), goldMat()); stand.position.y = 0.045; hub.add(stand);
-  const cap = new THREE.Group(); cap.scale.setScalar(0.85); cap.position.y = 0.16; hub.add(cap);
-  const skull = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.07, 0.06, 40), glossy(0x2b3f7a, { roughness: 0.4 })); skull.position.y = -0.03; cap.add(skull);
-  const board = new THREE.Mesh(rbox(0.25, 0.012, 0.25, 0.004), glossy(0x24346b, { roughness: 0.4 })); board.rotation.y = Math.PI / 4; board.position.y = 0.012; cap.add(board);
+  const cap = new THREE.Group(); cap.scale.setScalar(1.15); cap.position.y = 0.16; hub.add(cap);
+  const skull = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.07, 0.06, 40), glossy(0x2f62d6, { roughness: 0.3 })); skull.position.y = -0.03; cap.add(skull);
+  const board = new THREE.Mesh(rbox(0.25, 0.012, 0.25, 0.004), glossy(0x2a54c0, { roughness: 0.3 })); board.rotation.y = Math.PI / 4; board.position.y = 0.012; cap.add(board);
   const edge = new THREE.Mesh(rbox(0.258, 0.004, 0.258, 0.002), goldMat()); edge.rotation.y = Math.PI / 4; edge.position.y = 0.005; cap.add(edge);
   const button = new THREE.Mesh(new THREE.SphereGeometry(0.009, 14, 10), goldMat()); button.position.y = 0.022; cap.add(button);
   const cord = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.022, 0), new THREE.Vector3(0.07, 0.024, 0.02), new THREE.Vector3(0.115, 0.01, 0.05), new THREE.Vector3(0.125, -0.03, 0.05)]), 20, 0.0025, 6), goldMat()); cap.add(cord);
@@ -54,17 +51,17 @@ export default function build(ctx) {
   ctx.tap(hub, () => { ctx.sfx.pop?.(); R.bounce(hub); H.seen(skull); burstAt(ctx, cap, 0xffd27a, 24, 0.35, 0.028); ctx.ui.card({ tag: 'الفكرة المركزية', title: 'التعليم المتنقل', body: 'تعليم يعتمد على تقنيات لاسلكية مثل الهواتف النقالة والأجهزة الرقمية الشخصية PDAs والحاسبات المصغرة.', color: 0xd4ad55 }); finish('hub'); });
 
   // ---- branches and orbs
-  const RN = 0.3;
+  const RN = 0.31;
   const nodes = NODES.map((nd, i) => {
     const a = (i / 6) * TAU + 0.5, x = Math.cos(a) * RN, z = Math.sin(a) * RN * 0.9, y = 0.19 + (i % 2) * 0.04;
     const from = new THREE.Vector3(0, TY + 0.19, 0), to = new THREE.Vector3(x, TY + y, z), mid = new THREE.Vector3(x * 0.45, TY + y + 0.1, z * 0.45);
-    const tube = lightTube(new THREE.CatmullRomCurve3([from, mid, to]), { radius: 0.0055, color: nd.c, speed: 0.5, glass: false }); g.add(tube);
+    const tube = lightTube(new THREE.CatmullRomCurve3([from, mid, to]), { radius: 0.009, color: nd.c, speed: 0.5, glass: false }); g.add(tube);
     const gp = new THREE.Group(); gp.position.copy(to); g.add(gp);
-    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.075, 28, 20), glass(nd.c, 0.3)); orb.renderOrder = 4; gp.add(orb);
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.077, 24, 16), new THREE.MeshBasicMaterial({ color: nd.c, transparent: true, opacity: 0.12, depthWrite: false, toneMapped: false })); gp.add(core);
-    const ico = ICON[nd.k](); const ih = new THREE.Group(); ih.add(ico); ih.scale.setScalar(1.7); gp.add(ih);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 40, 28), glossy(nd.c, { roughness: 0.18 })); gp.add(orb);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 24, 16), new THREE.MeshBasicMaterial({ color: nd.c, transparent: true, opacity: 0.12, depthWrite: false, toneMapped: false })); gp.add(core);
+    const ico = ICON[nd.k](); ico.traverse((m) => { if (m.isMesh && m.material && m.material.color && !m.material.wireframe) { const col = m.material.color; if (Math.abs(col.getHex() - nd.c) < 0x101010) m.material = glossy(0xffffff); } }); const ih = new THREE.Group(); ih.add(ico); ih.scale.setScalar(2.1); ih.position.z = 0.1; gp.add(ih);
     const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, y - 0.05, 8), goldMat()); stalk.position.set(x, TY + (y - 0.05) / 2 - 0.0, z); g.add(stalk);
-    const tag = tagSprite(nd.l, 0.24, nd.c, { size: 36, pad: 14 }); tag.position.y = 0.1; gp.add(tag); tag.visible = false;
+    const tag = tagSprite(nd.l, 0.24, nd.c, { size: 36, pad: 14 }); tag.position.y = 0.14; gp.add(tag); tag.visible = false;
     R.add(gp, 2.2 + i * 0.3, { dur: 0.8, rise: 0.0 }); R.add(stalk, 2.4 + i * 0.3, { dur: 0.5, fn: ease });
     H.add(orb, nd.c, 0.18, null, () => 1);
     const o = { nd, gp, tube, core, ih, tag, on: 0, tt: 0, i };
@@ -87,7 +84,7 @@ export default function build(ctx) {
         n.on = Math.max(0, n.on - dt * 0.6);
         n.tube.userData.core.material.opacity = 0.55 + 0.4 * n.on;
         n.core.material.opacity = 0.12 + 0.3 * n.on;
-        n.ih.rotation.y += dt * (0.8 + n.on * 3); n.gp.position.y += 0; n.ih.position.y = Math.sin(t * 1.6 + n.i) * 0.004;
+        n.ih.rotation.y += dt * (0.8 + n.on * 3); n.gp.position.y += 0; n.ih.position.y = Math.sin(t * 1.6 + n.i) * 0.004; n.ih.position.z = 0.1;
         setSpr(n.tag, 0.24, n.tt ? 1 : 0); n.tag.visible = n.tt > 0 && R.k(n.gp) > 0.5;
       });
     },

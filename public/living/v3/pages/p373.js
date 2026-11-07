@@ -1,9 +1,9 @@
 // p373 — a desk with notebooks, an apple and an iPad; four lesson stages, each offers three little objects: pick the one that fits and it docks into the iPad.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=15';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab } from '../lib/a7.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=16';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr, hexSlab } from '../lib/a7.js?v=16';
 
-export const meta = { free: true, center: [0.45, 0.24], typeLabel: 'لعبة تصميم' };
+export const meta = { free: true, center: [0.45, 0.25], typeLabel: 'لعبة تصميم' };
 
 const STAGES = [
   { hud: 'نظّم عمل الطلبة', c: 0x4a8fd0, opts: [
@@ -65,53 +65,51 @@ function screenDraw(g, W, H, done, play) {
 }
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.1);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(1.0);
   const R = rig(), H = hints(g);
   let stage = 0, solved = 0, finishedAt = -1, now = 0, lastDraw = -1;
 
   // ---- wooden desk hexagon, notebooks, apple
   const base = new THREE.Group(); g.add(base);
-  const desk = new THREE.Mesh(rbox(0.72, 0.03, 0.56, 0.014), mat(0xb98552, { roughness: 0.75 })); desk.position.y = 0.015; base.add(desk);
-  const edge = new THREE.Mesh(rbox(0.73, 0.008, 0.57, 0.004), mat(0x8d5f34, { roughness: 0.7 })); edge.position.y = 0.004; base.add(edge);
   const sh = lightPool(0x000000, 0.55, 0.2); sh.position.y = -0.002; base.add(sh);
   R.add(base, 0.1, { dur: 0.9, rise: 0.06 });
-  const TY = 0.03;
-  const books = new THREE.Group(); books.position.set(-0.12, TY, -0.13); g.add(books);
+  const TY = 0.01;
+  const books = new THREE.Group(); books.position.set(0, TY, -0.13); books.scale.setScalar(1.9); g.add(books);
   [[0x4a56c8, 0.2, 0.3, 0], [0x2fa38a, 0.19, 0.27, 0.2], [0xe8604c, 0.16, 0.23, -0.15]].forEach(([c, w, d, r], i) => { const b = new THREE.Mesh(rbox(0.14 * w / 0.19, 0.016, 0.19 * d / 0.27, 0.004), glossy(c)); b.position.y = 0.008 + i * 0.017; b.rotation.y = r; books.add(b); });
-  const apple = new THREE.Group(); apple.position.set(0.12, TY + 0.034, -0.14); g.add(apple);
+  const apple = new THREE.Group(); apple.position.set(0.31, TY + 0.045, -0.06); apple.scale.setScalar(1.3); g.add(apple);
   const ab = new THREE.Mesh(new THREE.SphereGeometry(0.036, 28, 20), glossy(0x8dc63f)); ab.scale.set(1, 0.9, 1); apple.add(ab);
   const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.016, 6), mat(0x5a3d22)); stem.position.set(0, 0.035, 0); stem.rotation.z = 0.2; apple.add(stem);
   const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 8), glossy(0x4f8a2a)); leaf.scale.set(1.8, 0.35, 0.8); leaf.position.set(0.012, 0.04, 0); apple.add(leaf);
   R.add(books, 0.6, { dur: 0.7, rise: 0.1 }); R.add(apple, 0.9, { dur: 0.7, rise: 0.1 });
 
   // ---- the iPad
-  const pad = new THREE.Group(); pad.position.set(0, TY, -0.03); g.add(pad);
-  const tilt = new THREE.Group(); tilt.rotation.x = -0.9; tilt.position.y = 0.075; pad.add(tilt);
-  const PW = 0.27, PH = 0.2;
+  const pad = new THREE.Group(); pad.position.set(0, TY, -0.1); g.add(pad);
+  const tilt = new THREE.Group(); tilt.rotation.x = -0.9; tilt.position.y = 0.2; pad.add(tilt);
+  const PW = 0.6, PH = 0.42;
   const pb = new THREE.Mesh(rbox(PW, PH, 0.012, 0.012), glossy(0xf2f2f4)); tilt.add(pb);
   const sc = document.createElement('canvas'); sc.width = 250; sc.height = 180; const sg = sc.getContext('2d');
   const stex = new THREE.CanvasTexture(sc); stex.colorSpace = THREE.SRGBColorSpace;
   const scr = new THREE.Mesh(new THREE.PlaneGeometry(PW - 0.03, PH - 0.03), new THREE.MeshBasicMaterial({ map: stex, toneMapped: false })); scr.position.z = 0.0065; tilt.add(scr);
-  const prop = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.006, 0.07), mat(0xd9d9de)); prop.position.set(0, -0.036, -0.03); prop.rotation.x = 0.0; pad.add(prop);
-  const leds = [0, 1, 2, 3].map((i) => { const l = new THREE.Mesh(new THREE.CapsuleGeometry(0.004, 0.026, 6, 10), new THREE.MeshBasicMaterial({ color: 0x3a4152, toneMapped: false })); l.rotation.z = Math.PI / 2; l.position.set(-0.06 + i * 0.04, PH / 2 + 0.012, 0.0); tilt.add(l); return l; });
+  const prop = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.006, 0.07), mat(0xd9d9de)); prop.position.set(0, -0.2, -0.1); prop.visible = false; prop.rotation.x = 0.0; pad.add(prop);
+  const leds = [0, 1, 2, 3].map((i) => { const l = new THREE.Mesh(new THREE.CapsuleGeometry(0.006, 0.05, 6, 10), new THREE.MeshBasicMaterial({ color: 0x3a4152, toneMapped: false })); l.rotation.z = Math.PI / 2; l.position.set(-0.12 + i * 0.08, PH / 2 + 0.02, 0.0); tilt.add(l); return l; });
   R.add(pad, 0.4, { dur: 1.0, rise: 0.12 });
   const dock = () => { const v = new THREE.Vector3(); scr.getWorldPosition(v); ctx.stage.worldToLocal(v); return v; };
 
   // ---- option tokens (three per stage)
-  const slotsX = [-0.22, 0, 0.22];
+  const slotsX = [-0.29, 0, 0.29];
   const tokens = STAGES.map((st, s) => st.opts.map((op, k) => {
-    const gp = new THREE.Group(); gp.position.set(slotsX[k], TY + 0.002, 0.2); g.add(gp);
+    const gp = new THREE.Group(); gp.position.set(slotsX[k], TY + 0.002, 0.24); g.add(gp);
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.064, 0.01, 36), glossy(0xfdfaf2)); disc.position.y = 0.005; gp.add(disc);
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.0026, 8, 40), lit(st.c)); rim.rotation.x = Math.PI / 2; rim.position.y = 0.009; gp.add(rim);
-    const ico = MODELS[s][k](); const ih = new THREE.Group(); ih.position.y = 0.014; ih.scale.setScalar(1.35); ih.add(ico); gp.add(ih);
-    const tag = tagSprite(op.l, 0.205, st.c, { size: 40, pad: 12 }); tag.position.set(0, 0.14, 0.03); gp.add(tag);
+    const ico = MODELS[s][k](); const ih = new THREE.Group(); ih.position.y = 0.014; ih.scale.setScalar(1.75); ih.add(ico); gp.add(ih);
+    const tag = tagSprite(op.l, 0.2, st.c, { size: 40, pad: 12 }); tag.position.set(0, 0.2, 0.03); gp.add(tag);
     gp.visible = false;
     const o = { gp, op, s, k, ih, rim, tag, state: 0, t0: 0, shake: 0, from: new THREE.Vector3(), hide: s !== 0 };
     ctx.tap(gp, () => choose(o));
     return o;
   }));
   const cur = () => tokens[stage];
-  H.add(tokens[0][0].gp, 0xffd27a, 0.18, new THREE.Vector3(0, TY + 0.06, 0.2), () => (solved === 0 ? 1 : 0));
+  H.add(tokens[0][0].gp, 0xffd27a, 0.18, new THREE.Vector3(0, TY + 0.08, 0.24), () => (solved === 0 ? 1 : 0));
 
   function choose(o) {
     if (o.s !== stage || o.state !== 0 || stage >= 4) return;
@@ -146,7 +144,7 @@ export default function build(ctx) {
         if (o.state === 2) vis = 0;
         o.shake = Math.max(0, o.shake - dt * 2.2);
         if (o.state === 0) { o.gp.position.x = slotsX[o.k] + Math.sin(t * 40) * 0.01 * o.shake; o.gp.position.y = TY + 0.002 + Math.sin(t * 1.6 + o.k) * 0.004 * vis; }
-        o.gp.visible = vis > 0.01 && R.k(base) > 0.5; o.gp.scale.setScalar(Math.max(0.001, active || o.state ? easeBack(vis) : 0.001));
+        o.gp.visible = vis > 0.01 && R.k(base) > 0.5; o.gp.scale.setScalar(Math.max(0.001, active || o.state ? 1.3 * easeBack(vis) : 0.001));
         o.ih.rotation.y += dt * 0.7; o.rim.material.color.setHex(o.shake > 0.1 ? 0xe0453c : STAGES[s].c);
       }));
       const q = solved * 10 + (finishedAt > 0 && t - finishedAt > 0.8 ? 1 : 0);

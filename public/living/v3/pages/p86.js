@@ -1,109 +1,98 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { animator, shadowBlob, V, TAU } from '../lib/a1-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { animator, shadowBlob, V, TAU } from '../lib/a1-kit.js?v=16';
 
 export const meta = { free: true, center: [0.5, 0.75], typeLabel: 'مجسّم تفاعلي' };
 
-const GOLD = 0xe3b23c, TEAL = 0x2fb6a8, CORAL = 0xf0702a, BLUE = 0x4a90e2, N = 150;
+const GOLD = 0xe3b23c, TEAL = 0x2fb6a8, CORAL = 0xf0702a, BLUE = 0x4a90e2, N = 190;
+const GATES = [
+  { k: 'defs', t: 'تعريفات جديدة', col: BLUE, pos: V(-0.27, 0.36, 0.1), r: 0.11, title: 'تعريفات وتصنيفات جديدة', body: 'استحداث تعريفات وتصنيفات جديدة للمعرفة وما وراء المعرفة.' },
+  { k: 'media', t: 'الوسائل', col: CORAL, pos: V(0.27, 0.4, 0.1), r: 0.11, title: 'وسائل التكنولوجيا', body: 'الاستعانة بالتلفزيون والفيديو والدوائر التلفزيونية والحاسب الآلي والإنترنت.' },
+  { k: 'res', t: 'البحث العلمي', col: TEAL, pos: V(0.0, 0.56, -0.3), r: 0.14, title: 'البحث العلمي', body: 'طريق ثالث لمواجهة الانفجار المعرفي.' },
+];
 
 export default function build(ctx) {
   const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g);
-  const A = animator(ctx, g, 0.95);
-  g.position.y = 0.05;
-  const shb = shadowBlob(1.0, 0.75, 0.3); shb.position.y = -0.048; g.add(shb);
-  // a launch pad: steel slab with gold hazard edge and a lattice gantry
-  const lp = new THREE.Group();
-  const slab = new THREE.Mesh(new RoundedBoxGeometry(0.8, 0.05, 0.56, 3, 0.012), glossy(0xdccaa0, { roughness: 0.45 })); slab.position.y = -0.025;
-  const trim = new THREE.Mesh(new RoundedBoxGeometry(0.815, 0.012, 0.575, 3, 0.005), goldMat()); trim.position.y = -0.008;
-  lp.add(slab, trim);
-  const tw = new THREE.Group(); tw.position.set(-0.3, 0, -0.18);
-  [[-0.025, -0.025], [0.025, -0.025], [-0.025, 0.025], [0.025, 0.025]].forEach(([x, z]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.46, 0.008), goldMat()); p.position.set(x, 0.23, z); tw.add(p); });
-  for (let q = 1; q < 8; q++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.006, 0.06), goldMat()); b.position.y = q * 0.055; tw.add(b); }
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.012, 0.012), goldMat()); arm.position.set(0.11, 0.3, 0); tw.add(arm);
-  lp.add(tw); shadowed(lp); A.add(lp, { at: 0, dur: 0.7, rise: 0.2 });
+  const A = animator(ctx, g, 0.88);
+  const sh = shadowBlob(0.7, 0.55, 0.32); g.add(sh);
 
-  // the rocket on its gantry
-  const rocket = new THREE.Group(); rocket.position.y = 0.012;
-  const rp = [[0.001, 0], [0.026, 0.01], [0.03, 0.05], [0.026, 0.1], [0.016, 0.14], [0.001, 0.17]].map(([x, y]) => new THREE.Vector2(x, y));
-  const hull = new THREE.Mesh(new THREE.LatheGeometry(rp, 28), glossy(0xfff6e6)); hull.position.y = 0.04;
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.05, 24), glossy(CORAL)); nose.position.y = 0.22;
-  const win = new THREE.Mesh(new THREE.SphereGeometry(0.012, 16, 12), glossy(0x4aa8ff)); win.position.set(0, 0.14, 0.027);
-  rocket.add(hull, nose, win);
-  for (let i = 0; i < 3; i++) { const f = new THREE.Mesh(new RoundedBoxGeometry(0.004, 0.06, 0.04, 2, 0.0015), glossy(CORAL)); const a = i / 3 * TAU; f.position.set(Math.cos(a) * 0.03, 0.065, Math.sin(a) * 0.03); f.rotation.y = -a; rocket.add(f); }
-  const flame = glow(0xffb040, 0.14, 0.0); flame.position.y = 0.03; rocket.add(flame);
-  rocket.scale.setScalar(1.55); shadowed(rocket); const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.062, 0.02, 28), goldMat()); pad.position.y = 0.012; pad.scale.set(1.5, 1, 1.5); g.add(pad);
-  A.add(rocket, { at: 0.2, dur: 0.8, rise: 0.15 }); A.hint(rocket, GOLD, 0.1, 0.03);
-  const crown = new THREE.Group(); rocket.add(crown);
+  // a chunky rocket on a three-legged stand
+  const stand = new THREE.Group();
+  [90, 210, 330].forEach((d) => { const a = d * Math.PI / 180, l = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, 0.16, 10), goldMat()); l.position.set(Math.cos(a) * 0.075, 0.075, Math.sin(a) * 0.075); l.rotation.z = -Math.cos(a) * 0.38; l.rotation.x = Math.sin(a) * 0.38; stand.add(l); });
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.01, 10, 36), goldMat()); collar.rotation.x = Math.PI / 2; collar.position.y = 0.15; stand.add(collar); shadowed(stand);
+  A.add(stand, { at: 0.05, dur: 0.6, rise: 0.15 });
+  const rocket = new THREE.Group(); rocket.position.y = 0.16;
+  const rp = [[0.001, 0], [0.05, 0.012], [0.078, 0.07], [0.082, 0.17], [0.07, 0.28], [0.042, 0.37], [0.001, 0.42]].map(([x, y]) => new THREE.Vector2(x, y));
+  const hull = new THREE.Mesh(new THREE.LatheGeometry(rp, 40), glossy(0xfff6e6, { roughness: 0.18 })); hull.position.y = 0.05;
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.047, 24, 16, 0, TAU, 0, Math.PI * 0.62), glossy(CORAL)); nose.position.y = 0.43; nose.scale.y = 1.7;
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.081, 0.007, 10, 40), goldMat()); band.rotation.x = Math.PI / 2; band.position.y = 0.17;
+  const band2 = band.clone(); band2.position.y = 0.3; band2.scale.setScalar(0.88);
+  const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.055, 0.05, 20, 1, true), goldMat()); bell.position.y = 0.035;
+  rocket.add(hull, nose, band, band2, bell);
+  [0.23].forEach((y) => { const w = new THREE.Mesh(new THREE.SphereGeometry(0.024, 18, 12), glossy(0x4aa8ff)); w.position.set(0, y, 0.074); w.scale.z = 0.5; const wr = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.005, 8, 24), goldMat()); wr.position.set(0, y, 0.077); rocket.add(w, wr); });
+  for (let i = 0; i < 4; i++) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.12, 0.07), glossy(CORAL)); const a = i / 4 * TAU + Math.PI / 4; f.position.set(Math.cos(a) * 0.1, 0.11, Math.sin(a) * 0.1); f.rotation.y = -a; f.rotation.z = Math.cos(a) * 0.0; f.rotation.x = 0; rocket.add(f); }
+  const flame = glow(0xffb040, 0.28, 0.0); flame.position.y = -0.02; rocket.add(flame);
+  shadowed(rocket); rocket.userData.keepY = false; A.add(rocket, { at: 0.2, dur: 0.8, rise: 0.2 }); A.hint(rocket, GOLD, 0.11, 0.0);
+  const shock = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 64), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0, side: THREE.DoubleSide, toneMapped: false, depthWrite: false })); shock.rotation.x = -Math.PI / 2; shock.position.y = 0.004; g.add(shock);
 
-  // three gates that tame the explosion
-  const GATES = [
-    { k: 'defs', t: 'تعريفات جديدة', col: BLUE, ang: 2.5, title: 'تعريفات وتصنيفات جديدة', body: 'استحداث تعريفات وتصنيفات جديدة للمعرفة وما وراء المعرفة.' },
-    { k: 'media', t: 'وسائل التكنولوجيا', col: CORAL, ang: 0.62, title: 'وسائل التكنولوجيا', body: 'الاستعانة بالتلفزيون والفيديو والدوائر التلفزيونية والحاسب الآلي والإنترنت.' },
-    { k: 'res', t: 'البحث العلمي', col: TEAL, ang: -1.57, title: 'البحث العلمي', body: 'طريق ثالث لمواجهة الانفجار المعرفي.' },
-  ];
-  const gates = GATES.map((d, i) => {
-    const x = Math.cos(d.ang) * 0.27, z = Math.sin(d.ang) * 0.19, gt = new THREE.Group(); gt.position.set(x, 0.012, z); gt.rotation.y = Math.atan2(-x, -z) + Math.PI;
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.007, 14, 48), glossy(d.col)); ring.position.y = 0.075;
-    const post = [-1, 1].map((s) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.014, 0.075, 12), goldMat()); p.position.set(s * 0.04, 0.04, 0); return p; });
-    const core = new THREE.Mesh(new THREE.CircleGeometry(0.052, 32), new THREE.MeshBasicMaterial({ color: d.col, transparent: true, opacity: 0.0, side: THREE.DoubleSide, toneMapped: false, depthWrite: false })); core.position.y = 0.075;
-    gt.add(ring, ...post, core); gt.scale.setScalar(1.45); shadowed(gt);
-    A.add(gt, { at: 0.7 + i * 0.2, dur: 0.7, rise: 0.12 }); A.hint(gt, d.col, 0.085, 0.0);
-    A.tag(d.t, 0, d.col, V(x, 0.27, z), { at: 1.5 + i * 0.1 });
-    return { ...d, gt, core, on: false, onAt: -9, x, z };
+  // three big glass hoops that tame the sparks
+  const hoops = GATES.map((d, i) => {
+    const gt = new THREE.Group(); gt.position.copy(d.pos); gt.rotation.y = Math.atan2(d.pos.x, d.pos.z) * 0.55;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(d.r, 0.014, 16, 56), glossy(d.col));
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(d.r, 40), new THREE.MeshBasicMaterial({ color: d.col, transparent: true, opacity: 0.1, side: THREE.DoubleSide, toneMapped: false, depthWrite: false }));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.01, d.pos.y - 0.02, 10), goldMat()); stem.position.y = -d.pos.y / 2 + 0.01 - d.r * 0.0;
+    gt.add(ring, disc, stem); shadowed(gt);
+    A.add(gt, { at: 0.5 + i * 0.2, dur: 0.7, rise: 0.12 }); A.hint(gt, d.col, d.r + 0.03, 0.0, [0, 0, 0]);
+    A.tag(d.t, 0, d.col, d.pos.clone().add(V(0, d.r + 0.07, 0)), { at: 1.3 + i * 0.1 });
+    return { ...d, gt, disc, on: false, onAt: -9, ex: V(Math.cos(gt.rotation.y), 0, -Math.sin(gt.rotation.y)) };
   });
-  const tagBoom = A.tag('الانفجار المعرفي', 0, GOLD, V(0, 0.02, 0.36), { at: 1.2 });
 
-  // the sparks: one instanced cloud, steered by simple maths (no allocation per frame)
+  // the sparks: one point cloud steered by maths (no allocation per frame)
   const geo = new THREE.BufferGeometry(); const pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
   const S = [], c = new THREE.Color();
   for (let i = 0; i < N; i++) {
     const gI = i % 3, a = Math.random() * TAU, b = Math.acos(2 * Math.random() - 1);
-    S.push({ gI, dir: V(Math.sin(b) * Math.cos(a), Math.abs(Math.cos(b)) * 0.9 + 0.1, Math.sin(b) * Math.sin(a)), r: 0.16 + Math.random() * 0.24, ph: Math.random() * TAU, sp: 0.4 + Math.random() * 0.8, ring: Math.random() * TAU });
-    c.setHex([BLUE, CORAL, TEAL][gI]); c.lerp(new THREE.Color(0xfff0c0), Math.random() * 0.5); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    S.push({ gI, dir: V(Math.sin(b) * Math.cos(a), Math.abs(Math.cos(b)) * 0.8 + 0.2, Math.sin(b) * Math.sin(a)), r: 0.25 + Math.random() * 0.3, ph: Math.random() * TAU, sp: 0.4 + Math.random() * 0.8, ring: Math.random() * TAU, rr: 0.5 + Math.random() * 0.6 });
+    c.setHex([BLUE, CORAL, TEAL][gI]); c.lerp(new THREE.Color(0xfff0c0), Math.random() * 0.45); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.03, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false, sizeAttenuation: true, blending: THREE.NormalBlending }));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.034, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false, sizeAttenuation: true }));
   pts.frustumCulled = false; g.add(pts);
 
-  let bangAt = 1.6, n = 0; const seen = new Set();
+  let bangAt = 1.1, n = 0; const seen = new Set();
+  const NOSE = V(0, 0.68, 0);
   const finish = () => { ctx.ui.card({ tag: 'النتيجة', title: 'اختصار الوقت والجهد', body: 'زيادة المخزون التعليمي وإدراك العلاقات بين المواضيع المختلفة.', color: GOLD }); ctx.ui.done(); };
-  A.touch(rocket, () => { bangAt = A.now + 0.2; ctx.ui.card({ tag: 'المشكلة', title: 'الانفجار المعرفي', body: 'نمو مضاعف في المعلومات نتيجة التقدم العلمي وظهور علوم جديدة.', color: GOLD }); }, { color: GOLD });
-  gates.forEach((d) => A.touch(d.gt, () => {
+  A.touch(rocket, () => { bangAt = A.now + 0.25; ctx.ui.card({ tag: 'المشكلة', title: 'الانفجار المعرفي', body: 'نمو مضاعف في المعلومات نتيجة التقدم العلمي وظهور علوم جديدة.', color: GOLD }); }, { color: GOLD });
+  hoops.forEach((d) => A.touch(d.gt, () => {
     if (!d.on) { d.on = true; d.onAt = A.now; n++; }
     ctx.ui.card({ tag: 'مواجهة', title: d.title, body: d.body, color: d.col });
     ctx.ui.hud(n < 3 ? `روّضت ${['٠', '١', '٢'][n]} من ٣ طرق` : 'تحوّل الانفجار إلى نظام');
     if (n === 3 && !seen.has('f')) { seen.add('f'); setTimeout(finish, 2200); }
   }, { color: d.col }));
-  ctx.ui.hud('المس الصاروخ ثم البوابات');
+  ctx.ui.hud('المس الصاروخ ثم الحلقات');
 
   return {
     update(t, dt, e) {
-      A.update(t, dt, e);
+      A.update(t, dt, e); sh.material.opacity = 0.32 * e;
       const bt = t - bangAt;
-      // rocket shakes, lifts a little, then the burst
-      const lift = bt > -0.8 && bt < 0 ? -bt * 0 : 0;
-      rocket.position.y = 0.012 + (bt > -1.2 && bt < 0 ? Math.sin(bt * 40) * 0.0015 : 0) + (bt > 0 ? Math.min(bt * 0.25, 0.1) * (bt < 3 ? 1 : 0) : 0);
-      flame.material.opacity = bt > -1.2 && bt < 1.5 ? 0.9 : 0.0; flame.scale.setScalar(0.12 + Math.random() * 0.03);
-      if (bt > 3) { rocket.position.y = 0.012 + THREE.MathUtils.damp(rocket.position.y - 0.012, 0, 2, dt); }
+      rocket.position.y = 0.16 + (bt > -1.0 && bt < 0 ? Math.sin(bt * 45) * 0.002 : 0) + (bt > 0 && bt < 0.5 ? Math.sin(bt / 0.5 * Math.PI) * 0.03 : 0);
+      flame.material.opacity = bt > -1.0 && bt < 1.4 ? 0.9 : 0; flame.scale.setScalar(0.22 + Math.sin(t * 40) * 0.03);
+      const sk = clamp01(bt / 1.6); shock.material.opacity = bt > 0 && bt < 1.6 ? (1 - sk) * 0.6 : 0; shock.scale.setScalar(0.05 + ease(sk) * 0.45);
       for (let i = 0; i < N; i++) {
         const s = S[i], o = i * 3;
-        if (bt < 0 || t < 1.6) { pos[o] = 0; pos[o + 1] = -5; pos[o + 2] = 0; continue; }
+        if (bt < 0 || t < 1.1) { pos[o] = 0; pos[o + 1] = -5; pos[o + 2] = 0; continue; }
         const k = clamp01(bt / 1.6), r = ease(k) * s.r;
-        // free flight: spreads, then drifts on a slow chaotic orbit around the rocket
-        let x = s.dir.x * r + Math.sin(t * s.sp + s.ph) * 0.02 * k, y = 0.36 + s.dir.y * r * 1.1 + Math.cos(t * s.sp * 1.3 + s.ph) * 0.02 * k, z = s.dir.z * r + Math.sin(t * s.sp * 0.8 + s.ph * 2) * 0.02 * k;
-        const d = gates[s.gI];
-        if (d.on) { // tamed: streams into the gate, then circles it in orderly rings
-          const m = ease(clamp01((t - d.onAt) / 1.4)), a = t * 1.1 + s.ring, rr = 0.04 + (i % 4) * 0.012;
-          const tx = d.x + Math.cos(a) * rr * 0.4, ty = 0.11 + Math.sin(a) * rr, tz = d.z + Math.cos(a) * rr * 0.4 * 0 + Math.sin(a * 0.0) * 0 ;
-          const dx = (d.x - 0) , dz = d.z;
-          x += (d.x + Math.cos(a) * rr * Math.cos(Math.atan2(-d.x, -d.z) + Math.PI) - x) * m; y += (ty - y) * m; z += (d.z + Math.cos(a) * rr * -Math.sin(Math.atan2(-d.x, -d.z) + Math.PI) - z) * m;
+        let x = NOSE.x + s.dir.x * r + Math.sin(t * s.sp + s.ph) * 0.03 * k, y = NOSE.y + (s.dir.y - 0.35) * r + Math.cos(t * s.sp * 1.3 + s.ph) * 0.03 * k, z = NOSE.z + s.dir.z * r * 0.8 + Math.sin(t * s.sp * 0.8 + s.ph * 2) * 0.03 * k;
+        const d = hoops[s.gI];
+        if (d.on) {
+          const m = ease(clamp01((t - d.onAt) / 1.5)), a = t * 1.3 + s.ring, rr = d.r * (0.55 + s.rr * 0.5);
+          const tx = d.pos.x + d.ex.x * Math.cos(a) * rr, ty = d.pos.y + Math.sin(a) * rr, tz = d.pos.z + d.ex.z * Math.cos(a) * rr;
+          x += (tx - x) * m; y += (ty - y) * m; z += (tz - z) * m;
         }
         pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
       }
       geo.attributes.position.needsUpdate = true;
-      gates.forEach((d) => { d.core.material.opacity = THREE.MathUtils.damp(d.core.material.opacity, d.on ? 0.3 + Math.sin(t * 3) * 0.08 : 0, 4, dt); });
-      tagBoom.userData.hide = t - bangAt > 8 && n === 3;
+      hoops.forEach((d) => { d.disc.material.opacity = THREE.MathUtils.damp(d.disc.material.opacity, d.on ? 0.3 + Math.sin(t * 3) * 0.06 : 0.1, 4, dt); });
     },
   };
 }

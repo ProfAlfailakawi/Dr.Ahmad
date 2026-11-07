@@ -1,12 +1,12 @@
 // p469 — a concept map as a hanging mobile: the future of educational technology balances on a brass stand; every idea hangs from the one it depends on.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=15';
-import { inked } from '../../pencil.js?v=15';
-import { lightPool } from '../../v2/common.js?v=15';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=16';
+import { inked } from '../../pencil.js?v=16';
+import { lightPool } from '../../v2/common.js?v=16';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=16';
 
-export const meta = { free: true, center: [0.31, 0.575], typeLabel: 'مجسّم معلّق', title: 'شبكة مستقبل التعليم' };
+export const meta = { free: true, center: [0.5, 0.575], typeLabel: 'مجسّم معلّق', title: 'شبكة مستقبل التعليم' };
 
 const N = {
   t: { t: 'مستقبل تكنولوجيا التعليم', tag: 'المستقبل', b: 'يتمحور حول طرق الوصول إلى المعلومات والتعلم في جميع الأمكنة، والتعاون على الصعيدين المحلي والعالمي.', c: 0xe5258f },
@@ -18,7 +18,7 @@ const N = {
 };
 
 export default function build(ctx) {
-  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.7);
+  const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g); g.scale.setScalar(0.95);
   const seq = new Seq(), hints = new Hints(g, 6.0), tag = new Tag(g, 0.21);
   const brass = goldMat(), seen = new Set(); let finished = false, now = 0;
   const strMat = new THREE.MeshBasicMaterial({ color: 0x6b5a3c });

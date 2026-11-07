@@ -1,7 +1,7 @@
 // p363 — a laptop that writes itself on a teal hexagon; six little exhibits ring it, each wired to the screen by a thread of light.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=15';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, hexSlab } from '../lib/a7.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=16';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, hexSlab } from '../lib/a7.js?v=16';
 
 export const meta = { free: true, center: [0.38, 0.5], typeLabel: 'مجسّم تفاعلي' };
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=15';
-import { animator, shadowBlob, canvasTexture, V, TAU } from '../lib/a1-kit.js?v=15';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=16';
+import { animator, shadowBlob, V, TAU } from '../lib/a1-kit.js?v=16';
 
 export const meta = { free: true, center: [0.55, 0.7], typeLabel: 'لعبة تصميم' };
 
@@ -20,107 +20,96 @@ function archive() { const g = new THREE.Group(); const b = box(0.05, 0.07, 0.04
 function meet() { const g = new THREE.Group(); const t = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.012, 24), glossy(0xb9895c)); t.position.y = 0.025; const l = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.02, 8), goldMat()); l.position.y = 0.012; g.add(t, l); for (let i = 0; i < 4; i++) { const a = i / 4 * TAU, p = new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 8), glossy(GOLD)); p.position.set(Math.cos(a) * 0.04, 0.02, Math.sin(a) * 0.04); g.add(p); } return g; }
 
 const PARTS = [
-  { slot: 'نقل الخبرة', col: GOLD, opts: [{ t: 'تلفزيون تربوي', m: tv, ok: true, fb: 'يبثّ خبرة المتخصص إلى مواقع متعددة في آن واحد.' }, { t: 'مذكرات مطبوعة', m: papers, fb: 'لا تنقل أداء المتخصص ولا تعالج نقصه.' }, { t: 'متخصص لكل معهد', m: lonely, fb: 'يعيد المشكلة نفسها؛ فالكفاءات يصعب توفيرها لكل معهد.' }] },
-  { slot: 'الربط', col: SKY, opts: [{ t: 'اتصال ثنائي', m: pair, fb: 'محدود النطاق وكثير التكلفة.' }, { t: 'أقمار صناعية', m: sat, ok: true, fb: 'توسّع الوصول إلى عدد كبير من المؤسسات معاً.' }, { t: 'قاعة واحدة', m: room, fb: 'تحصر الفائدة في موقع واحد.' }] },
-  { slot: 'تبادل المعرفة', col: TEAL, opts: [{ t: 'أرشيف ورقي', m: archive, fb: 'يعزل الخبرة داخل الكلية ولا يتيح تبادلها.' }, { t: 'لقاء سنوي', m: meet, fb: 'لا يوفّر تبادلاً مستمراً للمعرفة.' }, { t: 'بنوك المعلومات', m: bank, ok: true, fb: 'تتيح تبادل المعرفة والخبرة بين المؤسسات.' }] },
+  { slot: 'نقل الخبرة', col: GOLD, opts: [{ t: 'تلفزيون تربوي', m: tv, ok: true, fb: 'يبثّ خبرة المتخصص إلى مواقع متعددة في آن واحد.' }, { t: 'مذكرات', m: papers, fb: 'لا تنقل أداء المتخصص ولا تعالج نقصه.' }, { t: 'متخصص خاص', m: lonely, fb: 'يعيد المشكلة نفسها؛ فالكفاءات يصعب توفيرها لكل معهد.' }] },
+  { slot: 'الربط', col: SKY, opts: [{ t: 'اتصال ثنائي', m: pair, fb: 'محدود النطاق وكثير التكلفة.' }, { t: 'أقمار', m: sat, ok: true, fb: 'توسّع الوصول إلى عدد كبير من المؤسسات معاً.' }, { t: 'قاعة واحدة', m: room, fb: 'تحصر الفائدة في موقع واحد.' }] },
+  { slot: 'تبادل المعرفة', col: TEAL, opts: [{ t: 'أرشيف', m: archive, fb: 'يعزل الخبرة داخل الكلية ولا يتيح تبادلها.' }, { t: 'لقاء سنوي', m: meet, fb: 'لا يوفّر تبادلاً مستمراً للمعرفة.' }, { t: 'بنوك معلومات', m: bank, ok: true, fb: 'تتيح تبادل المعرفة والخبرة بين المؤسسات.' }] },
 ];
 
-function mapTex() {
-  return canvasTexture(256, 180, (c, w, h) => { c.fillStyle = '#1f5f7a'; c.fillRect(0, 0, w, h); c.fillStyle = 'rgba(255,255,255,.08)'; for (let x = 0; x < w; x += 24) c.fillRect(x, 0, 1, h); for (let y = 0; y < h; y += 24) c.fillRect(0, y, w, 1); c.fillStyle = '#2f8aa8'; [[60, 70, 40], [130, 90, 55], [200, 60, 34], [95, 130, 28], [180, 125, 30]].forEach(([x, y, r]) => { c.beginPath(); c.ellipse(x, y, r, r * 0.6, 0.3, 0, TAU); c.fill(); }); });
-}
 export default function build(ctx) {
   const g = new THREE.Group(); g.position.copy(P(meta.center[0], meta.center[1])); ctx.stage.add(g);
-  const A = animator(ctx, g, 0.88);
-  g.position.y = 0.05;
-  const shb = shadowBlob(1.0, 0.8, 0.28); shb.position.y = -0.048; g.add(shb);
-  // a console desk in the pale blue of the print, with a glowing map inlay
-  const cs = new THREE.Group();
-  const slab = new THREE.Mesh(new RoundedBoxGeometry(0.84, 0.05, 0.64, 4, 0.02), glossy(0xbfe3ee, { roughness: 0.3 })); slab.position.y = -0.025;
-  const inlay = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.5), new THREE.MeshBasicMaterial({ map: mapTex(), toneMapped: false })); inlay.rotation.x = -Math.PI / 2; inlay.position.y = 0.001;
-  const rim = new THREE.Mesh(new RoundedBoxGeometry(0.86, 0.012, 0.66, 3, 0.005), goldMat()); rim.position.y = -0.01;
-  cs.add(slab, rim, inlay); shadowed(cs); A.add(cs, { at: 0, dur: 0.7, rise: 0.2 });
+  const A = animator(ctx, g, 0.86);
+  const sh = shadowBlob(0.8, 0.6, 0.3); g.add(sh);
 
-  // the scarce expert: a golden figure on a tall pedestal, with a faint light
-  const ex = new THREE.Group(); ex.position.set(0, 0.0, -0.16); ex.scale.setScalar(1.45);
-  const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.1, 28), glossy(0xf5ecd6)); ped.position.y = 0.05;
-  const bm = glossy(GOLD, { roughness: 0.25, metalness: 0.4 });
-  const eb = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.05, 6, 16), bm); eb.position.y = 0.14; const eh = new THREE.Mesh(new THREE.SphereGeometry(0.022, 20, 14), bm); eh.position.y = 0.205;
-  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.003, 8, 36), new THREE.MeshBasicMaterial({ color: GOLD, toneMapped: false })); halo.position.y = 0.24; halo.rotation.x = Math.PI / 2;
-  ex.add(ped, eb, eh, halo); shadowed(ex); A.add(ex, { at: 0.2, dur: 0.8, rise: 0.15 });
-  const exTag = A.tag('الكفاءة النادرة', 0, GOLD, V(0, 0.46, -0.16), { at: 1.2 });
+  // a broadcast tower: four slender legs, crossbars, a beacon; the design is bolted onto it part by part
+  const tw = new THREE.Group(); const gm = goldMat(), wm = glossy(0xf4ecd8, { roughness: 0.35 });
+  const lg = (a, b, r, m) => { const d = b.clone().sub(a), l = d.length(), c = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.8, r, l, 8), m); c.position.copy(a).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); return c; };
+  const H = 0.78, B = 0.12, T = 0.025;
+  [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach(([x, z]) => tw.add(lg(V(x * B, 0, z * B - 0.0), V(x * T, H, z * T), 0.008, wm)));
+  for (let q = 1; q <= 6; q++) { const y = q * H / 7, w = B + (T - B) * (y / H); const bx = new THREE.Mesh(new THREE.BoxGeometry(w * 2, 0.006, 0.006), gm), bz = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.006, w * 2), gm); bx.position.set(0, y, w); const bx2 = bx.clone(); bx2.position.z = -w; bz.position.set(w, y, 0); const bz2 = bz.clone(); bz2.position.x = -w; tw.add(bx, bx2, bz, bz2); }
+  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.022, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffe9a0, emissive: GOLD, emissiveIntensity: 0.5 })); beacon.position.y = H + 0.02; tw.add(beacon);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.004, 0.08, 8), gm); mast.position.y = H + 0.04; tw.add(mast);
+  
+  tw.position.z = -0.12; shadowed(tw); A.add(tw, { at: 0.05, dur: 0.8, rise: 0.2 });
+  const bg = glow(GOLD, 0.2, 0.7); bg.position.set(0, H + 0.03, -0.12); g.add(bg);
 
-  // the receiving institutions: small buildings ring, dark until the design reaches them
-  const camp = [], blds = [];
+  // the scarce expert, small and golden at the foot of the tower
+  const ex = new THREE.Group(); ex.position.set(-0.27, 0, -0.04); const bmx = glossy(GOLD, { roughness: 0.25, metalness: 0.4 });
+  const eb = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.07, 6, 16), bmx); eb.position.y = 0.075; const eh = new THREE.Mesh(new THREE.SphereGeometry(0.03, 20, 14), bmx); eh.position.y = 0.165;
+  const hl = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.004, 8, 36), new THREE.MeshBasicMaterial({ color: GOLD, toneMapped: false })); hl.position.y = 0.22; hl.rotation.x = Math.PI / 2;
+  ex.add(eb, eh, hl); shadowed(ex); A.add(ex, { at: 0.4, dur: 0.6, rise: 0.12 }); A.hint(ex, GOLD, 0.07, 0.0);
+  A.touch(ex, () => ctx.ui.card({ tag: 'المشكلة', title: 'الكفاءة النادرة', body: 'تفتقر جامعات ومعاهد عدة إلى ذوي الكفاءات الخاصة الذين يصعب توفيرهم لكل مؤسسة.', color: GOLD }), { color: GOLD });
+
+  // the institutions: little houses of learning that wake up as the design reaches them
+  const blds = [];
   for (let i = 0; i < 8; i++) {
-    const a = i / 8 * TAU + 0.2, b = new THREE.Group(); b.position.set(Math.cos(a) * 0.37, 0.0, Math.sin(a) * 0.25 + 0.01); b.scale.setScalar(1.5);
-    const body = box(0.035, 0.03 + (i % 3) * 0.01, 0.035, 0x6b7a86, 0.003); body.position.y = 0.02 + (i % 3) * 0.005;
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.015, 4), glossy(0x44525d)); roof.position.y = 0.045 + (i % 3) * 0.01; roof.rotation.y = Math.PI / 4;
-    const lamp = glow(GOLD, 0.0, 0.9); lamp.position.y = 0.075; b.add(body, roof, lamp); shadowed(b); b.userData.lamp = lamp; b.userData.body = body;
-    blds.push(b); A.add(b, { at: 0.5 + i * 0.07, dur: 0.6, rise: 0.08 });
+    const a = i / 8 * TAU + 0.4, b = new THREE.Group(); b.position.set(Math.cos(a) * 0.46, 0, Math.sin(a) * 0.3 - 0.06); b.scale.setScalar(1.25);
+    const body = box(0.04, 0.032 + (i % 3) * 0.01, 0.04, 0xcfc7b4, 0.003); body.position.y = 0.02 + (i % 3) * 0.005;
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.036, 0.018, 4), glossy(0x8e8676)); roof.position.y = 0.048 + (i % 3) * 0.01; roof.rotation.y = Math.PI / 4;
+    const lamp = glow(GOLD, 0.0, 0.9); lamp.position.y = 0.085; b.add(body, roof, lamp); shadowed(b); b.userData.lamp = lamp; b.userData.body = body;
+    blds.push(b); A.add(b, { at: 0.4 + i * 0.07, dur: 0.5, rise: 0.08 });
   }
 
-  // three slots on the platform, waiting for the chosen parts
-  const SLOTX = [-0.2, 0, 0.2], slots = PARTS.map((p, i) => {
-    const r = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.004, 8, 40), new THREE.MeshBasicMaterial({ color: p.col, transparent: true, opacity: 0.0, toneMapped: false })); r.rotation.x = Math.PI / 2; r.position.set(SLOTX[i], 0.006, 0.0); g.add(r);
-    return r;
-  });
+  // radio waves rolling over the print from the tower foot
+  const wcol = [GOLD, SKY, TEAL], waves = [];
+  for (let s = 0; s < 3; s++) for (let q = 0; q < 3; q++) { const m = new THREE.Mesh(new THREE.RingGeometry(0.96, 1.0, 72), new THREE.MeshBasicMaterial({ color: wcol[s], transparent: true, opacity: 0, side: THREE.DoubleSide, toneMapped: false, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(0, 0.004, -0.12); m.scale.setScalar(0.01); g.add(m); waves.push({ m, s, q }); }
 
-  // option objects for the current round
-  let round = 0, optObjs = [], doneCount = 0, roundAt = 1.2, solved = false, tubes = [];
-  const OPX = [-0.23, 0, 0.23];
-  const pickOrder = [[2, 0, 1], [1, 2, 0], [0, 1, 2]]; // where each option stands in each round (right answer is never in the middle twice)
+  // the three mounting points on the tower
+  const MOUNT = [V(0, 0.07, 0.04), V(0, H + 0.1, -0.12), V(0, 0.4, 0.06)], MSC = [2.1, 2.0, 2.0];
+  let round = 0, opts = [], placed = [false, false, false], placedAt = [-9, -9, -9], solved = false, roundAt = 1.0;
+  const OPX = [-0.25, 0, 0.25];
+  const order = [[2, 0, 1], [1, 2, 0], [0, 1, 2]];
+  const tags = [0, 1, 2].map(() => null);
   function spawn() {
-    optObjs.forEach((o) => { o.root.parent?.remove(o.root); o.tag.parent?.remove(o.tag); });
-    optObjs = [];
-    const P_ = PARTS[round]; if (!P_) return;
+    opts.forEach((o) => { o.root.parent?.remove(o.root); }); opts = [];
+    const P_ = PARTS[round]; if (!P_) return; ctx.ui.hud(`اختر: ${P_.slot}`);
     P_.opts.forEach((op, i) => {
-      const spot = pickOrder[round].indexOf(i);
-      const root = new THREE.Group(); root.position.set(OPX[spot], 0.0, 0.2); root.scale.setScalar(1.0);
-      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.058, 0.008, 28), glossy(0xf2ead8)); stand.position.y = 0.004;
-      const m = op.m(); m.position.y = 0.008; shadowed(m); root.add(stand, m);
-      root.scale.setScalar(0.0001); g.add(root);
-      const tag = A.tag(op.t, 0, P_.col, V(OPX[spot], spot === 1 ? 0.4 : 0.28, 0.2), { at: A.now + 0.3 + i * 0.1 });
-      A.hint(root, P_.col, 0.07, 0.01);
-      const o = { root, m, op, tag, spot, born: A.now + i * 0.15, dead: false, shake: -9, flyAt: -9, gone: false }; optObjs.push(o);
-      root.userData = { };
+      const spot = order[round].indexOf(i);
+      const root = new THREE.Group(); root.position.set(OPX[spot], 0, 0.4); root.scale.setScalar(0.0001);
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.078, 0.012, 28), glossy(0xf2ead8)); pad.position.y = 0.006;
+      const m = op.m(); m.position.y = 0.012; m.scale.setScalar(1.7); shadowed(m); root.add(pad, m); g.add(root);
+      const tg = tags[spot] || (tags[spot] = A.tag('—', 0, P_.col, V(OPX[spot], 0.3, 0.4), { at: 9e9 }));
+      A.retag(tg, op.t, P_.col); tg.userData.hide = false; tg.userData.at = A.now + 0.3 + i * 0.1; tg.position.set(OPX[spot], spot === 1 ? 0.46 : 0.26, 0.4);
+      const o = { root, m, op, spot, tg, born: A.now + i * 0.12, state: 'idle', t0: 0, wob: -9 }; opts.push(o);
       ctx.tap(root, () => choose(o));
     });
-    ctx.ui.hud(`اختر: ${P_.slot}`);
   }
   function choose(o) {
-    if (o.dead || solved || o.flyAt > -9) return;
-    ctx.sfx.pop?.();
+    if (o.state !== 'idle' || solved || opts.some((q) => q.state === 'fly')) return; ctx.sfx.pop?.();
     if (o.op.ok) {
-      o.flyAt = A.now; o.tag.userData.hide = true; ctx.sfx.good?.(); ctx.ui.card({ tag: 'اختيار موفّق', title: o.op.t, body: o.op.fb, color: PARTS[round].col });
-      optObjs.forEach((q) => { if (q !== o) q.dead = true; });
-      const r = round; setTimeout(() => { doneCount++; light(r); round++; if (round >= PARTS.length) finish(); else { roundAt = A.now + 0.2; spawn(); } }, 1700);
-    } else { o.shake = A.now; o.dead = true; ctx.sfx.bad?.(); ctx.ui.card({ tag: 'ليس الأنسب', title: o.op.t, body: o.op.fb, color: RED }); }
+      o.state = 'fly'; o.t0 = A.now; ctx.sfx.good?.(); tags.forEach((t) => t && (t.userData.hide = true));
+      ctx.ui.card({ tag: 'اختيار موفّق', title: o.op.t, body: o.op.fb, color: PARTS[round].col }); opts.forEach((q) => { if (q !== o) q.state = 'fade'; });
+      const r = round; o.r = r; setTimeout(() => { placed[r] = true; placedAt[r] = A.now; ctx.fx.burst(A.sp(MOUNT[r]), PARTS[r].col, 26, 0.4, 0.035); o.root.visible = false; blds.forEach((b, i) => { if (i % 3 === r) b.userData.on = A.now + 0.6 + i * 0.1; }); round++; if (round >= PARTS.length) finish(); else { roundAt = A.now; spawn(); } }, 1500);
+    } else { o.state = 'wrong'; o.wob = A.now; ctx.sfx.bad?.(); ctx.ui.card({ tag: 'ليس الأنسب', title: o.op.t, body: o.op.fb, color: RED }); }
   }
-  let litAt = [-9, -9, -9];
-  function light(r) { litAt[r] = A.now; for (let i = 0; i < 8; i++) { if (i % 3 === r || i === r + 3) blds[i].userData.on = A.now + i * 0.12; } }
-  function finish() {
-    solved = true; blds.forEach((b, i) => { b.userData.on = A.now + i * 0.1; });
-    setTimeout(() => { ctx.ui.card({ tag: 'خلاصة التصميم', title: 'خبرة واحدة تصل إلى الجميع', body: 'بثّ تربوي، وربط واسع بالأقمار الصناعية، وبنوك معلومات لتبادل المعرفة.', color: GOLD }); ctx.ui.done(); }, 2200);
-  }
+  function finish() { solved = true; blds.forEach((b, i) => { b.userData.on = A.now + 0.2 + i * 0.12; }); setTimeout(() => { ctx.ui.card({ tag: 'خلاصة التصميم', title: 'خبرة واحدة تصل إلى الجميع', body: 'بثّ تربوي، وربط واسع بالأقمار الصناعية، وبنوك معلومات لتبادل المعرفة.', color: GOLD }); ctx.ui.done(); }, 2400); }
   spawn();
 
-  const beams = [];
+  const mountedGroups = [];
   return {
     update(t, dt, e) {
-      A.update(t, dt, e);
-      halo.rotation.z = t; ex.rotation.y = Math.sin(t * 0.5) * 0.4; halo.position.y = 0.24 + Math.sin(t * 2) * 0.004;
-      optObjs.forEach((o) => {
-        const k = ease((t - Math.max(o.born, roundAt)) / 0.7);
-        let s = k, x = OPX[o.spot], y = 0.0 + (1 - k) * 0.08, z = 0.2, rz = 0;
-        if (o.shake > -9) { const w = t - o.shake; if (w < 0.5) rz = Math.sin(w * 50) * 0.2 * (1 - w * 2); }
-        if (o.dead && o.flyAt < 0) s *= 0.78 + 0.0;
-        if (o.flyAt > -9) { const f = clamp01((t - o.flyAt) / 1.2); x = THREE.MathUtils.lerp(OPX[o.spot], SLOTX[round], ease(f)); z = THREE.MathUtils.lerp(0.2, 0, ease(f)); y = 0.0 + Math.sin(f * Math.PI) * 0.12; }
-        o.root.position.set(x, y, z); o.root.rotation.z = rz; o.root.scale.setScalar(Math.max(0.0001, s * 1.8));
-        o.m.rotation.y = o.flyAt > -9 ? 0 : Math.sin(t * 0.8 + o.spot) * 0.3;
-        o.tag.position.set(x, o.spot === 1 ? 0.4 : 0.28, z); o.tag.userData.hide = o.flyAt > -9;
+      A.update(t, dt, e); sh.material.opacity = 0.3 * e;
+      hl.rotation.z = t; ex.rotation.y = Math.sin(t * 0.5) * 0.4; beacon.material.emissiveIntensity = 0.5 + placed.filter(Boolean).length * 0.5 + Math.sin(t * 3) * 0.15; bg.scale.setScalar(0.18 + placed.filter(Boolean).length * 0.05);
+      opts.forEach((o) => {
+        const k = ease((t - Math.max(o.born, roundAt)) / 0.7); let x = OPX[o.spot], y = (1 - k) * 0.08, z = 0.4, s = k * (o.state === 'fade' ? 0.7 : 1), rz = 0;
+        if (o.state === 'wrong') { const w = t - o.wob; if (w < 0.5) rz = Math.sin(w * 50) * 0.2 * (1 - w * 2); s *= 0.85; }
+        if (o.state === 'fly') { const f = clamp01((t - o.t0) / 1.4), M = MOUNT[o.r]; x = THREE.MathUtils.lerp(OPX[o.spot], M.x, ease(f)); z = THREE.MathUtils.lerp(0.4, M.z, ease(f)); y = THREE.MathUtils.lerp(0, M.y, ease(f)) + Math.sin(f * Math.PI) * 0.12; s = k * THREE.MathUtils.lerp(1, 0.9, ease(f)); o.m.rotation.y = f * TAU; }
+        else o.m.rotation.y = Math.sin(t * 0.8 + o.spot) * 0.3;
+        o.root.position.set(x, y, z); o.root.rotation.z = rz; o.root.scale.setScalar(Math.max(0.0001, s * (o.state === 'fly' ? 1 + ease(clamp01((t - o.t0) / 1.4)) * 0.2 : 1)));
       });
-      slots.forEach((r, i) => { r.material.opacity = (i === round && !solved ? 0.5 + Math.sin(t * 3) * 0.25 : litAt[i] > -9 ? 0.6 : 0.0) * clamp01(e); });
-      blds.forEach((b) => { const u = b.userData, k = clamp01((t - (u.on ?? 1e9)) / 0.8); u.lamp.scale.setScalar(Math.max(0.0001, ease(k) * 0.12 + (k > 1 ? Math.sin(t * 2 + b.position.x * 20) * 0.01 : 0))); u.body.material.emissive = u.body.material.emissive; u.body.material.emissiveIntensity = k; if (u.on !== undefined) u.body.material.emissive.setHex(0x8a6a1e); });
+      // modules that arrived stay mounted on the tower
+      PARTS.forEach((P_, r) => { if (placed[r] && !mountedGroups[r]) { const mm = P_.opts.find((q) => q.ok).m(); mm.scale.setScalar(MSC[r]); mm.position.copy(MOUNT[r]); shadowed(mm); g.add(mm); mountedGroups[r] = mm; mm.userData.born = t; } if (mountedGroups[r]) { const mm = mountedGroups[r]; mm.scale.setScalar(MSC[r] * (1 + Math.max(0, 1 - (t - mm.userData.born) * 3) * 0.3)); mm.rotation.y = Math.sin(t * 0.6 + r) * 0.4; } });
+      waves.forEach((w) => { const on = placed[w.s]; const ph = ((t - placedAt[w.s]) / 3.0 + w.q / 3) % 1; if (!on) { w.m.material.opacity = 0; return; } w.m.scale.setScalar(0.05 + ph * 0.5); w.m.material.opacity = (1 - ph) * 0.5 * (t - placedAt[w.s] > 0 ? 1 : 0); });
+      blds.forEach((b) => { const u = b.userData, k = clamp01((t - (u.on ?? 1e9)) / 0.8); u.lamp.scale.setScalar(Math.max(0.0001, ease(k) * 0.14 + (k > 1 ? Math.sin(t * 2 + b.position.x * 20) * 0.01 : 0))); if (u.on !== undefined && t >= u.on) { u.body.material.emissive.setHex(0xd9a830); u.body.material.emissiveIntensity = 0.45 * k; } });
     },
   };
 }

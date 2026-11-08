@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=21';
-import { animator, plinth, shadowBlob, V, TAU, softLight, canvasTexture } from '../lib/a1-kit.js?v=21';
-import { medal, tweener, shakeX } from '../lib/b1-kit.js?v=21';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=22';
+import { animator, plinth, shadowBlob, V, TAU, softLight, canvasTexture } from '../lib/a1-kit.js?v=22';
+import { medal, tweener, shakeX } from '../lib/b1-kit.js?v=22';
 
 export const meta = { free: true, center: [0.5, 0.65], typeLabel: 'لعبة: اكتشف الخطأ' };
 

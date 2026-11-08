@@ -1,8 +1,8 @@
 // Shared builders for the "a2" batch of hand-built page scenes (meshes, rise-in sequencing, pulses, touch helpers).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=21';
-import { softLight, tagSprite, css } from '../../v2/common.js?v=21';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=22';
+import { softLight, tagSprite, css } from '../../v2/common.js?v=22';
 
 export const INK = 0x2b2620, PAPER = 0xf7f2e7, GOLD = 0xd4ad55, TAU = Math.PI * 2;
 export const rb = (w, h, d, r = 0.008, s = 3) => new RoundedBoxGeometry(w, h, d, s, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4));

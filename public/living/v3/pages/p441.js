@@ -1,9 +1,9 @@
 // p441 — brainstorming: a glass bulb above a hex stage; six idea-gems orbit it, each rule is a gem that you send into the filament.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=24';
-import { inked } from '../../pencil.js?v=24';
-import { lightPool } from '../../v2/common.js?v=24';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=24';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=25';
+import { inked } from '../../pencil.js?v=25';
+import { lightPool } from '../../v2/common.js?v=25';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=25';
 
 export const meta = { free: true, center: [0.5, 0.247], typeLabel: 'مصباح الأفكار', title: 'أضئ المصباح بالأفكار' };
 

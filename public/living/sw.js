@@ -3,7 +3,7 @@
 const CACHE = 'living-v24';
 const BASE = new URL('./', self.location);                       // …/living/
 const PAGE = BASE.pathname === '/' ? BASE.href : BASE.href.slice(0, -1); // …/living (the page itself)
-const SHELL = ['app.js?v=24', 'experiences.js?v=24', 'kit.js?v=24', 'pencil.js?v=24', 'doors34.js?v=24', 'sound.js?v=24', 'boot.js?v=24', 'fast.js?v=24', 'fast-index.js?v=24', 'targets/all.stub.mind?v=14'].map((p) => new URL(p, BASE).href);
+const SHELL = ['app.js?v=25', 'experiences.js?v=25', 'kit.js?v=25', 'pencil.js?v=25', 'doors34.js?v=25', 'sound.js?v=25', 'boot.js?v=25', 'fast.js?v=25', 'fast-index.js?v=25', 'targets/all.stub.mind?v=15'].map((p) => new URL(p, BASE).href);
 const LIBS = [
   'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
   'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js',

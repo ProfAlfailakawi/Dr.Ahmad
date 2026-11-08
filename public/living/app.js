@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=22';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=22';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=22';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=22';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=23';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=23';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=23';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=23';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -848,6 +848,8 @@ function leaveExp() {
   stopAR();
   if (show) show.active = false;
   $('scan').classList.add('hidden'); $('loading').classList.add('hidden'); $('testPanel').classList.add('hidden');
+  // The encyclopedia works only with the camera: leaving a page goes back to scanning, never to a camera-less home.
+  if (!DEV) { startAR(); return; }
   $('exp').classList.add('hidden'); $('home').classList.remove('hidden');
   renderHome();
 }

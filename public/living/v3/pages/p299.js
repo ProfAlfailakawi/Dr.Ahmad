@@ -2,8 +2,8 @@
 // The claim drops into the vessel you chose: coins pile up in the jar, satellites join the globe's rings.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=22';
-import { rising, halos, motes, blob, dais, screen, paintText, TAU, toAr } from '../lib/b4-kit.js?v=22';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=23';
+import { rising, halos, motes, blob, dais, screen, paintText, TAU, toAr } from '../lib/b4-kit.js?v=23';
 
 export const meta = { free: true, center: [0.5, 0.4], typeLabel: 'لعبة فرز', title: 'صنّف مزايا الفصول الافتراضية' };
 

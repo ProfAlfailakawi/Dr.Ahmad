@@ -2,8 +2,8 @@
 // Seven claims, three are illusions: catching one cracks the visor and lights a red crystal on the arc behind.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=24';
-import { rising, halos, motes, blob, dais, screen, paintText, TAU, toAr } from '../lib/b4-kit.js?v=24';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=25';
+import { rising, halos, motes, blob, dais, screen, paintText, TAU, toAr } from '../lib/b4-kit.js?v=25';
 
 export const meta = { free: true, center: [0.5, 0.36], typeLabel: 'لعبة فحص', title: 'ما الحقيقة وما الوهم؟' };
 

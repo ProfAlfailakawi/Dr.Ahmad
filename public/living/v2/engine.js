@@ -4,7 +4,7 @@
 //   - the template starts drawing itself near the end of the intro and already has a pulsing light;
 //   - its interactive layer wakes (tpl.ready()) when the intro completes.
 import { playIntro } from './intros.js';
-import { BUILDERS, READY, META, loadPage } from '../v3/registry.js?v=24';
+import { BUILDERS, READY, META, loadPage } from '../v3/registry.js?v=25';
 import { INTRO_T, smooth } from './common.js';
 import { buildPopup } from './templates/popup.js';
 import { buildHotspots } from './templates/hotspots.js';

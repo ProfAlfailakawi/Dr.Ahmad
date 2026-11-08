@@ -1,7 +1,7 @@
 // p351 — a cork board of pinned paper slips: each slip is one student's slide; tap them into the rail and they fuse into one deck the projector lights.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=24';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr } from '../lib/a7.js?v=24';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=25';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr } from '../lib/a7.js?v=25';
 
 export const meta = { free: true, center: [0.4, 0.56], typeLabel: 'مجسّم تفاعلي' };
 

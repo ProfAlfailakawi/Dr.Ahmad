@@ -1,6 +1,6 @@
 // Helpers of builder "b4" (round 4: pages 239, 255, 263, 289, 295, 299).
 import * as THREE from 'three';
-import { ease, easeBack, clamp01, stag, mat, goldMat, glow } from '../../kit.js?v=21';
+import { ease, easeBack, clamp01, stag, mat, goldMat, glow } from '../../kit.js?v=22';
 
 export { ease, easeBack, clamp01, stag };
 export const TAU = Math.PI * 2;

@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=21';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=21';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=21';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=21';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=22';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=22';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=22';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=22';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -869,7 +869,6 @@ addEventListener('pointerdown', unlockAudio, { capture: true });
 $('back').onclick = leaveExp;
 $('openAR').onclick = () => startAR();
 $('openShow').onclick = () => startShowcase(EXPERIENCES.indexOf(PAGES[0]));
-$('openMap').onclick = openMap;
 $('mapClose').onclick = closeMap;
 $('packPill').onclick = openMap;
 $('photoBtn').onclick = capturePhoto;

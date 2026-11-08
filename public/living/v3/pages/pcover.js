@@ -1,7 +1,7 @@
 // pcover — the cover of the book lifts off the paper like a pop-up: the picture the camera sees rises in three layers of depth,
 // a line of gold light draws its frame, then the title forms in the air above it. Works with ANY cover (the picture comes from the camera).
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, PAGE_H } from '../../kit.js?v=24';
+import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, PAGE_H } from '../../kit.js?v=25';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'الغلاف' };
 

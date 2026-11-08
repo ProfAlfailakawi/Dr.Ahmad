@@ -1,8 +1,8 @@
 // museum — «متحف الباب»: a smoked-glass dome on a gold-and-door-coloured plinth. Every live page of the door floats inside as one small gem on a spiral:
 // discovered pages blaze in their own colour, pages still waiting are ghosts of glass. A heart of light in the middle grows with the progress.
 import * as THREE from 'three';
-import { ease, easeBack, clamp01, stag, glow, glowTexture, sprite } from '../../kit.js?v=24';
-import { lathe, std, brass, add, grp, blob, TAU } from './a2.js?v=24';
+import { ease, easeBack, clamp01, stag, glow, glowTexture, sprite } from '../../kit.js?v=25';
+import { lathe, std, brass, add, grp, blob, TAU } from './a2.js?v=25';
 
 const DOOR_COL = { 1: 0x6b6b3a, 2: 0x7a1f1f, 3: 0x3b7fc4, 4: 0xc46a1d };
 const AR = (n) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);

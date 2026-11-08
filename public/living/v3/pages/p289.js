@@ -1,8 +1,8 @@
 // p289 (round 4): a 3D printer that builds the orange head layer by layer. Tap the head and its layers float apart; tap the print head to print again.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=19';
-import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=19';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=20';
+import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=20';
 
 export const meta = { free: true, center: [0.46, 0.52], typeLabel: 'مجسّم تفاعلي', title: 'الطباعة ثلاثية الأبعاد' };
 
@@ -85,7 +85,7 @@ export default function build(ctx) {
       else { c.beginPath(); c.moveTo(0, -42); c.lineTo(40, -20); c.lineTo(40, 24); c.lineTo(0, 46); c.lineTo(-40, 24); c.lineTo(-40, -20); c.closePath(); c.stroke(); c.beginPath(); c.moveTo(-40, -20); c.lineTo(0, 2); c.lineTo(40, -20); c.moveTo(0, 2); c.lineTo(0, 46); c.stroke(); }
       c.restore();
     });
-    sc.mesh.position.z = 0.0145; lean.add(sc.mesh); sc.mesh.renderOrder = 6;
+    sc.mesh.position.z = 0.0075; sc.mesh.material.polygonOffset = true; sc.mesh.material.polygonOffsetFactor = -4; sc.mesh.material.polygonOffsetUnits = -4; lean.add(sc.mesh); sc.mesh.renderOrder = 6;
     const tag = sprite(T.sub, 0.16, { size: 92, color: '#2b2620', bg: 'rgba(255,251,242,.97)', border: T.c, radius: 30, pad: 14 }); tag.position.set(0, 0.035, 0.145); grp.add(tag);
     grp.scale.setScalar(1.55); shadowed(grp); rise.add(grp, 1.5 + i * 0.2, 0.1, 0.7);
     const hh = hal.add(lean, 0xffe0a0, 0.2, [0, 0, 0.03], 4.2);

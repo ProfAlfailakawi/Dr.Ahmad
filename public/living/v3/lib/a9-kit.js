@@ -1,7 +1,7 @@
 // Small shared helpers for the a9 pages: staged build-up, pulsing touch hints, one floating tag.
 import * as THREE from 'three';
-import { glow, ease, easeBack, clamp01, stag } from '../../kit.js?v=19';
-import { lightPool, tagSprite, setSpr } from '../../v2/common.js?v=19';
+import { glow, ease, easeBack, clamp01, stag } from '../../kit.js?v=20';
+import { lightPool, tagSprite, setSpr } from '../../v2/common.js?v=20';
 
 export const TAU = Math.PI * 2;
 export const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);

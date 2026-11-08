@@ -1,8 +1,8 @@
 // p258 (round 2): three towers of spending (2011, 2014, 2015) standing straight on the print; lift each year's increase onto the podium and compare.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=19';
-import { halos, liveTag, motes, blob, beam, fitTag, setSpr, TAU, css, arcPoint } from '../lib/a4-kit.js?v=19';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=20';
+import { halos, liveTag, motes, blob, beam, fitTag, setSpr, TAU, css, arcPoint } from '../lib/a4-kit.js?v=20';
 
 export const meta = { free: true, center: [0.5, 0.58], typeLabel: 'قراءة الأرقام', title: 'نموّ الإنفاق على التعليم الإلكتروني' };
 

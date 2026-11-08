@@ -2,9 +2,9 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, glow } from '../../kit.js?v=20';
-import { halos, motes, blob, TAU, setSpr } from '../lib/a4-kit.js?v=20';
-import { fitTag } from '../lib/a4-kit.js?v=20';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, glow } from '../../kit.js?v=21';
+import { halos, motes, blob, TAU, setSpr } from '../lib/a4-kit.js?v=21';
+import { fitTag } from '../lib/a4-kit.js?v=21';
 
 export const meta = { free: true, center: [0.46, 0.46], typeLabel: 'قرار متفرّع', title: 'طريق المعلّم التكنولوجي' };
 

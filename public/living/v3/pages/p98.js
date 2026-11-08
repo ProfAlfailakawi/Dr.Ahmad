@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=20';
-import { animator, shadowBlob, V, TAU, softLight } from '../lib/a1-kit.js?v=20';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=21';
+import { animator, shadowBlob, V, TAU, softLight } from '../lib/a1-kit.js?v=21';
 
 export const meta = { free: true, center: [0.5, 0.8], typeLabel: 'مجسّم تفاعلي' };
 

@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=20';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=20';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=20';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=20';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=21';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=21';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=21';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=21';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -582,7 +582,7 @@ async function startAR(id = packId) {
     [100, 600, 1500].forEach((ms) => setTimeout(() => dispatchEvent(new Event('resize')), ms));
     $('loading').classList.add('hidden');
     $('scan').classList.remove('hidden');
-    $('packPill').classList.remove('hidden');
+    // the book-map star was removed from the camera view
     $('photoBtn').classList.remove('hidden');
     if (test) { test.since = performance.now(); renderTest(); }
   } catch (err) {

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=19';
-import { Rig, V, TAU } from '../lib/b5-kit.js?v=19';
-import { lightPool } from '../../v2/common.js?v=19';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=20';
+import { Rig, V, TAU } from '../lib/b5-kit.js?v=20';
+import { lightPool } from '../../v2/common.js?v=20';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'نوافذ منبثقة' };
 

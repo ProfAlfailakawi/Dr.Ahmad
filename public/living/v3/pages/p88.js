@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=19';
-import { animator, plinth, shadowBlob, V, TAU, softLight } from '../lib/a1-kit.js?v=19';
-import { bust, tweener, shakeX } from '../lib/b1-kit.js?v=19';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, lightTube } from '../../kit.js?v=20';
+import { animator, plinth, shadowBlob, V, TAU, softLight } from '../lib/a1-kit.js?v=20';
+import { bust, tweener, shakeX } from '../lib/b1-kit.js?v=20';
 
 export const meta = { free: true, center: [0.55, 0.7], typeLabel: 'لعبة: صمّم الحل' };
 

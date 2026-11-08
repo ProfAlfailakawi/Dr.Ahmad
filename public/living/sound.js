@@ -66,6 +66,13 @@ function noise(at, dur, { gain = 0.08, low = 400, high = 4000, sweep = null } = 
 export const sfx = {
   // A page wakes up: a breath of paper, then a soft two-note chime.
   wake() { if (!ready()) return; noise(0, 0.45, { gain: 0.06, low: 900, high: 5000, sweep: 2400 }); tone(784, 0.18, 1.1, { gain: 0.07 }); tone(1175, 0.3, 1.3, { gain: 0.05 }); },
+  // Every door has its own quiet motif: a few soft notes that tell the reader which door the page belongs to.
+  signature(door) {
+    if (!ready()) return;
+    const M = { 1: [392, 494, 587, 784], 2: [330, 392, 494, 659], 3: [440, 554, 659, 880], 4: [294, 370, 440, 587] }[door];
+    if (!M) return;
+    M.forEach((f, i) => { tone(f, 0.55 + i * 0.11, 0.9, { gain: 0.035 }); tone(f * 2, 0.55 + i * 0.11, 0.55, { gain: 0.012, type: 'triangle' }); });
+  },
   tap() { if (!ready()) return; tone(660, 0, 0.12, { type: 'triangle', gain: 0.06 }); },
   discover() { if (!ready()) return; tone(880, 0, 0.35, { gain: 0.06 }); tone(1318, 0.07, 0.5, { gain: 0.045 }); },
   good() { if (!ready()) return; [523, 659, 784, 1046].forEach((f, i) => tone(f, i * 0.07, 0.45, { gain: 0.07 })); },

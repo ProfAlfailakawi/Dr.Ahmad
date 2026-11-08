@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=23';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=23';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=23';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=23';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=24';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=24';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=24';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=24';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -37,6 +37,8 @@ const TYPES = {
   balance: { c: '#1f9d7a', svg: '<path d="M12 3v18M7 21h10M4 7h16M4 7l-2.5 6h5L4 7ZM20 7l-2.5 6h5L20 7Z"/>' },
   roleplay: { c: '#e0861f', svg: '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.2-6 5-6s5 2.5 5 6M13 20c.3-3 1.6-5 3-5 2 0 4 2 4 5"/>' },
   branching: { c: '#c99a3b', svg: '<path d="M12 21v-7M12 14 6 8M12 14l6-6M12 14V5"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="4" r="2"/>' },
+  museum: { c: '#a9832f', svg: '<path d="M3 20h18M5 20V10M9 20V10M15 20V10M19 20V10M2 10l10-6 10 6"/>' },
+  cover: { c: '#a9832f', svg: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/>' },
   welcome: { c: '#a9832f', svg: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/>' },
   secret: { c: '#8b1d2c', svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' },
 };
@@ -223,7 +225,19 @@ function lights(stage, ar) {
 
 const pageInfo = () => doorPages(1).map((x) => ({ ...x, typeColor: TYPES[x.type].c, typeColorHex: parseInt(TYPES[x.type].c.slice(1), 16) }));
 
+let trailMemory = null;
+// The story goes on: a few golden sparks rise from the page's outer corner into the new scene, in the colour of the page left behind.
+function trail(fx, colorHex, center) {
+  const col = parseInt(String(colorHex).replace('#', ''), 16) || 0xd4ad55;
+  const a = new THREE.Vector3(0.52, 0.0, PAGE_H * 0.5), c = new THREE.Vector3(center[0] - 0.5, 0.0, (center[1] - 0.5) * PAGE_H);
+  const m = a.clone().lerp(c, 0.5); m.y += 0.32;
+  for (let i = 0; i < 14; i++) setTimeout(() => {
+    const t = i / 13, p = new THREE.Vector3().copy(a).multiplyScalar((1 - t) * (1 - t)).addScaledVector(m, 2 * (1 - t) * t).addScaledVector(c, t * t);
+    fx.burst(p, col, 3, 0.05, 0.016);
+  }, 80 + i * 55);
+}
 function startExperience(index, root, camera, mode) {
+  const prevTrail = trailMemory;
   stopExperience();
   ui.reset();
   const exp = EXPERIENCES[index];
@@ -237,8 +251,22 @@ function startExperience(index, root, camera, mode) {
   lights(outer, mode === 'ar');
   const taps = [];
   const fx = new FX(stage);
+  // A snapshot of the camera picture, with a way to find where any point of the page sits in it (used by the cover).
+  const captureFrame = () => {
+    const el = $('arStage'), video = el.querySelector('video');
+    if (!video || !video.videoWidth) return null;
+    const vw = video.videoWidth, vh = video.videoHeight, sw = el.clientWidth, sh = el.clientHeight, k = Math.max(sw / vw, sh / vh);
+    const shrink = Math.min(1, 1280 / Math.max(vw, vh)), cv = document.createElement('canvas');
+    cv.width = Math.round(vw * shrink); cv.height = Math.round(vh * shrink);
+    cv.getContext('2d').drawImage(video, 0, 0, cv.width, cv.height);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const v = new THREE.Vector3();
+    return { tex, canvas: cv, uv(local) { v.copy(local); stage.localToWorld(v); v.project(camera); const x = (v.x * 0.5 + 0.5) * sw, y = (-v.y * 0.5 + 0.5) * sh; return [(x - (sw - vw * k) / 2) / k / vw, 1 - (y - (sh - vh * k) / 2) / k / vh]; } };
+  };
   const ctx = {
-    stage, fx, mode, camera, ui, sfx, asset,
+    stage, fx, mode, camera, ui, sfx, asset, captureFrame,
+    doors: () => LIVE_DOORS.map((d) => ({ door: d, title: DOORS[d].t, subtitle: DOORS[d].s })),
+    doorPages: (d) => doorPages(d).map((x) => ({ id: x.id, title: x.title, type: x.type, color: TYPES[x.type]?.c || '#d4ad55', found: stamps.has(x.id) })),
     tap: (obj, fn) => taps.push([obj, fn]),
     progress: () => (exp.id === 'secret' ? secretProgress() : { done: foundOf(PAGES), total: PAGES.length }),
     pages: pageInfo,
@@ -257,6 +285,9 @@ function startExperience(index, root, camera, mode) {
   $('videoBtn').classList.toggle('hidden', !exp.video);
   $('behindBtn').classList.toggle('hidden', !exp.behind);
   sfx.wake();
+  if (exp.door) sfx.signature?.(exp.door);
+  if (prevTrail && performance.now() - prevTrail.at < 15000 && mode === 'ar') trail(fx, prevTrail.color, exp.center || [0.5, 0.6]);
+  trailMemory = { at: performance.now(), color: TYPES[exp.type]?.c || '#d4ad55' };
   lecture.sendState();
   return current;
 }
@@ -491,7 +522,7 @@ let ar = null, rotor = null;
 
 const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
 
-const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=13`), location.href).href;
+const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=14`), location.href).href;
 let fastWorkers = [];
 function packFailed() {
   $('loading').classList.remove('hidden');
@@ -507,7 +538,7 @@ async function startAR(id = packId) {
     const cores = navigator.hardwareConcurrency || 4;
     fastWorkers = captureWorkers(Math.min(4, Math.max(2, cores - 2)));
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=13`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=14`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 1, missTolerance: 10,
     });
     // MindAR creates its controller inside start(); the fast matching is attached at that moment, before the pages load.

@@ -1,8 +1,8 @@
 // p267: a glass-bright cloud above a hexagon of hands and devices. Upload from the tablet, the file rests in the servers, then comes down to a phone.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=26';
-import { rising, halos, liveTag, motes, canvasTex, beam, tagSprite, setSpr, TAU, css, arcPoint } from '../lib/a4-kit.js?v=26';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=27';
+import { rising, halos, liveTag, motes, canvasTex, beam, tagSprite, setSpr, TAU, css, arcPoint } from '../lib/a4-kit.js?v=27';
 
 export const meta = { free: true, center: [0.53, 0.4], typeLabel: 'خريطة ضوئية', title: 'السحابة الحاسوبية في التعلّم' };
 

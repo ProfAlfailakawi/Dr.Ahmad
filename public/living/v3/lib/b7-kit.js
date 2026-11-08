@@ -1,8 +1,8 @@
 // Shared helpers for the b7 batch (381, 384, 395, 401, 423, 431).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=26';
-import { tagSprite, setSpr, lightPool, softLight } from '../../v2/common.js?v=26';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=27';
+import { tagSprite, setSpr, lightPool, softLight } from '../../v2/common.js?v=27';
 
 export const TAU = Math.PI * 2;
 export const css = (c) => '#' + c.toString(16).padStart(6, '0');

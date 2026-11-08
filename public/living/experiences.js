@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
-} from './kit.js?v=20';
-import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=20';
-import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=20';
+} from './kit.js?v=21';
+import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=21';
+import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=21';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -849,9 +849,9 @@ export const EXPERIENCES = [
     center: [0.5, 0.5], free: false, crop: [0.19, 0.24, 0.81, 0.76], build: buildSecret,
   },
 ];
-import { SPEC_PAGES } from './v2/catalog.js?v=20';
+import { SPEC_PAGES } from './v2/catalog.js?v=21';
 import { specToExperience, v3Build } from './v2/engine.js';
-import { READY, META } from './v3/registry.js?v=20';
+import { READY, META } from './v3/registry.js?v=21';
 // A hand-built showpiece is replaced when a newer v3 scene file exists for its page.
 EXPERIENCES.forEach((x) => {
   const n = x.kind === 'page' ? parseInt(x.page.slice(1), 10) : 0;
@@ -868,4 +868,4 @@ EXPERIENCES.sort((a, b) => ORDER(a) - ORDER(b));
 export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 
 // Recognition packs come from v2/catalog.js (generated). The camera cycles through them by itself.
-export { PACKS } from './v2/catalog.js?v=20';
+export { PACKS } from './v2/catalog.js?v=21';

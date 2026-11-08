@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=23';
-import { inked } from '../../pencil.js?v=23';
-import { Rig, hexCoin, V, TAU, css } from '../lib/a5-kit.js?v=23';
-import { lightPool } from '../../v2/common.js?v=23';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=24';
+import { inked } from '../../pencil.js?v=24';
+import { Rig, hexCoin, V, TAU, css } from '../lib/a5-kit.js?v=24';
+import { lightPool } from '../../v2/common.js?v=24';
 
 export const meta = { free: true, center: [0.3, 0.66], typeLabel: 'شجرة ضوئية' };
 

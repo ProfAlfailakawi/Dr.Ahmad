@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=23';
-import { animator, shadowBlob, softLight, V, TAU } from '../lib/a1-kit.js?v=23';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=24';
+import { animator, shadowBlob, softLight, V, TAU } from '../lib/a1-kit.js?v=24';
 
 export const meta = { free: true, center: [0.5, 0.72], typeLabel: 'اختبار مجسّم' };
 

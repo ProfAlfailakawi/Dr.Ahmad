@@ -1,9 +1,9 @@
 // p181 — behaviourism vs cognitivism: a sealed lacquer box (stimulus in, response out) beside a glass dome with a thinking network inside.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=23';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=23';
-import { blobShadow, hints, finder } from '../lib/a3-kit.js?v=23';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=24';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=24';
+import { blobShadow, hints, finder } from '../lib/a3-kit.js?v=24';
 
 export const meta = { free: true, center: [0.42, 0.68], typeLabel: 'مقارنة مجسّمة' };
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01 } from '../../kit.js?v=25';
-import { scene, RoundedBox, TAU, contactShadow, lightPool } from '../lib/a8-kit.js?v=25';
+import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01 } from '../../kit.js?v=26';
+import { scene, RoundedBox, TAU, contactShadow, lightPool } from '../lib/a8-kit.js?v=26';
 export const meta = { free: true, center: [0.48, 0.575], typeLabel: 'مجسّم تفاعلي' };
 
 const GL = (c, i = 1) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: 0.3 });

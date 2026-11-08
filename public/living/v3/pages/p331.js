@@ -1,7 +1,7 @@
 // p331 — التلاحم العضوي الوظيفي: a glass head (the mind), a phone (the machines) and a globe (the network) on a blue hexagon; touch each and light joins them.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow, lightTube } from '../../kit.js?v=25';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU, GOLD } from '../lib/a2.js?v=25';
+import { P, ease, easeBack, clamp01, glow, lightTube } from '../../kit.js?v=26';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU, GOLD } from '../lib/a2.js?v=26';
 
 export const meta = { free: true, center: [0.46, 0.66], typeLabel: 'مجسّم تفاعلي' };
 

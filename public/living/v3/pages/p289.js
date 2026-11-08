@@ -1,8 +1,8 @@
 // p289 (round 4): a 3D printer that builds the orange head layer by layer. Tap the head and its layers float apart; tap the print head to print again.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=26';
-import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=26';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=27';
+import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=27';
 
 export const meta = { free: true, center: [0.46, 0.52], typeLabel: 'مجسّم تفاعلي', title: 'الطباعة ثلاثية الأبعاد' };
 

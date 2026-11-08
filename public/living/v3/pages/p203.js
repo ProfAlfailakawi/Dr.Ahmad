@@ -1,9 +1,9 @@
 // p203 — Fleming's cycle of information as one hero object: a chalkboard Ferris wheel whose four cabins (receive, organise, record, retrieve) ride round and round under chasing lights.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=25';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=25';
-import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=25';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=26';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=26';
+import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=26';
 
 export const meta = { free: true, center: [0.43, 0.64], typeLabel: 'دورة تفاعلية' };
 

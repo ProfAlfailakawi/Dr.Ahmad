@@ -1,9 +1,9 @@
 // Offline cache for the living encyclopedia: after the first visit the app, its libraries, the fonts
 // and the recognition packs come from the phone, so it opens instantly even with a weak network.
-const CACHE = 'living-v25';
+const CACHE = 'living-v26';
 const BASE = new URL('./', self.location);                       // …/living/
 const PAGE = BASE.pathname === '/' ? BASE.href : BASE.href.slice(0, -1); // …/living (the page itself)
-const SHELL = ['app.js?v=25', 'experiences.js?v=25', 'kit.js?v=25', 'pencil.js?v=25', 'doors34.js?v=25', 'sound.js?v=25', 'boot.js?v=25', 'fast.js?v=25', 'fast-index.js?v=25', 'targets/all.stub.mind?v=15'].map((p) => new URL(p, BASE).href);
+const SHELL = ['app.js?v=26', 'experiences.js?v=26', 'kit.js?v=26', 'pencil.js?v=26', 'doors34.js?v=26', 'sound.js?v=26', 'boot.js?v=26', 'fast.js?v=26', 'fast-index.js?v=26', 'targets/all.stub.mind?v=15'].map((p) => new URL(p, BASE).href);
 const LIBS = [
   'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
   'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js',
@@ -15,11 +15,32 @@ const LIBS = [
   'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js',
 ];
 
+// The page with any query (?home, ?pack=…, ?lecture) and every file under it.
+const PAGE_PATH = new URL(PAGE).pathname;
+const ours = (url) => url.origin === location.origin && (url.pathname === PAGE_PATH || url.pathname.startsWith(BASE.pathname));
+const library = (url) => url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
+
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    // One failed file must not block the others.
-    await Promise.all([PAGE, ...SHELL, ...LIBS].map((u) => cache.add(u).catch(() => {})));
+    // Keep what the phone already has: libraries (pinned by version in their address) and our files whose
+    // address carries a version that is still in use (the recognition pack above all, about 7 MB) move from
+    // the previous release's cache into this one, so an update downloads only what really changed.
+    for (const key of await caches.keys()) {
+      if (!key.startsWith('living-') || key === CACHE) continue;
+      const oldV = key.slice('living-v'.length);
+      const prev = await caches.open(key);
+      for (const req of await prev.keys()) {
+        const url = new URL(req.url);
+        const v = url.searchParams.get('v');
+        const keep = library(url) || (ours(url) && v && v !== oldV);
+        if (!keep || await cache.match(req)) continue;
+        const hit = await prev.match(req);
+        if (hit) await cache.put(req, hit).catch(() => {});
+      }
+    }
+    // Anything still missing comes from the network. One failed file must not block the others.
+    await Promise.all([PAGE, ...SHELL, ...LIBS].map(async (u) => { if (u === PAGE || !(await cache.match(u))) await cache.add(u).catch(() => {}); }));
     await self.skipWaiting();
   })());
 });
@@ -30,11 +51,6 @@ self.addEventListener('activate', (e) => {
     await self.clients.claim();
   })());
 });
-
-// The page with any query (?home, ?pack=…, ?lecture) and every file under it.
-const PAGE_PATH = new URL(PAGE).pathname;
-const ours = (url) => url.origin === location.origin && (url.pathname === PAGE_PATH || url.pathname.startsWith(BASE.pathname));
-const library = (url) => url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;

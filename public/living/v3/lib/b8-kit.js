@@ -1,7 +1,7 @@
 // Shared helpers for the a8 batch of hand-built pages (387 … 429).
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=25';
-import { tagSprite, setSpr } from '../../v2/common.js?v=25';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=26';
+import { tagSprite, setSpr } from '../../v2/common.js?v=26';
 
 export const TAU = Math.PI * 2;
 export const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
@@ -97,7 +97,7 @@ export function shake(obj, t0, now, amp = 0.012) { const k = now - t0; return k 
 export { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, tagSprite, setSpr };
 
 // ---- round 2 additions -----------------------------------------------------
-import { lightPool, softLight } from '../../v2/common.js?v=25';
+import { lightPool, softLight } from '../../v2/common.js?v=26';
 export { lightPool, softLight };
 // a soft dark contact shadow lying on the page
 let _sh;
@@ -140,7 +140,7 @@ export function person2({ body = 0x3d4f6b, trousers = 0x2b2f3a, skin = 0xe3b894,
 }
 
 // ---- b8 additions ----------------------------------------------------------
-import { label as kitLabel } from '../../kit.js?v=25';
+import { label as kitLabel } from '../../kit.js?v=26';
 export function paint(w, h, draw) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); draw(x, w, h);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;

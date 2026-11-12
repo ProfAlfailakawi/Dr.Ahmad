@@ -146,7 +146,7 @@ function AtlasCard({ entry, rank, onOpen }: { entry: AtlasEntry; rank: number; o
             <button
               type="button"
               onClick={() => { if (!startVideoProject(entry, onOpen)) openInLiveDirector(entry) }}
-              className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-[15px] py-2 font-sans text-[13px] font-medium text-white transition-colors hover:bg-accent-deep"
+              className="inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-[15px] py-2 font-sans text-[13px] font-medium text-canvas transition-colors hover:bg-accent-deep"
             >
               ابدأ مشروع فيديو
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M13 5l7 7-7 7M20 12H4" /></svg>

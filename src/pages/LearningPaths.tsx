@@ -232,7 +232,7 @@ function PathDetail({ path }: { path: LearningPath }) {
       <section className="px-6 py-12 md:px-11 md:py-16">
         <div className="mx-auto max-w-3xl">
           <FadeUp>
-            <Link to="/paths" viewTransition className="text-[.82rem] text-soft transition-colors hover:text-accent"><Arrow kind="back" />كل المسارات</Link>
+            <Link to="/paths" viewTransition className="inline-flex min-h-11 items-center text-[.82rem] text-soft transition-colors hover:text-accent"><Arrow kind="back" />كل المسارات</Link>
             <p className="mt-6 text-[.9rem] font-light leading-[1.9] text-soft">{live.audience}</p>
             <p className="mt-2 text-[.76rem] font-medium text-soft">
               {arabicCountPhrase(live.steps.length, STEP_FORMS)} · نحو {arabicCountPhrase(pathMinutes(live), MINUTE_AFTER_PREPOSITION_FORMS)}

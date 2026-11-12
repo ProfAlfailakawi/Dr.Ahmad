@@ -27,7 +27,7 @@ export function AdminAreaTabs({ tab, onSelect }: { tab: AdminTab; onSelect: (tab
       {ADMIN_GROUPS.map((group) => {
         const active = activeArea === group.area
         return (
-          <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-[.82rem] font-semibold transition-colors ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>
+          <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-[.82rem] font-semibold transition-colors ${active ? 'bg-accent text-canvas' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>
             {group.label}
           </button>
         )
@@ -131,7 +131,7 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
                   aria-label={`${group.label}${groupActive ? ' — القسم الحالي' : ''}`}
                   title={group.label}
                   onClick={() => setOpenArea((value) => value === group.area ? null : group.area)}
-                  className={`group relative flex h-14 w-full items-center justify-center rounded-[1.05rem] border transition-all duration-200 ${expanded || groupActive ? 'border-accent bg-accent text-white shadow-[0_12px_28px_-18px_rgba(45,76,105,.85)]' : 'border-transparent bg-wash/[.55] text-accent hover:-translate-y-0.5 hover:border-hair hover:bg-wash'}`}
+                  className={`group relative flex h-14 w-full items-center justify-center rounded-[1.05rem] border transition-all duration-200 ${expanded || groupActive ? 'border-accent bg-accent text-canvas shadow-[0_12px_28px_-18px_rgba(45,76,105,.85)]' : 'border-transparent bg-wash/[.55] text-accent hover:-translate-y-0.5 hover:border-hair hover:bg-wash'}`}
                 >
                   <AreaIcon name={group.icon} />
                   {groupActive && !expanded && <span aria-hidden className="absolute -left-[5px] top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-accent" />}
@@ -188,7 +188,7 @@ export function AdminSidebar({ tab, onSelect }: { tab: AdminTab; onSelect: (tab:
                                   setOpenArea(null)
                                 }}
                                 aria-current={active ? 'page' : undefined}
-                                className={`rounded-xl px-3 py-2.5 text-right transition-all ${active ? 'bg-accent text-white shadow-sm' : 'bg-canvas text-ink hover:-translate-y-px hover:bg-wash hover:text-accent'}`}
+                                className={`rounded-xl px-3 py-2.5 text-right transition-all ${active ? 'bg-accent text-canvas shadow-sm' : 'bg-canvas text-ink hover:-translate-y-px hover:bg-wash hover:text-accent'}`}
                               >
                                 <span className="block text-[.78rem] font-semibold">{item.label}</span>
                                 <span className={`mt-0.5 block text-[.59rem] font-light leading-relaxed ${active ? 'text-white/75' : 'text-soft'}`}>{item.note}</span>
@@ -228,7 +228,7 @@ export function AdminMobileSubnav({ tab, onSelect }: { tab: AdminTab; onSelect: 
             {section.label && <p className="px-3 pb-1 pt-2 text-[.64rem] font-bold text-soft">{section.label}</p>}
             <div className="grid gap-1">
               {section.items.map((item) => (
-                <button key={item.tab} type="button" onClick={(event) => { onSelect(item.tab); event.currentTarget.closest('details')?.removeAttribute('open') }} className={`min-h-11 rounded-xl px-3 py-2 text-right text-[.78rem] font-semibold ${tab === item.tab ? 'bg-accent text-white' : 'text-ink hover:bg-wash hover:text-accent'}`}>
+                <button key={item.tab} type="button" onClick={(event) => { onSelect(item.tab); event.currentTarget.closest('details')?.removeAttribute('open') }} className={`min-h-11 rounded-xl px-3 py-2 text-right text-[.78rem] font-semibold ${tab === item.tab ? 'bg-accent text-canvas' : 'text-ink hover:bg-wash hover:text-accent'}`}>
                   {item.label}
                 </button>
               ))}
@@ -271,7 +271,7 @@ export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (ta
       <div className="grid min-w-0 grid-cols-4 gap-1.5">
         {ADMIN_GROUPS.map((group) => {
           const active = area === group.area
-          return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-h-11 min-w-0 rounded-xl px-1.5 py-2 text-[.66rem] font-semibold leading-[1.25] transition-colors sm:text-[.72rem] ${active ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
+          return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-h-11 min-w-0 rounded-xl px-1.5 py-2 text-[.66rem] font-semibold leading-[1.25] transition-colors sm:text-[.72rem] ${active ? 'bg-accent text-canvas' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
         })}
       </div>
     </nav>
@@ -568,7 +568,7 @@ export function LaunchModeCard({ articles, books, papers, media }: { articles: A
           {form.duration === 'until' && <label className="grid gap-2 md:col-span-2"><span className="text-[.74rem] font-semibold text-accent">ينتهي في</span><input type="datetime-local" dir="ltr" className={input} value={form.until} onChange={(event) => setForm((current) => ({ ...current, until: event.target.value }))} /></label>}
           <label className="grid gap-2 md:col-span-2"><span className="text-[.74rem] font-semibold text-accent">ملاحظة الغلاف (اختيارية)</span><textarea className={`${input} min-h-28 resize-y`} value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} placeholder="جملة قصيرة تشرح لماذا يتصدر هذا العمل الآن." /></label>
         </div>
-        <div className="mt-5 flex flex-wrap items-center gap-3"><button disabled={busy} onClick={() => void save(true)} className="rounded-full bg-accent px-7 py-2.5 font-semibold text-white disabled:opacity-50">{busy ? 'أحفظ…' : form.active ? 'تحديث الإطلاق' : 'ضعه في الواجهة'}</button>{form.active && <button disabled={busy} onClick={() => void save(false)} className={button}>إيقاف الإطلاق</button>} {message && <span className="text-[.82rem] text-accent">{message}</span>}</div>
+        <div className="mt-5 flex flex-wrap items-center gap-3"><button disabled={busy} onClick={() => void save(true)} className="rounded-full bg-accent px-7 py-2.5 font-semibold text-canvas disabled:opacity-50">{busy ? 'أحفظ…' : form.active ? 'تحديث الإطلاق' : 'ضعه في الواجهة'}</button>{form.active && <button disabled={busy} onClick={() => void save(false)} className={button}>إيقاف الإطلاق</button>} {message && <span className="text-[.82rem] text-accent">{message}</span>}</div>
       </section>
     </div>
   )

@@ -22,7 +22,7 @@ type MonteurApi = {
 type MountOptions = { embedded?: boolean; onChange?: (draft: Draft) => void; onProject?: (draft: Draft) => void; onRegenerate?: (index: number) => void }
 declare global { interface Window { Monteur?: { mount: (el: HTMLElement, opts: MountOptions) => MonteurApi } } }
 
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-canvas transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-50'
 const select = 'max-w-[300px] rounded-full border border-hair bg-canvas px-3 py-2 text-[.76rem] text-ink outline-none focus:border-accent'
 let loading: Promise<void> | null = null

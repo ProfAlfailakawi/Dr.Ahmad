@@ -10,7 +10,7 @@ import {
    الذي تختاره، ثم يعرض المراحل المشتركة: المصدر ← الخطة ← المعاينة ← الفحص ← التصدير. */
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-canvas transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-soft transition hover:border-accent hover:text-accent'
 
 export function VideoHub({ onOpen }: { onOpen: (tab: AdminTab) => void }) {

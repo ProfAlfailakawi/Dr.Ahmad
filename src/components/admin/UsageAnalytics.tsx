@@ -299,7 +299,7 @@ export function UsageAnalytics() {
               type="button"
               onClick={() => { setCustomMode(false); setDays(value) }}
               aria-pressed={!customMode && days === value}
-              className={`rounded-full px-4 py-2 text-[.75rem] transition-colors ${!customMode && days === value ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}
+              className={`rounded-full px-4 py-2 text-[.75rem] transition-colors ${!customMode && days === value ? 'bg-accent text-canvas' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}
             >
               {arabicCountPhrase(value, DAY_FORMS, arabicNumber)}
             </button>
@@ -312,7 +312,7 @@ export function UsageAnalytics() {
               if (!customTo) setCustomTo(isoDay(Date.now()))
             }}
             aria-pressed={customMode}
-            className={`rounded-full px-4 py-2 text-[.75rem] transition-colors ${customMode ? 'bg-accent text-white' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}
+            className={`rounded-full px-4 py-2 text-[.75rem] transition-colors ${customMode ? 'bg-accent text-canvas' : 'border border-hair text-soft hover:border-accent hover:text-accent'}`}
           >
             فترة مخصّصة
           </button>

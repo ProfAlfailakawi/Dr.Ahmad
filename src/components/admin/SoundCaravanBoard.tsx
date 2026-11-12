@@ -203,7 +203,7 @@ function ArticlePreview({ row, onClose }: { row: Row; onClose: () => void }) {
           href={`/articles/${row.slug}`}
           target="_blank"
           rel="noreferrer"
-          className="mr-auto inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.78rem] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
+          className="mr-auto inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-[.78rem] font-bold text-canvas transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/[.35]"
           data-caravan-open-article="true"
         >
           فتح المقال ↗

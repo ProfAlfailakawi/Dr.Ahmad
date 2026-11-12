@@ -163,7 +163,7 @@ const AGENT_SCREENS: { id: AgentScreen; label: string; hint: string }[] = [
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
 const secondary = 'rounded-full border border-hair px-4 py-2 text-[.8rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45'
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45'
 
 const stateLabel: Record<string, string> = {
   unconfigured: 'غير مرتبط',
@@ -689,7 +689,7 @@ export function WhatsAppAgentPanel() {
             key={item.id}
             type="button"
             onClick={() => setScreen(item.id)}
-            className={`min-w-[9.5rem] snap-start rounded-xl px-4 py-3 text-right transition-colors ${screen === item.id ? 'bg-accent text-white' : 'bg-canvas text-ink hover:text-accent'}`}
+            className={`min-w-[9.5rem] snap-start rounded-xl px-4 py-3 text-right transition-colors ${screen === item.id ? 'bg-accent text-canvas' : 'bg-canvas text-ink hover:text-accent'}`}
           >
             <span className="block text-[.84rem] font-semibold">{item.label}</span>
             <span className={`mt-1 block text-[.68rem] ${screen === item.id ? 'text-white/75' : 'text-soft'}`}>{item.hint}</span>
@@ -1037,7 +1037,7 @@ export function WhatsAppAgentPanel() {
             <p className="text-[.75rem] font-semibold uppercase text-accent">مساعد د. أحمد داخل واتساب</p>
             <h2 className="mt-1 flex flex-wrap items-center gap-3 font-display text-2xl font-semibold text-ink">
               وكيل خاص بموافقة الدكتور.
-              <span className={`rounded-full px-3 py-1 text-[.72rem] font-semibold ${status.health?.ready ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
+              <span className={`rounded-full px-3 py-1 text-[.72rem] font-semibold ${status.health?.ready ? 'bg-accent text-canvas' : 'border border-hair text-soft'}`}>
                 {status.health?.label || stateLabel[String(status.status)] || 'غير مرتبط'}
               </span>
             </h2>
@@ -1109,7 +1109,7 @@ export function WhatsAppAgentPanel() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-white' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فوراً'}</button>
+            <button type="button" onClick={() => void toggleEmergencyPause()} disabled={!status.bridgeOnline} className={`rounded-full border px-4 py-2 text-[.8rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${status.runtimePaused ? 'border-accent bg-accent text-canvas' : 'border-red-300/70 bg-red-50 text-red-700 hover:border-red-500'}`}>{status.runtimePaused ? 'تشغيل الردود' : 'إيقاف الردود فوراً'}</button>
             <button type="button" onClick={() => void recoverBridge()} disabled={restarting || repairing} className={status.health?.ready ? secondary : primary}>{restarting ? 'جارٍ الإصلاح' : 'إصلاح الاتصال تلقائياً'}</button>
             <button type="button" onClick={() => void repairSession()} disabled={repairing || restarting || !status.bridgeOnline || status.repairAllowed === false} className={secondary}>
               {repairing

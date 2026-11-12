@@ -226,7 +226,7 @@ export function CvSectionEditor({ section, items, isAdmin, onSave, children }: P
       </button>
 
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-hair pt-5">
-        <button type="button" onClick={save} disabled={busy || invalid} className="rounded-full bg-accent px-7 py-2.5 font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-40">
+        <button type="button" onClick={save} disabled={busy || invalid} className="rounded-full bg-accent px-7 py-2.5 font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-40">
           {busy ? 'جارٍ الحفظ…' : 'حفظ القسم'}
         </button>
         <button type="button" onClick={cancel} disabled={busy} className="rounded-full border border-hair px-5 py-2.5 text-[.86rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50">

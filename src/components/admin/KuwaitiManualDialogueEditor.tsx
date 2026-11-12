@@ -49,7 +49,7 @@ const deliveryTypes = [
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-3.5 py-2.5 text-[.86rem] text-ink outline-none transition-colors focus:border-accent'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40'
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45'
 const dialogueAudioBase = (import.meta.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
 const dialogueAudioUrl = (path: string) => dialogueAudioBase ? `${dialogueAudioBase}/${path.replace(/^\/?audio\//, '')}` : path
 
@@ -839,7 +839,7 @@ export function KuwaitiManualDialogueEditor({ articles, onQueued }: { articles: 
               الحلقة الكويتية لا تظهر للزائر إلا بعد اجتياز البوابات والنشر في مسارها المستقل.
             </p>
             <div className="flex flex-wrap gap-2">
-              <a href="/admin?tab=production" className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90">تابع التوليد</a>
+              <a href="/admin?tab=production" className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-canvas transition-opacity hover:opacity-90">تابع التوليد</a>
               <button type="button" className={ghost} onClick={() => setQueuedProof(null)}>أرسل حواراً آخر</button>
             </div>
           </div>

@@ -15,7 +15,7 @@ import { buildCascadeCorrectionCase, cascadeCorrectionId, cascadeCorrectionSumma
 import { arabicCountPhrase, INTERNAL_MATERIAL_AFTER_PREPOSITION_FORMS, MATERIAL_AFTER_PREPOSITION_FORMS, PATH_FORMS, SAVED_SOURCE_FORMS, SOURCE_NEAR_FORMS } from '../../lib/arabic-count.ts'
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.78rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.78rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-50'
 const ghost = 'rounded-full border border-hair px-4 py-2 text-[.74rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
 
 const agendaStatuses: Array<{ value: IntellectualAgendaStatus; label: string }> = [

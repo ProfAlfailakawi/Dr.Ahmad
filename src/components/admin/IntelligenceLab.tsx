@@ -19,7 +19,7 @@ import {
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
 const softBtn = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent'
-const primaryBtn = 'rounded-full bg-accent px-5 py-2 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
+const primaryBtn = 'rounded-full bg-accent px-5 py-2 text-[.84rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-50'
 
 type RadarItem = { id: string; ar?: string; arNote?: string; en?: string; source?: string; url?: string }
 
@@ -355,7 +355,7 @@ export function IntelligenceLab({ articles, onOpen }: { articles: ArticleRecord[
         <p className="text-[.76rem] font-semibold uppercase text-accent">المختبر المتقدم</p>
         <p className="mt-2 text-[.88rem] leading-relaxed text-soft">الأدوات نفسها باقية، ومختبر الجودة الداخلي منفصل حتى لا يلوث واجهة الموقع العامة.</p>
         <div className="mt-5 flex min-w-0 flex-wrap gap-2 pb-1 md:flex-nowrap md:overflow-x-auto">
-          {([['before','قبل النشر'],['develop','تطوير الفكرة'],['system','تحويل المقال والصوت'],['quality','جودة اسأل المكتبة']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
+          {([['before','قبل النشر'],['develop','تطوير الفكرة'],['system','تحويل المقال والصوت'],['quality','جودة اسأل المكتبة']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-canvas' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
         </div>
       </section>
 

@@ -69,7 +69,7 @@ export function AtlasEditorialSettings({ articles }: { articles: ArticleRecord[]
           />
         </label>
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => void save()} disabled={state === 'busy'} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-white disabled:opacity-50">{state === 'busy' ? 'يحفظ…' : 'حفظ السماء'}</button>
+          <button type="button" onClick={() => void save()} disabled={state === 'busy'} className="rounded-full bg-accent px-5 py-2.5 text-[.76rem] font-semibold text-canvas disabled:opacity-50">{state === 'busy' ? 'يحفظ…' : 'حفظ السماء'}</button>
           {state === 'saved' && <span className="text-[.74rem] font-semibold text-accent">تم الحفظ.</span>}
           {state === 'error' && <span className="text-[.74rem] font-semibold text-red-500">تعذّر الحفظ.</span>}
         </div>

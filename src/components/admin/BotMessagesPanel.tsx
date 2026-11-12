@@ -127,7 +127,7 @@ export function BotMessagesPanel() {
 
   const card = 'rounded-2xl border border-hair bg-canvas p-4'
   const ghost = 'rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.7rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-50'
-  const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
+  const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-canvas transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
 
   return (
     <section className="grid gap-5" aria-labelledby="bot-messages-title">

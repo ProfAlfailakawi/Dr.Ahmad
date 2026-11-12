@@ -59,7 +59,7 @@ import { Plus } from 'lucide-react'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
-const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
+const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.84rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-50'
 const ghost = 'rounded-full border border-hair px-4 py-2 text-[.82rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
 const MIN_ARTICLE_WORDS = 350
 const MAX_GENERATION_WORDS = 4000
@@ -4020,8 +4020,8 @@ ${effectivePurpose}`,
                 <p className="mt-2 max-w-3xl text-[.82rem] leading-relaxed text-soft">يفحص الأرشيف، خريطة المعرفة، اللحظة الحالية وتوازن مشروعك الفكري، ثم يصدر حكماً واحداً لك أنت. لا يعتمد على ردود جمهور ولا يبدأ الكتابة من تلقاء نفسه.</p>
               </div>
               <div className="inline-flex rounded-full border border-hair bg-canvas p-1" aria-label="مصدر الفكرة">
-                <button type="button" aria-pressed={proposalMode === 'self'} onClick={() => { setProposalMode('self'); setEditorialDecision(null) }} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold transition-colors ${proposalMode === 'self' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>فكرة مني</button>
-                <button type="button" aria-pressed={proposalMode === 'received'} onClick={() => { setProposalMode('received'); setEditorialDecision(null) }} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold transition-colors ${proposalMode === 'received' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>مقترح وصلني</button>
+                <button type="button" aria-pressed={proposalMode === 'self'} onClick={() => { setProposalMode('self'); setEditorialDecision(null) }} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold transition-colors ${proposalMode === 'self' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>فكرة مني</button>
+                <button type="button" aria-pressed={proposalMode === 'received'} onClick={() => { setProposalMode('received'); setEditorialDecision(null) }} className={`rounded-full px-4 py-2 text-[.76rem] font-semibold transition-colors ${proposalMode === 'received' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>مقترح وصلني</button>
               </div>
             </div>
 

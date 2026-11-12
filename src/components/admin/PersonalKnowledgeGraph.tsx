@@ -86,8 +86,8 @@ export function PersonalKnowledgeGraph() {
       </div>
 
       <div className="mt-5 flex w-fit rounded-full border border-hair bg-canvas p-1" role="tablist" aria-label="منظور عقل الأرشيف">
-        <button type="button" role="tab" aria-selected={mode === 'graph'} onClick={() => setMode('graph')} className={`rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${mode === 'graph' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>عقل الأرشيف</button>
-        <button type="button" role="tab" aria-selected={mode === 'legacy'} onClick={() => setMode('legacy')} className={`rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${mode === 'legacy' ? 'bg-accent text-white' : 'text-soft hover:text-accent'}`}>وضع الإرث</button>
+        <button type="button" role="tab" aria-selected={mode === 'graph'} onClick={() => setMode('graph')} className={`rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${mode === 'graph' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>عقل الأرشيف</button>
+        <button type="button" role="tab" aria-selected={mode === 'legacy'} onClick={() => setMode('legacy')} className={`rounded-full px-4 py-2 text-[.74rem] font-semibold transition-colors ${mode === 'legacy' ? 'bg-accent text-canvas' : 'text-soft hover:text-accent'}`}>وضع الإرث</button>
       </div>
 
       {mode === 'legacy' ? <LegacyModePanel /> : <>

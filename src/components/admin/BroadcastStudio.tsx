@@ -280,7 +280,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
 
           {preview && (
             <div className="mt-3 flex flex-wrap items-center gap-3 text-[.8rem]">
-              <span className="rounded-full bg-accent px-3 py-1 font-semibold text-white">{preview.willSend} ستصلهم</span>
+              <span className="rounded-full bg-accent px-3 py-1 font-semibold text-canvas">{preview.willSend} ستصلهم</span>
               {preview.suppressed > 0 && (
                 <span className="rounded-full border border-hair px-3 py-1 text-soft">{preview.suppressed} مستبعد — طلبوا الإيقاف</span>
               )}
@@ -372,7 +372,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
               type="button"
               onClick={() => void send()}
               disabled={busy === 'send'}
-              className={`mt-3 rounded-full px-5 py-2.5 text-[.82rem] font-semibold transition-opacity ${confirmOnce ? 'bg-accent text-white' : 'border border-accent text-accent'} hover:opacity-90 disabled:opacity-50`}
+              className={`mt-3 rounded-full px-5 py-2.5 text-[.82rem] font-semibold transition-opacity ${confirmOnce ? 'bg-accent text-canvas' : 'border border-accent text-accent'} hover:opacity-90 disabled:opacity-50`}
             >
               {busy === 'send' ? 'يبدأ الإرسال…' : confirmOnce ? `تأكيد: أرسل إلى ${arabicCountPhrase(willSend, ENTITY_AFTER_PREPOSITION_FORMS)}` : `إرسال هادئ إلى ${arabicCountPhrase(willSend, ENTITY_AFTER_PREPOSITION_FORMS)}`}
             </button>
@@ -406,7 +406,7 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
                   <div className="rounded-xl border border-hair bg-canvas p-3"><span className="text-[.64rem] text-soft">الرسالة التالية</span><p className="mt-1 line-clamp-3 whitespace-pre-line text-[.75rem] leading-relaxed text-ink">{activeCampaign.messagePreview || '—'}</p><p className="mt-2 text-[.66rem] text-accent">موعدها: {activeCampaign.nextAt ? campaignDate(activeCampaign.nextAt) : activeCampaign.remaining ? 'بانتظار الجدولة' : 'لا توجد رسالة تالية'}</p></div>
                   <div className="flex flex-wrap content-start gap-2 lg:max-w-[240px]">
                     {['sending', 'retrying'].includes(activeCampaign.state) && <button type="button" disabled={Boolean(campaignActionBusy)} onClick={() => void campaignAction('pause')} className="rounded-full border border-hair px-3 py-2 text-[.72rem] font-semibold text-ink hover:border-accent hover:text-accent disabled:opacity-40">{campaignActionBusy === 'pause' ? 'يوقف…' : 'إيقاف مؤقت'}</button>}
-                    {activeCampaign.state === 'paused' && <button type="button" disabled={Boolean(campaignActionBusy)} onClick={() => void campaignAction('resume')} className="rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold text-white disabled:opacity-40">{campaignActionBusy === 'resume' ? 'يستأنف…' : 'استئناف'}</button>}
+                    {activeCampaign.state === 'paused' && <button type="button" disabled={Boolean(campaignActionBusy)} onClick={() => void campaignAction('resume')} className="rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold text-canvas disabled:opacity-40">{campaignActionBusy === 'resume' ? 'يستأنف…' : 'استئناف'}</button>}
                     {activeCampaign.failed > 0 && !['sending', 'retrying', 'paused'].includes(activeCampaign.state) && <button type="button" disabled={Boolean(campaignActionBusy)} onClick={() => void campaignAction('retry-failed')} className="rounded-full border border-accent px-3 py-2 text-[.72rem] font-semibold text-accent disabled:opacity-40">{campaignActionBusy === 'retry-failed' ? 'يعيد…' : 'إعادة الفاشل فقط'}</button>}
                   </div>
                 </div>

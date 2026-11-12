@@ -3011,7 +3011,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   border: 0 !important;
   border-radius: 999px !important;
   background: rgb(var(--c-accent)) !important;
-  color: #fff !important;
+  color: rgb(var(--c-canvas)) !important;
   font-size: 13px !important;
   font-weight: 700 !important;
   line-height: 1.5 !important;
@@ -3789,7 +3789,7 @@ body.selection-active .floating-actions {
 }
 .citation-export-v2:hover {
   background: rgb(var(--c-accent)) !important;
-  color: #fff !important;
+  color: rgb(var(--c-canvas)) !important;
 }
 
 /* حارس الهاتف: النصوص الطويلة وDOI وأسماء المجلات لا تكسر بطاقاتها */
@@ -5541,7 +5541,7 @@ html.dark .content-book-detail .book-detail-cover {
   background-color: rgb(var(--c-accent)) !important;
   background-image: none !important;
   border-color: rgb(var(--c-accent)) !important;
-  color: #fff !important;
+  color: rgb(var(--c-canvas)) !important; /* ليلاً التمييز فاتح، فالأبيض عليه 2.4:1؛ لون القماشة يعطي AA في الوضعين */
   box-shadow: none !important;
   text-shadow: none !important;
   -webkit-backdrop-filter: none !important;
@@ -5554,7 +5554,7 @@ html.dark .content-book-detail .book-detail-cover {
     background-color: rgb(var(--c-accent)) !important;
     background-image: none !important;
     border-color: rgb(var(--c-accent)) !important;
-    color: #fff !important;
+    color: rgb(var(--c-canvas)) !important;
     box-shadow: none !important;
   }
 }

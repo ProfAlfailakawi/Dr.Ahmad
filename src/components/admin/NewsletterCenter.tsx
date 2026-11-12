@@ -103,7 +103,7 @@ export function NewsletterCenter({ draft }: { draft: Draft | null }) {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setShowPreview((value) => !value)} className="rounded-full border border-hair bg-canvas px-4 py-2 text-[.78rem] font-semibold text-soft hover:border-accent hover:text-accent">{showPreview ? 'إخفاء المعاينة' : 'معاينة الرسالة'}</button>
         <button type="button" onClick={() => void send('test')} disabled={busy !== '' || !state?.configured} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent disabled:opacity-40">{busy === 'test' ? 'أرسل الاختبار…' : `اختبار لنفسي${state?.testEmail ? ` · ${state.testEmail}` : ''}`}</button>
-        <button type="button" onClick={() => void send('send')} disabled={busy !== '' || !state?.configured || !state?.recipientCount} className="rounded-full bg-accent px-5 py-2 text-[.78rem] font-semibold text-white disabled:opacity-40">{busy === 'send' ? 'جارٍ الإرسال…' : `إرسال إلى ${arabicCountPhrase(state?.recipientCount || 0, SUBSCRIBER_AFTER_PREPOSITION_FORMS)}`}</button>
+        <button type="button" onClick={() => void send('send')} disabled={busy !== '' || !state?.configured || !state?.recipientCount} className="rounded-full bg-accent px-5 py-2 text-[.78rem] font-semibold text-canvas disabled:opacity-40">{busy === 'send' ? 'جارٍ الإرسال…' : `إرسال إلى ${arabicCountPhrase(state?.recipientCount || 0, SUBSCRIBER_AFTER_PREPOSITION_FORMS)}`}</button>
         {notice && <span className="text-[.76rem] text-soft">{notice}</span>}
       </div>
 

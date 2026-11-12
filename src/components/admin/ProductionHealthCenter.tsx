@@ -361,9 +361,9 @@ export function ProductionHealthCenter({
                   {status === 'published' ? (
                     <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-accent/30 bg-accent/[.08] px-3 py-2 text-[.72rem] font-semibold leading-tight text-accent sm:px-4 sm:text-[.74rem]" data-episode-approved="1"><Check aria-hidden size={14} strokeWidth={1.6} />معتمدة</span>
                   ) : status === 'draft' || status === 'queued' ? (
-                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'جارٍ بدء التوليد' : <><Clapperboard aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />ابدأ التوليد الآن</>}</button>
+                    <button disabled={busy === article.slug || status === 'queued'} onClick={() => void setStatus(article.slug, 'queued')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-canvas disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'queued' ? 'جارٍ بدء التوليد' : <><Clapperboard aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />ابدأ التوليد الآن</>}</button>
                   ) : (
-                    <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-white disabled:opacity-50 sm:px-4 sm:text-[.74rem]">اعتماد الحلقة</button>
+                    <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'published')} className="min-w-0 rounded-full bg-accent px-3 py-2 text-[.72rem] font-semibold leading-tight text-canvas disabled:opacity-50 sm:px-4 sm:text-[.74rem]">اعتماد الحلقة</button>
                   )}
                   <button disabled={busy === article.slug} onClick={() => void setStatus(article.slug, 'needs_review')} className="min-w-0 rounded-full border border-hair px-3 py-2 text-[.72rem] font-semibold leading-tight text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50 sm:px-4 sm:text-[.74rem]">{status === 'published' ? 'سحب الاعتماد للمراجعة' : 'إعادتها للمراجعة'}</button>
                 </div>
@@ -441,7 +441,7 @@ export function ProductionHealthCenter({
                   {sourceReport.checkedAt ? ` · ${new Date(sourceReport.checkedAt).toLocaleString('ar-KW', { dateStyle: 'medium', timeStyle: 'short', numberingSystem: 'latn' })}` : ''}
                 </span>
               </span>
-              <span className={`shrink-0 rounded-full px-3 py-1 text-[.72rem] font-semibold ${confirmedDeadCount ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-[.72rem] font-semibold ${confirmedDeadCount ? 'bg-accent text-canvas' : 'border border-hair text-soft'}`}>
                 {sourcesOpen ? 'إخفاء التفاصيل' : 'التفاصيل'}
               </span>
             </button>
@@ -478,7 +478,7 @@ export function ProductionHealthCenter({
                       const place = item.places?.[0]
                       const critical = item.state === 'dead'
                       return <div key={item.url} className={`min-w-0 rounded-xl border px-3 py-3 ${critical ? 'border-accent/40 bg-accent/[.04]' : 'border-hair bg-wash'}`}>
-                        <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[.68rem] font-semibold ${critical ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>{sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}</span>{critical && item.action && <span className="text-[.68rem] font-semibold text-accent">{item.action}</span>}</div>
+                        <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[.68rem] font-semibold ${critical ? 'bg-accent text-canvas' : 'border border-hair text-soft'}`}>{sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}</span>{critical && item.action && <span className="text-[.68rem] font-semibold text-accent">{item.action}</span>}</div>
                         {(place?.title || place?.slug) && <p className="mt-1.5 break-words text-[.84rem] font-semibold leading-[1.6] text-ink">{place.title || place.slug}</p>}
                         <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.note}{item.advice ? ` — ${item.advice}` : ''}</p>
                         <a href={critical && item.replacement ? item.replacement : item.url} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.72rem] text-accent underline underline-offset-4">{critical && item.replacement ? 'فتح البديل المعتمد' : 'فتح المصدر'} ↗</a>

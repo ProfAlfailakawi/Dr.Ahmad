@@ -227,7 +227,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         <p className="text-[.85rem] text-soft">تُحتسب الصفحة مرة واحدة في الجلسة لكل زائر.</p>
       </div>
       <div className="rail flex gap-2 overflow-x-auto pb-1">
-        {([['overview','النظرة العامة'],['content','المحتوى'],['journey','رحلة الزائر'],['details','كل البيانات']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
+        {([['overview','النظرة العامة'],['content','المحتوى'],['journey','رحلة الزائر'],['details','كل البيانات']] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setView(key)} className={`shrink-0 rounded-full px-4 py-2 text-[.8rem] font-semibold ${view === key ? 'bg-accent text-canvas' : 'border border-hair bg-canvas text-soft'}`}>{label}</button>)}
       </div>
 
       {error && <div className={`${card} border-accent/40 text-[.9rem] text-soft`}>{error}</div>}
@@ -236,7 +236,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
         <section className={`${card} ${health.status === 'سليم' ? '' : 'border-accent/50'}`} aria-label="حارس الجودة">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className={`flex h-9 w-9 items-center justify-center rounded-full text-[1.1rem] ${health.status === 'سليم' ? 'bg-accent/10 text-accent' : 'bg-accent text-white'}`}>
+              <span className={`flex h-9 w-9 items-center justify-center rounded-full text-[1.1rem] ${health.status === 'سليم' ? 'bg-accent/10 text-accent' : 'bg-accent text-canvas'}`}>
                 {health.status === 'سليم' ? '✓' : '!'}
               </span>
               <div>
@@ -421,7 +421,7 @@ export function Indicators({ articles }: { articles: ArticleRecord[] }) {
             <button
               key={k}
               onClick={() => setKind(k)}
-              className={`rounded-full border px-4 py-1.5 text-[.82rem] font-medium transition-colors ${kind === k ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+              className={`rounded-full border px-4 py-1.5 text-[.82rem] font-medium transition-colors ${kind === k ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
             >
               {k}
             </button>

@@ -57,7 +57,7 @@ export function ReaderPulse() {
       {docs && (
         <>
           <div className="mt-4 flex flex-wrap gap-3">
-            <span className="rounded-full bg-accent px-4 py-1.5 text-[.8rem] font-semibold text-white">
+            <span className="rounded-full bg-accent px-4 py-1.5 text-[.8rem] font-semibold text-canvas">
               {arabicCountPhrase(weekTotal, READING_FORMS)} هذا الأسبوع
             </span>
             <span className="rounded-full border border-hair px-4 py-1.5 text-[.8rem] text-soft">

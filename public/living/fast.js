@@ -12,7 +12,7 @@ let loader = null;   // { worker, pack, waiters } kept alive from page load unti
 // Started as early as possible, so the download runs while the libraries load.
 export function startPack(url) {
   if (loader) return loader;
-  const l = loader = { worker: new Native(new URL('./fast-index.js?v=29', import.meta.url)), pack: null, onCands: null, onFail: null, failed: false };
+  const l = loader = { worker: new Native(new URL('./fast-index.js?v=30', import.meta.url)), pack: null, onCands: null, onFail: null, failed: false };
   const fail = () => { l.failed = true; l.onFail?.(); };
   l.worker.onerror = fail;
   l.worker.onmessage = ({ data }) => {
@@ -107,6 +107,7 @@ export function installFast(ctl, workers, { maxPoints = 150, url, onFail } = {})
   workers.forEach((w, n) => { w.onmessage = ({ data }) => { if (data.type === 'matchDone' && waiting) waiting(n, data); }; });
   const candidates = (points) => new Promise((resolve) => { l.onCands = resolve; l.worker.postMessage({ type: 'query', points }); });
   const scan = (points, list) => new Promise((resolve) => {
+    if (!workers.length) { resolve(MISS); return; }   // the camera was stopped while a scan was on its way
     const stride = points.length / maxPoints;
     const pts = stride > 1 ? Array.from({ length: maxPoints }, (_, i) => points[Math.floor(i * stride)]) : points;
     const shares = workers.map(() => []);

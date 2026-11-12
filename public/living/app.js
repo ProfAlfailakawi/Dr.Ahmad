@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=29';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=29';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=29';
-import { bumpVisit, memory, bridge, isFacing, paperVideo } from './extras.js?v=29';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=29';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=30';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=30';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=30';
+import { bumpVisit, memory, bridge, isFacing, paperVideo } from './extras.js?v=30';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=30';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;

@@ -1,9 +1,9 @@
 // p184 — a chalkboard easel and three school pedestals: carry each technology to the theory it came from, staking coins on your confidence.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=29';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=29';
-import { blobShadow, hints, finder } from '../lib/a3-kit.js?v=29';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=30';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=30';
+import { blobShadow, hints, finder } from '../lib/a3-kit.js?v=30';
 
 export const meta = { free: true, center: [0.5, 0.75], typeLabel: 'لعبة مراهنة' };
 

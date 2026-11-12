@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=28';
-import { inked } from '../../pencil.js?v=28';
-import { Rig, iconTexture, badge, V, TAU, css } from '../lib/a5-kit.js?v=28';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=29';
+import { inked } from '../../pencil.js?v=29';
+import { Rig, iconTexture, badge, V, TAU, css } from '../lib/a5-kit.js?v=29';
 
 export const meta = { free: true, center: [0.65, 0.74], typeLabel: 'رفّ تفاعلي' };
 

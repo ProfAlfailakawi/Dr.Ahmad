@@ -1,8 +1,8 @@
 // Shared helpers for the a7 pages: appear/bounce rig, touch hints, plinth, canvas drawing.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, mat, glossy, goldMat, glow, sprite } from '../../kit.js?v=28';
-import { softLight, lightPool, tagSprite, solidTag, setSpr } from '../../v2/common.js?v=28';
+import { P, ease, easeBack, clamp01, mat, glossy, goldMat, glow, sprite } from '../../kit.js?v=29';
+import { softLight, lightPool, tagSprite, solidTag, setSpr } from '../../v2/common.js?v=29';
 
 export const TAU = Math.PI * 2;
 export const css = (c) => '#' + c.toString(16).padStart(6, '0');

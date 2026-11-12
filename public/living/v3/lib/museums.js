@@ -1,9 +1,9 @@
 // The four door museums in one scene: the page that was recognised picks the door to start with, and four small numbered chips under the cabinet
 // switch to any other door. (The chapter-list pages of door 3 and door 4 are almost identical on paper, so the reader can always put it right with one touch.)
 import * as THREE from 'three';
-import { ease, clamp01, sprite } from '../../kit.js?v=28';
-import museum from './museum.js?v=28';
-import portal from './portal.js?v=28';
+import { ease, clamp01, sprite } from '../../kit.js?v=29';
+import museum from './museum.js?v=29';
+import portal from './portal.js?v=29';
 
 const NUM = ['١', '٢', '٣', '٤'], DOOR_COL = [0x6b6b3a, 0x7a1f1f, 0x3b7fc4, 0xc46a1d];
 export default function museums(ctx, startDoor, meta) {
@@ -35,15 +35,53 @@ export default function museums(ctx, startDoor, meta) {
     ctx.tap(hit, () => { ctx.sfx.click?.(); if (d === cur) toggle(false); else show(d); });
     return { d, off, on, grp };
   });
+  const NAMES = ['الأول', 'الثاني', 'الثالث', 'الرابع'];
   function show(d) {
     if (d === cur) return;
+    ctx.retitle?.(`متحف الباب ${NAMES[d - 1]}`);
     ctx.ui.hideCard(); portals[cur]?.exit(); cur = d;
     if (!slots[d]) make(d);
     Object.entries(slots).forEach(([k, s]) => { s.holder.visible = +k === d; });
   }
   Object.entries(slots).forEach(([k, s]) => { s.holder.visible = +k === cur; });
+  // The chapter lists of door 3 and door 4 are the same picture; only the small lettering differs. So the scene reads the page itself:
+  // on door 3 the first ribbon carries two lines of text and the second one line; on door 4 it is the other way round.
+  // When the camera picture is too soft to tell, the last page the reader opened decides (before or after the middle of the two doors).
+  const inkSpread = (f, v0, v1) => {
+    const cv = f.canvas, g = cv.getContext('2d', { willReadFrequently: true }), NX = 44, NY = 34, lum = [], p = new THREE.Vector3();
+    for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+      p.set(0.34 + (i / (NX - 1)) * 0.34 - 0.5, 0, (v0 + (j / (NY - 1)) * (v1 - v0) - 0.5) * (1024 / 838));
+      const q = f.uv(p), x = Math.round(q[0] * cv.width), y = Math.round((1 - q[1]) * cv.height);
+      if (x < 0 || y < 0 || x >= cv.width || y >= cv.height) { lum.push(-1); continue; }
+      const d = g.getImageData(x, y, 1, 1).data; lum.push(0.3 * d[0] + 0.59 * d[1] + 0.11 * d[2]);
+    }
+    const ok = lum.filter((v) => v >= 0).sort((a, b) => a - b); if (ok.length < NX * NY * 0.8) return null;
+    const med = ok[ok.length >> 1], thr = med * 0.72, rows = [];
+    for (let j = 0; j < NY; j++) { let n = 0; for (let i = 0; i < NX; i++) { const v = lum[j * NX + i]; if (v >= 0 && v < thr) n++; } rows.push(n); }
+    const total = rows.reduce((a, b) => a + b, 0); if (total < 12) return null;
+    let acc = 0, lo = 0, hi = NY - 1;
+    for (let j = 0; j < NY; j++) { acc += rows[j]; if (acc >= total * 0.12) { lo = j; break; } }
+    acc = 0; for (let j = NY - 1; j >= 0; j--) { acc += rows[j]; if (acc >= total * 0.12) { hi = j; break; } }
+    return (hi - lo) / NY;
+  };
+  let judged = startDoor < 3, judgeAt = 0.35, tries = 0;
+  const judge = () => {
+    let f = null; try { f = ctx.captureFrame?.(); } catch { f = null; }
+    let pick = 0, how = 'none';
+    if (f) {
+      const a = inkSpread(f, 0.135, 0.265), b = inkSpread(f, 0.265, 0.405);
+      if (a !== null && b !== null && Math.abs(a - b) > 0.1) { pick = a > b ? 3 : 4; how = `ink ${a.toFixed(2)}/${b.toFixed(2)}`; }
+      f.tex.dispose();
+    }
+    if (!pick && ++tries < 4) { judgeAt += 0.3; return; }
+    if (!pick) { const last = ctx.lastPage?.() || 0; if (last >= 224) { pick = last >= 392 ? 4 : last >= 268 ? 3 : 0; how = `last page ${last}`; } }
+    judged = true;
+    console.info('[door]', 'recognised', startDoor, '→', pick || startDoor, how);
+    if (pick && pick !== cur) show(pick);
+  };
   return {
     update(t, dt, e) {
+      if (!judged && ctx.mode === 'ar' && t > judgeAt) judge();
       Object.entries(slots).forEach(([k, s]) => { if (+k === cur) s.api.update(t, dt, e); });
       // distance from the phone to the museum, in page widths
       ctx.camera.getWorldPosition(cw); pw.localToWorld(mw.copy(at));

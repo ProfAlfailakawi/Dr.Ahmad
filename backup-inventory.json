@@ -11,14 +11,14 @@
       "admin_book_architecture", "admin_command_sessions", "admin_content_intelligence",
       "admin_content_pipeline", "admin_control_backups", "admin_control_probes",
       "admin_correction_cases", "admin_editorial_board", "admin_generated_assets",
-      "admin_generated_designs", "admin_intellectual_agenda", "admin_live_director_projects",
+      "admin_generated_designs", "admin_intellectual_agenda", "admin_live_director_projects", "admin_mihwar", "admin_mihwar_backups",
       "admin_publication_passport_heads", "admin_publication_passport_links",
       "admin_publication_passports", "admin_publication_signing_keys", "admin_push_tokens",
       "admin_reports", "admin_source_desk", "admin_style_memory", "admin_tool_events",
       "analytics_events", "article_highlight_members", "article_highlights",
       "article_quote_counts", "article_quote_votes", "automation_state", "bot_messages",
       "content_history", "content_overrides", "control_center_incidents", "cv_overrides",
-      "journeys", "messages", "monteur_plans", "myspace_sync", "newsletter_deliveries", "newsletter_sends",
+      "journeys", "messages", "mihwar_feed", "monteur_plans", "myspace_sync", "newsletter_deliveries", "newsletter_sends",
       "passage_highlights", "podcast_dialogues", "podcast_dialogues_kw", "podcast_production",
       "podcast_production_kw", "pronunciation_lexicon",
       "pronunciation_pending", "site_articles", "site_books", "site_cv_files", "site_faqs",
@@ -35,7 +35,7 @@
       { "path": "site_cv_files/{docId}/chunks", "criticality": "critical", "note": "بايتات ملفات السيرة المجزّأة base64 — أعلى قيمة، تفوتها النسخة العليا" },
       { "path": "article_highlight_members/{highlightKey}/readers", "criticality": "medium", "note": "عضوية القرّاء لكل تظليل — إشارة الرنين" }
     ],
-    "sensitive": ["admin_publication_signing_keys", "subscribers", "messages", "admin_push_tokens", "myspace_sync"],
+    "sensitive": ["admin_publication_signing_keys", "subscribers", "messages", "admin_push_tokens", "myspace_sync", "admin_mihwar", "admin_mihwar_backups"],
     "codeOnlyNotInRules": ["admin_control_backups", "admin_control_probes", "control_center_incidents", "whatsapp_reply_rules", "pronunciation_lexicon", "pronunciation_pending", "site_idea_life", "site_health"]
   },
   "firebaseStorage": {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, plinth, contactShadow, sign, paintTex, drawText, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, faceYaw, toAr } from '../lib/b7-kit.js?v=30';
+import { scene, plinth, contactShadow, sign, paintTex, drawText, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, faceYaw, toAr } from '../lib/b7-kit.js?v=31';
 export const meta = { free: true, center: [0.48, 0.6], typeLabel: 'لعبة رهان' };
 
 // A tower of light rises from a city. Before each question you stake 1-3 gold coins on your confidence; a right answer lights that many

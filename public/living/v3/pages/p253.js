@@ -1,8 +1,8 @@
 // p253: the journey of distance learning, as a bright packet that travels a spiral around an armillary globe, waking five beacons in time order.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=30';
-import { rising, halos, liveTag, motes, canvasTex, beam, blob, TAU, css } from '../lib/a4-kit.js?v=30';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=31';
+import { rising, halos, liveTag, motes, canvasTex, beam, blob, TAU, css } from '../lib/a4-kit.js?v=31';
 
 export const meta = { free: true, center: [0.5, 0.66], typeLabel: 'خط زمني', title: 'رحلة التعلم عن بعد' };
 

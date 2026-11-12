@@ -1,0 +1,23 @@
+{
+  "repo": "Dr.Ahmad",
+  "appId": "com.dralfailakawi.library",
+  "nameAr": "د. أحمد الفيلكاوي",
+  "nameEn": "Dr. Alfailakawi",
+  "displayName": "الفيلكاوي",
+  "url": "https://dr-alfailakawi.com",
+  "allowNavigation": [
+    "dr-alfailakawi.web.app",
+    "*.r2.dev",
+    "*.googleapis.com"
+  ],
+  "icon": "public/icon-512.png",
+  "background": "#FCFCFA",
+  "backgroundDark": "#151513",
+  "accent": "#7A5C2E",
+  "lsCategory": "public.app-category.books",
+  "backgroundModes": [
+    "audio"
+  ],
+  "version": "1.0.0",
+  "build": 1
+}

@@ -1,0 +1,30 @@
+{
+  "appId": "com.dralfailakawi.library",
+  "appName": "Dr. Alfailakawi",
+  "webDir": "www",
+  "server": {
+    "url": "https://dr-alfailakawi.com",
+    "errorPath": "offline.html",
+    "allowNavigation": [
+      "dr-alfailakawi.com",
+      "dr-alfailakawi.web.app",
+      "*.r2.dev",
+      "*.googleapis.com"
+    ]
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#FCFCFA",
+    "scheme": "Dr.Alfailakawi",
+    "limitsNavigationsToAppBoundDomains": false,
+    "preferredContentMode": "mobile"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "launchAutoHide": true,
+      "backgroundColor": "#FCFCFA",
+      "showSpinner": false
+    }
+  }
+}

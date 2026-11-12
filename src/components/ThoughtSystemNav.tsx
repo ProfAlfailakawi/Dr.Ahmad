@@ -21,7 +21,7 @@ export function ThoughtSystemNav() {
 
   return (
     <nav className="thought-system-nav border-b border-hair bg-canvas/95 px-6 md:px-11" aria-label="التنقل داخل المنظومة الفكرية">
-      <div className="edge-fade mx-auto flex max-w-shell gap-7 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="edge-fade mx-auto flex max-w-shell gap-7 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden after:block after:w-4 after:shrink-0 after:content-['']">
         {ITEMS.map((item) => {
           const active = pathname === item.to || (item.to === '/impact' && pathname.startsWith('/impact/')) || (item.to === '/paths' && pathname.startsWith('/paths/'))
           return (

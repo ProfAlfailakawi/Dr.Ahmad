@@ -240,6 +240,9 @@ body:has(.content-impact) .site-nav.is-solid {
 .admin-dashboard * {
   min-width: 0;
 }
+/* أزرار الترقيم الدائرية تحتفظ بحدّها الأدنى؛ القاعدة أعلاه كانت تضغطها بيضاويةً بعرض 23px. */
+.admin-dashboard .tap-44.min-w-10 { min-width: 2.5rem; }
+.admin-dashboard .tap-44.min-w-11 { min-width: 2.75rem; }
 .admin-dashboard {
   inline-size: 100%;
   max-width: 100%;
@@ -3293,7 +3296,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   background: rgb(var(--c-accent) / .065);
   padding: .34rem .62rem;
   color: rgb(var(--c-accent));
-  font-size: .64rem;
+  font-size: .74rem;
   font-weight: 800;
   line-height: 1.45;
 }
@@ -3357,7 +3360,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   background: rgb(var(--c-canvas));
   padding: .55rem .8rem;
   color: rgb(var(--c-soft));
-  font-size: .7rem;
+  font-size: .8rem;
   font-weight: 750;
   white-space: nowrap;
   transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s ease;
@@ -3365,7 +3368,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
 .content-research .research-smart-reader-rail button span {
   color: rgb(var(--c-accent));
   font-family: var(--font-display, inherit);
-  font-size: .7rem;
+  font-size: .76rem;
   font-weight: 900;
 }
 .content-research .research-smart-reader-rail button:hover,
@@ -3491,7 +3494,7 @@ body:has(.home-thought-maps-overlay) .floating-actions { opacity: 0; visibility:
   .content-research .research-split .research-title-link { font-size: 1.28rem; }
 }
 @media (max-width: 640px) {
-  .content-research .research-evidence-stamp { font-size: .61rem; }
+  .content-research .research-evidence-stamp { font-size: .72rem; }
   .content-research .research-smart-reader { padding: 1rem; }
   .content-research .research-index-result { margin-inline-start: 0; }
   .citation-style-switch { border-radius: 1rem !important; }
@@ -8516,6 +8519,8 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 
 /* أرضية المقروئية: المقاسات الكسرية الأصغر من .72rem تُرفع إلى حدٍّ أدنى مقروء
    دون المساس بالمقاسات الأكبر أو بالعائلة والوزن. */
+.text-\[\.52rem\], .text-\[\.54rem\], .text-\[\.55rem\], .text-\[\.56rem\], .text-\[\.57rem\],
+.text-\[\.59rem\], .text-\[\.61rem\], .text-\[\.63rem\], .text-\[\.67rem\],
 .text-\[\.58rem\], .text-\[\.6rem\], .text-\[\.62rem\], .text-\[\.64rem\],
 .text-\[\.65rem\], .text-\[\.66rem\], .text-\[\.68rem\], .text-\[\.7rem\] {
   font-size: .72rem !important;

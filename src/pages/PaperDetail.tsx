@@ -241,7 +241,7 @@ export default function PaperDetail() {
         <div className="mx-auto max-w-[960px]">
           <FadeUp>
             <div className="flex items-center justify-between gap-4">
-              <Link to="/research" viewTransition className="text-[.85rem] font-medium text-soft transition-colors hover:text-accent"><ArrowRight aria-hidden size={15} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />كل المساهمات العلمية</Link>
+              <Link to="/research" viewTransition className="inline-flex min-h-11 items-center text-[.85rem] font-medium text-soft transition-colors hover:text-accent"><ArrowRight aria-hidden size={15} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />كل المساهمات العلمية</Link>
             </div>
           </FadeUp>
 
@@ -305,7 +305,7 @@ export default function PaperDetail() {
                   {journal && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">جهة النشر / وعاء النشر</span><strong dir="auto" className="mt-1 block min-w-0 whitespace-normal text-[.88rem] font-bold leading-[1.85] text-ink [overflow-wrap:anywhere]">{journal}</strong></div>}
                   {year && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">سنة الصدور</span><strong className="mt-1 block text-[.88rem] font-bold text-ink">{year}</strong></div>}
                   {doi && <div className="min-w-0 overflow-hidden rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">المعرّف المعياري DOI</span><strong dir="ltr" className="mt-1 block min-w-0 font-mono text-[.8rem] text-accent [overflow-wrap:anywhere]">{doi}</strong></div>}
-                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-600'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : <><Check aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />موثق ومطابق للمصدر</>}</strong></div>}
+                  {isAdmin && <div className="rounded-2xl border border-hair bg-canvas p-4"><span className="block text-[.72rem] text-soft">حالة التدقيق والموثوقية</span><strong className={`mt-1 block text-[.88rem] font-bold ${p.analysisNeedsReview ? 'text-soft' : 'text-emerald-700 dark:text-emerald-400'}`}>{p.analysisNeedsReview ? 'قيد التدقيق — يحتاج مراجعتك' : <><Check aria-hidden size={14} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />موثق ومطابق للمصدر</>}</strong></div>}
                 </div>
               </div>
             </FadeUp>
@@ -338,7 +338,7 @@ export default function PaperDetail() {
                       const isExpanded = Boolean(expandedCards[card.key])
                       return (
                         <div id={`research-card-${card.key}`} key={card.key} className={`rounded-2xl border border-hair bg-canvas p-5 transition ${readerKey === card.key ? 'border-accent bg-accent/[.03] shadow-md' : ''}`}>
-                          <button type="button" aria-expanded={isExpanded} aria-controls={`research-card-${card.key}`} onClick={() => toggleCard(card.key)} className="flex w-full items-center justify-between gap-2 text-start">
+                          <button type="button" aria-expanded={isExpanded} aria-controls={`research-card-${card.key}`} onClick={() => toggleCard(card.key)} className="flex min-h-11 w-full items-center justify-between gap-2 text-start">
                             <h3 className="text-[.8rem] font-bold text-accent">{card.label}</h3>
                             <span className="shrink-0 text-[.72rem] font-bold text-soft transition-colors group-hover:text-accent">
                               {isExpanded ? <>إخفاء <ChevronUp aria-hidden size={14} strokeWidth={1.6} className="inline" /></> : <>عرض التفاصيل <ChevronDown aria-hidden size={14} strokeWidth={1.6} className="inline" /></>}

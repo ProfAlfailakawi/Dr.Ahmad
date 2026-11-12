@@ -37,7 +37,7 @@ const hash = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >
 // A gold gem in the top corner of the page; touching it opens the deeper question for this visit.
 export function memory({ parent, taps, ui, sfx, fx, id, title, visits, color = 0xd4ad55 }) {
   const lvl = LEVELS[Math.min(visits - 2, LEVELS.length - 1)];
-  const q = lvl.qs[(hash(id) + visits) % lvl.qs.length].replace('$', title);
+  const q = lvl.qs[(hash(id) + visits) % lvl.qs.length].split('$').join(title);
   const g = new THREE.Group(); g.position.set(0.39, 0, -PAGE_H / 2 + 0.1); parent.add(g); g.visible = false;
   const gold = new THREE.MeshStandardMaterial({ color: 0xe8c063, emissive: 0xffb84a, emissiveIntensity: 0.55, metalness: 0.7, roughness: 0.25 });
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.004, 8, 48), gold); ring.rotation.x = Math.PI / 2; ring.position.y = 0.003; g.add(ring);

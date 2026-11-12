@@ -8665,7 +8665,7 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     line-clamp: 2;
     padding: 1px 5px 2px;
     border-radius: 6px;
-    background: var(--dna-surface);
+    background: color-mix(in srgb, var(--dna-surface) 72%, var(--dna-canvas)); /* لون أرضية الخريطة نفسه */
   }
 }
 

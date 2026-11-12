@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, plinth, contactShadow, sign, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, shuffle, faceYaw } from '../lib/b7-kit.js?v=27';
+import { scene, plinth, contactShadow, sign, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, shuffle, faceYaw } from '../lib/b7-kit.js?v=28';
 export const meta = { free: true, center: [0.5, 0.65], typeLabel: 'أسئلة تطبيقية' };
 
 // Three ways to teach thinking, as three physical stations: a lone orb (independent), an orb inside a row of books (including),

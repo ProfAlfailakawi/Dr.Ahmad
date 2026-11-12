@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=27';
-import { Rig, badge, V } from '../lib/b5-kit.js?v=27';
-import { lightPool } from '../../v2/common.js?v=27';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=28';
+import { Rig, badge, V } from '../lib/b5-kit.js?v=28';
+import { lightPool } from '../../v2/common.js?v=28';
 
 export const meta = { free: true, center: [0.45, 0.74], typeLabel: 'مخطط ينمو' };
 

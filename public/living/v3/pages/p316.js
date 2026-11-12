@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=27';
-import { inked } from '../../pencil.js?v=27';
-import { TAU, revealer, hintGlow, pulseHint, bumper, canvasTex, faceMat, fillText, burstAt } from '../lib/a6-kit.js?v=27';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=28';
+import { inked } from '../../pencil.js?v=28';
+import { TAU, revealer, hintGlow, pulseHint, bumper, canvasTex, faceMat, fillText, burstAt } from '../lib/a6-kit.js?v=28';
 
 export const meta = { free: true, center: [0.56, 0.64], typeLabel: 'لعبة مطابقة' };
 

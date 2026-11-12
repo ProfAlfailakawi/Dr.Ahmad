@@ -1,7 +1,7 @@
 // p122 — two phones joined by a wire of light, and four ways of reaching beyond the ordinary (ascent, revelation, the cave, the message).
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow, lightTube } from '../../kit.js?v=27';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, slab, organic, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=27';
+import { P, ease, easeBack, clamp01, stag, glow, lightTube } from '../../kit.js?v=28';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, slab, organic, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=28';
 
 export const meta = { free: true, center: [0.5, 0.74], typeLabel: 'مجسّم تفاعلي' };
 

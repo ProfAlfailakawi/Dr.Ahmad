@@ -1,7 +1,7 @@
 // Shared helpers for the a5 batch of hand-built pages (icons, touch halos, build-in rig, plinths).
 import * as THREE from 'three';
-import { ease, easeBack, clamp01, stag, glow, textCanvas, mat, glossy, goldMat, shadowed } from '../../kit.js?v=27';
-import { inked } from '../../pencil.js?v=27';
+import { ease, easeBack, clamp01, stag, glow, textCanvas, mat, glossy, goldMat, shadowed } from '../../kit.js?v=28';
+import { inked } from '../../pencil.js?v=28';
 
 export const css = (c) => '#' + c.toString(16).padStart(6, '0');
 export const TAU = Math.PI * 2;

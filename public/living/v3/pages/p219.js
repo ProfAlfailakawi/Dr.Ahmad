@@ -1,7 +1,7 @@
 // p219 — «احترموا عقولنا»: grey "minds" hover over an open bin; tap one to catch it before it falls, it turns gold on its own pedestal; the bin lid closes when none is left.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=27';
-import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU, INK, GOLD } from '../lib/a2.js?v=27';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=28';
+import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU, INK, GOLD } from '../lib/a2.js?v=28';
 
 export const meta = { free: true, center: [0.5, 0.62], typeLabel: 'مجسّم تفاعلي' };
 

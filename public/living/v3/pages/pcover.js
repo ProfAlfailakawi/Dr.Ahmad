@@ -3,7 +3,7 @@
 // experience turn in front of it, and the title forms. Everything is drawn in code (no video file, no images), so it costs nothing to load.
 // Tap the scene to watch it again.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, sprite, mat, glossy } from '../../kit.js?v=27';
+import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, sprite, mat, glossy } from '../../kit.js?v=28';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'الغلاف' };
 
@@ -19,7 +19,7 @@ const CAPS = [
   [4.4, 9.8, 'أربعة أبواب تفتح لك عالماً كاملاً'],
   [10.2, 15.6, 'أكثر من مئة صفحة تستيقظ أمام الكاميرا'],
   [16, 21.2, 'مجسّمات وألعاب وخطوط زمنية'],
-  [22.6, 1e9, 'وجّه الكاميرا إلى أي صفحة لتبدأ الرحلة'],
+  [22.6, 27.6, 'وجّه الكاميرا إلى أي صفحة لتبدأ الرحلة'],
 ];
 const KINDS = [
   { t: 'مجسّمات', c: 0x2a7fd0 }, { t: 'ألعاب', c: 0xd62b3a }, { t: 'خطوط زمنية', c: 0xe0861f },
@@ -90,6 +90,7 @@ export default function build(ctx) {
   const beam = act(glow(0xfff0c0, 0.5, 0)); beam.position.set(0, 0.12, 0.1);
 
   // ---- things that need the fonts: doors, captions, title (made on the first frame after fonts load)
+  let skyBright = null, skyDim = null, skyLines = null;
   let doors = [], caps = [], title = null, sub = null, kinds = [], cards = [], cardRoot = act(new THREE.Group()), kindRoot = act(new THREE.Group());
   const makeText = () => {
     DOORS.forEach((d, i) => {
@@ -120,6 +121,40 @@ export default function build(ctx) {
       grp.add(m); const lab = sprite(k.t, 0.19, { width: 320, size: 44, color: '#f4d98a', bg: 'rgba(11,20,42,0.86)', pad: 12, radius: 22, shadow: false }); lab.position.set(0, -0.085, 0.09); grp.add(lab);
       grp.visible = false; grp.userData.m = m; kindRoot.add(grp); kinds.push({ grp, m, i });
     });
+
+    // ---- the reader's sky: every page this reader has discovered is a star; the stars of one door are joined in book order
+    const doorsInfo = (ctx.doors?.() || []).map((d) => ({ door: d.door, pages: ctx.doorPages?.(d.door) || [] }));
+    const total = doorsInfo.reduce((n, d) => n + d.pages.length, 0), found = doorsInfo.reduce((n, d) => n + d.pages.filter((p) => p.found).length, 0);
+    const AR = (n) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
+    const skyText = found ? `سماؤك: ${AR(found)} من ${AR(total)} صفحة صارت نجوماً` : 'كل صفحة تكتشفها تصير نجمة في سمائك';
+    { const s = sprite(skyText, 0.86, { width: 760, size: 38, color: '#f4d98a', bg: 'rgba(11,20,42,0.86)', border: 'rgba(240,196,92,.6)', pad: 18, radius: 30, shadow: false });
+      s.material.opacity = 0; s.visible = false; s.position.set(0, 0.1, 0.66); act(s); caps.push({ s, a: 28, b: 1e9 }); }
+    const SKY_COL = { 1: 0xb8b86a, 2: 0xe06a6a, 3: 0x6fb2f0, 4: 0xf0a050 };
+    const bright = [], dim = [], lines = [];
+    doorsInfo.forEach(({ door, pages }, di) => {
+      const cx = (di - 1.5) * 0.235, cy = 0.42, cz = -0.32, n = pages.length, R = 0.108;
+      let prev = null;
+      pages.forEach((p, i) => {
+        const r = R * Math.sqrt((i + 0.5) / Math.max(n, 1)), a = i * 2.39996;
+        const v = new THREE.Vector3(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 1.15, cz);
+        (p.found ? bright : dim).push({ v, c: new THREE.Color(SKY_COL[door] || 0xffd27a), ph: Math.random() * 6.28 });
+        if (p.found) { if (prev) lines.push(prev, v); prev = v; }
+      });
+    });
+    const pts = (list, size, op) => {
+      const geo = new THREE.BufferGeometry(), pos = new Float32Array(Math.max(list.length, 1) * 3), colr = new Float32Array(Math.max(list.length, 1) * 3);
+      list.forEach((o, i) => { pos.set([o.v.x, o.v.y, o.v.z], i * 3); colr.set([o.c.r, o.c.g, o.c.b], i * 3); });
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(colr, 3)); geo.setDrawRange(0, list.length);
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 3);
+      const m = new THREE.Points(geo, new THREE.PointsMaterial({ map: glowTexture(), size, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+      m.userData.op = op; m.frustumCulled = false; m.renderOrder = 12; act(m); return m;
+    };
+    skyBright = pts(bright, 0.06, 1); skyDim = pts(dim, 0.022, 0.45);
+    if (lines.length) {
+      const lg = new THREE.BufferGeometry().setFromPoints(lines);
+      skyLines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0xf0c45c, transparent: true, opacity: 0, depthWrite: false })); skyLines.renderOrder = 11; act(skyLines);
+      lg.setDrawRange(0, 0); skyLines.userData.n = lines.length;
+    }
     ready = true;
   };
   fontsReady().then(() => { try { makeText(); } catch (e) { console.warn('[cover]', e); } });
@@ -156,7 +191,7 @@ export default function build(ctx) {
       // act 2: four doors rise out of the book
       doors.forEach(({ s, i, home }) => {
         const a = 4.1 + i * 0.95, k = easeBack(win(tl, a, a + 1.0)), settle = ease(win(tl, 9.6, 11));
-        s.visible = k > 0.001; s.material.opacity = Math.min(1, win(tl, a, a + 0.5)) * (1 - 0.4 * win(tl, 22, 25));
+        s.visible = k > 0.001; s.material.opacity = Math.min(1, win(tl, a, a + 0.5)) * (1 - 0.4 * win(tl, 22, 25)) * (1 - 0.88 * win(tl, 26.6, 28));
         const sc = Math.max(0.001, k) * (1 - 0.18 * settle);
         s.scale.set(0.2 * sc, 0.2667 * sc, 1);
         s.position.set(lerp(0, home.x, k), lerp(0.2, home.y + 0.1 * settle, k) + Math.sin(t * 1.1 + i) * 0.006 * k, lerp(0.1, home.z - 0.12 * settle, k));
@@ -165,7 +200,7 @@ export default function build(ctx) {
 
       // act 3: pages leave the book and circle it
       cards.forEach(({ s, i, ph, lane }) => {
-        const a = 10 + i * 0.07, k = ease(win(tl, a, a + 1.6)), out = 1 - win(tl, 21.5, 24.5) * 0.45;
+        const a = 10 + i * 0.07, k = ease(win(tl, a, a + 1.6)), out = (1 - win(tl, 21.5, 24.5) * 0.45) * (1 - 0.6 * win(tl, 26.6, 28));
         s.visible = k > 0.001 && tl < 99;
         const ang = ph + t * (0.28 + lane * 0.04) * (fin ? 0.6 : 1), R = lerp(0.04, 0.46 + lane * 0.05, k);
         s.position.set(Math.cos(ang) * R, lerp(0.16, 0.2 + lane * 0.06 + Math.sin(ang * 2) * 0.03, k), 0.12 + Math.sin(ang) * R * 0.5);
@@ -187,6 +222,13 @@ export default function build(ctx) {
       title.position.y = 0.76 + 0.02 * (1 - tk) + Math.sin(t * 1.0) * 0.004 * tk;
       sub.visible = sk > 0.001; sub.material.opacity = sk; sub.scale.set(0.6, 0.6 * sub.userData.aspect, 1);
       once('title', tl >= 21.8, () => { ctx.sfx.good?.(); ctx.fx.burst(new THREE.Vector3(0, 0.68, -0.3), GOLD, 34, 0.5, 0.03); if (!doneOnce) { doneOnce = true; ctx.ui.done?.(); } });
+
+      // act 6: the reader's sky
+      const skk = ease(win(tl, 27.2, 29.4));
+      if (skyBright) { skyBright.material.opacity = skk * (0.85 + 0.15 * Math.sin(t * 2.3)); skyBright.visible = skk > 0.001; skyBright.material.size = 0.05 + 0.012 * Math.sin(t * 1.7); }
+      if (skyDim) { skyDim.material.opacity = skk * 0.45; skyDim.visible = skk > 0.001; }
+      if (skyLines) { const lk = ease(win(tl, 28.6, 31)); skyLines.visible = lk > 0.001; skyLines.material.opacity = 0.7 * lk; skyLines.geometry.setDrawRange(0, Math.floor((skyLines.userData.n / 2) * lk) * 2); }
+      once('sky', tl >= 27.4, () => { ctx.sfx.discover?.(); });
 
       // captions follow the story
       caps.forEach(({ s, a, b }) => {

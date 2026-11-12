@@ -3,10 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=27';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=27';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=27';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=27';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=28';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=28';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=28';
+import { bumpVisit, memory, bridge, isFacing, paperVideo } from './extras.js?v=28';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=28';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -266,7 +267,7 @@ function startExperience(index, root, camera, mode) {
   const ctx = {
     stage, fx, mode, camera, ui, sfx, asset, captureFrame,
     doors: () => LIVE_DOORS.map((d) => ({ door: d, title: DOORS[d].t, subtitle: DOORS[d].s })),
-    doorPages: (d) => doorPages(d).map((x) => ({ id: x.id, title: x.title, type: x.type, color: TYPES[x.type]?.c || '#d4ad55', found: stamps.has(x.id) })),
+    doorPages: (d) => doorPages(d).map((x) => ({ id: x.id, page: x.page, title: x.title, type: x.type, color: TYPES[x.type]?.c || '#d4ad55', found: stamps.has(x.id) })),
     tap: (obj, fn) => taps.push([obj, fn]),
     progress: () => (exp.id === 'secret' ? secretProgress() : { done: foundOf(PAGES), total: PAGES.length }),
     pages: pageInfo,
@@ -286,13 +287,28 @@ function startExperience(index, root, camera, mode) {
   $('behindBtn').classList.toggle('hidden', !exp.behind);
   sfx.wake();
   if (exp.door) sfx.signature?.(exp.door);
-  if (prevTrail && performance.now() - prevTrail.at < 15000 && mode === 'ar') trail(fx, prevTrail.color, exp.center || [0.5, 0.6]);
-  trailMemory = { at: performance.now(), color: TYPES[exp.type]?.c || '#d4ad55' };
+  current.extras = [];
+  const pageNo = exp.kind === 'page' ? +String(exp.page).replace(/\D/g, '') : 0;
+  if (prevTrail && performance.now() - prevTrail.at < 15000 && mode === 'ar') {
+    // two facing pages talk: the page left behind sends its title across the gutter on a bridge of light
+    if (pageNo && prevTrail.no && isFacing(pageNo, prevTrail.no)) current.extras.push(bridge({ parent: outer, fx, sfx, side: pageNo > prevTrail.no ? 1 : -1, center: exp.center || [0.5, 0.6], color: prevTrail.color, title: prevTrail.title }));
+    else trail(fx, prevTrail.color, exp.center || [0.5, 0.6]);
+  }
+  trailMemory = { at: performance.now(), color: TYPES[exp.type]?.c || '#d4ad55', no: pageNo, title: exp.title };
+  // the page remembers the reader: from the second visit on, a deeper question waits in its corner
+  if (exp.kind === 'page' && mode === 'ar') {
+    const visits = bumpVisit(exp.id);
+    if (visits >= 2) {
+      const mem = memory({ parent: outer, taps, ui, sfx, fx, id: exp.id, title: exp.title, visits, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16) });
+      current.extras.push({ update: () => { mem.update(current.t); return true; } });
+    }
+  }
   lecture.sendState();
   return current;
 }
 
 function stopExperience() {
+  paperVideo.close();
   if (!current) return;
   current.root.remove(current.stage);
   current.root.remove(current.sweep);
@@ -342,6 +358,7 @@ function tick(dt) {
   fitScene(c, dt);
   c.pivot.scale.setScalar(c.zoom * c.fit);
   c.inst.update(c.t, dt, ease(c.e));
+  if (c.extras?.length) c.extras = c.extras.filter((x) => x.update(dt) !== false);
   c.fx.update(dt);
 }
 
@@ -606,6 +623,7 @@ async function startAR(id = packId) {
       const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
       tick(dt);
       renderer.render(scene, camera);
+      paperVideo.render(scene, camera);
       if (test) testFrame(now);
     });
     ar = { mind, anchors };
@@ -912,7 +930,14 @@ const step = (d) => {
 };
 $('navNext').onclick = () => step(1);
 $('navPrev').onclick = () => step(-1);
-$('videoBtn').onclick = () => { if (current?.exp.video) open(`https://www.youtube.com/watch?v=${current.exp.video}`, '_blank', 'noopener'); };
+// The video plays on the paper itself, standing on the page; touching the button again (or ✕) puts it away. Without the camera it opens YouTube.
+$('videoBtn').onclick = () => {
+  const c = current; if (!c?.exp.video) return;
+  if (paperVideo.open) { paperVideo.close(); return; }
+  if (ar && c.found) { sfx.whoosh?.(); paperVideo.show({ parent: c.stage, id: c.exp.video, stageEl: $('arStage') }).catch(() => open(`https://www.youtube.com/watch?v=${c.exp.video}`, '_blank', 'noopener')); }
+  else open(`https://www.youtube.com/watch?v=${c.exp.video}`, '_blank', 'noopener');
+};
+addEventListener('resize', () => { const el = $('arStage'); paperVideo.resize(el.clientWidth, el.clientHeight); });
 $('behindBtn').onclick = () => {
   if (!current?.exp.behind) return;
   $('bhTitle').textContent = current.exp.behind.principle;

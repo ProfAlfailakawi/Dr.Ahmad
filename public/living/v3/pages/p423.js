@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, contactShadow, sign, paintTex, drawText, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, shuffle, faceYaw } from '../lib/b7-kit.js?v=27';
+import { scene, contactShadow, sign, paintTex, drawText, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, shuffle, faceYaw } from '../lib/b7-kit.js?v=28';
 export const meta = { free: true, center: [0.46, 0.62], typeLabel: 'لعبة تصنيف' };
 
 // A stone platform torn in two by a glowing rift. A situation hovers on the near half: tap the tablet (on the far half) that names

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=27';
-import { scene, RoundedBox, TAU, contactShadow, lightPool } from '../lib/a8-kit.js?v=27';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=28';
+import { scene, RoundedBox, TAU, contactShadow, lightPool } from '../lib/a8-kit.js?v=28';
 export const meta = { free: true, center: [0.5, 0.666], typeLabel: 'مجسّم تفاعلي' };
 
 // Ten dark columns grow from the printed chart; a big phone crowns each. Six phones carry a statement to judge.

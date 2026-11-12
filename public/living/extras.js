@@ -3,7 +3,7 @@
 //   bridge(): two facing pages talk. Moving from one page to the page opposite it draws a bridge of light across the gutter, carrying the first page's title over.
 //   paperVideo: the page's YouTube video plays on the paper itself, standing on the page and following it, instead of leaving the book.
 import * as THREE from 'three';
-import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=30';
+import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=31';
 
 // ------------------------------------------------------------ visits (kept on the device only)
 const VKEY = 'living-encyclopedia:visits';
@@ -109,6 +109,84 @@ export function bridge({ parent, fx, sfx, side, center, color, title }) {
       start.material.opacity = 0.8 * fade * (1 - clamp01(t / 2));
       if (!landed && g >= 0.999) { landed = true; fx.burst(c.clone(), col.getHex(), 26, 0.4, 0.026); sfx.pop?.(); }
       if (t > 4.6) { parent.remove(root); tube.geometry.dispose(); mat.dispose(); return false; }
+      return true;
+    },
+  };
+}
+
+// ------------------------------------------------------------ the room's own light
+// Once a second the camera picture is averaged (16×16 pixels): its colour tints the scene's lights and its brightness dims or lifts them,
+// so a model under a warm lamp looks warm and one in a dim room is not floodlit. Changes glide; nothing here costs a frame.
+const room = { tint: new THREE.Color(1, 1, 1), gain: 1, tTint: new THREE.Color(1, 1, 1), tGain: 1, at: 0, cv: null };
+export function roomLight(video, now, dt, lightsList) {
+  if (video && video.videoWidth && now - room.at > 1000) {
+    room.at = now;
+    try {
+      room.cv ||= Object.assign(document.createElement('canvas'), { width: 16, height: 16 });
+      const g = room.cv.getContext('2d', { willReadFrequently: true });
+      g.drawImage(video, 0, 0, 16, 16);
+      const d = g.getImageData(0, 0, 16, 16).data; let r = 0, gg = 0, b = 0;
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; }
+      const n = d.length / 4; r /= n; gg /= n; b /= n;
+      const m = Math.max(r, gg, b, 1), lum = 0.3 * r + 0.59 * gg + 0.11 * b;
+      room.tTint.setRGB(1 + (r / m - 1) * 0.4, 1 + (gg / m - 1) * 0.4, 1 + (b / m - 1) * 0.4);
+      room.tGain = Math.min(1.12, Math.max(0.68, 0.55 + lum / 300));
+    } catch { /* a protected video frame: keep the last light */ }
+  }
+  const k = 1 - Math.exp(-2 * dt);
+  room.tint.lerp(room.tTint, k); room.gain += (room.tGain - room.gain) * k;
+  for (const L of lightsList) {
+    if (!L) continue;
+    L.userData.base ??= { c: L.color.clone(), i: L.intensity };
+    L.color.copy(L.userData.base.c).multiply(room.tint); L.intensity = L.userData.base.i * room.gain;
+  }
+}
+
+// ------------------------------------------------------------ the printed figure itself rises from the paper
+// A snapshot of the page region the camera recognised is laid exactly over the print, then peels up, floats and melts into gold light
+// while the scene grows underneath: the drawing seems to leave the paper and become the model.
+const LIFT_V = 'varying vec2 vUv; varying vec2 vP; attribute vec2 aP; void main(){ vUv = uv; vP = aP; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
+const LIFT_F = `uniform sampler2D map; uniform float uK; varying vec2 vUv; varying vec2 vP;
+void main(){
+  vec4 c = texture2D(map, vUv);
+  float edge = min(min(vP.x, 1.0 - vP.x), min(vP.y, 1.0 - vP.y));
+  float soft = smoothstep(0.0, 0.08, edge);
+  float n = fract(sin(dot(floor(vP * 46.0), vec2(12.9898, 78.233))) * 43758.5453);
+  float gone = smoothstep(uK * 1.25 - 0.25, uK * 1.25, n * 0.6 + (1.0 - vP.y) * 0.4);
+  float rim = smoothstep(0.0, 0.12, gone) * (1.0 - smoothstep(0.12, 0.3, gone));
+  vec3 col = c.rgb + vec3(1.0, 0.82, 0.45) * (rim * 0.9 + uK * 0.25);
+  float a = soft * gone * (1.0 - smoothstep(0.8, 1.0, uK));
+  if (a < 0.01) discard;
+  gl_FragColor = vec4(col, a);
+}`;
+export function liftOff({ parent, frame, rect, fx, color = 0xffd27a }) {
+  if (!frame?.tex) return null;
+  const [u0, v0, u1, v1] = rect, N = 10, pos = [], uv = [], ap = [], idx = [], v = new THREE.Vector3();
+  let inside = 0;
+  for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+    const a = i / N, b = j / N, x = u0 + (u1 - u0) * a - 0.5, z = (v0 + (v1 - v0) * b - 0.5) * PAGE_H;
+    pos.push(x, 0, z); ap.push(a, 1 - b);
+    const q = frame.uv(v.set(x, 0, z)); uv.push(q[0], q[1]);
+    if (q[0] > 0 && q[0] < 1 && q[1] > 0 && q[1] < 1) inside++;
+  }
+  if (inside < (N + 1) * (N + 1) * 0.6) { frame.tex.dispose(); return null; }   // most of the figure must be in the camera picture
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setAttribute('aP', new THREE.Float32BufferAttribute(ap, 2)); geo.setIndex(idx);
+  const U = { map: { value: frame.tex }, uK: { value: 0 } };
+  const mesh = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: U, vertexShader: LIFT_V, fragmentShader: LIFT_F, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+  mesh.renderOrder = 20; mesh.frustumCulled = false;
+  const cx = (u0 + u1) / 2 - 0.5, cz = ((v0 + v1) / 2 - 0.5) * PAGE_H;
+  const holder = new THREE.Group(); holder.position.set(cx, 0, cz); mesh.position.set(-cx, 0, -cz); holder.add(mesh); parent.add(holder);
+  let t = 0, sparked = false;
+  return {
+    update(dt) {
+      t += dt; const k = clamp01(t / (globalThis.__liftDur || 1.5)), e = ease(k);   // __liftDur: local checks only
+      U.uK.value = k;
+      holder.position.y = 0.002 + e * 0.2; holder.rotation.x = -0.25 * e; holder.scale.setScalar(1 - 0.12 * e);
+      if (!sparked && k > 0.45) { sparked = true; fx.burst(new THREE.Vector3(cx, 0.14, cz), color, 22, 0.42, 0.026); }
+      if (k >= 1) { parent.remove(holder); geo.dispose(); mesh.material.dispose(); frame.tex.dispose(); return false; }
       return true;
     },
   };

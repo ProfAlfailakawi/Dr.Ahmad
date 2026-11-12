@@ -1,8 +1,8 @@
 // museum — «متحف الباب»: a smoked-glass dome on a gold-and-door-coloured plinth. Every live page of the door floats inside as one small gem on a spiral:
 // discovered pages blaze in their own colour, pages still waiting are ghosts of glass. A heart of light in the middle grows with the progress.
 import * as THREE from 'three';
-import { ease, easeBack, clamp01, stag, glow, glowTexture, sprite } from '../../kit.js?v=30';
-import { lathe, std, brass, add, grp, blob, TAU } from './a2.js?v=30';
+import { ease, easeBack, clamp01, stag, glow, glowTexture, sprite } from '../../kit.js?v=31';
+import { lathe, std, brass, add, grp, blob, TAU } from './a2.js?v=31';
 
 const DOOR_COL = { 1: 0x6b6b3a, 2: 0x7a1f1f, 3: 0x3b7fc4, 4: 0xc46a1d };
 const AR = (n) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
@@ -93,7 +93,9 @@ export default function museum(ctx, door, meta) {
   if (!found) ctx.ui.hud('اللمس يكشف ما ينتظر');
 
   const d = new THREE.Object3D(), qa = new THREE.Quaternion(), qb = new THREE.Quaternion(), tmp = new THREE.Color(), cc = new THREE.Color();
-  let burstAt = 3;
+  let burstAt = 3; const fin = { done: false };
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(DR, 0.006, 8, 64), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  ring.rotation.x = Math.PI / 2; ring.visible = false; g.add(ring);
   return {
     update(t, dt, e) {
       const k0 = Math.max(e, 1e-3); g.scale.setScalar(k0);
@@ -124,6 +126,13 @@ export default function museum(ctx, door, meta) {
       heartM.emissiveIntensity = 0.35 + 1.1 * br * (0.8 + 0.2 * pu);
       heartGlow.scale.setScalar((0.1 + 0.26 * frac) * (1 + 0.15 * pu) * hk + 1e-3); heartGlow.material.opacity = (0.15 + 0.6 * frac) * (0.75 + 0.25 * pu) * clamp01(e);
       crown.rotation.set(Math.PI / 2 + Math.sin(t * 0.8) * 0.3, t * 0.6, 0); crown.scale.setScalar(Math.max(hk, 1e-4));
+      // the door is complete: a short celebration the first seconds the museum opens, then the calm pulse below
+      if (all && !fin.done && t > 1.6) {
+        fin.done = true; ctx.sfx.good?.(); ctx.ui.toast?.('اكتمل هذا الباب · كل صفحاته أضاءت ✦');
+        const cols = [0xffd27a, DOOR_COL[door] || 0xd4ad55, 0xffffff, 0xffb84a];
+        for (let k = 0; k < 9; k++) setTimeout(() => { const a = k * 0.7, r = 0.12 + (k % 3) * 0.08; ctx.fx.burst(new THREE.Vector3(g.position.x + Math.cos(a) * r, TOP + 0.05 + (k % 4) * 0.05, g.position.z + Math.sin(a) * r), cols[k % 4], 22, 0.5, 0.028); if (k % 3 === 0) ctx.sfx.pop?.(); }, k * 170);
+      }
+      if (fin.done) { const fk = clamp01((t - 1.6) / 2.2); ring.visible = fk < 1; ring.scale.setScalar(0.2 + fk * 1.5); ring.material.opacity = 0.85 * (1 - fk); ring.position.y = TOP + 0.02 + fk * 0.1; }
       if (all && t > burstAt) { burstAt = t + 2.2; ctx.fx.burst(new THREE.Vector3(g.position.x, TOP + 0.012, g.position.z), 0xffd27a, 14, 0.3, 0.022); }
     },
   };

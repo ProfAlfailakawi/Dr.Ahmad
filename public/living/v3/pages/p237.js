@@ -1,8 +1,8 @@
 // p237 — a student's desk: three hovering choice tiles per decision fly into the monitor and answer as a stack of books (left) and a plant (right) that thrive or wilt with the quality of the decision.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow } from '../../kit.js?v=30';
-import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, desk, blob, at, shuffled, TAU } from '../lib/a2.js?v=30';
-import { plate, damp } from '../lib/b3-kit.js?v=30';
+import { P, ease, easeBack, clamp01, glow } from '../../kit.js?v=31';
+import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, desk, blob, at, shuffled, TAU } from '../lib/a2.js?v=31';
+import { plate, damp } from '../lib/b3-kit.js?v=31';
 
 export const meta = { free: true, center: [0.45, 0.7], typeLabel: 'لعبة قرار' };
 

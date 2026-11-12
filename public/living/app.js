@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=30';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=30';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=30';
-import { bumpVisit, memory, bridge, isFacing, paperVideo } from './extras.js?v=30';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=30';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=31';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=31';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=31';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=31';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=31';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -222,6 +222,7 @@ function lights(stage, ar) {
     catcher.rotation.x = -Math.PI / 2; catcher.position.y = 0.0006; catcher.receiveShadow = true;
     stage.add(catcher);
   }
+  return sun;
 }
 
 const pageInfo = () => doorPages(1).map((x) => ({ ...x, typeColor: TYPES[x.type].c, typeColorHex: parseInt(TYPES[x.type].c.slice(1), 16) }));
@@ -249,7 +250,7 @@ function startExperience(index, root, camera, mode) {
   const pivot = new THREE.Group(); pivot.position.copy(center); outer.add(pivot);
   const stage = new THREE.Group(); stage.position.copy(center).negate(); pivot.add(stage);
   const sweep = sweepBand(); root.add(sweep);
-  lights(outer, mode === 'ar');
+  const sun = lights(outer, mode === 'ar');
   const taps = [];
   const fx = new FX(stage);
   // A snapshot of the camera picture, with a way to find where any point of the page sits in it (used by the cover).
@@ -289,7 +290,11 @@ function startExperience(index, root, camera, mode) {
   $('behindBtn').classList.toggle('hidden', !exp.behind);
   sfx.wake();
   if (exp.door) sfx.signature?.(exp.door);
-  current.extras = [];
+  current.extras = []; current.sun = sun; current.near = 0; current.nearHit = false;
+  // the printed figure itself rises from the paper and melts into the scene (ordinary pages, with the camera)
+  if (exp.kind === 'page' && mode === 'ar') {
+    try { const lift = liftOff({ parent: outer, frame: captureFrame(), rect: exp.crop ? exp.crop.map((x) => Math.min(1, Math.max(0, x))) : [0.08, 0.1, 0.92, 0.9], fx, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16) }); if (lift) current.extras.push(lift); } catch { /* no picture: the scene simply starts */ }
+  }
   const pageNo = exp.kind === 'page' ? +String(exp.page).replace(/\D/g, '') : 0;
   if (prevTrail && performance.now() - prevTrail.at < 15000 && (mode === 'ar' || DEV)) {
     // two facing pages talk: the page left behind sends its title across the gutter on a bridge of light
@@ -345,6 +350,7 @@ function fitScene(c, dt) {
   c.fit = THREE.MathUtils.damp(c.fit, c.fitT, 2.5, dt);
 }
 
+const nearA = new THREE.Vector3(), nearB = new THREE.Vector3();
 function tick(dt) {
   const c = current; if (!c) return;
   if (activeCanvas) syncLines(activeCanvas.clientWidth || 1, activeCanvas.clientHeight || 1);
@@ -358,8 +364,16 @@ function tick(dt) {
     if (!c.exp.free) { c.yaw = THREE.MathUtils.damp(c.yaw, 0, 4, dt); c.pitch = THREE.MathUtils.damp(c.pitch, 0, 4, dt); c.zoom = THREE.MathUtils.damp(c.zoom, 1, 4, dt); }
   }
   c.pivot.rotation.order = 'YXZ'; c.pivot.rotation.x = c.pitch; c.pivot.rotation.y = c.yaw;
-  fitScene(c, dt);
-  c.pivot.scale.setScalar(c.zoom * c.fit);
+  // come closer: an ordinary page's scene grows toward the reader as the phone approaches (distance counted in page widths)
+  if (c.exp.kind === 'page' && c.found && activeCanvas && ar) {
+    c.camera.getWorldPosition(nearA); c.pivot.getWorldPosition(nearB);
+    const dist = nearA.distanceTo(nearB) / Math.max(1e-6, c.stage.matrixWorld.getMaxScaleOnAxis());
+    c.near = THREE.MathUtils.damp(c.near, THREE.MathUtils.clamp((1.0 - dist) / 0.4, 0, 1), 3, dt);
+    if (c.near > 0.85 && !c.nearHit && c.t > 3) { c.nearHit = true; sfx.discover?.(); c.fx.burst(new THREE.Vector3(c.pivot.position.x, 0.12, c.pivot.position.z), 0xffd27a, 26, 0.5, 0.028); navigator.vibrate?.(18); }
+    if (c.near < 0.2) c.nearHit = false;
+  } else c.near = THREE.MathUtils.damp(c.near || 0, 0, 3, dt);
+  if (c.near < 0.05) fitScene(c, dt);
+  c.pivot.scale.setScalar(c.zoom * c.fit * (1 + 0.32 * c.near));
   c.inst.update(c.t, dt, ease(c.e));
   if (c.extras?.length) c.extras = c.extras.filter((x) => x.update(dt) !== false);
   c.fx.update(dt);
@@ -567,7 +581,7 @@ async function startAR(id = packId) {
     const { renderer, scene, camera } = mind;
     applyLook(renderer);
     environment(renderer, scene);
-    scene.add(new THREE.HemisphereLight(0xfff4e0, 0x5a4a3a, 0.7));
+    const hemi = new THREE.HemisphereLight(0xfff4e0, 0x5a4a3a, 0.7); scene.add(hemi);
     activeCanvas = renderer.domElement;
     // The camera looks through the recognition packs one after another by itself; the student never picks.
     let ids = pack.ids, packNo = PACKS.indexOf(pack);
@@ -625,6 +639,7 @@ async function startAR(id = packId) {
     renderer.setAnimationLoop(() => {
       const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
       tick(dt);
+      roomLight($('arStage').querySelector('video'), now, dt, [hemi, current?.sun]);
       renderer.render(scene, camera);
       paperVideo.render(scene, camera);
       if (test) testFrame(now);

@@ -216,7 +216,7 @@ export function ImageLab() {
 
   const card = 'rounded-2xl border border-hair bg-canvas p-4'
   const ghost = 'rounded-full border border-hair bg-canvas px-3 py-1.5 text-[.72rem] font-semibold text-soft transition hover:border-accent hover:text-accent'
-  const primary = 'rounded-full bg-accent px-4 py-2 text-[.76rem] font-semibold text-white transition hover:bg-accent-deep'
+  const primary = 'rounded-full bg-accent px-4 py-2 text-[.76rem] font-semibold text-canvas transition hover:bg-accent-deep'
 
   return (
     <section className="grid gap-5" aria-labelledby="image-lab-title">
@@ -245,7 +245,7 @@ export function ImageLab() {
             <p className="text-[.7rem] font-bold text-accent">مرشّحات بلمسة</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {PRESETS.map((entry) => (
-                <button key={entry.id} type="button" onClick={() => applyPreset(entry.id)} className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition ${preset === entry.id ? 'bg-accent text-white' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{entry.label}</button>
+                <button key={entry.id} type="button" onClick={() => applyPreset(entry.id)} className={`rounded-full px-3 py-1.5 text-[.72rem] font-semibold transition ${preset === entry.id ? 'bg-accent text-canvas' : 'border border-hair bg-canvas text-soft hover:border-accent hover:text-accent'}`}>{entry.label}</button>
               ))}
             </div>
           </section>

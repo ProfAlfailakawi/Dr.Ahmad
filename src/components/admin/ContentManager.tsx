@@ -96,7 +96,7 @@ const editableFields: Record<ManagedKind, string[]> = {
 }
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.94rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
-const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.9rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-50'
+const primary = 'rounded-full bg-accent px-6 py-2.5 text-[.9rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-50'
 const secondary = 'rounded-full border border-hair px-5 py-2.5 text-[.86rem] text-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50'
 
 /* اقتراح محلي فوري — احتياط زر الذكاء الاصطناعي حين لا يتوفر الخادم.
@@ -1198,21 +1198,21 @@ ${form.outlet || ''}`
                   <button
                     type="button"
                     onClick={() => setForm((previous) => ({ ...previous, status: 'published', scheduledAt: '' }))}
-                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'published' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'published' ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                   >
                     نشر الآن
                   </button>
                   <button
                     type="button"
                     onClick={() => setForm((previous) => ({ ...previous, status: 'scheduled', scheduledAt: previous.scheduledAt || localDateTimeValue() }))}
-                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'scheduled' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'scheduled' ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                   >
                     جدولة النشر
                   </button>
                   <button
                     type="button"
                     onClick={() => setForm((previous) => ({ ...previous, status: 'draft', scheduledAt: '' }))}
-                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'draft' ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
+                    className={`rounded-full border px-4 py-2 text-[.82rem] transition-colors ${form.status === 'draft' ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}
                   >
                     حفظ كمسودة
                   </button>

@@ -81,7 +81,7 @@ export function AnswerQualityLab({ articles }: { articles: ArticleRecord[] }) {
             <span className="text-[.68rem] text-soft">{passed} من {rows.length} اجتازت</span>
           </div>
         </div>
-        <button type="button" onClick={() => setRunId((value) => value + 1)} className="mt-4 rounded-full bg-accent px-5 py-2 text-[.76rem] font-semibold text-white hover:bg-accent-deep">أعد الفحص</button>
+        <button type="button" onClick={() => setRunId((value) => value + 1)} className="mt-4 rounded-full bg-accent px-5 py-2 text-[.76rem] font-semibold text-canvas hover:bg-accent-deep">أعد الفحص</button>
       </div>
 
       <div className="grid gap-3">

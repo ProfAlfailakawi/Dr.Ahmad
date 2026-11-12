@@ -349,7 +349,7 @@ export default function Inbox() {
                 role="tab"
                 aria-selected={activeView === tab.id}
                 onClick={() => setActiveView(tab.id)}
-                className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${activeView === tab.id ? "bg-accent text-white" : "text-soft hover:bg-wash hover:text-ink"}`}
+                className={`min-h-11 rounded-full px-5 text-[.82rem] font-semibold transition-colors ${activeView === tab.id ? "bg-accent text-canvas" : "text-soft hover:bg-wash hover:text-ink"}`}
               >
                 {tab.label}
               </button>

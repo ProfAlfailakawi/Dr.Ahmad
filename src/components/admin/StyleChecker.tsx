@@ -28,7 +28,7 @@ import { ArrowLeft, Sparkles } from 'lucide-react'
 const DRAFT_KEY = 'admin-style-checker-draft-v1'
 const card = 'min-w-0 rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const inset = 'rounded-xl border border-hair bg-canvas'
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-45'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2.5 text-[.78rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45'
 const actionBtn = 'rounded-full border border-accent/30 bg-accent/[.08] px-4 py-2.5 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-45'
 

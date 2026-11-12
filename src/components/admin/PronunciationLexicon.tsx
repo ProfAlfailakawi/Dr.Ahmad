@@ -229,7 +229,7 @@ export function PronunciationLexicon() {
 
       {/* الحجم والأصناف: يعرف الدكتور ما يملكه بلا أن يُغرَق بثلاثمئة سطر */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-accent px-4 py-1.5 text-[.78rem] font-semibold text-white">
+        <span className="rounded-full bg-accent px-4 py-1.5 text-[.78rem] font-semibold text-canvas">
           {arabicCountPhrase(summary.total, ADJUSTED_WORD_FORMS)} سلفاً
         </span>
         {summary.types.map(([type, count]) => (
@@ -281,7 +281,7 @@ export function PronunciationLexicon() {
           <button
             type="button"
             onClick={transferAll}
-            className="mt-3 rounded-full bg-accent px-4 py-2 text-[.78rem] font-semibold text-white transition-opacity hover:opacity-90"
+            className="mt-3 rounded-full bg-accent px-4 py-2 text-[.78rem] font-semibold text-canvas transition-opacity hover:opacity-90"
           >
             حوّلها كلها إلى القاموس
           </button>
@@ -322,7 +322,7 @@ export function PronunciationLexicon() {
               type="button"
               onClick={() => void saveQueue()}
               disabled={busy}
-              className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {busy ? 'أحفظ…' : 'احفظ المكتمل'}
             </button>
@@ -380,7 +380,7 @@ export function PronunciationLexicon() {
           type="button"
           onClick={() => void save()}
           disabled={busy || Boolean(problem)}
-          className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-50"
+          className="rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-50"
         >
           {busy ? 'أحفظ…' : 'أضف إلى القاموس'}
         </button>

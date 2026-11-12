@@ -68,7 +68,7 @@ const SoundCaravanBoard = lazy(() => import('../components/admin/SoundCaravanBoa
 const AtlasEditorialSettings = lazy(() => import('../components/admin/AtlasEditorialSettings').then((module) => ({ default: module.AtlasEditorialSettings })))
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.95rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
-const btn = 'rounded-full bg-accent px-7 py-2.5 font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
+const btn = 'rounded-full bg-accent px-7 py-2.5 font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-50'
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-7'
 
 /* التاريخ العربي من اليوم — مثل بقية الموقع */
@@ -284,7 +284,7 @@ function PushGateBanner() {
             if (result.ok) { localStorage.setItem('admin:push-registered', '1'); setRegistered(true) }
           }).catch((error) => setNotice(error instanceof Error ? error.message : 'تعذّر الربط على هذا الجهاز.'))
             .finally(() => setBusy(''))
-        }} className="rounded-full bg-accent px-4 py-2 text-[.78rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-45">
+        }} className="rounded-full bg-accent px-4 py-2 text-[.78rem] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-45">
           {busy === 'enable' ? 'يربط…' : 'فعّل الإشعارات على هذا الجهاز'}
         </button>
         {registered && (

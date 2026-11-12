@@ -59,7 +59,7 @@ import { arabicCountPhrase, AFFECTED_MATERIAL_OBJECT_FORMS, DAY_FORMS, READER_FO
 
 const card = 'rounded-[1.75rem] border border-hair bg-paper p-5 shadow-sm md:p-7'
 const input = 'w-full rounded-2xl border border-hair bg-canvas px-4 py-3 text-[.88rem] text-ink outline-none transition focus:border-accent'
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.8rem] font-bold text-canvas transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50'
 const ghost = 'rounded-full border border-hair bg-canvas px-4 py-2 text-[.76rem] font-semibold text-soft transition hover:border-accent hover:text-accent disabled:opacity-50'
 
 type RadarItem = { id: string; ar?: string; arNote?: string; en?: string; source?: string; url?: string }
@@ -169,7 +169,7 @@ function LedgerRow({ record, onSaveOutcome, onForget }: { record: TweetPublishRe
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
-              className="rounded-full bg-accent px-3 py-1 text-[.6rem] font-bold text-white"
+              className="rounded-full bg-accent px-3 py-1 text-[.6rem] font-bold text-canvas"
               onClick={() => { onSaveOutcome(record.id, { impressions: num(form.impressions), likes: num(form.likes), reposts: num(form.reposts), replies: num(form.replies) }); setOpen(false) }}
             >احفظ</button>
             {record.outcome && (
@@ -542,7 +542,7 @@ export function TweetStudio() {
               key={tab.kind}
               type="button"
               onClick={() => { setKind(tab.kind); setSelectedId(''); setBatchMode(false); setWeeklyMode(false); setResonanceMode(false) }}
-              className={`min-h-16 rounded-2xl px-3 py-2.5 text-right transition-colors ${kind === tab.kind && !batchMode && !weeklyMode && !resonanceMode ? 'bg-accent text-white' : 'border border-hair bg-wash text-ink hover:border-accent hover:text-accent'}`}
+              className={`min-h-16 rounded-2xl px-3 py-2.5 text-right transition-colors ${kind === tab.kind && !batchMode && !weeklyMode && !resonanceMode ? 'bg-accent text-canvas' : 'border border-hair bg-wash text-ink hover:border-accent hover:text-accent'}`}
             >
               <strong className="block text-[.78rem]">{tab.label}</strong>
               <span className={`mt-0.5 block text-[.6rem] leading-relaxed ${kind === tab.kind && !batchMode ? 'text-white/70' : 'text-soft'}`}>{tab.note}</span>

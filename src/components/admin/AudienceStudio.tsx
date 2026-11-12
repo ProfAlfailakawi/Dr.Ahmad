@@ -16,7 +16,7 @@ import { BellOff, Plus } from 'lucide-react'
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none placeholder:text-soft/60 focus:border-accent'
 const secondary = 'rounded-full border border-hair px-4 py-2 text-[.8rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45'
-const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45'
+const primary = 'rounded-full bg-accent px-5 py-2.5 text-[.82rem] font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45'
 
 type Contact = { id: string; name: string; nickname: string; waName: string; tail: string; suppressed: boolean; lists: number }
 type BroadcastList = { id: string; name: string; note: string; kind: string; count: number }
@@ -346,7 +346,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                 const isPicked = picked.has(contact.id)
                 return (
                   <span key={contact.id}
-                    className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.78rem] transition-colors ${already ? 'border-hair bg-wash text-soft' : isPicked ? 'border-accent bg-accent text-white' : 'border-hair bg-wash text-ink'}`}>
+                    className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[.78rem] transition-colors ${already ? 'border-hair bg-wash text-soft' : isPicked ? 'border-accent bg-accent text-canvas' : 'border-hair bg-wash text-ink'}`}>
                     <button type="button" disabled={already} onClick={() => toggle(contact.id)} title={already ? 'في القائمة أصلاً' : 'اختره'}>
                       {/* مجهول الاسم كان يظهر «0007 0 ••0007» — رقمه مرتين وصفرٌ
                           شارد (لقطة ٣١ يوليو). الآن: تسميةٌ صريحة ورقمٌ واحد. */}
@@ -387,7 +387,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                         <button key={item} type="button" disabled={busy}
                           onClick={() => setPage(item)}
                           className={`min-w-9 rounded-full border px-3 py-1.5 text-[.8rem] font-semibold transition-colors ${
-                            item === page ? 'border-accent bg-accent text-white' : 'border-hair text-soft hover:border-accent hover:text-accent'
+                            item === page ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'
                           }`}>
                           {item + 1}
                         </button>
@@ -525,7 +525,7 @@ export default function AudienceStudio({ request, onNotice, campaigns }: { reque
                     const isPicked = picked.has(contact.id)
                     return (
                       <button key={contact.id} type="button" onClick={() => toggle(contact.id)}
-                        className={`rounded-full border px-3 py-1.5 text-[.74rem] transition-colors ${isPicked ? 'border-accent bg-accent text-white' : 'border-hair bg-canvas text-soft hover:border-accent'}`}>
+                        className={`rounded-full border px-3 py-1.5 text-[.74rem] transition-colors ${isPicked ? 'border-accent bg-accent text-canvas' : 'border-hair bg-canvas text-soft hover:border-accent'}`}>
                         ••{contact.tail}
                       </button>
                     )

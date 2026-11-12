@@ -6,7 +6,7 @@ import { arabicCountPhrase, CUMULATIVE_VIEW_FORMS, DECISION_FORMS } from '../../
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const softButton = 'rounded-full border border-hair px-4 py-2 text-[.82rem] font-semibold text-soft transition-colors hover:border-accent hover:text-accent'
-const primaryButton = 'rounded-full bg-accent px-5 py-2.5 text-[.84rem] font-semibold text-white transition-colors hover:bg-accent-deep disabled:opacity-50'
+const primaryButton = 'rounded-full bg-accent px-5 py-2.5 text-[.84rem] font-semibold text-canvas transition-colors hover:bg-accent-deep disabled:opacity-50'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.9rem] text-ink outline-none transition-colors focus:border-accent'
 
 const kuwaitDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuwait', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
@@ -151,7 +151,7 @@ export function LaunchModeCard({ articles, books, papers, media }: { articles: A
     <section className={card}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="text-[.76rem] font-semibold uppercase text-accent">وضع الإطلاق</p><h2 className="mt-1 font-display text-xl font-semibold text-ink">حوّل الشاشة الأولى إلى غلاف حدث مؤقت.</h2><p className="mt-2 max-w-2xl text-[.84rem] leading-relaxed text-soft">لا يغيّر المحتوى ولا يحذف شيئاً. يضع عملاً واحداً في الواجهة حتى الموعد الذي تحدده، ثم تعود الهوية الأصلية تلقائياً.</p></div>
-        <span className={`rounded-full border px-3 py-1 text-[.75rem] font-semibold ${form.enabled ? 'border-accent bg-accent text-white' : 'border-hair text-soft'}`}>{form.enabled ? 'مفعّل' : 'متوقف'}</span>
+        <span className={`rounded-full border px-3 py-1 text-[.75rem] font-semibold ${form.enabled ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft'}`}>{form.enabled ? 'مفعّل' : 'متوقف'}</span>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <label className="grid gap-2 text-[.78rem] font-semibold text-soft">نوع الإطلاق<select className={input} value={form.kind} onChange={(event) => setForm((previous) => ({ ...previous, kind: event.target.value as LaunchKind, slug: '' }))}>{(Object.keys(KIND_LABEL) as LaunchKind[]).map((kind) => <option key={kind} value={kind}>{KIND_LABEL[kind]}</option>)}</select></label>

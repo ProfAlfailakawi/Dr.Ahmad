@@ -8650,6 +8650,18 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
 @media (max-width: 640px) {
   .compass-hub .dna-hubl { font-size: 13.5px; line-height: 1.4; }
   .compass-hub .dna-hubcl { font-size: 13.5px; }
+  /* 2026-11 — في عمود 320px كانت التسمية ثلاثية الأسطر تهبط على أيقونة العقدة التالية،
+     وتعبرها خطوط الوصل المتقطّعة. سطران فقط (العنوان كاملاً في تلميح العقدة)،
+     ورقعةٌ بلون السطح تجعل الخطّ يمرّ خلف الكلمات لا فوقها. */
+  .compass-hub .dna-hubl {
+    position: relative;
+    z-index: 1;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    padding: 1px 5px 2px;
+    border-radius: 6px;
+    background: var(--dna-surface);
+  }
 }
 
 /* مدخل الافتتاحية الإنجليزية: أهداف لمس ≥ 44px. */

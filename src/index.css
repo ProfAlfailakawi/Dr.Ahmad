@@ -8482,7 +8482,7 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     .home-footer-rights, .impact-map-label, .impact-map-eyebrow, .card-live__lbl,
     .archive-editorial-kicker, .archive-editorial-year, .media-editorial-row__meta,
     .radio-variant, .search-query-suggestion, .reader-aa-discovery-label,
-    .tho-skip, .ent-skip, .human-core__tagline, .research-index-result, .concept-echo-foot,
+    .tho-skip, .ent-skip, .human-core__tagline, .research-index-result, .concept-echo-foot, .search-palette-shortcut,
     main label
   ) {
     font-size: max(.75rem, 12px);

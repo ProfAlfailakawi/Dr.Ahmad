@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=28';
-import { Rig, badge, V, TAU } from '../lib/b5-kit.js?v=28';
-import { lightPool } from '../../v2/common.js?v=28';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=29';
+import { Rig, badge, V, TAU } from '../lib/b5-kit.js?v=29';
+import { lightPool } from '../../v2/common.js?v=29';
 
 export const meta = { free: true, center: [0.5, 0.74], typeLabel: 'خط زمني' };
 

@@ -3,7 +3,7 @@
 //   bridge(): two facing pages talk. Moving from one page to the page opposite it draws a bridge of light across the gutter, carrying the first page's title over.
 //   paperVideo: the page's YouTube video plays on the paper itself, standing on the page and following it, instead of leaving the book.
 import * as THREE from 'three';
-import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=28';
+import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=29';
 
 // ------------------------------------------------------------ visits (kept on the device only)
 const VKEY = 'living-encyclopedia:visits';
@@ -35,10 +35,12 @@ const LEVELS = [
 const hash = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 // A gold gem in the top corner of the page; touching it opens the deeper question for this visit.
-export function memory({ parent, taps, ui, sfx, fx, id, title, visits, color = 0xd4ad55 }) {
+export function memory({ parent, taps, ui, sfx, fx, id, title, visits, color = 0xd4ad55, center = [0.5, 0.6] }) {
   const lvl = LEVELS[Math.min(visits - 2, LEVELS.length - 1)];
   const q = lvl.qs[(hash(id) + visits) % lvl.qs.length].split('$').join(title);
-  const g = new THREE.Group(); g.position.set(0.39, 0, -PAGE_H / 2 + 0.1); parent.add(g); g.visible = false;
+  // the gem waits in the corner farthest from the scene, so it never sits on top of it
+  const at = new THREE.Vector3(center[0] > 0.5 ? -0.36 : 0.36, 0, (center[1] > 0.5 ? -1 : 1) * (PAGE_H / 2 - 0.14)), SIZE = 1.6;
+  const g = new THREE.Group(); g.position.copy(at); parent.add(g); g.visible = false;
   const gold = new THREE.MeshStandardMaterial({ color: 0xe8c063, emissive: 0xffb84a, emissiveIntensity: 0.55, metalness: 0.7, roughness: 0.25 });
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.004, 8, 48), gold); ring.rotation.x = Math.PI / 2; ring.position.y = 0.003; g.add(ring);
   const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.022, 0), new THREE.MeshPhysicalMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.15, clearcoat: 1, flatShading: true }));
@@ -52,7 +54,7 @@ export function memory({ parent, taps, ui, sfx, fx, id, title, visits, color = 0
   let shownAt = -1, opened = false;
   taps.push([hit, () => {
     opened = true; sfx.discover?.();
-    fx.burst(new THREE.Vector3(0.39, 0.05, -PAGE_H / 2 + 0.1), 0xffd27a, 18, 0.3, 0.022);
+    fx.burst(at.clone().setY(0.07), 0xffd27a, 18, 0.3, 0.022);
     ui.card({ tag: lvl.tag, title: 'الصفحة تتذكّرك', body: q, color: 0xd4ad55 });
   }]);
   return {
@@ -60,7 +62,7 @@ export function memory({ parent, taps, ui, sfx, fx, id, title, visits, color = 0
       if (t < 2.6) { g.visible = false; return; }
       if (shownAt < 0) { shownAt = t; sfx.discover?.(); ui.toast?.('عدت إلى هذه الصفحة · طبقة أعمق تنتظرك ✦'); }
       const k = easeBack(clamp01((t - shownAt) / 0.8));
-      g.visible = true; g.scale.setScalar(Math.max(k, 1e-4));
+      g.visible = true; g.scale.setScalar(Math.max(k, 1e-4) * SIZE);
       gem.position.y = 0.045 + Math.sin(t * 2) * 0.006; gem.rotation.set(0.3, t * 1.4, 0);
       halo.position.y = gem.position.y; halo.material.opacity = (opened ? 0.35 : 0.7) * (0.75 + 0.25 * Math.sin(t * 3));
       ring.rotation.z = t * 0.5; lab.visible = !opened;

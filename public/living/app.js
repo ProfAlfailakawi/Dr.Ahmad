@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=28';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=28';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=28';
-import { bumpVisit, memory, bridge, isFacing, paperVideo } from './extras.js?v=28';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=28';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=29';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=29';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=29';
+import { bumpVisit, memory, bridge, isFacing, paperVideo } from './extras.js?v=29';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=29';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -272,6 +272,8 @@ function startExperience(index, root, camera, mode) {
     progress: () => (exp.id === 'secret' ? secretProgress() : { done: foundOf(PAGES), total: PAGES.length }),
     pages: pageInfo,
     isFound: (id) => stamps.has(id),
+    retitle: (text) => { $('chip').querySelector('span').textContent = text; },
+    lastPage: () => { try { return +localStorage.getItem('living-encyclopedia:lastPage') || 0; } catch { return 0; } },
   };
   const inst = exp.build(ctx);
   current = { exp, index, root, stage: outer, pivot, sweep, taps, fx, inst, camera, t: 0, e: 0, found: true, stamped: false, yaw: 0, yawV: 0, pitch: 0, zoom: 1, drag: false };
@@ -289,17 +291,18 @@ function startExperience(index, root, camera, mode) {
   if (exp.door) sfx.signature?.(exp.door);
   current.extras = [];
   const pageNo = exp.kind === 'page' ? +String(exp.page).replace(/\D/g, '') : 0;
-  if (prevTrail && performance.now() - prevTrail.at < 15000 && mode === 'ar') {
+  if (prevTrail && performance.now() - prevTrail.at < 15000 && (mode === 'ar' || DEV)) {
     // two facing pages talk: the page left behind sends its title across the gutter on a bridge of light
     if (pageNo && prevTrail.no && isFacing(pageNo, prevTrail.no)) current.extras.push(bridge({ parent: outer, fx, sfx, side: pageNo > prevTrail.no ? 1 : -1, center: exp.center || [0.5, 0.6], color: prevTrail.color, title: prevTrail.title }));
     else trail(fx, prevTrail.color, exp.center || [0.5, 0.6]);
   }
   trailMemory = { at: performance.now(), color: TYPES[exp.type]?.c || '#d4ad55', no: pageNo, title: exp.title };
+  if (pageNo) { try { localStorage.setItem('living-encyclopedia:lastPage', String(pageNo)); } catch { /* private mode */ } }
   // the page remembers the reader: from the second visit on, a deeper question waits in its corner
-  if (exp.kind === 'page' && mode === 'ar') {
+  if (exp.kind === 'page' && (mode === 'ar' || DEV)) {
     const visits = bumpVisit(exp.id);
     if (visits >= 2) {
-      const mem = memory({ parent: outer, taps, ui, sfx, fx, id: exp.id, title: exp.title, visits, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16) });
+      const mem = memory({ parent: outer, taps, ui, sfx, fx, id: exp.id, title: exp.title, visits, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16), center: exp.center || [0.5, 0.6] });
       current.extras.push({ update: () => { mem.update(current.t); return true; } });
     }
   }

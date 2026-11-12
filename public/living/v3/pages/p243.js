@@ -1,8 +1,8 @@
 // p243 (round 2): a big glowing screen with seven devices orbiting it on light beams: what every definition of e-learning agrees on.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=28';
-import { halos, liveTag, motes, canvasTex, beam, blob, TAU, css } from '../lib/a4-kit.js?v=28';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=29';
+import { halos, liveTag, motes, canvasTex, beam, blob, TAU, css } from '../lib/a4-kit.js?v=29';
 
 export const meta = { free: true, center: [0.5, 0.62], typeLabel: 'خريطة ضوئية', title: 'خريطة مفهوم التعليم الإلكتروني' };
 

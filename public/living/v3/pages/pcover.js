@@ -3,7 +3,7 @@
 // experience turn in front of it, and the title forms. Everything is drawn in code (no video file, no images), so it costs nothing to load.
 // Tap the scene to watch it again.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, sprite, mat, glossy } from '../../kit.js?v=28';
+import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, sprite, mat, glossy } from '../../kit.js?v=29';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'الغلاف' };
 
@@ -103,7 +103,7 @@ export default function build(ctx) {
     });
     title = sprite('موسوعة تكنولوجيا التعليم', 1.0, { width: 900, size: 76, weight: 700, color: '#f5cf6b', bg: null, title: true, shadow: false, pad: 10 });
     title.material.opacity = 0; title.visible = false; title.position.set(0, 0.76, -0.3); act(title);
-    sub = sprite('الموسوعة الحيّة', 0.5, { width: 700, size: 58, weight: 700, color: '#ffffff', bg: null, title: true, shadow: false, pad: 6 });
+    sub = sprite('الموسوعة الحيّة', 0.5, { width: 520, size: 62, weight: 800, color: '#ffffff', bg: 'rgba(11,20,42,0.82)', border: 'rgba(240,196,92,.7)', shadow: false, pad: 16, radius: 40 });
     sub.material.opacity = 0; sub.visible = false; sub.position.set(0, 0.64, -0.3); act(sub);
     const ct = ['#8a8a45', '#b53a3a', '#4a95e0', '#e08a2c'].map(cardTexture);
     for (let i = 0; i < NCARD; i++) {
@@ -220,7 +220,7 @@ export default function build(ctx) {
       const tk = ease(win(tl, 21.8, 24)), sk = ease(win(tl, 23.2, 25));
       title.visible = tk > 0.001; title.material.opacity = tk; title.scale.set(1.0 * (0.9 + 0.1 * tk), 1.0 * title.userData.aspect * (0.9 + 0.1 * tk), 1);
       title.position.y = 0.76 + 0.02 * (1 - tk) + Math.sin(t * 1.0) * 0.004 * tk;
-      sub.visible = sk > 0.001; sub.material.opacity = sk; sub.scale.set(0.6, 0.6 * sub.userData.aspect, 1);
+      sub.visible = sk > 0.001; sub.material.opacity = sk; sub.scale.set(0.42, 0.42 * sub.userData.aspect, 1);
       once('title', tl >= 21.8, () => { ctx.sfx.good?.(); ctx.fx.burst(new THREE.Vector3(0, 0.68, -0.3), GOLD, 34, 0.5, 0.03); if (!doneOnce) { doneOnce = true; ctx.ui.done?.(); } });
 
       // act 6: the reader's sky

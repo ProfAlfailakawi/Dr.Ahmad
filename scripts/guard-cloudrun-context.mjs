@@ -98,10 +98,16 @@ const walkImports = (absolutePath) => {
 
 if (existsSync(SERVER)) {
   walkImports(SERVER)
+  /* السكربت الذي يشغّله الخادم عبر spawn (مثل رادار الكرون) ليس import، فلا يراه
+     الفحص أعلاه؛ غيابه من الصورة يجعل المسار يردّ 500 فوراً كل يوم بصمت. */
+  const serverSource = readFileSync(SERVER, 'utf8')
+  for (const match of serverSource.matchAll(/spawn\([^)]*?['"](scripts\/[A-Za-z0-9_./-]+\.mjs)['"]/g)) {
+    walkImports(resolve(ROOT, match[1]))
+  }
   for (const absolutePath of visitedImports) {
     const repoPath = relative(ROOT, absolutePath)
     if (!copiedSources.has(repoPath)) {
-      failures.push(`${repoPath} — يستورده server.mjs لكنه غير منسوخ في Dockerfile`)
+      failures.push(`${repoPath} — يستورده أو يشغّله server.mjs لكنه غير منسوخ في Dockerfile`)
       continue
     }
     if (!included(repoPath)) {

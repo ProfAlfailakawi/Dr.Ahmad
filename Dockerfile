@@ -11,6 +11,8 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY server.mjs /app/server.mjs
 COPY scripts/editorial-policy.mjs /app/scripts/editorial-policy.mjs
 COPY scripts/canonical-cms.mjs /app/scripts/canonical-cms.mjs
+# رادار المختارات اليومي: يشغّله /api/cron/radar عبر spawn؛ بدونه يردّ المسار 500 كل يوم.
+COPY scripts/daily-radar.mjs /app/scripts/daily-radar.mjs
 # متون الموقع: مصادر الفهرس التي يقرأها content-index.mjs وقت التشغيل.
 # غيابها لا يُسقط الصورة — يُفرغ الفهرس بصمت فيردّ البوت «ما لقيت مادة» على كل سؤال.
 COPY src/data.ts /app/src/data.ts

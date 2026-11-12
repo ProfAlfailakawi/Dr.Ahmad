@@ -6270,10 +6270,12 @@ html.reader-paper .sentence-item.is-sentence-active {
 @media (max-width: 767px) {
   /* Safari على iPhone يكبّر الصفحة تلقائياً عندما يركّز حقلاً أصغر من 16px.
      رفع حجم خط أدوات الإدخال إلى 16px يمنع القفزة من أصلها، مع إبقاء pinch-zoom
-     متاحاً بالكامل لذوي الاحتياج ولا يعبث بالـ viewport. */
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
-  textarea,
-  select {
+     متاحاً بالكامل لذوي الاحتياج ولا يعبث بالـ viewport.
+     البادئة :is(#root, body) ترفع الأولوية فوق سلّم المقاسات `#root :where(...)`
+     (وهو !important أيضاً) الذي كان يعيد الحقول إلى 14px فتعود قفزة التكبير. */
+  :is(#root, body) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+  :is(#root, body) textarea,
+  :is(#root, body) select {
     font-size: 16px !important;
   }
 
@@ -8483,7 +8485,7 @@ html[data-admin-dock] body { padding-bottom: var(--admin-dock-h, 0px); }
     .home-footer-rights, .impact-map-label, .impact-map-eyebrow, .card-live__lbl,
     .archive-editorial-kicker, .archive-editorial-year, .media-editorial-row__meta,
     .radio-variant, .search-query-suggestion, .reader-aa-discovery-label,
-    .tho-skip, .ent-skip, .human-core__tagline, .research-index-result,
+    .tho-skip, .ent-skip, .human-core__tagline, .research-index-result, .concept-echo-foot, .search-palette-shortcut,
     main label
   ) {
     font-size: max(.75rem, 12px);

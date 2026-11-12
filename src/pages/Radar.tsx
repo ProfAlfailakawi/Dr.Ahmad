@@ -207,7 +207,7 @@ export default function Radar() {
                     { key: 'items', Icon: Layers, count: items.length, forms: MATERIAL_FORMS },
                     { key: 'sources', Icon: Globe2, count: sources.size, forms: SOURCE_PLAIN_FORMS },
                   ].map(({ key, Icon, count, forms }) => (
-                    <div key={key} className="flex min-w-[8.5rem] items-center gap-3 rounded-2xl border border-hair bg-canvas px-4 py-3">
+                    <div key={key} className="flex min-w-[7.5rem] items-center gap-3 rounded-2xl sm:min-w-[8.5rem] border border-hair bg-canvas px-4 py-3">
                       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-hair text-accent" aria-hidden="true"><Icon size={18} strokeWidth={1.6} /></span>
                       <span>
                         <span className="block font-display text-[1.4rem] font-semibold leading-none text-ink">{arNum(count)}</span>

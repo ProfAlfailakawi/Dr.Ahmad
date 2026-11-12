@@ -1,8 +1,8 @@
 // p263 (round 2): a hundred employees on a dark roster board (green pad = success, red pad = failure). Touch a glass orb and that many pawns light up.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=27';
-import { halos, liveTag, motes, blob, TAU, css, toAr } from '../lib/a4-kit.js?v=27';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=28';
+import { halos, liveTag, motes, blob, TAU, css, toAr } from '../lib/a4-kit.js?v=28';
 
 export const meta = { free: true, center: [0.5, 0.72], typeLabel: 'نجاح أم فشل', title: 'التعليم الإلكتروني في الشركات' };
 

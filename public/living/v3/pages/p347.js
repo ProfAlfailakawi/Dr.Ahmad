@@ -1,7 +1,7 @@
 // p347 — a desk globe wrapped by a ring of phone-light, ringed by four glass gauges of users you "bet" on, then touch to reveal.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=27';
-import { TAU, css, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr } from '../lib/a7.js?v=27';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube } from '../../kit.js?v=28';
+import { TAU, css, canvasTex, rbox, lit, rig, hints, burstAt, lightPool, tagSprite, setSpr } from '../lib/a7.js?v=28';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'مجسّم تفاعلي' };
 

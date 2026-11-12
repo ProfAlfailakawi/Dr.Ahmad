@@ -2,8 +2,8 @@
 // Tap a task: it flies into its own glowing screen on the ring, the arm relaxes, the load ring turns from red to teal.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=27';
-import { rising, halos, motes, blob, dais, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=27';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=28';
+import { rising, halos, motes, blob, dais, canvasTex, screen, paintText, TAU } from '../lib/b4-kit.js?v=28';
 
 export const meta = { free: true, center: [0.45, 0.46], typeLabel: 'نوافذ ضوئية', title: 'تعدّد المهام وعبء المعلم' };
 

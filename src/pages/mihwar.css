@@ -44,8 +44,9 @@
 @media(max-width:680px){.row-actions a,.detail-links a{min-height:44px}}
 
 /* ===== iPhone Duo — الامتداد الكامل والتكيّف (١٣ نوفمبر ٢٠٢٦) ===== */
-/* الإطار ثابت يملأ النافذة؛ 100vh في Safari هو الارتفاع الأكبر فيترك فراغاً تحت المحتوى. */
-.app{min-height:100%}
+/* 100vh في Safari هو الارتفاع الأكبر فيترك فراغاً تحت المحتوى حين يظهر شريط المتصفح؛
+   100dvh يتبع الارتفاع الفعلي. (100% لا يصلح: بين الإطار و.app غلاف بلا ارتفاع محدد.) */
+.app{min-height:100vh;min-height:100dvh}
 /* حواف الأمان: الخلفية حتى الحافة والمحتوى بعيد عن الكاميرا في الوضع العرضي. */
 .main{padding-left:max(clamp(18px,4vw,58px),env(safe-area-inset-left,0px));padding-right:max(clamp(18px,4vw,58px),env(safe-area-inset-right,0px))}
 .side{padding-right:max(20px,env(safe-area-inset-right,0px))}

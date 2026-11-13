@@ -1,10 +1,10 @@
 // p174 — the Gerlach & Ely model as a lacquer-red board: a golden marble walks the path, feedback returns to the goals.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube, PAGE_H } from '../../kit.js?v=31';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=31';
-import { inked } from '../../pencil.js?v=31';
-import { hints, slabText, finder, blobShadow } from '../lib/a3-kit.js?v=31';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, lightTube, PAGE_H } from '../../kit.js?v=32';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=32';
+import { inked } from '../../pencil.js?v=32';
+import { hints, slabText, finder, blobShadow } from '../lib/a3-kit.js?v=32';
 
 export const meta = { free: true, center: [0.5, 0.49], typeLabel: 'مسار ضوئي' };
 

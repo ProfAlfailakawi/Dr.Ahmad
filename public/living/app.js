@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=31';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=31';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=31';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=31';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=31';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=32';
+import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=32';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=32';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=32';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=32';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -290,7 +290,7 @@ function startExperience(index, root, camera, mode) {
   $('behindBtn').classList.toggle('hidden', !exp.behind);
   sfx.wake();
   if (exp.door) sfx.signature?.(exp.door);
-  current.extras = []; current.sun = sun; current.near = 0; current.nearHit = false;
+  current.extras = []; current.sun = sun;
   // the printed figure itself rises from the paper and melts into the scene (ordinary pages, with the camera)
   if (exp.kind === 'page' && mode === 'ar') {
     try { const lift = liftOff({ parent: outer, frame: captureFrame(), rect: exp.crop ? exp.crop.map((x) => Math.min(1, Math.max(0, x))) : [0.08, 0.1, 0.92, 0.9], fx, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16) }); if (lift) current.extras.push(lift); } catch { /* no picture: the scene simply starts */ }
@@ -350,7 +350,6 @@ function fitScene(c, dt) {
   c.fit = THREE.MathUtils.damp(c.fit, c.fitT, 2.5, dt);
 }
 
-const nearA = new THREE.Vector3(), nearB = new THREE.Vector3();
 function tick(dt) {
   const c = current; if (!c) return;
   if (activeCanvas) syncLines(activeCanvas.clientWidth || 1, activeCanvas.clientHeight || 1);
@@ -364,16 +363,9 @@ function tick(dt) {
     if (!c.exp.free) { c.yaw = THREE.MathUtils.damp(c.yaw, 0, 4, dt); c.pitch = THREE.MathUtils.damp(c.pitch, 0, 4, dt); c.zoom = THREE.MathUtils.damp(c.zoom, 1, 4, dt); }
   }
   c.pivot.rotation.order = 'YXZ'; c.pivot.rotation.x = c.pitch; c.pivot.rotation.y = c.yaw;
-  // come closer: an ordinary page's scene grows toward the reader as the phone approaches (distance counted in page widths)
-  if (c.exp.kind === 'page' && c.found && activeCanvas && ar) {
-    c.camera.getWorldPosition(nearA); c.pivot.getWorldPosition(nearB);
-    const dist = nearA.distanceTo(nearB) / Math.max(1e-6, c.stage.matrixWorld.getMaxScaleOnAxis());
-    c.near = THREE.MathUtils.damp(c.near, THREE.MathUtils.clamp((1.0 - dist) / 0.4, 0, 1), 3, dt);
-    if (c.near > 0.85 && !c.nearHit && c.t > 3) { c.nearHit = true; sfx.discover?.(); c.fx.burst(new THREE.Vector3(c.pivot.position.x, 0.12, c.pivot.position.z), 0xffd27a, 26, 0.5, 0.028); navigator.vibrate?.(18); }
-    if (c.near < 0.2) c.nearHit = false;
-  } else c.near = THREE.MathUtils.damp(c.near || 0, 0, 3, dt);
-  if (c.near < 0.05) fitScene(c, dt);
-  c.pivot.scale.setScalar(c.zoom * c.fit * (1 + 0.32 * c.near));
+  // (The "come closer" growth was removed: scaling the scene moved it off the printed figure, and a phone that started close left it invisible.)
+  fitScene(c, dt);
+  c.pivot.scale.setScalar(c.zoom * c.fit);
   c.inst.update(c.t, dt, ease(c.e));
   if (c.extras?.length) c.extras = c.extras.filter((x) => x.update(dt) !== false);
   c.fx.update(dt);

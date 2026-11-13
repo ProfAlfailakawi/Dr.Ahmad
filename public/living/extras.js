@@ -3,7 +3,7 @@
 //   bridge(): two facing pages talk. Moving from one page to the page opposite it draws a bridge of light across the gutter, carrying the first page's title over.
 //   paperVideo: the page's YouTube video plays on the paper itself, standing on the page and following it, instead of leaving the book.
 import * as THREE from 'three';
-import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=31';
+import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=32';
 
 // ------------------------------------------------------------ visits (kept on the device only)
 const VKEY = 'living-encyclopedia:visits';
@@ -193,27 +193,10 @@ export function liftOff({ parent, frame, rect, fx, color = 0xffd27a }) {
 }
 
 // ------------------------------------------------------------ the video plays on the paper
-// A flat panel (YouTube player) is laid exactly over four points standing on the page: each frame the four corners are projected with
-// the AR camera and the panel gets the CSS perspective transform (homography) that maps its rectangle onto them.
-function homography(src, dst) {
-  const A = [], b = [];
-  for (let i = 0; i < 4; i++) {
-    const [x, y] = src[i], [X, Y] = dst[i];
-    A.push([x, y, 1, 0, 0, 0, -X * x, -X * y]); b.push(X);
-    A.push([0, 0, 0, x, y, 1, -Y * x, -Y * y]); b.push(Y);
-  }
-  for (let c = 0; c < 8; c++) {   // Gauss-Jordan with partial pivoting
-    let piv = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
-    [A[c], A[piv]] = [A[piv], A[c]]; [b[c], b[piv]] = [b[piv], b[c]];
-    const d = A[c][c]; if (Math.abs(d) < 1e-12) return null;
-    for (let r = 0; r < 8; r++) if (r !== c) { const f = A[r][c] / d; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
-  }
-  const h = b.map((v, i) => v / A[i][i]);
-  return [h[0], h[3], 0, h[6], h[1], h[4], 0, h[7], 0, 0, 1, 0, h[2], h[5], 0, 1];
-}
+// A YouTube player in a panel that stands on a point of the page and follows it, always facing the reader.
 let panel = null, holder = null, layer = null;
-const PW = 960, PH = 600, WORLD_W = 0.7;
-const corners = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+const PW = 960, PH = 600;
+const corners = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
 export const paperVideo = {
   get open() { return !!panel; },
   async show({ parent, id, stageEl, onClose }) {
@@ -234,29 +217,29 @@ export const paperVideo = {
     fr.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; fr.allowFullscreen = true; fr.title = 'فيديو الصفحة';
     Object.assign(fr.style, { border: '0', width: '100%', flex: '1' });
     box.append(top, fr); layer.append(box); stageEl.appendChild(layer);
-    // the panel stands on the page, leaning back a little, in page coordinates of `parent`
-    const h = WORLD_W * PH / PW, y0 = 0.03, z0 = 0.08, lean = 0.32;
-    const up = new THREE.Vector3(0, Math.cos(lean), -Math.sin(lean)).multiplyScalar(h);
-    const bl = new THREE.Vector3(-WORLD_W / 2, y0, z0), br = new THREE.Vector3(WORLD_W / 2, y0, z0);
-    panel = { box, stageEl, local: [bl.clone().add(up), br.clone().add(up), br, bl] };   // top-left, top-right, bottom-right, bottom-left
+    panel = { box, stageEl, anchor: [new THREE.Vector3(0, 0.02, -0.05), new THREE.Vector3(-0.5, 0.02, -0.05), new THREE.Vector3(0.5, 0.02, -0.05)] };
     holder = parent;
     x.onclick = (ev) => { ev.stopPropagation(); this.close(); onClose?.(); };
   },
+  // The panel always faces the reader: an upright rectangle (never skewed) whose bottom centre sits on a point of the page and whose
+  // width follows the page's size on screen. Only a move and a uniform scale are applied.
   render(scene, camera) {
     if (!panel || !holder) return;
-    // MindAR sizes its canvas to the camera picture and shifts it to fill the screen: project into the canvas box, measured from the stage
     const el = panel.stageEl, cv = el.querySelector('canvas'), sr = el.getBoundingClientRect(), cr = cv ? cv.getBoundingClientRect() : sr;
     const W = cr.width, H = cr.height, ox = cr.left - sr.left, oy = cr.top - sr.top;
     holder.updateWorldMatrix(true, false);
-    const dst = [];
-    for (let i = 0; i < 4; i++) {
-      const v = corners[i].copy(panel.local[i]).applyMatrix4(holder.matrixWorld).project(camera);
+    const pt = [];
+    for (let i = 0; i < 3; i++) {
+      const v = corners[i].copy(panel.anchor[i]).applyMatrix4(holder.matrixWorld).project(camera);
       if (!(v.z < 1) || !Number.isFinite(v.x)) { panel.box.style.visibility = 'hidden'; return; }
-      dst.push([ox + (v.x * 0.5 + 0.5) * W, oy + (-v.y * 0.5 + 0.5) * H]);
+      pt.push([ox + (v.x * 0.5 + 0.5) * W, oy + (-v.y * 0.5 + 0.5) * H]);
     }
-    const m = homography([[0, 0], [PW, 0], [PW, PH], [0, PH]], dst);
-    if (!m) return;
-    panel.box.style.transform = `matrix3d(${m.map((n) => +n.toFixed(8)).join(',')})`;
+    // pt[0]: where the panel stands; pt[1], pt[2]: the page's left and right edges at that depth (its width on screen)
+    const pageW = Math.hypot(pt[2][0] - pt[1][0], pt[2][1] - pt[1][1]);
+    const w = Math.min(sr.width * 0.92, Math.max(sr.width * 0.5, pageW * 0.8)), s = w / PW;
+    const x = Math.min(sr.width - w - 6, Math.max(6, pt[0][0] - w / 2));
+    const y = Math.min(sr.height - PH * s - 90, Math.max(70, pt[0][1] - PH * s));
+    panel.box.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${s.toFixed(4)})`;
     panel.box.style.visibility = 'visible';
   },
   resize() {},

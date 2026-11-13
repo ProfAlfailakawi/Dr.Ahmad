@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   P, PAGE_H, ease, easeBack, stag, clamp01, label, sprite, mat, glossy, goldMat, shadowed, glow, textCanvas,
-} from './kit.js?v=31';
-import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=31';
-import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=31';
+} from './kit.js?v=32';
+import { buildLab, buildCone, buildTimeTV, buildWelcome, buildSecret } from './pencil.js?v=32';
+import { buildPortal, PORTAL_HOLE, buildPhone, buildBloom, buildBalance, buildRoleplay, buildBranch } from './doors34.js?v=32';
 
 const TAU = Math.PI * 2;
 const lerp = THREE.MathUtils.lerp;
@@ -849,9 +849,9 @@ export const EXPERIENCES = [
     center: [0.5, 0.5], free: false, crop: [0.19, 0.24, 0.81, 0.76], build: buildSecret,
   },
 ];
-import { SPEC_PAGES } from './v2/catalog.js?v=31';
+import { SPEC_PAGES } from './v2/catalog.js?v=32';
 import { specToExperience, v3Build } from './v2/engine.js';
-import { READY, META } from './v3/registry.js?v=31';
+import { READY, META } from './v3/registry.js?v=32';
 // A hand-built showpiece is replaced when a newer v3 scene file exists for its page.
 EXPERIENCES.forEach((x) => {
   const n = x.kind === 'page' ? parseInt(x.page.slice(1), 10) : 0;
@@ -869,11 +869,11 @@ EXPERIENCES.push(...SPEC_PAGES.map(specToExperience));
   center: [0.5, 0.55], free: true, crop: [0.04, 0.03, 0.96, 0.97], build: v3Build(n),
 }));
 // The cover, in every edition the book has had: each edition is a recognition target of its own, all open the same experience.
-import { COVERS } from './v2/covers.js?v=31';
+import { COVERS } from './v2/covers.js?v=32';
 COVERS.forEach((id) => EXPERIENCES.push({ id, kind: 'special', pack: 'all', page: 'p0', pageNo: '', title: 'الموسوعة الحيّة', type: 'cover', typeLabel: 'الغلاف', center: [0.5, 0.5], free: true, build: v3Build('cover') }));
 const ORDER = (x) => (x.kind === 'page' ? parseInt(x.page.slice(1), 10) : 1e6);
 EXPERIENCES.sort((a, b) => ORDER(a) - ORDER(b));
 export const PAGES = EXPERIENCES.filter((x) => x.kind === 'page');
 
 // Recognition packs come from v2/catalog.js (generated). The camera cycles through them by itself.
-export { PACKS } from './v2/catalog.js?v=31';
+export { PACKS } from './v2/catalog.js?v=32';

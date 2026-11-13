@@ -1,8 +1,8 @@
 // p294 — virtual reality: a holographic stage that wakes as you plug in the five parts of the system.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { P, ease, easeBack, clamp01, glow } from '../../kit.js?v=31';
-import { rb, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU } from '../lib/a2.js?v=31';
+import { P, ease, easeBack, clamp01, glow } from '../../kit.js?v=32';
+import { rb, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU } from '../lib/a2.js?v=32';
 
 export const meta = { free: true, center: [0.45, 0.47], typeLabel: 'مجسّم تفاعلي' };
 

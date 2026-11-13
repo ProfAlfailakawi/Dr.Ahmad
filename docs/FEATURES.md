@@ -153,6 +153,7 @@
 | Workflow | ما يفعله | التشغيل |
 | --- | --- | --- |
 | [site-guardian.yml](../.github/workflows/site-guardian.yml) | حارس الموقع وتقريره | أسبوعي · يدوي |
+| [schedule-guard.yml](../.github/workflows/schedule-guard.yml) | حارس التوقّف الصامت: يفتح Issue إن تجاوز جدولٌ أساسيّ نافذة آخر نجاح | كل ٦ ساعات · يدوي |
 | [uptime-alarm.yml](../.github/workflows/uptime-alarm.yml) | إنذار التوقف | كل ربع ساعة · يدوي |
 | [domain-tls-watch.yml](../.github/workflows/domain-tls-watch.yml) | حارس النطاقات والشهادات | شهري · يدوي |
 | [archive-scale-guard.yml](../.github/workflows/archive-scale-guard.yml) | حارس قابلية الأرشيف للتوسّع | رفع · طلب دمج · شهري · يدوي |
@@ -171,9 +172,6 @@
 | [daily-inbox.yml](../.github/workflows/daily-inbox.yml) | بريد المساء — رسائل اليوم | يومي · يدوي |
 | [weekly-report.yml](../.github/workflows/weekly-report.yml) | تقرير الجمعة | أسبوعي · يدوي |
 
-> ملاحظة: في جذر المستودع ملف [schedule-guard.yml](../schedule-guard.yml) («حارس التوقّف الصامت»)
-> ليس داخل `.github/workflows/`، فلا يشغّله GitHub حالياً.
-
 ---
 
-آخر تحديث للتوثيق: 2026-11-12
+آخر تحديث للتوثيق: 2026-11-13

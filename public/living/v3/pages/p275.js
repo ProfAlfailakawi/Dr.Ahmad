@@ -1,8 +1,8 @@
 // p275 (round 2): the flipped classroom as two little rooms, a school and a home. A blue content block and a gold practice block swap rooms; the pawns turn from rows into a circle.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=31';
-import { halos, liveTag, motes, canvasTex, blob, fitTag, setSpr, TAU, css, arcPoint } from '../lib/a4-kit.js?v=31';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=32';
+import { halos, liveTag, motes, canvasTex, blob, fitTag, setSpr, TAU, css, arcPoint } from '../lib/a4-kit.js?v=32';
 
 export const meta = { free: true, center: [0.5, 0.68], typeLabel: 'مقارنة', title: 'قلب مهام التعلّم: الفصل المقلوب' };
 

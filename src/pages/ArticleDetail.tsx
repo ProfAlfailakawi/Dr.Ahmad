@@ -35,6 +35,7 @@ import { ConceptEchoMarker } from '../components/ConceptEcho'
 import KuficMark from '../components/KuficMark'
 import { buildConceptEchoes } from '../lib/concept-weave'
 import { ArrowLeft, Plus } from 'lucide-react'
+import { useKeepReadingPlace } from '../lib/keep-reading-place'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -796,6 +797,8 @@ export default function ArticleDetail() {
   const [vocalizedBody, setVocalizedBody] = useState<string | undefined>()
   const [bodyLoading, setBodyLoading] = useState(false)
   const { preferences } = useReaderPreferences()
+  // فتح الجهاز أو طيّه أو تبديل Split View لا يُضيّع الفقرة التي يقرؤها الزائر.
+  useKeepReadingPlace('article-body')
 
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
 
@@ -912,7 +915,7 @@ export default function ArticleDetail() {
         }}
       />
       <article
-        className="px-6 pb-12 pt-32 md:px-11 md:pb-16 md:pt-40"
+        className="article-shell px-6 pb-12 pt-32 md:px-11 md:pb-16 md:pt-40"
         data-print-citation={`للاستشهاد: ${a.title}، ${a.date}، الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، ${SITE_URL}/articles/${a.slug}`}
       >
         <div className="mx-auto max-w-[720px]">

@@ -151,7 +151,7 @@ npm run upgrades:self-test          # عقود الترقيات المجمّعة
 
 | الطبقة | كيف يُنشر | المرجع |
 | --- | --- | --- |
-| الموقع (Firebase Hosting) | Workflow **«نشر الموقع على Firebase Hosting»**: يدوي (`workflow_dispatch`)، أو تلقائياً بعد نجاح «توليد الصوت إلى R2» (رفعٌ يغيّر `src/data.ts` أو `src/data/bodies.json`) أو «نشر الخمس الكويتية»، أو حين يجد [scheduled-content-release.yml](.github/workflows/scheduled-content-release.yml) محتوىً مستحقّاً. محلياً: `npm run deploy:hosting`. | [firebase-hosting-live.yml](.github/workflows/firebase-hosting-live.yml) |
+| الموقع (Firebase Hosting) | Workflow **«نشر الموقع على Firebase Hosting»**: تلقائياً عند كل رفعٍ إلى `main` (عدا ملفات `*.md` و`docs/` و`.github/` الأخرى)، ويدوي (`workflow_dispatch`)، وبعد نجاح «توليد الصوت إلى R2» (رفعٌ يغيّر `src/data.ts` أو `src/data/bodies.json` يُنشر من هذا المسار وحده بعد جاهزية الصوت) أو «نشر الخمس الكويتية»، أو حين يجد [scheduled-content-release.yml](.github/workflows/scheduled-content-release.yml) محتوىً مستحقّاً. محلياً: `npm run deploy:hosting`. | [firebase-hosting-live.yml](.github/workflows/firebase-hosting-live.yml) |
 | قواعد البيانات والتخزين | `npm run deploy:data-rules` (يدوي) | [firestore.rules](firestore.rules) · [storage.rules](storage.rules) |
 | الخادم `dr-api` | يُنشر يدوياً إلى Cloud Run؛ لا ينشره مسار الموقع | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 

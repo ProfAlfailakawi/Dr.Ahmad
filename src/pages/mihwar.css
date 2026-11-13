@@ -42,3 +42,35 @@
 @media(max-width:680px){.digest-stats{grid-template-columns:1fr 1fr}.btn.small,.chip{min-height:44px}.mobile-nav button{min-height:48px}.search-wrap{flex-wrap:wrap}.sort{flex:1}.toast{right:12px;left:12px;bottom:84px}.row-actions{flex-wrap:wrap}.quick{grid-template-columns:1fr}.notice{flex-direction:column;align-items:flex-start}.kv{grid-template-columns:1fr}.kv dd{margin-bottom:8px}}
 .row-actions a,.detail-links a{display:inline-flex;align-items:center;min-height:40px;padding:0 4px}
 @media(max-width:680px){.row-actions a,.detail-links a{min-height:44px}}
+
+/* ===== iPhone Duo — الامتداد الكامل والتكيّف (١٣ نوفمبر ٢٠٢٦) ===== */
+/* الإطار ثابت يملأ النافذة؛ 100vh في Safari هو الارتفاع الأكبر فيترك فراغاً تحت المحتوى. */
+.app{min-height:100%}
+/* حواف الأمان: الخلفية حتى الحافة والمحتوى بعيد عن الكاميرا في الوضع العرضي. */
+.main{padding-left:max(clamp(18px,4vw,58px),env(safe-area-inset-left,0px));padding-right:max(clamp(18px,4vw,58px),env(safe-area-inset-right,0px))}
+.side{padding-right:max(20px,env(safe-area-inset-right,0px))}
+.drawer{padding-top:max(25px,env(safe-area-inset-top,0px));padding-bottom:max(25px,env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+/* الترتيب: WebKit يتجاهل min-height على select الأصلي فيظهر أقصر من «الفلاتر» والبحث. */
+.sort select{-webkit-appearance:none;appearance:none;min-height:50px;padding:0 14px 0 36px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5' fill='none' stroke='%23667b74' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat left 12px center/12px 12px}
+@media(max-width:680px){
+  .main{padding-left:max(15px,env(safe-area-inset-left,0px));padding-right:max(15px,env(safe-area-inset-right,0px))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+/* الارتفاع المضغوط (مطوي عرضياً، آيفون عرضياً): الرأس لا يأكل نصف الشاشة. */
+@media(max-height:480px){
+  .main{padding-top:16px}
+  .top h1{font-size:clamp(22px,3vw,30px)}
+  .subtitle{margin-top:4px}
+  .search-wrap{margin:14px 0 10px}
+  .side{padding-top:16px;padding-bottom:16px}
+  .brand{font-size:26px;margin-bottom:14px}
+}
+/* عرض الهاتف مع ارتفاع قصير (المطوي عرضياً 600×350): الشريط السفلي يصير عموداً
+   جانبياً على جهة البداية، كما يفعل النظام بأشرطته في الشاشة الخارجية. */
+@media(max-width:680px) and (min-width:520px) and (max-height:480px){
+  .mobile-nav{top:0;bottom:0;left:auto;right:0;width:112px;flex-direction:column;justify-content:center;border-top:0;border-left:1px solid var(--line);padding:max(10px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) 8px}
+  .mobile-nav button{flex:0 0 auto}
+  .main{padding-bottom:24px;padding-right:calc(127px + env(safe-area-inset-right,0px))}
+  .toast{bottom:calc(16px + env(safe-area-inset-bottom,0px));right:124px}
+}

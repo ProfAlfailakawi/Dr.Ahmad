@@ -139,7 +139,7 @@ export default function Mihwar() {
     } catch { setLoginError('تعذر تسجيل الدخول. تحقّق من البيانات وحاول مجدداً.') }
     finally { setBusy(false) }
   }
-  if (loading) return <div className="mihwar-gate" dir="rtl">جارٍ التحقق من الدخول…</div>
+  if (loading) return <div className="mihwar-gate" dir="rtl"><span>جارٍ التحقق من الدخول…</span></div>
   if (!user || !isAdmin) return <main className="mihwar-gate" dir="rtl"><div className="mihwar-login"><span className="mihwar-kicker">مِحور</span><h1>مساحتك الخاصة</h1><p>الدخول مخصص لصاحب الموقع فقط.</p>{user && !isAdmin ? <p role="alert">هذا الحساب لا يملك صلاحية المشرف.</p> : <form onSubmit={signIn}><label>البريد الإلكتروني<input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="username" /></label><label>كلمة المرور<input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" /></label><button disabled={busy}>دخول</button></form>}{(loginError || error) && <p role="alert">{loginError || error}</p>}</div></main>
   return <MihwarApp uid={user.uid} />
 }

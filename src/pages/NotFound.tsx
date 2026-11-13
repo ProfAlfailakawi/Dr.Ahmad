@@ -25,7 +25,7 @@ export default function NotFound() {
 
   return (
     <Page>
-      <section className="relative overflow-hidden px-6 pb-24 pt-36 md:px-11 md:pt-44">
+      <section className="not-found-stage relative overflow-hidden px-6 pb-24 pt-36 md:px-11 md:pt-44">
         <div className="mx-auto max-w-[680px] text-center">
           <FadeUp>
             <div className="relative py-6">

@@ -8835,3 +8835,61 @@ html, body, #root { min-width: 0; max-width: 100%; }
 @media (min-width: 640px) and (max-width: 1023px) {
   #main { padding-bottom: 4.5rem; }
 }
+
+/* ============================================================
+   iPhone Duo — الامتداد الكامل والتكيّف (جولة ١٣ نوفمبر ٢٠٢٦)
+   القرار من مساحة النافذة الفعلية فقط، لا من نوع الجهاز.
+   ============================================================ */
+
+/* ١) حواف الأمان الجانبية. viewport-fit=cover يجعل الصفحة تمتد خلف الكاميرا
+   في الوضع العرضي (المطوي عرضياً، الآيفون عرضياً). الخلفية (لون body ينتقل
+   إلى canvas) تبقى ممتدة حتى الحافة، والمحتوى وحده يبتعد. الشريط الثابت لا
+   يرث حشو body، فيأخذ حدّه بنفسه. حين تكون الحواف صفراً لا يتغير شيء. */
+body {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+.site-nav > div {
+  padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 768px) {
+  .site-nav > div {
+    padding-left: max(2.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(2.75rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+/* ٢) الارتفاع المضغوط (مطوي عرضياً 600×350، آيفون عرضياً 852×393، Split مع
+   عنصر مثبت). الحشو العلوي مصمم لشاشة طولية، فكان عنوان المقال يبدأ عند
+   y≈221 من 350 ويُدفع حقل البحث وزر الصفحة المفقودة تحت الحافة. نُبقي مسافة
+   الشريط الثابت (64px) ونزيل الهواء الزائد فقط. */
+@media (max-height: 480px) {
+  .article-shell { padding-top: 5.25rem; }
+  .article-shell h1 { margin-top: .75rem; }
+  /* رأس الصفحة «مشهد» بحدّ أدنى 22rem (352px) وحشو علوي 7.5rem: أطول من
+     النافذة كلها في 350px، فيُدفع البحث والمحتوى تحت الحافة. */
+  .page-head-scene {
+    min-height: 0;
+    padding-block-start: 5.25rem !important;
+    padding-block-end: 2rem !important;
+  }
+  .not-found-stage { padding-top: 4.75rem; padding-bottom: 3rem; }
+  .not-found-stage .not-found-code { font-size: clamp(3.25rem, 11vh, 4.5rem); }
+  .not-found-stage .relative.py-6 { padding-block: .5rem; }
+  .search-empty-state { padding-block: 2.5rem; }
+}
+
+/* ٣) المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب،
+   لا يعبر عمود القراءة خط الطي: يجلس النص كله في المقطع الأيمن (بداية
+   القراءة بالعربية). دون الـ API لا تُطبَّق هذه الكتلة أبداً.
+   في RTL يُتجاهل margin-left حين يُقيَّد العرض صراحةً، فنستعمل auto/0. */
+@media (horizontal-viewport-segments: 2) {
+  .article-shell > .mx-auto,
+  .not-found-stage > .mx-auto {
+    width: calc(env(viewport-segment-width 1 0, 50vw) - 3rem);
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: 0;
+  }
+}

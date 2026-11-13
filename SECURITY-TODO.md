@@ -101,9 +101,9 @@
   workflows (e.g. `podcast-dialogue-final-review.yml`, `auto-audio-r2.yml`,
   `podcast-male-finalist-retest.yml`). Lower risk: `workflow_dispatch` requires
   repo write access. Recommended fix: same `env:` indirection pattern applied above.
-- `server.js` `/api/say` Google TTS proxy is unauthenticated (240-char cap +
-  in-memory cache). Potential cost/DoS abuse. Recommend a rate limiter / auth;
-  left to avoid affecting the live voice flow.
+- ~~`server.js` `/api/say` Google TTS proxy is unauthenticated~~ — resolved
+  2026-11-13: root `server.js` was never deployed (Dockerfile/.gcloudignore ship
+  only `server.mjs`) and has been deleted, with the unused `server.ts`/`index.mjs`.
 - CSP not added to `vercel.json` (Firebase remains the CSP-enforcing host; adding
   it to a secondary host without live testing risks breaking inline boot logic).
 - Prior items from earlier rounds (Pexels key rotation, git-history cleanup for

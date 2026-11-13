@@ -11,7 +11,7 @@
  *
  * مبدأ الأمان: عند أيّ فشل في الجلب يُحتفَظ بالعدد السابق، فلا تختفي أيقونةٌ بالخطأ.
  *
- * يُشغَّل أسبوعياً عبر .github/workflows/refresh-academic-presence.yml
+ * يُشغَّل شهرياً (اليوم الأول) عبر .github/workflows/refresh-academic-presence.yml
  * أو يدوياً:  node scripts/refresh-academic-presence.mjs
  */
 import { readFile, writeFile } from 'node:fs/promises'

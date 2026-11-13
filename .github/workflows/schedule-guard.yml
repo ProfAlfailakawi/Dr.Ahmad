@@ -22,14 +22,17 @@ jobs:
         run: |
           set -euo pipefail
           # "ملف الجدول:أقصى عمرٍ بالساعات:اسمٌ ودّي"
+          # الحدّ = دورة الـcron الفعلية + هامش لتأخّر جدولة GitHub:
+          #   يومي → 40h · أسبوعي → 200h (168h + 32h).
+          # راجعه كلما تغيّر cron في الملف المراقَب. الجداول الحدثيّة (بلا cron) مثل
+          # auto-audio-r2.yml لا تُراقَب هنا: غياب تشغيلها ليس توقّفاً.
           WATCH=(
-            "daily-radar.yml:40:رادار المختارات"
-            "auto-audio-r2.yml:8:توليد الصوت إلى R2"
-            "daily-inbox.yml:40:بريد المساء"
-            "check-curated-links.yml:40:فحص المصادر"
-            "auto-site-content.yml:40:نشر الرسائل والأسئلة"
-            "backup-firestore.yml:200:درع النسخ الاحتياطي"
-            "weekly-report.yml:200:تقرير الجمعة"
+            "daily-radar.yml:200:رادار المختارات"                 # أسبوعي: '20 4 * * 0'
+            "daily-inbox.yml:40:بريد المساء"                      # يومي: '30 15 * * *'
+            "check-curated-links.yml:200:فحص المصادر"             # أسبوعي: '0 2 * * 0'
+            "auto-site-content.yml:40:نشر الرسائل والأسئلة"       # مرّتان يومياً: '35 4' و'55 4'
+            "backup-firestore.yml:40:درع النسخ الاحتياطي"          # يومي: '0 3 * * *'
+            "weekly-report.yml:200:تقرير الجمعة"                  # أسبوعي: '30 4 * * 5'
           )
           NOW=$(date -u +%s)
           STALE=""

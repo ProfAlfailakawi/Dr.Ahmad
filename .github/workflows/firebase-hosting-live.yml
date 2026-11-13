@@ -2,6 +2,18 @@ name: نشر الموقع على Firebase Hosting
 
 on:
   workflow_dispatch:
+  # الكود المدموج في main يُنشر وحده. التوثيق وملفات workflows الأخرى لا تغيّر
+  # الموقع فلا تستحق نشراً. رفعٌ يمسّ src/data.ts أو src/data/bodies.json يتولّاه
+  # «توليد الصوت» ثم workflow_run أدناه، فتتخطّى بوابةُ push نفسَها (انظر gate).
+  # التزامات github-actions[bot] عبر GITHUB_TOKEN لا تطلق push أصلاً.
+  push:
+    branches: [main]
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!.github/**'
+      - '.github/workflows/firebase-hosting-live.yml'
   # التزام GitHub الذي يصنعه Workflow الصوت لا يطلق حدث push جديداً لأسباب
   # أمنية في GitHub. لذلك كان R2 وmain يتقدمان بينما يبقى الموقع عند 56.
   workflow_run:
@@ -15,8 +27,12 @@ concurrency:
   # تشغيلةُ workflow_run التي مصدرها فاشل تتخطّى نفسها (انظر شرط gate أدناه). فإن
   # شاركت مجموعةَ النشر ألغت دفعةً حقيقيةً جارية ثم لم تنشر شيئاً — وهذا ما حدث في
   # ٧ أغسطس ٢٠٢٦: أُلغيت دفعةُ c33ff1f فبقي أحدثُ التزامٍ بلا نشر. نعزلها وحدها.
-  group: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success') && format('firebase-hosting-noop-{0}', github.run_id) || 'firebase-hosting-live' }}
-  cancel-in-progress: true
+  # ومثلها رفعُ push الذي يمسّ ملفات الصوت (يتخطّى نفسه لأن workflow_run سينشره).
+  # cancel-in-progress: false — مع push صار النشر يتزاحم؛ الإلغاء كان يقطع نشراً
+  # جارياً في منتصفه (بعد dr-api وقبل Hosting). الآن ينتظر الجديد دوره، وGitHub
+  # يُبقي أحدث منتظرٍ واحد فقط، وكل تشغيلة تنشر main كما هو عند بدئها.
+  group: ${{ ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success') || (github.event_name == 'push' && (contains(toJSON(github.event.commits), '"src/data.ts"') || contains(toJSON(github.event.commits), '"src/data/bodies.json"')))) && format('firebase-hosting-noop-{0}', github.run_id) || 'firebase-hosting-live' }}
+  cancel-in-progress: false
 
 jobs:
   # بوّابةٌ تسبق النشر. أربعة أعطابٍ بلغت الموقع في يومٍ واحد (٢٠ يوليو)
@@ -24,7 +40,11 @@ jobs:
   # فوجودُ الاختبار بلا مُشغِّلٍ كعدمه. تُشغَّل هنا كلُّها، وإن احمرّ واحدٌ
   # منها لم تبدأ خطوةُ النشر أصلاً (needs) — لا نشرَ فوق فحصٍ أحمر.
   gate:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # push يمسّ src/data.ts أو bodies.json: «توليد الصوت» يلتقطه وينشره بعد جاهزية
+    # الصوت عبر workflow_run؛ فلا ننشر هنا قبله. (الشرط نفسه في concurrency أعلاه.)
+    if: >-
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') &&
+      !(github.event_name == 'push' && (contains(toJSON(github.event.commits), '"src/data.ts"') || contains(toJSON(github.event.commits), '"src/data/bodies.json"')))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

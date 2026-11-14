@@ -9344,6 +9344,26 @@ body {
   .en-contact #booking-form { max-width: none; }
   .en-contact #booking-form .grid { grid-template-columns: minmax(0, 1fr); }
 
+  /* ٢٥) الأرشيف الإعلامي (/media): الواجهة والمسار الزمني على اليمنى،
+     و«ابحث داخل ما قيل» وفهرس السنوات والأنواع على اليسرى ثابتين أثناء
+     التصفح. داخل الصفحة الواحدة تُستعار هيئة الهاتف المضغوطة: السنة ترويسة
+     فوق صفوفها، والبطاقات الثانوية صورة بجانب نص. */
+  .media-spread > .media-desk { grid-row: 1 / span 6; position: sticky; top: 5.5rem; }
+  .media-spread > .media-desk .media-archive-index .editorial-tablist { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .media-spread > :not(.media-desk) { margin-top: 0; }
+  .media-spread > :not(.media-desk) + :not(.media-desk) { margin-top: 3rem; }
+  .media-spread .media-feature-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .media-spread .media-feature-card.is-lead { grid-row: auto; }
+  .media-spread .media-feature-card.is-secondary > a { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); }
+  .media-spread .media-feature-card.is-secondary .spatial-media { height: 100%; min-height: 7.6rem; aspect-ratio: auto !important; }
+  .media-spread .media-feature-card.is-secondary > a > div:last-child { padding: .85rem; }
+  .media-spread .media-editorial-intro > span { display: none; }
+  .media-spread .media-editorial-archive > .site-fade-up > div { grid-template-columns: minmax(0, 1fr); }
+  .media-spread .media-editorial-archive > .site-fade-up > div > p { text-align: start; }
+  .media-spread .media-year-group { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .media-spread .media-year-mark { display: flex; align-items: center; gap: .6rem; padding-block: 1rem .15rem; direction: rtl; text-align: start; }
+  .media-spread .media-year-mark i { position: static; flex: 1; width: auto; height: 1px; background: rgb(var(--c-ink) / .08) !important; }
+
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */
   .ent-stage {

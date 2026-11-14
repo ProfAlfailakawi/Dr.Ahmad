@@ -83,42 +83,44 @@ export default function Media() {
   useEffect(() => { setVisibleCount((count) => Math.min(Math.max(25, count), Math.max(25, filteredMedia.length))) }, [filteredMedia.length])
   useSeo({ title: 'الأرشيف الإعلامي', path: '/media', description: 'أرشيف مرئي ومسموع قابل للبحث داخل اللحظة، يجمع اللقاءات التلفزيونية والإذاعية واستضافات يوتيوب.' })
 
-  return <Page className="content-media page-journey">
+  return <Page className="content-media page-journey duo-book">
     <PageHead label="الأرشيف الإعلامي" title="الفكرة كما قيلت، في لحظتها." />
 
     <section className="media-archive-body editorial-breath-section px-6 py-5 md:px-11 md:py-8">
-      <div className="mx-auto max-w-shell">
-        <FadeUp>
-          <div className="media-search-shell rounded-2xl border border-hair bg-wash p-3 md:rounded-[1.6rem] md:p-6">
-            <label className="media-search-label block text-[.72rem] font-bold text-accent md:text-[.74rem]" htmlFor="media-search">ابحث داخل ما قيل</label>
-            <div className="media-search-input mt-2 flex items-center gap-3 rounded-xl border border-hair bg-canvas px-3 focus-within:border-accent md:mt-3 md:rounded-2xl md:px-4">
-              <span aria-hidden className="text-accent">⌕</span>
-              <input id="media-search" value={query} onFocus={() => { void ensureArchiveTranscripts() }} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي" className="min-w-0 flex-1 self-stretch bg-transparent py-2.5 text-base text-ink outline-none placeholder:text-soft/70 md:py-3 md:text-[.92rem]" />
-              {query && <button type="button" onClick={() => setQuery('')} className="text-[.72rem] text-soft hover:text-accent">مسح</button>}
-            </div>
-            <p className="media-search-note measure mt-2 text-[.72rem] leading-relaxed text-soft md:mt-3 md:text-[.72rem]">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>
-          </div>
-        </FadeUp>
-
-        <FadeUp delay={0.04}>
-          <section className="media-archive-index mt-6 border-y border-hair py-4" aria-label="فهرس الأرشيف الإعلامي">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <span className="editorial-micro-label text-[.72rem] font-semibold text-accent">المسار الإعلامي</span>
-                <p className="mt-1 text-[.72rem] font-light text-soft">{filteredMedia.length.toLocaleString('en-US')} ظهوراً في النطاق الحالي</p>
+      <div className="media-spread duo-sheet mx-auto max-w-shell">
+        <div className="media-desk duo-sheet__left">
+          <FadeUp>
+            <div className="media-search-shell rounded-2xl border border-hair bg-wash p-3 md:rounded-[1.6rem] md:p-6">
+              <label className="media-search-label block text-[.72rem] font-bold text-accent md:text-[.74rem]" htmlFor="media-search">ابحث داخل ما قيل</label>
+              <div className="media-search-input mt-2 flex items-center gap-3 rounded-xl border border-hair bg-canvas px-3 focus-within:border-accent md:mt-3 md:rounded-2xl md:px-4">
+                <span aria-hidden className="text-accent">⌕</span>
+                <input id="media-search" value={query} onFocus={() => { void ensureArchiveTranscripts() }} onChange={(event) => setQuery(event.target.value)} placeholder="مثال: التعليم الإلكتروني، الذكاء الاصطناعي" className="min-w-0 flex-1 self-stretch bg-transparent py-2.5 text-base text-ink outline-none placeholder:text-soft/70 md:py-3 md:text-[.92rem]" />
+                {query && <button type="button" onClick={() => setQuery('')} className="text-[.72rem] text-soft hover:text-accent">مسح</button>}
               </div>
-              {(yearFilter !== 'all' || kindFilter !== 'all') && <button type="button" onClick={() => { setYearFilter('all'); setKindFilter('all') }} className="border-b border-accent/[.35] pb-0.5 text-[.72rem] font-semibold text-accent">إظهار الكل</button>}
+              <p className="media-search-note measure mt-2 text-[.72rem] leading-relaxed text-soft md:mt-3 md:text-[.72rem]">عند وجود تفريغ زمني موثّق، تنقلك النتيجة مباشرة إلى اللحظة التي قيلت فيها العبارة.</p>
             </div>
-            <div className="editorial-tablist edge-fade mt-3 flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب السنة">
-              <button type="button" onClick={() => setYearFilter('all')} aria-pressed={yearFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.72rem] font-semibold ${yearFilter === 'all' ? 'is-active' : ''}`}>كل السنوات</button>
-              {archiveYears.map((year) => <button key={year} type="button" onClick={() => setYearFilter(year)} aria-pressed={yearFilter === year} className={`editorial-tab shrink-0 px-3 py-1.5 font-mono text-[.72rem] ${yearFilter === year ? 'is-active' : ''}`}>{year}</button>)}
-            </div>
-            <div className="editorial-tablist edge-fade mt-1 flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب نوع الظهور">
-              <button type="button" onClick={() => setKindFilter('all')} aria-pressed={kindFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.72rem] font-medium ${kindFilter === 'all' ? 'is-active' : ''}`}>كل الأنواع</button>
-              {archiveKinds.map((kind) => <button key={kind} type="button" onClick={() => setKindFilter(kind)} aria-pressed={kindFilter === kind} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.72rem] font-medium ${kindFilter === kind ? 'is-active' : ''}`}>{kindLabel[kind] || 'ظهور إعلامي'}</button>)}
-            </div>
-          </section>
-        </FadeUp>
+          </FadeUp>
+
+          <FadeUp delay={0.04}>
+            <section className="media-archive-index mt-6 border-y border-hair py-4" aria-label="فهرس الأرشيف الإعلامي">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <span className="editorial-micro-label text-[.72rem] font-semibold text-accent">المسار الإعلامي</span>
+                  <p className="mt-1 text-[.72rem] font-light text-soft">{filteredMedia.length.toLocaleString('en-US')} ظهوراً في النطاق الحالي</p>
+                </div>
+                {(yearFilter !== 'all' || kindFilter !== 'all') && <button type="button" onClick={() => { setYearFilter('all'); setKindFilter('all') }} className="border-b border-accent/[.35] pb-0.5 text-[.72rem] font-semibold text-accent">إظهار الكل</button>}
+              </div>
+              <div className="editorial-tablist edge-fade mt-3 flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب السنة">
+                <button type="button" onClick={() => setYearFilter('all')} aria-pressed={yearFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.72rem] font-semibold ${yearFilter === 'all' ? 'is-active' : ''}`}>كل السنوات</button>
+                {archiveYears.map((year) => <button key={year} type="button" onClick={() => setYearFilter(year)} aria-pressed={yearFilter === year} className={`editorial-tab shrink-0 px-3 py-1.5 font-mono text-[.72rem] ${yearFilter === year ? 'is-active' : ''}`}>{year}</button>)}
+              </div>
+              <div className="editorial-tablist edge-fade mt-1 flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="تصفية حسب نوع الظهور">
+                <button type="button" onClick={() => setKindFilter('all')} aria-pressed={kindFilter === 'all'} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.72rem] font-medium ${kindFilter === 'all' ? 'is-active' : ''}`}>كل الأنواع</button>
+                {archiveKinds.map((kind) => <button key={kind} type="button" onClick={() => setKindFilter(kind)} aria-pressed={kindFilter === kind} className={`editorial-tab shrink-0 px-3 py-1.5 text-[.72rem] font-medium ${kindFilter === kind ? 'is-active' : ''}`}>{kindLabel[kind] || 'ظهور إعلامي'}</button>)}
+              </div>
+            </section>
+          </FadeUp>
+        </div>
 
         {query.trim() && <FadeUp>
           <section className="mt-7" aria-label="نتائج البحث داخل اللقاءات">

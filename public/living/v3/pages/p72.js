@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=37';
-import { animator, shadowBlob, canvasTexture, V, TAU } from '../lib/a1-kit.js?v=37';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=38';
+import { animator, shadowBlob, canvasTexture, V, TAU } from '../lib/a1-kit.js?v=38';
 
 export const meta = { free: true, center: [0.09, 0.43], typeLabel: 'لعبة قرار' };   // the middle of the book: the picture spans the gutter, and the gutter is the centre of the spread target, so a pose-scale error cannot push the scene sideways
 

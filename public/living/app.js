@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=37';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=37';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=37';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=37';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=37';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=38';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=38';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=38';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=38';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=38';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -331,7 +331,7 @@ function stopExperience() {
 const fitBox = new THREE.Box3(), fitV = new THREE.Vector3();
 function fitScene(c, dt) {
   if (c.fit === undefined) { c.fit = 1; c.fitT = 1; c.fitN = 0; }
-  if (c.t > 2.2 && c.e > 0.95 && !c.drag && ++c.fitN % 20 === 0 && Math.abs(c.yaw) < 0.07 && Math.abs(c.pitch) < 0.07 && Math.abs(c.zoom - 1) < 0.05) {
+  if (c.t > 1.7 && c.e > 0.95 && !c.drag && ++c.fitN % 20 === 0 && Math.abs(c.yaw) < 0.07 && Math.abs(c.pitch) < 0.07 && Math.abs(c.zoom - 1) < 0.05) {
     c.pivot.updateMatrixWorld(true);
     fitBox.setFromObject(c.pivot.children[0]);
     if (!fitBox.isEmpty()) {
@@ -344,8 +344,11 @@ function fitScene(c, dt) {
         x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
       }
       if (ok && x1 - x0 > 20 && y1 - y0 > 20) {
-        const r = Math.min((0.9 * W) / (x1 - x0), Math.max(200, H - 300) / (y1 - y0));
-        c.fitT = THREE.MathUtils.clamp(c.fit * r, 0.5, 1);
+        // Shrink only when the scene would really be cut off by the screen, and never below 85%: a smaller scene is no longer on its printed figure.
+        const r = Math.min((1.0 * W) / (x1 - x0), Math.max(260, H - 150) / (y1 - y0));
+        // S is the scale at which the whole scene would just fit; it is averaged over time (the scene's labels move) so the size never pulses.
+        const S = c.fit * r; c.fitS = c.fitS === undefined ? S : c.fitS * 0.85 + S * 0.15;
+        c.fitT = c.fitS >= 0.93 ? 1 : THREE.MathUtils.clamp(c.fitS, 0.85, 1);
       }
     }
   }
@@ -563,7 +566,7 @@ let ar = null, rotor = null;
 
 const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
 
-const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=15`), location.href).href;
+const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=16`), location.href).href;
 let fastWorkers = [];
 function packFailed() {
   $('loading').classList.remove('hidden');
@@ -579,7 +582,7 @@ async function startAR(id = packId) {
     const cores = navigator.hardwareConcurrency || 4;
     fastWorkers = captureWorkers(Math.min(4, Math.max(2, cores - 2)));
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=15`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=16`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 1, missTolerance: 10,
     });
     // MindAR creates its controller inside start(); the fast matching is attached at that moment, before the pages load.
@@ -593,7 +596,10 @@ async function startAR(id = packId) {
     // The camera looks through the recognition packs one after another by itself; the student never picks.
     let ids = pack.ids, packNo = PACKS.indexOf(pack);
     const slots = Math.max(...PACKS.map((p) => p.ids.length));
-    const expOf = (i) => { const k = EXPERIENCES.findIndex((x) => x.id === ids[i]); return k < 0 ? null : [k, EXPERIENCES[k]]; };
+    // A page can be recognised through more than one target: the 73|72 picture is recognised from either page, and both open the scene of page 72.
+    // The second target sits in page 72's coordinates as the page to its left (u from -1 to 0).
+    const ALIAS = { 'prophetic-gentleness-case-73': { of: 'prophetic-gentleness-case', crop: [-1, 0, 0, 1] } };
+    const expOf = (i) => { const al = ALIAS[ids[i]], k = EXPERIENCES.findIndex((x) => x.id === (al ? al.of : ids[i])); return k < 0 ? null : [k, al ? { ...EXPERIENCES[k], crop: al.crop } : EXPERIENCES[k]]; };
     const anchors = Array.from({ length: slots }, (_, i) => {
       const a = mind.addAnchor(i);
       const page = new THREE.Group(); a.group.add(page);

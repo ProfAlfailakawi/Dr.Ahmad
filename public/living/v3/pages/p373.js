@@ -1,9 +1,9 @@
 // p373: a four-ring cryptex crowned by a tablet. Touch a ring to turn it to its next option; the right choice locks in gold and lights its quarter of the tablet.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=37';
-import { inked } from '../../pencil.js?v=37';
-import { TAU, css, rising, halos, motes, blob, dais, canvasTex, glyph, paintWrap, roundRect, faceMat, shakeX } from '../lib/b6-kit.js?v=37';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=38';
+import { inked } from '../../pencil.js?v=38';
+import { TAU, css, rising, halos, motes, blob, dais, canvasTex, glyph, paintWrap, roundRect, faceMat, shakeX } from '../lib/b6-kit.js?v=38';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'لعبة تصميم', title: 'صمّم حصة الآيباد' };
 

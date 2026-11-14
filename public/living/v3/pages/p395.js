@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, plinth, contactShadow, paintTex, drawText, textPlate, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, shuffle, faceYaw } from '../lib/b7-kit.js?v=37';
+import { scene, plinth, contactShadow, paintTex, drawText, textPlate, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, shuffle, faceYaw } from '../lib/b7-kit.js?v=38';
 export const meta = { free: true, center: [0.5, 0.64], typeLabel: 'لعبة مطابقة' };
 
 // Six real miniatures stand on a ring. A function token hovers in the middle: tap the invention it belongs to.

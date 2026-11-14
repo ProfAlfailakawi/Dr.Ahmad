@@ -3,8 +3,8 @@
 // (timers, tweens, particles, end-of-game card) that every game type builds on.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=37';
-import { inked } from '../../pencil.js?v=37';
+import { P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, glowTexture, lightTube, sketch } from '../../kit.js?v=38';
+import { inked } from '../../pencil.js?v=38';
 
 export { THREE, P, PAGE_H, PAPER, INK, ease, easeBack, stag, clamp01, lightTube, sketch, inked, RoundedBoxGeometry };
 export const TAU = Math.PI * 2;

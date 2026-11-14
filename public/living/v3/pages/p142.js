@@ -1,7 +1,7 @@
 // p142 — a laptop with a library in its screen; four pop-ups on the keyboard show what changed the designer's trade.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=37';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, organic, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=37';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=38';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, organic, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=38';
 
 export const meta = { free: true, center: [0.5, 0.7], typeLabel: 'مجسّم تفاعلي' };
 

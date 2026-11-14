@@ -326,7 +326,7 @@ export default function Inbox() {
       : "بانتظار أول تحديث موثّق";
 
   return (
-    <Page className="inbox-page">
+    <Page className="inbox-page duo-book">
       <PageHead
         label="رسائل على الهامش"
         title={pageHead.title}
@@ -369,7 +369,7 @@ export default function Inbox() {
                 </div>
               </div>
             </FadeUp>
-            <div className="archive-dialogue-rail mobile-card-rail mt-8 grid items-stretch gap-5 md:grid-cols-2">
+            <div className="archive-dialogue-rail mobile-card-rail duo-pair mt-8 grid items-stretch gap-5 md:grid-cols-2">
               {archiveDialogues.map((item, index) => (
                 <FadeUp key={item.id} delay={Math.min(index * .06, .2)} className="flex h-full">
                   <article className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-hair bg-canvas p-6 shadow-[0_18px_55px_-48px_rgba(21,32,44,.55)] transition hover:border-accent/[.55]">
@@ -410,7 +410,7 @@ export default function Inbox() {
             </span>
           </FadeUp>
           {featuredLetter ? (
-            <div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end">
+            <div className="duo-pair mt-8 grid gap-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end">
               <FadeUp delay={0.06}>
                 <blockquote className="relative overflow-hidden rounded-[2rem] border border-hair bg-wash px-7 py-9 md:px-11 md:py-12">
                   <span className="absolute right-8 top-3 font-display text-[5rem] leading-none text-accent/[.15]">
@@ -453,7 +453,7 @@ export default function Inbox() {
           )}
 
           {letterArchive.length > 0 && (
-            <div id="inbox-letters" className="mobile-card-rail mt-12 scroll-mt-28 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div id="inbox-letters" className="mobile-card-rail duo-pair mt-12 scroll-mt-28 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {letterPages.pageItems.map((letter, index) => (
                 <FadeUp key={letter.id} delay={Math.min(index * 0.05, 0.25)}>
                   <button type="button" onClick={() => setOpenCard({ title: letter.source === "editorial" ? "نموذج رسالة تمثيلية" : "رسالة على الهامش", body: letter.message, reply: letter.reply, meta: letter.source === "editorial" ? "نموذج تمثيلي" : undefined })} className="group flex h-full w-full flex-col rounded-2xl border border-hair bg-canvas p-6 text-right transition-colors hover:border-accent">
@@ -484,7 +484,7 @@ export default function Inbox() {
           </FadeUp>
 
           {publicTestimonials.length > 0 && (
-            <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
+            <div className="mobile-card-rail duo-pair mt-8 grid gap-6 md:grid-cols-2">
               {visibleTestimonials.map((t, i) => (
                 <motion.blockquote
                   key={i}
@@ -503,7 +503,7 @@ export default function Inbox() {
           )}
 
           {archiveEchoCards.length > 0 && (
-            <div className="mobile-card-rail mt-8 grid gap-6 md:grid-cols-2">
+            <div className="mobile-card-rail duo-pair mt-8 grid gap-6 md:grid-cols-2">
               {archiveEchoCards.map((item, index) => (
                 <motion.article
                   key={item.id}
@@ -541,7 +541,7 @@ export default function Inbox() {
             </span>
           </FadeUp>
           {questions.length > 0 && (
-            <div id="inbox-questions" className="mobile-card-rail mt-9 scroll-mt-28 grid gap-8 md:grid-cols-3">
+            <div id="inbox-questions" className="mobile-card-rail duo-pair mt-9 scroll-mt-28 grid gap-8 md:grid-cols-3">
               {questionPages.pageItems.map((f, i) => (
                 <FadeUp key={f.q} delay={i * 0.07}>
                   <button type="button" onClick={() => setOpenCard({ title: f.q, body: f.a })} className="group w-full border-t-2 border-accent pt-5 text-right">

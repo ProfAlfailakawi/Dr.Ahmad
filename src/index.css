@@ -9249,6 +9249,11 @@ body {
   :is(.curated-feature, .curated-archive) > .duo-sheet__left .editorial-tablist { min-width: 0; flex-wrap: wrap; }
   .curated-feature > .duo-sheet__left > div { flex-direction: column; align-items: flex-start; }
   .curated-feature > [role="tabpanel"], .curated-archive > #curated-grid { grid-row: 1; margin-top: 0; max-width: none; }
+
+  /* ٢١) البريد (/inbox): الرسالة على اليمنى وتعقيب الدكتور على اليسرى كصفحة
+     الرد، وخيوط الأرشيف والرسائل والأسئلة بطاقتان متقابلتان عند الكعب. */
+  .inbox-page .duo-pair:has(> * > blockquote) { align-items: center; }
+  .inbox-page .duo-pair blockquote { padding-inline: 1.5rem; }
 }
 
 /* المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب

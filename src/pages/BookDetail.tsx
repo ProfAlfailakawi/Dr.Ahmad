@@ -86,7 +86,7 @@ function DeferredBookWorld({ book, seed, articles, books, papers }: { book: Book
           <LazyBookWorld book={book} seed={seed} articles={articles} books={books} papers={papers} />
         </Suspense>
       ) : (
-        <div className="border-t border-hair bg-wash px-6 py-10 text-center text-[.74rem] text-soft" aria-hidden="true">تظهر امتدادات الكتاب عند الاقتراب منها.</div>
+        <div className="duo-loading-note border-t border-hair bg-wash px-6 py-10 text-center text-[.74rem] text-soft" aria-hidden="true">تظهر امتدادات الكتاب عند الاقتراب منها.</div>
       )}
     </div>
   )

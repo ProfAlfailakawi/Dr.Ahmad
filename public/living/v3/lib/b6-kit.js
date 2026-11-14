@@ -1,7 +1,7 @@
 // Shared helpers of the builder "a4" (pages 237-275): rise-in sequencer, touch halos, ring dais, tags, motes.
 import * as THREE from 'three';
-import { ease, easeBack, clamp01, stag, mat, goldMat, glow } from '../../kit.js?v=33';
-import { tagSprite, solidTag, setSpr } from '../../v2/common.js?v=33';
+import { ease, easeBack, clamp01, stag, mat, goldMat, glow } from '../../kit.js?v=34';
+import { tagSprite, solidTag, setSpr } from '../../v2/common.js?v=34';
 
 export { tagSprite, solidTag, setSpr };
 export const TAU = Math.PI * 2;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=33';
-import { scene, RoundedBox, TAU, person2, contactShadow } from '../lib/a8-kit.js?v=33';
+import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=34';
+import { scene, RoundedBox, TAU, person2, contactShadow } from '../lib/a8-kit.js?v=34';
 export const meta = { free: true, center: [0.6, 0.444], typeLabel: 'لعبة قرارات' };
 const GL = (c, i = 1) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: i, roughness: 0.3 });
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');

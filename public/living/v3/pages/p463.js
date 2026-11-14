@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01 } from '../../kit.js?v=33';
-import { scene, RoundedBox, TAU, contactShadow, lightPool, paint, smooth, GL, plinth, textPlane } from '../lib/b8-kit.js?v=33';
+import { mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01 } from '../../kit.js?v=34';
+import { scene, RoundedBox, TAU, contactShadow, lightPool, paint, smooth, GL, plinth, textPlane } from '../lib/b8-kit.js?v=34';
 export const meta = { free: true, center: [0.5, 0.6], typeLabel: 'لعبة اكتشاف' };
 
 const TEAL = 0x4fc3c8, RED = 0xe8412c, GOLD = 0xd4ad55;

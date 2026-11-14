@@ -9263,6 +9263,11 @@ body {
   .radar-spread > .site-fade-up > div { margin-top: 0; }
   .radar-spread > .site-fade-up .overflow-x-auto { overflow: visible; -webkit-mask-image: none; mask-image: none; }
   .radar-spread > .site-fade-up [role="tablist"] { min-width: 0; flex-wrap: wrap; }
+
+  /* ٣٥) حول الموقع (/about): الرؤية ولماذا، والمميزات، ولمن، والعقيدة —
+     كلها صفحتان متقابلتان؛ دعوة التعاون في منتصف الصفحة اليمنى. */
+  .duo-book .duo-pair > .site-fade-up > p.mt-5:first-child { margin-top: 0; }
+  .about-cta { padding-inline-end: calc(50% + var(--duo-spine) / 2); }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

@@ -19,13 +19,13 @@ export default function AboutSite() {
   useSeo({ title: 'حول الموقع', path: '/about', description: aboutSite.hero })
 
   return (
-    <Page>
+    <Page className="duo-book">
       <PageHead label="حول الموقع" title="فضاءٌ مُنتقى." sub={aboutSite.hero} />
 
       <div className="px-6 py-16 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           {/* الرؤية + لماذا */}
-          <div className="grid gap-12 border-b border-hair pb-16 md:grid-cols-2 md:gap-14">
+          <div className="duo-pair grid gap-12 border-b border-hair pb-16 md:grid-cols-2 md:gap-14">
             {aboutSite.sections.map((s, i) => (
               <FadeUp key={s.title} delay={i * 0.08}>
                 <SectionTag icon={i ? Target : Compass}>{s.title}</SectionTag>
@@ -39,7 +39,7 @@ export default function AboutSite() {
             <FadeUp>
               <SectionTag icon={Gem}>ما الذي يميّز هذا الموقع؟</SectionTag>
             </FadeUp>
-            <ul className="mt-8 grid gap-6 md:grid-cols-2 md:gap-x-12">
+            <ul className="duo-pair mt-8 grid gap-6 md:grid-cols-2 md:gap-x-12">
               {aboutSite.distinct.map((t, i) => (
                 <FadeUp as="li" key={t} delay={i * 0.05}>
                   <div className="relative ps-10 text-[1rem] font-light leading-[1.95] text-ink">
@@ -56,7 +56,7 @@ export default function AboutSite() {
             <FadeUp>
               <SectionTag icon={Users}>لمن هذا الموقع؟</SectionTag>
             </FadeUp>
-            <div tabIndex={0} className="mobile-card-rail mt-8 grid gap-5 sm:grid-cols-2">
+            <div tabIndex={0} className="mobile-card-rail duo-pair mt-8 grid gap-5 sm:grid-cols-2">
               {aboutSite.audience.map((t, i) => (
                 <FadeUp key={t} delay={i * 0.06}>
                   <div className="h-full rounded-2xl border border-hair border-r-2 border-r-accent bg-wash p-7 font-display text-[clamp(1.1rem,2.2vw,1.4rem)] font-medium leading-[1.7] text-ink">
@@ -69,7 +69,7 @@ export default function AboutSite() {
 
           {/* العقيدة */}
           <section className="py-16">
-            <div className="rounded-2xl border border-hair bg-wash p-9 md:p-12">
+            <div className="duo-pair rounded-2xl border border-hair bg-wash p-9 md:p-12">
               {aboutSite.creed.map((t, i) => (
                 <FadeUp key={t} delay={i * 0.08}>
                   <p className={`font-display text-[1.15rem] font-light leading-[1.9] text-ink/90 md:text-[1.3rem] ${i ? 'mt-5' : ''}`}>
@@ -82,7 +82,7 @@ export default function AboutSite() {
           </section>
 
           <FadeUp>
-            <div className="border-t border-hair pt-14 text-center">
+            <div className="about-cta border-t border-hair pt-14 text-center">
               <Link to="/contact" className="inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
                 للاستشارة أو التعاون
               </Link>

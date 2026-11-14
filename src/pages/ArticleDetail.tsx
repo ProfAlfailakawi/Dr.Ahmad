@@ -36,6 +36,7 @@ import KuficMark from '../components/KuficMark'
 import { buildConceptEchoes } from '../lib/concept-weave'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { useKeepReadingPlace } from '../lib/keep-reading-place'
+import { useBookPaging } from '../lib/book-flow'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -122,6 +123,25 @@ function SelectionDiscoveryHint() {
   )
 }
 
+
+/** ترقيم صفحتي الورقة وسهما التقليب: لا يظهر إلا في وضع الكتاب (CSS). رقم كل صفحة
+    تحتها، والسهمان عند حافتي الورقة الخارجيتين فلا يقع شيء على الكعب. */
+function BookPager({ paging }: { paging: ReturnType<typeof useBookPaging> }) {
+  const { spread, spreads, go } = paging
+  const arrow = (d: string) => <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+  return (
+    <div className="article-book-pager" aria-label="تقليب أوراق المقال" role="group">
+      <div className="article-book-pager__page article-book-pager__page--right">
+        <button type="button" onClick={() => go(-1)} disabled={spread <= 0} aria-label="الورقة السابقة" className="article-book-pager__btn">{arrow('M9 6l6 6-6 6')}</button>
+        <span aria-hidden>{spread * 2 + 1}</span>
+      </div>
+      <div className="article-book-pager__page article-book-pager__page--left">
+        <span aria-hidden>{spread * 2 + 2}</span>
+        <button type="button" onClick={() => go(1)} disabled={spread >= spreads - 1} aria-label="الورقة التالية" className="article-book-pager__btn">{arrow('M15 6l-6 6 6 6')}</button>
+      </div>
+    </div>
+  )
+}
 
 function SyncedArticleBody({ article, body, articles, papers, books }: { article: ArticleRecord; body: string; articles: ArticleRecord[]; papers: PaperRecord[]; books: BookRecord[] }) {
   const { slug, title } = article
@@ -799,6 +819,8 @@ export default function ArticleDetail() {
   const { preferences } = useReaderPreferences()
   // فتح الجهاز أو طيّه أو تبديل Split View لا يُضيّع الفقرة التي يقرؤها الزائر.
   useKeepReadingPlace('article-body')
+  const flowRef = useRef<HTMLDivElement>(null)
+  const paging = useBookPaging(flowRef, `${slug}|${a ? 1 : 0}`)
 
   const neighbors = useMemo(() => a ? getArticleNeighbors(a.slug, articles) : { prev: undefined, next: undefined }, [a, articles])
 
@@ -921,6 +943,8 @@ export default function ArticleDetail() {
         {/* في الشاشة الداخلية (كتاب مفتوح) تصير هذه الحاوية صفحتين: النص على اليمنى
             ومكتب القارئ (الاستماع والأدوات) على اليسرى. CSS وحده، فلا يُعاد تركيب شيء. */}
         <div className="article-spread mx-auto max-w-[720px]" data-duo-spread="article">
+          {/* وضع الكتاب: كل ما في المقال يجري أعمدةً في نافذة واحدة تُقلَّب ورقةً ورقة. */}
+          <div className="article-spread__flow" data-book-flow ref={flowRef}>
           <FadeUp delay={0.05} className="article-spread__head">
             <div className="flex flex-wrap items-center gap-3 text-[.8rem]">
               <span className="font-semibold text-accent">{categoryLabel(a.cat)}</span>
@@ -1052,6 +1076,8 @@ export default function ArticleDetail() {
               </div>
             </nav>
           </FadeUp>
+          </div>
+          <BookPager paging={paging} />
         </div>
       </article>
 

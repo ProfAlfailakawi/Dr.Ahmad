@@ -672,7 +672,7 @@ export default function AskLibrary() {
         sub="محادثة موثّقة مع الأرشيف: يركّب الجواب من مقالاتي وأبحاثي وكتبي فقط، ويعيدك إلى النص الحرفي الذي استند إليه. إن لم يجد دليلاً يقول ذلك بوضوح."
       />
 
-      <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
+      <div className="px-6 pt-8 md:px-11"><div className="ask-entry mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
 
       <section className="px-6 py-14 md:px-11 md:py-16">
         <div className="ask-desk duo-chapter mx-auto max-w-3xl">

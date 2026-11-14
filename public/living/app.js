@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=32';
-import { PAGE_H, FX, sweepBand, ease, fontsReady, syncLines } from './kit.js?v=32';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=32';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=32';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=32';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=33';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=33';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=33';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=33';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=33';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -329,7 +329,7 @@ function stopExperience() {
 const fitBox = new THREE.Box3(), fitV = new THREE.Vector3();
 function fitScene(c, dt) {
   if (c.fit === undefined) { c.fit = 1; c.fitT = 1; c.fitN = 0; }
-  if (c.t > 1.5 && c.e > 0.95 && !c.drag && ++c.fitN % 20 === 0 && Math.abs(c.yaw) < 0.07 && Math.abs(c.pitch) < 0.07 && Math.abs(c.zoom - 1) < 0.05) {
+  if (c.t > 2.2 && c.e > 0.95 && !c.drag && ++c.fitN % 20 === 0 && Math.abs(c.yaw) < 0.07 && Math.abs(c.pitch) < 0.07 && Math.abs(c.zoom - 1) < 0.05) {
     c.pivot.updateMatrixWorld(true);
     fitBox.setFromObject(c.pivot.children[0]);
     if (!fitBox.isEmpty()) {
@@ -365,7 +365,11 @@ function tick(dt) {
   c.pivot.rotation.order = 'YXZ'; c.pivot.rotation.x = c.pitch; c.pivot.rotation.y = c.yaw;
   // (The "come closer" growth was removed: scaling the scene moved it off the printed figure, and a phone that started close left it invisible.)
   fitScene(c, dt);
-  c.pivot.scale.setScalar(c.zoom * c.fit);
+  // Every ordinary page's scene is drawn up out of its print: it grows in HEIGHT only (the base stays exactly on the printed figure),
+  // after the printed figure has begun to lift away. Left/right and front/back never change, so alignment is untouched.
+  const D = globalThis.__riseDur || 1.1, grow = c.exp.kind === 'page' ? Math.max(0.001, easeBack((c.t - 0.35) / D)) : 1;
+  c.pivot.scale.set(c.zoom * c.fit, c.zoom * c.fit * grow, c.zoom * c.fit);
+  if (c.exp.kind === 'page' && !c.rose && c.t > 0.35 + D * 0.55) { c.rose = true; c.fx.burst(new THREE.Vector3(c.pivot.position.x, 0.02, c.pivot.position.z), 0xffd27a, 18, 0.35, 0.022); }
   c.inst.update(c.t, dt, ease(c.e));
   if (c.extras?.length) c.extras = c.extras.filter((x) => x.update(dt) !== false);
   c.fx.update(dt);

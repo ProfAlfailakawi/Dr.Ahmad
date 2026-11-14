@@ -82,7 +82,7 @@ function DeferredBookWorld({ book, seed, articles, books, papers }: { book: Book
   return (
     <div ref={anchorRef} className="min-h-28">
       {ready ? (
-        <Suspense fallback={<div className="border-t border-hair bg-wash px-6 py-14 text-center text-[.78rem] text-soft">تُجهّز امتدادات الكتاب بهدوء…</div>}>
+        <Suspense fallback={<div className="duo-loading-note border-t border-hair bg-wash px-6 py-14 text-center text-[.78rem] text-soft">تُجهّز امتدادات الكتاب بهدوء…</div>}>
           <LazyBookWorld book={book} seed={seed} articles={articles} books={books} papers={papers} />
         </Suspense>
       ) : (
@@ -257,9 +257,9 @@ export default function BookDetail() {
 
   if (book.slug === 'encyclopedia') {
     return (
-      <Page className="content-encyclopedia">
+      <Page className="content-encyclopedia duo-book">
         <JsonLd data={structuredData} />
-        <Suspense fallback={<section className="px-6 pb-20 pt-36 md:px-11 md:pt-44"><div className="mx-auto max-w-shell rounded-2xl border border-hair bg-wash px-6 py-12 text-center text-[.78rem] text-soft">تُفتح الموسوعة بهدوء…</div></section>}>
+        <Suspense fallback={<section className="px-6 pb-20 pt-36 md:px-11 md:pt-44"><div className="duo-loading-note mx-auto max-w-shell rounded-2xl border border-hair bg-wash px-6 py-12 text-center text-[.78rem] text-soft">تُفتح الموسوعة بهدوء…</div></section>}>
           <LazyEncyclopediaPortal book={book} articles={articles} papers={papers} />
         </Suspense>
         <DeferredBookWorld book={book} seed={guide?.idea || book.desc || ''} articles={articles} books={books} papers={papers} />

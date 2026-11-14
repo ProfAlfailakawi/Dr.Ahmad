@@ -9225,6 +9225,8 @@ body {
   .duo-sheet > * { grid-column: 1; min-width: 0; }
   .duo-sheet > .duo-sheet__left { grid-column: 3; }
   .duo-sheet .site-pagination { width: auto; }
+  /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
+  .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 
   /* ١٩) «سؤال يُقلق التعليم» (/questions): السؤال الأحدث على اليمنى ورأيي فيه
      وأدواته على اليسرى كالصفحة المقابلة؛ ثم الأسئلة السابقة عموداً على اليمنى
@@ -9380,6 +9382,19 @@ body {
   .card-spread > :nth-child(7) { grid-row: 2 / 7; }
   .card-spread > :nth-child(8) { grid-row: 7; }
   .card-spread > button { justify-self: center; }
+
+  /* ٢٧) موسوعة تكنولوجيا التعليم (/publications/encyclopedia): العنوان
+     والتعريف وأزراره على اليمنى والغلاف على اليسرى؛ ثم الأبواب والشروحات
+     المرئية (ونتائج البحث) على اليمنى، والبحث في الموسوعة على اليسرى ثابتاً
+     أثناء التنقل بين الأبواب. حقيبة التدريس تحت الأبواب في صفحتها. */
+  .ency-hero { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 0; }
+  .ency-hero > :nth-child(1) { grid-column: 3; grid-row: 1; align-self: center; }
+  .ency-hero > :nth-child(2) { grid-column: 1; grid-row: 1; }
+  .ency-hero h1 { font-size: clamp(1.9rem, 4.2vw, 2.7rem); }
+  .ency-map > .site-fade-up:first-child { grid-column: 3; grid-row: 1 / span 8; position: sticky; top: 5.5rem; }
+  .ency-map > .site-fade-up:first-child + * { margin-top: 0; }
+  .ency-map > :nth-child(2) { margin-top: 0; }
+  #encyclopedia-teaching-kit > div { width: calc(50% - var(--duo-spine) / 2); margin-inline: 0; max-width: none; }
 
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */

@@ -58,7 +58,7 @@ export default function Research() {
 
   useSeo({ title: 'المساهمات العلمية', path: '/research', description: `${count} في تكنولوجيا التعليم والممارسة التربوية.` })
   return (
-    <Page className="content-research page-journey">
+    <Page className="content-research page-journey duo-book">
       <JsonLd data={{
         '@context': 'https://schema.org', '@type': 'CollectionPage', '@id': `${SITE_URL}/research#collection`,
         name: 'المساهمات العلمية', url: `${SITE_URL}/research`, inLanguage: 'ar',

@@ -228,10 +228,15 @@ async function settle(page) {
       const top = await page.evaluate(measure, { spine: SPINE, inner: v.inner })
       let mid = null
       if (v.inner) {
-        // نصف الصفحة أيضاً: المفصل يجب أن يبقى خالياً أثناء القراءة، لا في أعلاها فقط.
-        await page.evaluate(() => window.scrollTo(0, Math.max(0, document.scrollingElement.scrollHeight * 0.35)))
-        await page.waitForTimeout(500)
-        mid = await page.evaluate(measure, { spine: SPINE, inner: true })
+        // الكعب يجب أن يبقى خالياً في الصفحة كلها: أربع نقاط على طول الصفحة.
+        mid = { spineHits: [] }
+        const seen = new Set()
+        for (const f of [0.2, 0.4, 0.6, 0.8]) {
+          await page.evaluate((f) => window.scrollTo(0, Math.max(0, (document.scrollingElement.scrollHeight - innerHeight) * f)), f)
+          await page.waitForTimeout(400)
+          const m = await page.evaluate(measure, { spine: SPINE, inner: true })
+          for (const h of m.spineHits) if (!seen.has(h.el)) { seen.add(h.el); mid.spineHits.push({ ...h, at: f }) }
+        }
       }
       rows.push({ page: pg.id, path: pg.path, pose: v.pose, w: v.w, h: v.h, inner: v.inner, top, mid, errors: [...errors] })
       if (SHOTS && v.inner && ['article', 'home', 'articles', 'book'].includes(pg.id)) {

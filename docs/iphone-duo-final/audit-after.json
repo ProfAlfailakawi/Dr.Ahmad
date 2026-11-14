@@ -3,27 +3,27 @@
   "label": "after",
   "base": "http://127.0.0.1:5110",
   "engine": "webkit",
-  "generatedAt": "2026-11-14T01:05:27.379Z",
-  "seconds": 567,
+  "generatedAt": "2026-11-14T01:40:44.125Z",
+  "seconds": 512,
   "snapshots": 234,
   "overflowX": [],
   "clipped": 0,
-  "smallTargets": 26,
-  "spineHitsInner": 16,
+  "smallTargets": 20,
+  "spineHitsInner": 28,
   "spineByPage": {
    "home": [
-    "669x867: top 0 / mid 9",
-    "951x585: top 0 / mid 3",
-    "669x520: top 0 / mid 4"
+    "669x867: top 0 / mid 8",
+    "951x585: top 0 / mid 7",
+    "669x520: top 0 / mid 8"
    ],
    "articles": [
-    "669x867: top 0 / mid 0",
-    "951x585: top 0 / mid 0",
-    "669x520: top 0 / mid 0"
+    "669x867: top 0 / mid 1",
+    "951x585: top 0 / mid 1",
+    "669x520: top 0 / mid 1"
    ],
    "article": [
-    "669x867: top 0 / mid 0",
-    "951x585: top 0 / mid 0",
+    "669x867: top 0 / mid 1",
+    "951x585: top 0 / mid 1",
     "669x520: top 0 / mid 0"
    ],
    "publications": [
@@ -57,14 +57,7 @@
     "669x520: top 0 / mid 0"
    ]
   },
-  "pageErrors": [
-   "article@360x640: /127.0.0.1:5110/archive/bodies/v1/meta.json due to access control checks.",
-   "article@844x390: /127.0.0.1:5110/books/passages/v1/meta.json due to access control checks.",
-   "article@320x350: /127.0.0.1:5110/archive/bodies/v1/meta.json due to access control checks.",
-   "article@620x900: /127.0.0.1:5110/archive/bodies/v1/meta.json due to access control checks.",
-   "publications@382x580: /127.0.0.1:5110/books/passages/v1/meta.json due to access control checks.",
-   "search-empty@1440x900: /127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
-  ]
+  "pageErrors": []
  },
  "rows": [
   {
@@ -165,78 +158,72 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
     "spineHits": [
      {
       "kind": "text",
-      "el": "span «هوية»",
-      "left": 316,
-      "right": 343,
-      "top": 85
-     },
-     {
-      "kind": "text",
-      "el": "span.dna-hubcl «التعليم»",
-      "left": 317,
-      "right": 353,
-      "top": 438
-     },
-     {
-      "kind": "text",
-      "el": "time.text-[.72rem].text-soft «10 أبريل 2026»",
-      "left": 299,
-      "right": 323,
-      "top": 642
-     },
-     {
-      "kind": "text",
-      "el": "h3.mt-2.5.font-display «حين يصبح الامتحان هو الهدف»",
-      "left": 169,
-      "right": 364,
-      "top": 690
-     },
-     {
-      "kind": "text",
-      "el": "span.editorial-micro-label.w-fit «أرشيف»",
-      "left": 305,
-      "right": 339,
-      "top": 800
-     },
-     {
-      "kind": "text",
-      "el": "span.line-clamp-2.text-[.86rem] «كل ما كتبته في التعليم»",
-      "left": 234,
-      "right": 364,
-      "top": 830
+      "el": "p.mt-4.max-w-2xl «تظهر النتيجة، ترتفع الزغاريد أو تنهال ال»",
+      "left": 119,
+      "right": 616,
+      "top": 556,
+      "at": 0.2
      },
      {
       "kind": "control",
-      "el": "button.dna-segb «هوية»",
-      "left": 303,
-      "right": 356,
-      "top": 70
+      "el": "a.absolute.inset-0 «اقرأ مقال: النجاح الذي لا يفرح صاحبه»",
+      "left": 25,
+      "right": 644,
+      "top": 414,
+      "at": 0.2
+     },
+     {
+      "kind": "text",
+      "el": "span.block «أربع زوايا، ورؤية تتجدّد.»",
+      "left": 342,
+      "right": 645,
+      "top": 505,
+      "at": 0.6
      },
      {
       "kind": "control",
-      "el": "a.absolute.inset-0 «اقرأ مقال: حين يصبح الامتحان هو الهدف»",
-      "left": 138,
-      "right": 384,
-      "top": 616
+      "el": "a.block.h-full «بحثبأرشيفبحث محكّمفاعلية استخدام أعضاء ه»",
+      "left": 24,
+      "right": 645,
+      "top": 624,
+      "at": 0.6
+     },
+     {
+      "kind": "text",
+      "el": "h3.mt-2.5.line-clamp-3 «فاعلية استخدام أعضاء هيئة التدريس للوسائ»",
+      "left": 184,
+      "right": 628,
+      "top": 453,
+      "at": 0.8
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.block «مدخل واحد إلى سماء المقالات، رحلة الأثر،»",
+      "left": 185,
+      "right": 589,
+      "top": 742,
+      "at": 0.8
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.block «أي: خريطة تُريك كيف تتصل مقالاتي بعضها ب»",
+      "left": 263,
+      "right": 589,
+      "top": 776,
+      "at": 0.8
      },
      {
       "kind": "control",
-      "el": "a.group.flex «أرشيفكل ما كتبته في التعليم»",
-      "left": 129,
-      "right": 381,
-      "top": 780
+      "el": "button.group.flex «خرائط الفكر والأثرمدخل واحد إلى سماء الم»",
+      "left": 24,
+      "right": 645,
+      "top": 695,
+      "at": 0.8
      }
-    ],
-    "spread": null,
-    "spreadOn": false
+    ]
    },
    "errors": []
   },
@@ -258,36 +245,64 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
     "spineHits": [
      {
-      "kind": "text",
-      "el": "span «بحث»",
-      "left": 469,
-      "right": 494,
-      "top": 74
-     },
-     {
-      "kind": "text",
-      "el": "span.dna-hubcl «التعليم»",
-      "left": 458,
-      "right": 494,
-      "top": 434
+      "kind": "control",
+      "el": "a.absolute.inset-0 «اقرأ مقال: النجاح الذي لا يفرح صاحبه»",
+      "left": 452,
+      "right": 906,
+      "top": 251,
+      "at": 0.2
      },
      {
       "kind": "control",
-      "el": "button.dna-segb «بحث»",
-      "left": 456,
-      "right": 507,
-      "top": 59
+      "el": "button.relative.inline-flex «مشاركة المقال»",
+      "left": 488,
+      "right": 532,
+      "top": 287,
+      "at": 0.2
+     },
+     {
+      "kind": "text",
+      "el": "span.block «أربع زوايا، ورؤية تتجدّد.»",
+      "left": 476,
+      "right": 907,
+      "top": 387,
+      "at": 0.6
+     },
+     {
+      "kind": "control",
+      "el": "a.absolute.inset-0 «اقرأ مقال: أخطاء الماضي مازالت في زمن ال»",
+      "left": 487,
+      "right": 685,
+      "top": 522,
+      "at": 0.6
+     },
+     {
+      "kind": "control",
+      "el": "a.block.h-full «بحثبأرشيفبحث محكّمما أهمية استخدام أنظمة»",
+      "left": 265,
+      "right": 466,
+      "top": 521,
+      "at": 0.6
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.block «مدخل واحد إلى سماء المقالات، رحلة الأثر،»",
+      "left": 380,
+      "right": 851,
+      "top": 479,
+      "at": 0.8
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «خرائط الفكر والأثرمدخل واحد إلى سماء الم»",
+      "left": 44,
+      "right": 907,
+      "top": 428,
+      "at": 0.8
      }
-    ],
-    "spread": null,
-    "spreadOn": false
+    ]
    },
    "errors": []
   },
@@ -349,43 +364,72 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
     "spineHits": [
      {
       "kind": "text",
-      "el": "span.dna-hubcl «التعليم»",
-      "left": 317,
-      "right": 353,
-      "top": 255
-     },
-     {
-      "kind": "text",
-      "el": "time.text-[.72rem].text-soft «10 أبريل 2026»",
-      "left": 299,
-      "right": 323,
-      "top": 459
-     },
-     {
-      "kind": "text",
-      "el": "h3.mt-2.5.font-display «حين يصبح الامتحان هو الهدف»",
-      "left": 169,
-      "right": 364,
-      "top": 508
+      "el": "p.mt-4.max-w-2xl «تظهر النتيجة، ترتفع الزغاريد أو تنهال ال»",
+      "left": 119,
+      "right": 616,
+      "top": 267,
+      "at": 0.2
      },
      {
       "kind": "control",
-      "el": "a.absolute.inset-0 «اقرأ مقال: حين يصبح الامتحان هو الهدف»",
-      "left": 138,
-      "right": 384,
-      "top": 434
+      "el": "a.absolute.inset-0 «اقرأ مقال: النجاح الذي لا يفرح صاحبه»",
+      "left": 25,
+      "right": 644,
+      "top": 125,
+      "at": 0.2
+     },
+     {
+      "kind": "text",
+      "el": "span.block «أربع زوايا، ورؤية تتجدّد.»",
+      "left": 342,
+      "right": 645,
+      "top": 197,
+      "at": 0.6
+     },
+     {
+      "kind": "control",
+      "el": "a.absolute.inset-0 «اقرأ مقال: ثقافة التعليم الإلكتروني»",
+      "left": 25,
+      "right": 644,
+      "top": 318,
+      "at": 0.6
+     },
+     {
+      "kind": "text",
+      "el": "p.mt-2.line-clamp-2 «أينما جلست ضمن قواعد السلامة المعتادة أج»",
+      "left": 128,
+      "right": 628,
+      "top": 173,
+      "at": 0.8
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.block «مدخل واحد إلى سماء المقالات، رحلة الأثر،»",
+      "left": 185,
+      "right": 589,
+      "top": 405,
+      "at": 0.8
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.block «أي: خريطة تُريك كيف تتصل مقالاتي بعضها ب»",
+      "left": 263,
+      "right": 589,
+      "top": 439,
+      "at": 0.8
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «خرائط الفكر والأثرمدخل واحد إلى سماء الم»",
+      "left": 24,
+      "right": 645,
+      "top": 358,
+      "at": 0.8
      }
-    ],
-    "spread": null,
-    "spreadOn": false
+    ]
    },
    "errors": []
   },
@@ -480,7 +524,13 @@
     "vw": 1440,
     "vh": 900,
     "overflowX": 0,
-    "smallTargets": [],
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 41,
+      "h": 41
+     }
+    ],
     "clipped": [],
     "spineHits": [],
     "spread": null,
@@ -739,6 +789,148 @@
    "top": {
     "vw": 382,
     "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": {
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "time.w-32.shrink-0 «3 أبريل 2026»",
+      "left": 312,
+      "right": 319,
+      "top": 645,
+      "at": 0.6
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": {
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "time.w-32.shrink-0 «3 أبريل 2026»",
+      "left": 453,
+      "right": 460,
+      "top": 467,
+      "at": 0.6
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
     "overflowX": 0,
     "smallTargets": [
      {
@@ -758,144 +950,6 @@
   {
    "page": "articles",
    "path": "/articles",
-   "pose": "A",
-   "w": 385,
-   "h": 571,
-   "inner": false,
-   "top": {
-    "vw": 385,
-    "vh": 571,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "articles",
-   "path": "/articles",
-   "pose": "A",
-   "w": 320,
-   "h": 568,
-   "inner": false,
-   "top": {
-    "vw": 320,
-    "vh": 568,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "articles",
-   "path": "/articles",
-   "pose": "B",
-   "w": 594,
-   "h": 368,
-   "inner": false,
-   "top": {
-    "vw": 594,
-    "vh": 368,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "articles",
-   "path": "/articles",
-   "pose": "C",
-   "w": 669,
-   "h": 867,
-   "inner": true,
-   "top": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "errors": []
-  },
-  {
-   "page": "articles",
-   "path": "/articles",
-   "pose": "D",
-   "w": 951,
-   "h": 585,
-   "inner": true,
-   "top": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "errors": []
-  },
-  {
-   "page": "articles",
-   "path": "/articles",
-   "pose": "E",
-   "w": 951,
-   "h": 350,
-   "inner": false,
-   "top": {
-    "vw": 951,
-    "vh": 350,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "articles",
-   "path": "/articles",
    "pose": "E",
    "w": 600,
    "h": 350,
@@ -931,14 +985,16 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "time.w-32.shrink-0 «3 أبريل 2026»",
+      "left": 312,
+      "right": 319,
+      "top": 412,
+      "at": 0.6
+     }
+    ]
    },
    "errors": []
   },
@@ -1293,7 +1349,13 @@
     "vw": 382,
     "vh": 580,
     "overflowX": 0,
-    "smallTargets": [],
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 41,
+      "h": 41
+     }
+    ],
     "clipped": [],
     "spineHits": [],
     "spread": null,
@@ -1380,8 +1442,154 @@
     "spreadOn": true
    },
    "mid": {
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "p.min-w-0.text-[.8rem] «ظلِّل جملةً تلمسك: يتراءى صداها عبر السن»",
+      "left": 298,
+      "right": 474,
+      "top": 796,
+      "at": 0.6
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": {
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "p.min-w-0.text-[.8rem] «ظلِّل جملةً تلمسك: يتراءى صداها عبر السن»",
+      "left": 439,
+      "right": 615,
+      "top": 527,
+      "at": 0.4
+     }
+    ]
+   },
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 40,
+      "h": 40
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
     "vw": 669,
-    "vh": 867,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 40,
+      "h": 40
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": {
+    "spineHits": []
+   },
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
     "overflowX": 0,
     "smallTargets": [
      {
@@ -1395,167 +1603,6 @@
     "spread": "block",
     "spreadOn": true
    },
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "D",
-   "w": 951,
-   "h": 585,
-   "inner": true,
-   "top": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
-      "w": 28,
-      "h": 28
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "E",
-   "w": 951,
-   "h": 350,
-   "inner": false,
-   "top": {
-    "vw": 951,
-    "vh": 350,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "E",
-   "w": 600,
-   "h": 350,
-   "inner": false,
-   "top": {
-    "vw": 600,
-    "vh": 350,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "F",
-   "w": 669,
-   "h": 520,
-   "inner": true,
-   "top": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
-      "w": 28,
-      "h": 28
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "F",
-   "w": 600,
-   "h": 480,
-   "inner": false,
-   "top": {
-    "vw": 600,
-    "vh": 480,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "G",
-   "w": 768,
-   "h": 1024,
-   "inner": false,
-   "top": {
-    "vw": 768,
-    "vh": 1024,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
    "mid": null,
    "errors": []
   },
@@ -1570,7 +1617,13 @@
     "vw": 1024,
     "vh": 768,
     "overflowX": 0,
-    "smallTargets": [],
+    "smallTargets": [
+     {
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
+     }
+    ],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
@@ -1590,7 +1643,13 @@
     "vw": 1280,
     "vh": 800,
     "overflowX": 0,
-    "smallTargets": [],
+    "smallTargets": [
+     {
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
+     }
+    ],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
@@ -1612,15 +1671,15 @@
     "overflowX": 0,
     "smallTargets": [
      {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
      }
     ],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -1643,9 +1702,7 @@
     "spreadOn": true
    },
    "mid": null,
-   "errors": [
-    "/127.0.0.1:5110/archive/bodies/v1/meta.json due to access control checks."
-   ]
+   "errors": []
   },
   {
    "page": "article",
@@ -1678,22 +1735,14 @@
     "vw": 844,
     "vh": 390,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
-   "errors": [
-    "/127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
-   ]
+   "errors": []
   },
   {
    "page": "article",
@@ -1713,9 +1762,7 @@
     "spreadOn": true
    },
    "mid": null,
-   "errors": [
-    "/127.0.0.1:5110/archive/bodies/v1/meta.json due to access control checks."
-   ]
+   "errors": []
   },
   {
    "page": "article",
@@ -1728,17 +1775,11 @@
     "vw": 320,
     "vh": 600,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -1757,8 +1798,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -1774,17 +1815,11 @@
     "vw": 470,
     "vh": 350,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -1800,17 +1835,11 @@
     "vw": 470,
     "vh": 600,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -1875,8 +1904,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -1899,9 +1928,7 @@
     "spreadOn": true
    },
    "mid": null,
-   "errors": [
-    "/127.0.0.1:5110/archive/bodies/v1/meta.json due to access control checks."
-   ]
+   "errors": []
   },
   {
    "page": "publications",
@@ -1914,22 +1941,14 @@
     "vw": 382,
     "vh": 580,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
     "spreadOn": true
    },
    "mid": null,
-   "errors": [
-    "/127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
-   ]
+   "errors": []
   },
   {
    "page": "publications",
@@ -2005,18 +2024,11 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
-   },
-   "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
     "spread": "block",
     "spreadOn": true
+   },
+   "mid": {
+    "spineHits": []
    },
    "errors": []
   },
@@ -2038,20 +2050,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -2113,20 +2112,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 44,
-      "h": 44
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -2301,13 +2287,7 @@
     "vw": 320,
     "vh": 350,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
@@ -2327,17 +2307,11 @@
     "vw": 320,
     "vh": 600,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -2376,8 +2350,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -2513,13 +2487,7 @@
     "vw": 385,
     "vh": 571,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": null,
@@ -2586,20 +2554,7 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spineHits": []
    },
    "errors": []
   },
@@ -2621,14 +2576,7 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spineHits": []
    },
    "errors": []
   },
@@ -2690,14 +2638,7 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spineHits": []
    },
    "errors": []
   },
@@ -2809,6 +2750,11 @@
       "el": "a.inline-flex.h-8 «»",
       "w": 32,
       "h": 32
+     },
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 40,
+      "h": 40
      }
     ],
     "clipped": [],
@@ -2970,13 +2916,7 @@
     "vw": 470,
     "vh": 600,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": null,
@@ -3119,8 +3059,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3163,14 +3103,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -3192,20 +3125,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -3267,14 +3187,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -3292,8 +3205,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3312,8 +3225,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3332,8 +3245,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3352,8 +3265,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3372,13 +3285,11 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
-   "errors": [
-    "/127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
-   ]
+   "errors": []
   },
   {
    "page": "search-empty",
@@ -3394,8 +3305,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3414,8 +3325,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3494,8 +3405,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3534,8 +3445,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3574,8 +3485,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3591,17 +3502,11 @@
     "vw": 620,
     "vh": 600,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3617,17 +3522,11 @@
     "vw": 620,
     "vh": 900,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -3730,14 +3629,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -3759,14 +3651,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -3828,14 +3713,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -3930,13 +3808,7 @@
     "vw": 1440,
     "vh": 900,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
@@ -4283,14 +4155,7 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spineHits": []
    },
    "errors": []
   },
@@ -4312,14 +4177,7 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spineHits": []
    },
    "errors": []
   },
@@ -4381,14 +4239,7 @@
     "spreadOn": false
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spineHits": []
    },
    "errors": []
   },
@@ -4863,14 +4714,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 867,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -4892,14 +4736,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 951,
-    "vh": 585,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },
@@ -4961,14 +4798,7 @@
     "spreadOn": true
    },
    "mid": {
-    "vw": 669,
-    "vh": 520,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spineHits": []
    },
    "errors": []
   },

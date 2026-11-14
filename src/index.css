@@ -8964,15 +8964,9 @@ body {
   .article-spread__desk .article-reading-actions > :last-child { justify-content: flex-start; }
   .article-spread__desk .article-atlas-knot { margin-top: .75rem; }
 
-  /* الشريط العلوي: عنوان الصفحة المصغّر يجلس على الصفحة اليمنى بجوار الشعار
-     بدل منتصف الشريط حيث الكعب. */
-  .site-nav .nav-page-echo {
-    left: auto;
-    right: 6.25rem;
-    max-width: calc(50vw - var(--duo-spine) / 2 - 6.25rem - 12px);
-    transform: none;
-    text-align: right;
-  }
+  /* الشريط العلوي: صدى عنوان الصفحة (زخرفي، aria-hidden) كان يقع في منتصف
+     الشريط على الكعب؛ في الكتاب المفتوح يكفي العنوان الجاري في الصفحة. */
+  .site-nav .nav-page-echo { display: none; }
   /* الأزرار العائمة تنتقل إلى ذيل الصفحة اليسرى (صفحة السياق)، فلا تغطي
      أطراف أسطر الصفحة اليمنى أثناء القراءة. */
   .floating-actions { --floating-right: auto; left: max(.25rem, env(safe-area-inset-left, 0px)); }
@@ -9129,6 +9123,70 @@ body {
   .legal-spread article { padding-inline: 1.1rem; }
   .legal-spread nav[aria-label="مفاتيح سريعة لمحتوى الصفحة"] { display: grid; }
   .legal-spread nav[aria-label="مفاتيح سريعة لمحتوى الصفحة"] > a { width: 100%; }
+
+  /* ١٢) لوحات «بالأرقام» (الأبحاث، المؤلفات…): الحلقات على اليمنى والخط
+     الزمني أو الترتيب على اليسرى، لا لوحة واحدة تمتد فوق الكعب. */
+  .count-tiles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--duo-spine); }
+  .count-tiles > .count-tile--row { grid-column: 1; }
+  .count-tiles > .count-tile:not(.count-tile--row) { grid-column: 2; grid-row: span 2; order: 0; }
+  .count-tiles:not(:has(.count-tile--row ~ .count-tile--row)) .count-tile--row { grid-column: 1; }
+
+  /* ١٣) الأبحاث: الفهرس (القائمة) على اليمنى، والفهرسة الداخلية والتصفية
+     وتصفح السنوات على اليسرى ثابتة أثناء التصفح. */
+  .research-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    gap: 0;
+    align-items: start;
+  }
+  .research-split > .research-main { grid-column: 1; grid-row: 1; min-width: 0; }
+  .research-split > .research-rail { grid-column: 3; grid-row: 1; position: sticky; top: 5.5rem; min-width: 0; }
+  .research-split .research-index-panel { grid-template-columns: minmax(0, 1fr); }
+  .research-split .research-index-filters { display: grid; }
+
+  /* ١٤) الرئيسية — «بوصلة الفكر»: المحاور والخريطة الدائرية على اليمنى
+     (تُعيد الخريطة قياس عرضها فتتوسط الصفحة لا المفصل)، ومقالات المحور
+     ومداخله عموداً على اليسرى بدل سكتين تعبران الكعب. */
+  .compass-spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-rows: repeat(3, auto) 1fr;
+    align-items: start;
+  }
+  .compass-spread > * { grid-column: 1; min-width: 0; }
+  .compass-spread > .rail { grid-column: 3; grid-row: 1 / span 3; display: grid; gap: .75rem; margin: 0; padding: 0; overflow: visible; }
+  .compass-spread > .rail > * { width: auto; max-width: none; }
+  .compass-spread > .rail > * > div { min-height: 0; }
+  .compass-spread > .site-fade-up:last-child { grid-column: 3; grid-row: 4; }
+  .compass-spread > .site-fade-up:last-child > .rail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .75rem; margin: .75rem 0 0; padding: 0; overflow: visible; }
+  .compass-spread > .site-fade-up:last-child > .rail > a { width: auto; max-width: none; }
+  .compass-spread > .site-fade-up:last-child > .rail > span[aria-hidden] { display: none; }
+
+  /* ١٥) شريط «المنظومة الفكرية» (العقد، مسارات الفكر، المسارات، الفكر،
+     الأثر): ترويسة جارية على الصفحة اليمنى كما في الكتب، يُسحب داخلها. */
+  .thought-system-nav > div { max-width: none; width: calc(50% - var(--duo-spine) / 2); margin-inline: 0; }
+
+  /* ١٦) ترقيم الصفحات: يجلس في ذيل الصفحة اليمنى (حيث انتهت القراءة) بدل
+     منتصف المفصل. */
+  .site-pagination { width: calc(50% - var(--duo-spine) / 2); margin-inline: 0 auto; }
+  .site-pagination > p { text-align: start; }
+  .site-pagination > div { justify-content: flex-start; flex-wrap: wrap; }
+  /* تلميح «ظلِّل جملة» العائم: على الصفحة اليمنى حيث النص. */
+  .selection-discovery-chip { left: auto; right: max(1rem, env(safe-area-inset-right, 0px)); margin: 0; max-width: calc(50vw - var(--duo-spine) / 2 - 2rem); }
+  /* مقدمة فهرس المقالات وخريطة المؤلفات: الصفحة اليمنى. */
+  .duo-book .editorial-breath-section > .max-w-shell > .site-fade-up:first-child { width: calc(50% - var(--duo-spine) / 2); }
+
+  /* ١٧) «عالم الكتاب» أسفل صفحة الكتاب: العنوان على اليمنى والرابط على
+     اليسرى، والأبواب المطوية فهرس من عمودين يلتقيان عند الكعب. */
+  .content-book-world > .max-w-shell > .flex { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: end; }
+  .content-book-world > .max-w-shell > .flex > :first-child { grid-column: 1; }
+  .content-book-world > .max-w-shell > .flex > :last-child { grid-column: 3; justify-self: end; }
+  .content-book-world > .max-w-shell > .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--duo-spine); align-items: start; }
+
+  /* خريطة المؤلفات المطوية وغصن الأبحاث في صفحة الكتاب: عنوانهما وزرّهما
+     على الصفحة اليمنى بعرضها، لا شريط واحد فوق المفصل. */
+  section[aria-labelledby="books-atlas-title"] details > summary { width: calc(50% - var(--duo-spine) / 2); }
+  .content-book-detail > section:has(.grove-box) > div { max-width: calc(50% - var(--duo-spine) / 2); margin-inline: 0; }
 
   /* ١٠) غلاف الرئيسية (كتاب طولي 640–720): الصورة صفحة والنص صفحة، وبطاقة
      «المسيرة» تحت النص في الصفحة اليسرى بدل أن تمتد فوق الكعب. */

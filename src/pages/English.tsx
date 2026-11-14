@@ -130,7 +130,7 @@ export function EnglishHome() {
       {/* الأثر */}
       <section className="border-b border-hair px-6 py-20 md:px-11">
         <div className="mx-auto max-w-shell">
-          <FadeUp className="en-impact">
+          <FadeUp className="duo-seals">
             <p className="mb-10 text-center text-[.76rem] font-semibold uppercase tracking-[.14em] text-accent">A documented record</p>
             <Impact />
           </FadeUp>
@@ -221,7 +221,7 @@ export function EnglishCV() {
       <PageHead label="Curriculum Vitae" title="Ahmad H. Alfailakawi" sub={profileEn.tagline} />
       <div className="px-6 py-14 md:px-11 md:py-16">
         <div className="en-cv mx-auto max-w-shell">
-          <FadeUp className="en-impact">
+          <FadeUp className="duo-seals">
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase tracking-[.14em] text-accent">A documented record</p>
             <div className="mb-14 border-b border-hair pb-14"><Impact /></div>
           </FadeUp>

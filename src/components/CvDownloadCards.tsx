@@ -3,7 +3,7 @@ import { FadeUp } from './ui'
 export function CvDownloadCards({ academicHref }: { academicHref: string }) {
   return (
     <FadeUp>
-      <section className="mb-14" aria-labelledby="cv-downloads-title">
+      <section className="cv-downloads mb-14" aria-labelledby="cv-downloads-title">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-[.72rem] font-semibold text-accent">السير الذاتية</p>

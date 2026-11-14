@@ -9312,10 +9312,10 @@ body {
   .en-hero h1 { font-size: clamp(2.3rem, 5.4vw, 3.4rem); }
   .en-hero > p:nth-child(3) { font-size: clamp(1.3rem, 2.8vw, 1.8rem); }
   .en-about > :nth-child(3) { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin-top: 0; }
-  .en-impact > p { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
-  .en-impact .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
-  .en-impact .grid > :nth-child(3) { grid-column: 4; }
-  .en-impact .grid > :nth-child(4) { grid-column: 5; }
+  .duo-seals > p { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
+  .duo-seals .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
+  .duo-seals .grid > :nth-child(3) { grid-column: 4; }
+  .duo-seals .grid > :nth-child(4) { grid-column: 5; }
   .en-selected > ul { grid-row: 1; margin-top: 0; }
   .en-selected > div { flex-direction: column; align-items: flex-start; }
   .en-home .duo-pair { align-items: start; }
@@ -9427,6 +9427,30 @@ body {
   .impact-chains { max-width: none; }
   .impact-chains .impact-chain { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 0; }
   .impact-chain > ol { grid-column: 3; }
+
+  /* ٣٠) السيرة (/cv): العبارة على اليمنى وتمهيدها ومجالاتها على اليسرى؛
+     البصمة المعرفية رسماً ونصاً؛ أختام الأثر اثنان في كل صفحة؛ النسخ
+     المخصّصة (PDF) على اليمنى وعنوانها على اليسرى؛ التعليم والتدريس
+     متقابلان، والمطويّات فهرس من عمودين يلتقيان عند الكعب. */
+  .cv-hero { align-items: end; }
+  .cv-hero > :nth-child(n+3) { grid-column: 3; }
+  .cv-hero > :nth-child(3) { grid-row: 1 / span 2; margin-top: 0; }
+  .cv-hero > :nth-child(4) { grid-row: 3; }
+  .cv-hero h1 { font-size: clamp(2.2rem, 5vw, 3.3rem); }
+  .duo-book section[aria-labelledby="knowledge-fingerprint-title"] > div { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 0; }
+  .duo-book section[aria-labelledby="knowledge-fingerprint-title"] > div > :last-child { grid-column: 3; }
+  .duo-seals__note { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
+  .duo-seals__note > p { margin-inline: 0; }
+  .cv-body { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: start; }
+  .cv-body > * { grid-column: 1 / -1; min-width: 0; }
+  .cv-body > .site-fade-up:has(> .cv-open) { grid-column: 1; }
+  .cv-body > .site-fade-up:has(> .cv-open) + .site-fade-up:has(> .cv-open) { grid-column: 3; }
+  .cv-downloads { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: center; }
+  .cv-downloads > div:first-child { grid-column: 3; flex-direction: column; align-items: flex-start; margin-bottom: 0; }
+  .cv-downloads > .grid { grid-column: 1; grid-row: 1; }
+  .cv-folds { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--duo-spine); align-items: start; }
+  .cv-folds > * { min-width: 0; }
+  .cv-folds .grid { grid-template-columns: minmax(0, 1fr); }
 
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */

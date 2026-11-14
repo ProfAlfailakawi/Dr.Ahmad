@@ -9826,4 +9826,27 @@ body {
   .search-palette-shortcuts, .search-palette-head { padding-right: var(--duo-widget-inset); }
   /* كلمات الغلاف الزخرفية (وعي، مستقبل…) لا تقع تحت صندوق الودجت. */
   .human-core__words { clip-path: polygon(0 0, calc(100% - var(--duo-widget-w)) 0, calc(100% - var(--duo-widget-w)) var(--duo-widget-h), 100% var(--duo-widget-h), 100% 100%, 0 100%); }
+  /* استوديو المحاضرات: رابط اسم الدكتور في رأس البطاقة يترك يمينه للودجت. */
+  .live-card > a:first-child, .live-card > div:nth-child(2) { margin-right: calc(var(--duo-widget-w) - 2.5rem); }
+  /* الراديو: شارة «على الهواء» وأزرار اللهجة تضيق جانب الودجت. */
+  .radio-stage .radio-onair, .radio-stage .radio-variants, .radio-stage .radio-now { padding-right: calc(var(--duo-widget-w) - 1.5rem); }
+  /* الطولي الداخلي وغيره: أول كتلة في الصفحة (الرأس) تضيق جانب الودجت بدل أن يمر عنوان تحته. */
+  .signature-page > :first-child { padding-right: max(1.5rem, var(--duo-widget-inset)); }
+  /* قارئ المقال: ترويسة المقال وصف أدوات القراءة تضيق جانب الودجت. */
+  .article-spread__head, .article-spread__desk { padding-right: calc(var(--duo-widget-w) - 1rem); }
+}
+/* الكتاب: الودجت على الصفحة اليمنى وحدها. حشوُ الشبكة نفسها يزيح الكعب، فيُضيَّق ابنُ العمود الأول فقط
+   (رأس الصفحة والشبكات ذات الصفحتين)، وما ليس شبكة صفحتين يضيق كله. */
+@media screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape) {
+  /* حشو الرأس العام يزيح الكعب هنا، فيُصفَّر ويُضيَّق ابن العمود الأول فقط. */
+  .page-head-scene__inner { padding-right: 0; }
+  .signature-page > :first-child:not(:has(.duo-sheet, .page-head-scene__inner > .site-fade-up)) { padding-right: max(1.5rem, var(--duo-widget-inset)); }
+  .page-head-scene__inner:dir(rtl) > .site-fade-up > :not(.page-head-scene__sub),
+  .page-head-scene__inner:dir(ltr) > .site-fade-up > .page-head-scene__sub,
+  .signature-page > :first-child:dir(rtl) .duo-sheet > :not(.duo-sheet__left),
+  .signature-page > :first-child:dir(ltr) .duo-sheet > .duo-sheet__left { padding-right: var(--duo-widget-inset); }
+  /* قارئ المقال: الترويسة أول ما في العمود الأول (الصفحة اليمنى). */
+  .article-spread__head, .article-spread__desk { padding-right: var(--duo-widget-inset); }
+  /* بوابة الإنجليزية: قائمة الأبواب على اليمين. */
+  .ent-stage > .ent-doors { margin-right: var(--duo-widget-inset); }
 }

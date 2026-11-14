@@ -2,8 +2,8 @@
 // to rebuild, the digital-divide balance, a classroom role-play and a branching teacher's path.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, PAGE_H, INK, ease, easeBack, stag, clamp01, label, sprite, glow, goldMat, mat, glossy, paperMat, shadowed, lightTube } from './kit.js?v=37';
-import { inked, printFrame } from './pencil.js?v=37';
+import { P, PAGE_H, INK, ease, easeBack, stag, clamp01, label, sprite, glow, goldMat, mat, glossy, paperMat, shadowed, lightTube } from './kit.js?v=38';
+import { inked, printFrame } from './pencil.js?v=38';
 
 const TAU = Math.PI * 2;
 const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);

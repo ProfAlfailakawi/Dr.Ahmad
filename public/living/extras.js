@@ -3,7 +3,7 @@
 //   bridge(): two facing pages talk. Moving from one page to the page opposite it draws a bridge of light across the gutter, carrying the first page's title over.
 //   paperVideo: the page's YouTube video plays on the paper itself, standing on the page and following it, instead of leaving the book.
 import * as THREE from 'three';
-import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=37';
+import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=38';
 
 // ------------------------------------------------------------ visits (kept on the device only)
 const VKEY = 'living-encyclopedia:visits';
@@ -184,7 +184,7 @@ export function liftOff({ parent, frame, rect, fx, color = 0xffd27a }) {
     update(dt) {
       t += dt; const k = clamp01(t / (globalThis.__liftDur || 1.5)), e = ease(k);   // __liftDur: local checks only
       U.uK.value = k;
-      holder.position.y = 0.002 + e * 0.2; holder.rotation.x = -0.25 * e; holder.scale.setScalar(1 - 0.12 * e);
+      holder.position.y = 0.002 + e * 0.2; holder.rotation.x = -0.25 * e; holder.scale.setScalar(1 + 0.03 * e);
       if (!sparked && k > 0.45) { sparked = true; fx.burst(new THREE.Vector3(cx, 0.14, cz), color, 22, 0.42, 0.026); }
       if (k >= 1) { parent.remove(holder); geo.dispose(); mesh.material.dispose(); frame.tex.dispose(); return false; }
       return true;

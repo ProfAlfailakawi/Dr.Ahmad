@@ -15,6 +15,7 @@
 | كتاب طولي (C) | عرض 640–720 وارتفاع ≥ 520 (669×867، 669×520) |
 | كتاب عرضي (D) | عرض 880–1000 وارتفاع ≥ 520 ونسبة ≥ 7:5 (951×585). لا يدخل آيباد 768×1024 ولا 1024×768 |
 | مفصل حقيقي | `@media (horizontal-viewport-segments: 2)` يفعّل الكتاب أياً كان المقاس، ويصير عرض الكعب `env(viewport-segment-left 1 0) − env(viewport-segment-right 0 0) + 16px` (حدّه الأدنى 32px) |
+| الطباعة | كل الاستعلامات أعلاه مقيّدة بـ `screen`: عرض صفحة A4 (≈658px) يقع في 640–720، فبغير القيد كان المقال المطبوع/PDF يُضغط في نصف الصفحة. مقيس: في `print` يعود `.article-spread` إلى `block` والمكتب إلى `static` (مراجعة Codex) |
 | حاسوب/عريض قصير (E، B) | ارتفاع ≤ 480 ونسبة ≥ 3:2: رأس الصفحة سطر من عمودين، والصفحات ذات المهمتين (التواصل، البحث، 404، الكتاب) عمودان، وأدوات المقال شريط سفلي ثابت يُحجز له حشو |
 
 الملفات: [src/index.css](../src/index.css) (القسم «iPhone Duo — الكتاب المفتوح»)، [src/pages/mihwar.css](../src/pages/mihwar.css) (داخل Shadow DOM)، وسطر واحد في [src/beauty.css](../src/beauty.css) (متغيّر `--floating-right` بدل قيمة ثابتة كي لا نكدّس `!important`). وفي الصفحات: أسماء أصناف فقط (`article-spread__*`، `contact-spread`، `not-found-spread`، `book-spread`، `search-spread`، `legal-spread`، `duo-book`).

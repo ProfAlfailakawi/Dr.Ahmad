@@ -8801,7 +8801,7 @@ html, body, #root { min-width: 0; max-width: 100%; }
 /* الغلاف الطباعي للبطل: عمودان من 600px بدل تكرار تخطيط الهاتف.
    الصورة على اليمين والنص على اليسار كما في md، والبطاقة تمتد عبر العمودين.
    والمطوي عرضياً (594×368) عريض قصير: عمودان أيضاً، لا صورة تحت الحافة. */
-@media (min-width: 600px) and (max-width: 767px), (min-width: 540px) and (max-width: 767px) and (max-height: 480px) {
+@media (min-width: 600px) and (max-width: 767px), screen and (min-width: 540px) and (max-width: 767px) and (max-height: 480px) {
   .human-core { align-items: center; padding-top: 5.5rem; padding-bottom: 3.5rem; }
   .human-core .human-core__grid {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
@@ -8897,9 +8897,10 @@ body {
    والسياق على اليسرى. لا نص ولا زر يعبر الكعب (المركز ± 16px).
    كل شيء CSS: لا يُعاد تركيب مكوّن عند الطي، فيبقى الصوت والتحديد والتمرير.
    ============================================================ */
-@media (min-width: 640px) and (max-width: 720px) and (min-height: 520px),
-       (min-width: 880px) and (max-width: 1000px) and (min-height: 520px) and (min-aspect-ratio: 7/5),
-       (horizontal-viewport-segments: 2) {
+/* screen فقط: عرض صفحة A4 المطبوعة (≈658px) يقع في 640–720، والطباعة عمود واحد. */
+@media screen and (min-width: 640px) and (max-width: 720px) and (min-height: 520px),
+       screen and (min-width: 880px) and (max-width: 1000px) and (min-height: 520px) and (min-aspect-ratio: 7/5),
+       screen and (horizontal-viewport-segments: 2) {
   :root {
     --duo-spine: 32px;
     /* الكعب: خط شعري في المنتصف وظل طيّ خفيف على جانبيه. */
@@ -9141,14 +9142,14 @@ body {
    تُفعَّل صفحتا «الكتاب المفتوح» أعلاه أياً كان المقاس، ويأخذ الكعب عرض
    المفصل الحقيقي (المسافة بين المقطعين) فيقع عليه تماماً. المقاطع فيزيائية:
    (0 0) اليسرى و(1 0) اليمنى. دون الـ API لا تُطبَّق هذه الكتلة أبداً. */
-@media (horizontal-viewport-segments: 2) {
+@media screen and (horizontal-viewport-segments: 2) {
   :root { --duo-spine: max(32px, calc(env(viewport-segment-left 1 0, 0px) - env(viewport-segment-right 0 0, 0px) + 16px)); }
 }
 
 /* وضع الحاسوب (عريض قصير: 951×350، 600×350، 594×368، والآيفون عرضياً):
    المحتوى فوق، وأدوات القراءة في شريط سفلي ثابت لا يغطي النص — يُحجز له
    حشو في أسفل المقال. الجهة اليمنى من الشريط متروكة للأزرار العائمة. */
-@media (max-height: 480px) and (min-aspect-ratio: 3/2) {
+@media screen and (max-height: 480px) and (min-aspect-ratio: 3/2) {
   .article-spread__desk {
     position: fixed;
     z-index: 200;
@@ -9176,7 +9177,7 @@ body {
 /* العريض القصير (حاسوب 951×350 و600×350، مطوي عرضياً 594×368): رأس الصفحة
    الداخلية كان يملأ الشاشة الأولى كلها. يصير سطراً تحريرياً من عمودين —
    العنوان يميناً والوصف يساراً — فيظهر المحتوى تحته من أول نظرة. */
-@media (min-width: 540px) and (max-height: 480px) and (min-aspect-ratio: 3/2) {
+@media screen and (min-width: 540px) and (max-height: 480px) and (min-aspect-ratio: 3/2) {
   .page-head-scene__inner > .site-fade-up {
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);

@@ -92,7 +92,7 @@ function PathsIndex() {
   })
 
   return (
-    <Page className="content-learning-paths page-journey">
+    <Page className="content-learning-paths page-journey duo-book">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'ItemList',
@@ -108,7 +108,7 @@ function PathsIndex() {
 
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
-          <ol className="grid gap-5 md:grid-cols-2 md:gap-6">
+          <ol className="duo-pair grid gap-5 md:grid-cols-2 md:gap-6">
             {paths.map((path, index) => {
               const done = completedSteps(path, progress)
               const next = nextStepIndex(path, done)
@@ -153,7 +153,7 @@ function PathsIndex() {
             })}
           </ol>
 
-          <p className="mt-10 max-w-2xl text-[.78rem] font-light leading-[1.9] text-soft">
+          <p className="duo-half mt-10 max-w-2xl text-[.78rem] font-light leading-[1.9] text-soft">
             يُحفظ تقدّمك في هذا المتصفح وحده، ولا يُرسل إلى أي مكان. ولمن يريد أن يرى كيف تطوّرت فكرةٌ بعينها عبر السنوات، فهناك{' '}
             <Link to="/thought-paths" className="font-medium text-accent hover:underline">مسار الفكرة</Link>.
           </p>
@@ -215,7 +215,7 @@ function PathDetail({ path }: { path: LearningPath }) {
   const markDone = (step: LearningStep, value: boolean) => setStepDone(live.id, stepKey(step), value)
 
   return (
-    <Page className="content-learning-paths page-journey">
+    <Page className="content-learning-paths page-journey duo-book">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'Course',
@@ -230,7 +230,7 @@ function PathDetail({ path }: { path: LearningPath }) {
       <ThoughtSystemNav />
 
       <section className="px-6 py-12 md:px-11 md:py-16">
-        <div className="mx-auto max-w-3xl">
+        <div className="path-spread mx-auto max-w-3xl">
           <FadeUp>
             <Link to="/paths" viewTransition className="inline-flex min-h-11 items-center text-[.82rem] text-soft transition-colors hover:text-accent"><Arrow kind="back" />كل المسارات</Link>
             <p className="mt-6 text-[.9rem] font-light leading-[1.9] text-soft">{live.audience}</p>

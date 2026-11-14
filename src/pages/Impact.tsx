@@ -141,7 +141,7 @@ export default function Impact() {
   ].filter((item) => item.value > 10)
 
   return (
-    <Page className="content-impact page-journey">
+    <Page className="content-impact page-journey duo-book">
       <PageHead
         label="من الفكرة إلى الميدان"
         title="سجل الأثر الموثق."
@@ -150,7 +150,7 @@ export default function Impact() {
       <ThoughtSystemNav />
 
       <section className="border-b border-hair px-6 py-5 md:px-11">
-        <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3">
+        <div className="impact-lead mx-auto flex max-w-shell flex-wrap items-center justify-between gap-3">
           <p className="text-[.78rem] leading-relaxed text-soft">للقراءة الكلية قبل الدخول في المسارات التفصيلية.</p>
           <Link to="/thought" className="rounded-full border border-hair px-4 py-2 text-[.76rem] font-semibold text-accent transition-colors hover:border-accent">فكر د. أحمد في لقطة واحدة<Arrow /></Link>
         </div>
@@ -159,7 +159,7 @@ export default function Impact() {
       <ImpactMap />
 
       <section className="border-b border-hair px-6 py-7 md:px-11">
-        <div className="mx-auto flex max-w-shell flex-wrap items-center justify-between gap-6">
+        <div className="impact-stats mx-auto flex max-w-shell flex-wrap items-center justify-between gap-6">
           {headlineStats.length > 0 && (
             <ul className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
               {headlineStats.map((item) => (
@@ -182,7 +182,7 @@ export default function Impact() {
           </div>
         </div>
         {yearSummary.length > 1 && (
-          <div className="impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-2" {...yearsDraw.props}>
+          <div className="impact-years impact-no-print mx-auto mt-5 flex max-w-shell flex-wrap items-center gap-2" {...yearsDraw.props}>
             <span className="text-[.72rem] font-semibold text-soft">حصاد السنوات:</span>
             {yearSummary.map(([year, count], barIndex) => (
               <button
@@ -209,7 +209,7 @@ export default function Impact() {
       </section>
 
       <section className="px-6 py-14 md:px-11 md:py-20">
-        <div className="mx-auto max-w-4xl">
+        <div className="impact-chains mx-auto max-w-4xl">
           {loading && !chains.length ? (
             <div className="py-20"><ComposeScene lines={["تُراجع الأدلة والروابط…"]} /></div>
           ) : visible.length === 0 ? (
@@ -221,7 +221,7 @@ export default function Impact() {
                 const nodes = filter === 'all' ? chain.nodes : chain.nodes.filter((node) => node.kind === 'origin' || nodeMatchesFilter(node, filter))
                 return (
                   <FadeUp key={chain.key} delay={Math.min(chainIndex * .035, .2)}>
-                    <article className="grid gap-7 py-9 md:grid-cols-[minmax(0,.8fr)_minmax(0,1.35fr)] md:gap-12 md:py-11">
+                    <article className="impact-chain grid gap-7 py-9 md:grid-cols-[minmax(0,.8fr)_minmax(0,1.35fr)] md:gap-12 md:py-11">
                       <header>
                         <span className="text-[.72rem] font-semibold text-accent">رحلة أثر{chain.year ? ` · ${chain.year}` : ''}</span>
                         {chain.originTo ? (

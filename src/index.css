@@ -9214,6 +9214,10 @@ body {
     mask-image: none;
   }
   .duo-book .duo-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: var(--duo-spine) !important; }
+  /* ‎.duo-quad: أربع لوحات صغيرة (أرقام) — اثنتان في كل صفحة. */
+  .duo-book .duo-quad { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: .75rem; }
+  .duo-book .duo-quad > :nth-child(4n+3) { grid-column: 4; }
+  .duo-book .duo-quad > :nth-child(4n+4) { grid-column: 5; }
   .duo-book :is(.duo-stack, .duo-pair) > * { flex: none; width: auto; max-width: none; min-width: 0; }
   /* الشبكة ذات الأعمدة الثلاثة (صفحة | كعب | صفحة)؛ ‎.duo-sheet__right و__left
      تحددان صفحة الابن، والرأسي ثابت على صفحة السياق أثناء التصفح. */
@@ -9225,6 +9229,29 @@ body {
   .duo-sheet > * { grid-column: 1; min-width: 0; }
   .duo-sheet > .duo-sheet__left { grid-column: 3; }
   .duo-sheet .site-pagination { width: auto; }
+  /* ‎.duo-half: كتلة قصيرة (بحث، عبارة) تجلس في الصفحة اليمنى بعرضها.
+     ‎.duo-chapter: فصل طويل — رأسه (أول ابن) على اليسرى ثابتاً، وما بعده
+     على اليمنى. */
+  .duo-half { width: calc(50% - var(--duo-spine) / 2); max-width: none; margin-inline: 0; }
+  .duo-chapter { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; max-width: none; }
+  .duo-chapter > * { grid-column: 1; min-width: 0; }
+  .duo-chapter > :first-child { grid-column: 3; grid-row: 1 / span 30; position: sticky; top: 5.5rem; }
+  .duo-chapter > :nth-child(2) { margin-top: 0; }
+  .duo-chapter > :first-child > .flex { flex-direction: column; align-items: flex-start; }
+  .duo-chapter > :nth-child(2) > :first-child { margin-top: 0; }
+  .duo-chapter > :first-child h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
+  .duo-half [role="tablist"] { flex-wrap: wrap; row-gap: .25rem; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+
+  /* ٣٣) مسار تعلّم (/paths/:id): الجمهور وبطاقة التقدّم والخطوة التالية على
+     اليسرى ثابتتين، والخطوات على اليمنى ثم «مسارات أخرى». (فهرس /paths:
+     بطاقتان متقابلتان.) */
+  .path-spread { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto auto 1fr; max-width: none; align-items: start; }
+  .path-spread > * { grid-column: 1; min-width: 0; }
+  .path-spread > :nth-child(1) { grid-column: 3; grid-row: 1; padding-inline-start: .25rem; }
+  .path-spread > :nth-child(2) { grid-column: 3; grid-row: 2 / 4; position: sticky; top: 5.5rem; }
+  .path-spread > :nth-child(3) { grid-row: 1 / 4; margin-top: 0; }
+  .path-spread > :nth-child(2) .flex { flex-direction: column; align-items: flex-start; }
+  .path-spread ul.grid { grid-template-columns: minmax(0, 1fr); }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 
@@ -9312,10 +9339,10 @@ body {
   .en-hero h1 { font-size: clamp(2.3rem, 5.4vw, 3.4rem); }
   .en-hero > p:nth-child(3) { font-size: clamp(1.3rem, 2.8vw, 1.8rem); }
   .en-about > :nth-child(3) { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin-top: 0; }
-  .en-impact > p { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
-  .en-impact .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
-  .en-impact .grid > :nth-child(3) { grid-column: 4; }
-  .en-impact .grid > :nth-child(4) { grid-column: 5; }
+  .duo-seals > p { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
+  .duo-seals .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
+  .duo-seals .grid > :nth-child(3) { grid-column: 4; }
+  .duo-seals .grid > :nth-child(4) { grid-column: 5; }
   .en-selected > ul { grid-row: 1; margin-top: 0; }
   .en-selected > div { flex-direction: column; align-items: flex-start; }
   .en-home .duo-pair { align-items: start; }
@@ -9395,6 +9422,96 @@ body {
   .ency-map > .site-fade-up:first-child + * { margin-top: 0; }
   .ency-map > :nth-child(2) { margin-top: 0; }
   #encyclopedia-teaching-kit > div { width: calc(50% - var(--duo-spine) / 2); margin-inline: 0; max-width: none; }
+
+  /* ٢٨) لوحة التحكم (/admin، لوحة «اليوم»): التحية على اليمنى والأدوات على
+     اليسرى؛ «ماذا تريد؟» على اليمنى، وقرارات اليوم ونبض الموقع على اليسرى؛
+     قائمة المجال المطوية في الصفحة اليسرى، وشريط المجالات السفلي اثنان في
+     كل صفحة. (الأدوات الأخرى تبقى عموداً واحداً بلا كعب مرسوم.) */
+  .admin-book .admin-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: center; }
+  .admin-book .admin-head > :last-child { grid-column: 3; justify-content: flex-end; }
+  .admin-book .admin-shell section > details:first-child { width: calc(50% - var(--duo-spine) / 2); margin-inline-start: auto; }
+  .admin-today { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 1.25rem 0; align-items: start; }
+  .admin-today > * { grid-column: 3; min-width: 0; }
+  .admin-today > :first-child { grid-column: 1; grid-row: 1 / span 2; }
+  .admin-today > section:last-child > .grid { grid-template-columns: minmax(0, 1fr); }
+  .admin-today > section:last-child > h3 { font-size: 1.05rem; }
+  .admin-today > section:last-child > .grid > button { padding-inline: 0; border-top: 1px solid var(--c-hair); }
+  .admin-today > section:last-child > .grid > button:first-child { border-top: 0; }
+  .admin-dock-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: .375rem; }
+  .admin-dock-grid > :nth-child(3) { grid-column: 4; }
+  .admin-dock-grid > :nth-child(4) { grid-column: 5; }
+
+  /* ٢٩) سجل الأثر (/impact): كل رحلة أثر صفحتان — الأصل (العنوان) على
+     اليمنى وسلسلة أدلته على اليسرى؛ الأرقام على اليمنى والتصفية على اليسرى،
+     وحصاد السنوات في الصفحة اليسرى. */
+  .impact-lead, .impact-stats { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); }
+  .impact-lead > :last-child, .impact-stats > :last-child { grid-column: 3; justify-self: start; }
+  .impact-lead > :only-child, .impact-stats > :only-child { grid-column: 1; }
+  .impact-stats > ul { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); display: grid; width: auto; }
+  .impact-stats > ul > li { min-width: 0; }
+  .impact-stats > [role="tablist"] { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .impact-years { max-width: none; padding-inline-start: calc(50% + var(--duo-spine) / 2); }
+  .impact-chains { max-width: none; }
+  .impact-chains .impact-chain { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 0; }
+  .impact-chain > ol { grid-column: 3; }
+
+  /* ٣٠) السيرة (/cv): العبارة على اليمنى وتمهيدها ومجالاتها على اليسرى؛
+     البصمة المعرفية رسماً ونصاً؛ أختام الأثر اثنان في كل صفحة؛ النسخ
+     المخصّصة (PDF) على اليمنى وعنوانها على اليسرى؛ التعليم والتدريس
+     متقابلان، والمطويّات فهرس من عمودين يلتقيان عند الكعب. */
+  .cv-hero { align-items: end; }
+  .cv-hero > :nth-child(n+3) { grid-column: 3; }
+  .cv-hero > :nth-child(3) { grid-row: 1 / span 2; margin-top: 0; }
+  .cv-hero > :nth-child(4) { grid-row: 3; }
+  .cv-hero h1 { font-size: clamp(2.2rem, 5vw, 3.3rem); }
+  .duo-book section[aria-labelledby="knowledge-fingerprint-title"] > div { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 0; }
+  .duo-book section[aria-labelledby="knowledge-fingerprint-title"] > div > :last-child { grid-column: 3; }
+  .duo-seals__note { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
+  .duo-seals__note > p { margin-inline: 0; }
+  .cv-body { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: start; }
+  .cv-body > * { grid-column: 1 / -1; min-width: 0; }
+  .cv-body > .site-fade-up:has(> .cv-open) { grid-column: 1; }
+  .cv-body > .site-fade-up:has(> .cv-open) + .site-fade-up:has(> .cv-open) { grid-column: 3; }
+  .cv-downloads { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: center; }
+  .cv-downloads > div:first-child { grid-column: 3; flex-direction: column; align-items: flex-start; margin-bottom: 0; }
+  .cv-downloads > .grid { grid-column: 1; grid-row: 1; }
+  .cv-folds { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--duo-spine); align-items: start; }
+  .cv-folds > * { min-width: 0; }
+  .cv-folds .grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* ٣١) اللقاءات القادمة (/upcoming): العنوان على اليمنى والدعوة على اليسرى؛
+     المواعيد بطاقات على اليمنى (التاريخ فوق العنوان)، واللقاءات المنقضية
+     والنشرة على اليسرى. */
+  .upcoming-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: end; }
+  .upcoming-head > :last-child { grid-column: 3; justify-self: start; }
+  .upcoming-body { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto auto 1fr; max-width: none; align-items: start; }
+  .upcoming-body > * { grid-column: 1; min-width: 0; }
+  .upcoming-body > :first-child { grid-row: 1 / span 3; }
+  .upcoming-body > .site-fade-up:has(> details) { grid-column: 3; grid-row: 1; }
+  .upcoming-body > .site-fade-up:last-child { grid-column: 3; grid-row: 2; }
+  .upcoming-body > .site-fade-up:has(> details) > details, .upcoming-body > .site-fade-up:last-child > div { margin-top: 0; }
+  .upcoming-body > .site-fade-up:has(> details) + .site-fade-up > div { margin-top: 1.5rem; }
+  .upcoming-body #upcoming-events-list .group { grid-template-columns: minmax(0, 1fr); gap: .6rem; }
+  .upcoming-body #upcoming-events-list .group > :first-child { border-left: 0; padding-left: 0; border-bottom: 1px solid var(--c-hair); padding-bottom: .6rem; }
+
+  /* ٣٢) جواز البحث (/research/:slug): غلاف البحث (العنوان والدوريّة) وفهرس
+     طبقاته الثلاث على اليسرى، والفهرس ثابت أثناء القراءة؛ الطبقات نفسها
+     على اليمنى ثم «داخل المشروع» والبحث التالي. شبكات البطاقات داخل الطبقة
+     عمود واحد في صفحتها. */
+  .paper-spread { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto auto 1fr; max-width: none; align-items: start; }
+  .paper-spread > * { grid-column: 1; min-width: 0; }
+  .paper-spread > :first-child { grid-column: 1 / -1; }
+  .paper-spread > :nth-child(2) { grid-column: 3; grid-row: 2; }
+  .paper-spread > .research-section-nav { grid-column: 3; grid-row: 3; position: sticky; top: 5rem; margin: 1.25rem 0 0; padding-inline: 0; border-bottom: 0; background: transparent; backdrop-filter: none; }
+  .paper-spread > .research-section-nav nav { flex-direction: column; gap: 0; }
+  .paper-spread > .research-section-nav nav > button { flex-direction: row; justify-content: flex-start; gap: .6rem; text-align: start; border-bottom: 1px solid var(--c-hair); }
+  .paper-spread > .research-evidence-thread-wrap { grid-row: 2 / span 2; margin-top: 1.5rem; }
+  .paper-spread > :nth-child(2) > .research-hero { margin-top: 1.5rem; }
+  .paper-spread .research-hero h1 { font-size: clamp(1.5rem, 3.4vw, 2.1rem); }
+  .paper-spread .research-evidence-thread-wrap .grid { grid-template-columns: minmax(0, 1fr); }
+  .paper-spread details .grid { grid-template-columns: minmax(0, 1fr); }
+  /* «الخطوة التالية» أسفل الصفحات: سطر في الصفحة اليمنى. */
+  .duo-book .next-step-thread { width: calc(50% - var(--duo-spine) / 2); }
 
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */

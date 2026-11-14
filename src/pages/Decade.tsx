@@ -222,7 +222,7 @@ export default function Decade() {
   }, [articles, bodies, idea, remoteIdeaLife, exactArticleSlug, mode])
 
   return (
-    <Page className="content-decade page-journey">
+    <Page className="content-decade page-journey duo-book">
       <PageHead
         label={mode === 'predictions' ? 'الزمن يراجع النص' : (idea ? 'رحلة فكرة' : 'السيرة الفكرية الحيّة')}
         title={mode === 'predictions' ? 'التنبؤات والمراجعات.' : (idea ? `«${idea}» عبر السنوات.` : 'وثيقة العقد.')}
@@ -251,7 +251,7 @@ export default function Decade() {
       {/* حقل الفكرة: يكتب القارئ «الامتحان» أو «العيال» فيرى رحلتها وحدها.
           والاقتراحات مأخوذةٌ من أكثر ما كتب فيه الدكتور، فلا يبدأ من فراغ. */}
       <section className="border-b border-hair px-6 py-8 md:px-11">
-        <div className="mx-auto max-w-shell">
+        <div className="duo-half mx-auto max-w-shell">
           <form
             onSubmit={(event) => {
               event.preventDefault()
@@ -307,7 +307,7 @@ export default function Decade() {
           <div className="px-6 py-24 text-center text-soft">لم يُرصد في هذا النطاق توقعٌ صريح يستحق فتح سجلٍ له.</div>
         ) : (
           <section className="px-6 py-14 md:px-11 md:py-20">
-            <div className="mx-auto max-w-3xl">
+            <div className="duo-chapter mx-auto max-w-3xl">
               <FadeUp>
                 <div className="flex flex-wrap items-end justify-between gap-5 border-b border-hair pb-7">
                   <div>
@@ -420,7 +420,7 @@ export default function Decade() {
       ) : (
         <>
           <section className="border-b border-hair px-6 py-14 md:px-11 md:py-20">
-            <div className="mx-auto max-w-shell">
+            <div className="duo-half mx-auto max-w-shell">
               <FadeUp>
                 <p className="max-w-3xl font-display text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[1.8] text-ink">
                   من {document.firstYear} إلى {document.latestYear}: {document.span >= 10 ? 'أكثر من عشر سنوات' : arabicCountPhrase(document.span, YEAR_IMPACT_FORMS, number.format)} تقرأ نفسها من خلال {arabicCountPhrase(document.articles.length, ARTICLE_AFTER_PREPOSITION_FORMS, number.format)}، لا لتختصر الفكرة في رقم، بل لتكشف حركتها.
@@ -430,12 +430,12 @@ export default function Decade() {
           </section>
 
           <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
-            <div className="mx-auto max-w-shell">
+            <div className="duo-chapter mx-auto max-w-shell">
               <FadeUp>
                 <span className="text-[.78rem] font-semibold text-accent">{chapterCountWord(document.stages.length)}</span>
                 <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-ink">كيف تحرّكت الكتابة؟</h2>
               </FadeUp>
-              <div className={`mobile-card-rail mt-10 grid gap-px overflow-hidden rounded-2xl border border-hair bg-hair ${document.stages.length >= 3 ? 'lg:grid-cols-3' : document.stages.length === 2 ? 'lg:grid-cols-2' : ''}`}>
+              <div className={`mobile-card-rail duo-stack mt-10 grid gap-px overflow-hidden rounded-2xl border border-hair bg-hair ${document.stages.length >= 3 ? 'lg:grid-cols-3' : document.stages.length === 2 ? 'lg:grid-cols-2' : ''}`}>
                 {document.stages.map((stage, index) => (
                   <FadeUp key={stage.range} delay={index * 0.06} className="bg-canvas p-7 md:p-8">
                     <div className="flex items-center justify-between gap-4 text-[.76rem]">
@@ -461,7 +461,7 @@ export default function Decade() {
           </section>
 
           <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
-            <div className="mx-auto grid max-w-shell gap-16 lg:grid-cols-[.8fr_1.2fr]">
+            <div className="duo-pair mx-auto grid max-w-shell gap-16 lg:grid-cols-[.8fr_1.2fr]">
               <div>
                 <FadeUp>
                   <span className="text-[.78rem] font-semibold text-accent">الموضوعات المُلحّة</span>
@@ -507,7 +507,7 @@ export default function Decade() {
           </section>
 
           <section className="px-6 py-16 md:px-11 md:py-24">
-            <div className="mx-auto max-w-3xl">
+            <div className="duo-chapter mx-auto max-w-3xl">
               <FadeUp>
                 <span className="text-[.78rem] font-semibold text-accent">الخط الزمني السنوي</span>
                 <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-ink">العقد، سنةً سنة.</h2>

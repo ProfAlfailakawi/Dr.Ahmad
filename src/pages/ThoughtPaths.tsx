@@ -239,7 +239,7 @@ export default function ThoughtPaths() {
   }
 
   return (
-    <Page className="content-thought-paths page-journey">
+    <Page className="content-thought-paths page-journey duo-book">
       <PageHead
         label="قراءة عابرة للأنواع"
         title="مسار الفكرة."
@@ -248,7 +248,7 @@ export default function ThoughtPaths() {
       <ThoughtSystemNav />
 
       <section className="border-b border-hair px-6 py-10 md:px-11 md:py-12">
-        <div className="mx-auto max-w-shell">
+        <div className="duo-half mx-auto max-w-shell">
           {resumePath && (
             <button
               type="button"
@@ -284,7 +284,7 @@ export default function ThoughtPaths() {
           id="thought-path-panel"
           role="tabpanel"
           aria-labelledby={`tab-${active.id}`}
-          className="mx-auto max-w-3xl"
+          className="duo-chapter mx-auto max-w-3xl"
         >
           <FadeUp key={`${active.id}-head`}>
             <span className="text-[.78rem] font-medium text-soft">كيف بدأت الفكرة عندي… وكيف تطورت؟</span>

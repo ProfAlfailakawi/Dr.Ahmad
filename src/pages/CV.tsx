@@ -23,7 +23,7 @@ const SHOW_CITATION_IMPACT = false
 function Open({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <FadeUp>
-      <section className="border-b border-hair py-10">
+      <section className="cv-open border-b border-hair py-10">
         <h2 className="text-[.76rem] font-semibold uppercase text-accent">{title}</h2>
         <div className="mt-6">{children}</div>
       </section>
@@ -97,11 +97,11 @@ export default function CV() {
   const publishedWords = articles.reduce((sum, article) => sum + article.words, 0)
 
   return (
-    <Page className="content-cv page-journey">
+    <Page className="content-cv page-journey duo-book">
       <header className="relative overflow-hidden border-b border-hair px-6 pb-14 pt-32 md:px-11 md:pb-16 md:pt-40">
         <div className="pointer-events-none absolute inset-y-0 left-[8%] hidden w-px bg-gradient-to-b from-transparent via-accent/20 to-transparent md:block" aria-hidden="true" />
         <div className="mx-auto max-w-shell">
-          <FadeUp>
+          <FadeUp className="cv-hero duo-sheet">
             <Label>د. أحمد حسين الفيلكاوي</Label>
             <h1 className="max-w-[900px] font-display text-[clamp(2.55rem,7vw,5.2rem)] font-bold leading-[1.25] text-ink">
               <Reveal>كلُّ ما تعلّمتُه…</Reveal>
@@ -125,7 +125,7 @@ export default function CV() {
       </header>
 
       <div className="px-6 py-14 md:px-11 md:py-16">
-        <div className="mx-auto max-w-shell">
+        <div className="cv-body mx-auto max-w-shell">
           {isAdmin && cvError && (
             <div role="alert" className="mb-8 rounded-xl border border-hair bg-wash px-5 py-4 text-[.85rem] leading-relaxed text-soft">
               تعذّر تحميل تعديلات السيرة حالياً، لذلك تُعرض النسخة الأصلية. يمكنك المحاولة مجدداً بعد التحقق من الاتصال.
@@ -138,7 +138,7 @@ export default function CV() {
           </FadeUp>
 
           {/* أثرٌ موثّق — أختام هادئة لا أرقام صاخبة */}
-          <FadeUp delay={0.04}>
+          <FadeUp delay={0.04} className="duo-seals">
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase text-accent">أثرٌ موثّق</p>
             <div className="cv-impact-grid mb-5 grid grid-cols-2 gap-6 min-[600px]:grid-cols-4" {...sealsDraw.props}>
               {[
@@ -156,7 +156,7 @@ export default function CV() {
                 </div>
               ))}
             </div>
-            <div className="mb-14 border-b border-hair pb-10 text-center">
+            <div className="duo-seals__note mb-14 border-b border-hair pb-10 text-center">
               <p className="mx-auto max-w-[560px] text-[.78rem] font-light leading-[1.8] text-soft">بعض الأعمال لا تنتهي عند النشر؛ يتتبع السجل انتقالها إلى البحث والحوار العام والتطبيق، مع طريق يعود إلى أصل كل محطة.</p>
               <Link to="/impact" reloadDocument className="mt-4 inline-flex min-h-10 items-center border-b border-accent/[.35] pb-1 text-[.78rem] font-semibold text-accent transition-colors hover:border-accent">استكشف مسارات الأثر الموثق ←</Link>
             </div>
@@ -200,7 +200,7 @@ export default function CV() {
 
           {/* ── التفاصيل: مطويّات ── */}
           <FadeUp>
-            <div className="mt-6">
+            <div className="cv-folds mt-6">
               <CvSectionEditor section="work" items={cv.work} isAdmin={isAdmin} onSave={saveSection}>
                 <Accordion title="الخبرات الوظيفية والاستشارية" count={cv.work.length}>
                   <ul className="mobile-card-rail grid gap-7 md:grid-cols-2">

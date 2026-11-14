@@ -1,9 +1,9 @@
 // The four door museums in one scene: the page that was recognised picks the door to start with, and four small numbered chips under the cabinet
 // switch to any other door. (The chapter-list pages of door 3 and door 4 are almost identical on paper, so the reader can always put it right with one touch.)
 import * as THREE from 'three';
-import { ease, clamp01, sprite } from '../../kit.js?v=34';
-import museum from './museum.js?v=34';
-import portal from './portal.js?v=34';
+import { ease, clamp01, sprite } from '../../kit.js?v=35';
+import museum from './museum.js?v=35';
+import portal from './portal.js?v=35';
 
 const NUM = ['١', '٢', '٣', '٤'], DOOR_COL = [0x6b6b3a, 0x7a1f1f, 0x3b7fc4, 0xc46a1d];
 export default function museums(ctx, startDoor, meta) {

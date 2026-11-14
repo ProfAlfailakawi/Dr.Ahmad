@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=34';
-import { Rig, hexCoin, badge, V, TAU } from '../lib/a5-kit.js?v=34';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite } from '../../kit.js?v=35';
+import { Rig, hexCoin, badge, V, TAU } from '../lib/a5-kit.js?v=35';
 
 export const meta = { free: true, center: [0.55, 0.57], typeLabel: 'بين عصرين' };
 

@@ -1,7 +1,7 @@
 // p166 — ADDIE as a staircase of five lit steps: a glowing output arrives, tap the step that produces it.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow, lightTube } from '../../kit.js?v=34';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, blob, at, shuffled, TAU, INK, GOLD } from '../lib/a2.js?v=34';
+import { P, ease, easeBack, clamp01, stag, glow, lightTube } from '../../kit.js?v=35';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, blob, at, shuffled, TAU, INK, GOLD } from '../lib/a2.js?v=35';
 
 export const meta = { free: true, center: [0.5, 0.54], typeLabel: 'لعبة ترتيب' };
 

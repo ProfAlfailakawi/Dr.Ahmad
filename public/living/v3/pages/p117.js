@@ -1,7 +1,7 @@
 // p117 — the iceberg of communication, cut by a pane of sea: a bright tip (words 7%), a cyan middle (voice 38%), a big warm base (body 55%); four skills at its feet.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=34';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU, INK, GOLD } from '../lib/a2.js?v=34';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=35';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, blob, at, TAU, INK, GOLD } from '../lib/a2.js?v=35';
 
 export const meta = { free: true, center: [0.5, 0.68], typeLabel: 'مجسّم تفاعلي' };
 

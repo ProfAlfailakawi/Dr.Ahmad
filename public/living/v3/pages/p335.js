@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, glowTexture } from '../../kit.js?v=34';
-import { inked } from '../../pencil.js?v=34';
-import { TAU, toAr, revealer, bumper, canvasTex, faceMat, fillText, hintGlow, pulseHint, burstAt } from '../lib/a6-kit.js?v=34';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, glowTexture } from '../../kit.js?v=35';
+import { inked } from '../../pencil.js?v=35';
+import { TAU, toAr, revealer, bumper, canvasTex, faceMat, fillText, hintGlow, pulseHint, burstAt } from '../lib/a6-kit.js?v=35';
 
 export const meta = { free: true, center: [0.5, 0.45], typeLabel: 'سباق زمني' };
 

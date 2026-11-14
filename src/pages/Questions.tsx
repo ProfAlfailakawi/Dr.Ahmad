@@ -131,13 +131,13 @@ export default function Questions() {
   const paged = usePagedList(filteredQuestions, 12, `${topicFilter || ''}:${filteredQuestions.length}`)
 
   return (
-    <Page className="content-questions page-journey">
+    <Page className="content-questions page-journey duo-book">
       <PageHead
         label="الزاوية المتجددة"
         title="سؤال يُقلق التعليم."
       />
       <section className="border-b border-hair px-6 py-16 md:px-11 md:py-24">
-        <div className="mx-auto max-w-shell">
+        <div className="question-now duo-sheet mx-auto max-w-shell">
           <FadeUp>
             <div className="mb-6 flex flex-wrap items-center gap-3 text-[.82rem] font-semibold text-accent">
               <span>السؤال الأحدث</span>
@@ -172,8 +172,8 @@ export default function Questions() {
         </div>
       </section>
       <section className="px-6 py-16 md:px-11 md:py-20">
-        <div className="mx-auto max-w-shell">
-          <FadeUp>
+        <div className="questions-archive duo-sheet mx-auto max-w-shell">
+          <FadeUp className="duo-sheet__left">
             <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
               <h3 className="font-display text-2xl font-bold text-ink">أسئلة سابقة</h3>
               {topics.length > 1 && (
@@ -199,7 +199,7 @@ export default function Questions() {
               )}
             </div>
           </FadeUp>
-          <div id="questions-list" tabIndex={0} className="mobile-card-rail scroll-mt-28 grid gap-5">
+          <div id="questions-list" tabIndex={0} className="mobile-card-rail duo-stack scroll-mt-28 grid gap-5">
             {paged.pageItems.map((question, index) => (
               <FadeUp key={question.key} delay={Math.min(index * 0.04, 0.3)}>
                 <article className="rounded-2xl border border-hair p-6">

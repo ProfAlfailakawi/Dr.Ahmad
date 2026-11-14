@@ -265,7 +265,7 @@ export default function Listen() {
   }
 
   return (
-    <Page className="content-listen page-journey">
+    <Page className="content-listen page-journey duo-book listen-spread">
       <PageHead label="استمع" title="مجلس الفكرة." />
 
       <section className="mx-auto max-w-shell px-6 md:px-11">

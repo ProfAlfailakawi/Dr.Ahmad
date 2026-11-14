@@ -8983,6 +8983,8 @@ body {
     grid-column: 3;
     grid-row: 1 / span 3;
     font-size: .98rem;
+    /* السطر الأخير يُحاذى إلى حافة الكعب تماماً؛ مسافة ربع سطر تبقيه في صفحته. */
+    padding-inline-start: .25rem;
   }
   .page-head-scene .scene-heading__title { max-width: none; --type-3xl: clamp(2rem, 4.6vw, 2.9rem); }
   .page-head-scene .scene-heading__rule { width: 100%; max-width: 100%; }
@@ -9194,6 +9196,219 @@ body {
   .human-core .human-core__visual { grid-column: 1; grid-row: 1 / span 2; }
   .human-core .human-core__copy { grid-column: 2; grid-row: 1; }
   .human-core .human-core__cvrow { grid-column: 2; grid-row: 2; }
+
+  /* ١٨) أدوات الصفحتين المشتركة. سكك البطاقات الأفقية في الهاتف (‎.mobile-card-rail
+     وأخواتها، بـ!important في استعلام ≤767px) كانت تمرّ فوق الكعب: في الكتاب
+     المفتوح تصير ‎.duo-stack عموداً داخل صفحة واحدة، و‎.duo-pair عمودين يلتقيان
+     عند الكعب (الفجوة بعرضه)، فتجلس كل بطاقة في صفحتها. */
+  .duo-book :is(.duo-stack, .duo-pair) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 1rem !important;
+    overflow: visible !important;
+    width: auto;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .duo-book .duo-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: var(--duo-spine) !important; }
+  .duo-book :is(.duo-stack, .duo-pair) > * { flex: none; width: auto; max-width: none; min-width: 0; }
+  /* الشبكة ذات الأعمدة الثلاثة (صفحة | كعب | صفحة)؛ ‎.duo-sheet__right و__left
+     تحددان صفحة الابن، والرأسي ثابت على صفحة السياق أثناء التصفح. */
+  .duo-sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    align-items: start;
+  }
+  .duo-sheet > * { grid-column: 1; min-width: 0; }
+  .duo-sheet > .duo-sheet__left { grid-column: 3; }
+  .duo-sheet .site-pagination { width: auto; }
+  /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
+  .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
+
+  /* ١٩) «سؤال يُقلق التعليم» (/questions): السؤال الأحدث على اليمنى ورأيي فيه
+     وأدواته على اليسرى كالصفحة المقابلة؛ ثم الأسئلة السابقة عموداً على اليمنى
+     والعنوان والتصفية بالموضوع على اليسرى ثابتة أثناء القراءة. */
+  .question-now {
+    grid-template-areas: "meta . take" "q . take" "q . actions";
+    grid-template-rows: auto auto 1fr;
+  }
+  .question-now > :nth-child(1) { grid-area: meta; }
+  .question-now > :nth-child(2) { grid-area: q; }
+  .question-now > :nth-child(3) { grid-area: take; }
+  .question-now > :nth-child(4) { grid-area: actions; }
+  .question-now > :nth-child(3) > div { margin-top: 0; }
+  .question-now > :nth-child(4) > div { margin-top: 1.5rem; }
+  .question-now h2 { --question-size: clamp(1.6rem, 3.6vw, 2.3rem); font-size: var(--question-size); }
+  .questions-archive > .duo-sheet__left { grid-row: 1 / span 2; position: sticky; top: 5.5rem; }
+  .questions-archive > .duo-sheet__left > div { flex-direction: column; align-items: flex-start; margin-bottom: 0; }
+
+  /* ٢٠) المختارات (/curated): المادة المختارة على اليمنى، وحالة التجدد
+     ومفاتيح الواجهة (اختيار اليوم، كتاب الشهر…) على اليسرى؛ ثم الأرشيف عموداً
+     على اليمنى وتصفية الأنواع ثابتة على اليسرى. الألسنة تلتف داخل صفحتها. */
+  :is(.curated-feature, .curated-archive) > .duo-sheet__left { grid-row: 1 / span 2; position: sticky; top: 5.5rem; }
+  :is(.curated-feature, .curated-archive) > .duo-sheet__left .overflow-x-auto { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  :is(.curated-feature, .curated-archive) > .duo-sheet__left .editorial-tablist { min-width: 0; flex-wrap: wrap; }
+  .curated-feature > .duo-sheet__left > div { flex-direction: column; align-items: flex-start; }
+  .curated-feature > [role="tabpanel"], .curated-archive > #curated-grid { grid-row: 1; margin-top: 0; max-width: none; }
+
+  /* ٢١) البريد (/inbox): الرسالة على اليمنى وتعقيب الدكتور على اليسرى كصفحة
+     الرد، وخيوط الأرشيف والرسائل والأسئلة بطاقتان متقابلتان عند الكعب. */
+  .inbox-page .duo-pair:has(> * > blockquote) { align-items: center; }
+  .inbox-page .duo-pair blockquote { padding-inline: 1.5rem; }
+
+  /* ٢٢) سيرة المفهوم (/concept/:term): خيط المحطات على اليمنى، وأنواعها
+     للتصفية وملاحظة «ما الذي تغيّر؟» على اليسرى ثابتة أثناء القراءة. */
+  .concept-life > .duo-sheet__left { grid-row: 1 / span 3; position: sticky; top: 5.5rem; }
+  .concept-life > .duo-sheet__left .concept-shift-note { margin-top: 1.5rem; }
+  .concept-life > ol { margin-top: 0; }
+  .concept-life > ol li { grid-template-columns: 4.75rem minmax(0, 1fr); gap: .75rem; }
+
+  /* ٢٣) مجلس الفكرة (/listen): قائمة الأسئلة ومشغّلها على اليمنى، و«افتح
+     المجلس» ومنصات البث والبحث والتصفية على اليسرى، والتصفية ثابتة أثناء
+     التصفح. الشبكة على جذر الصفحة نفسه فلا يُغلَّف قسم ولا يُعاد تركيب
+     المشغّل؛ الحاشية الملاصقة للكعب تسقط فيلتقي العمودان عنده. */
+  .listen-spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    align-items: start;
+  }
+  .listen-spread > * { grid-column: 1 / -1; min-width: 0; }
+  .listen-spread > #listen-list { grid-column: 1; grid-row: 2 / -1; width: 100%; max-width: none; padding-inline-end: 0; padding-top: 1.5rem; }
+  .listen-spread > section:not(#listen-list):not(.page-head) { grid-column: 3; max-width: none; width: 100%; margin: 0; padding-inline-start: 0; }
+  .listen-spread > section:not(#listen-list):not(.page-head):not(.listen-filter-bar) { grid-row: 2; padding-top: 1.5rem; }
+  .listen-spread > .listen-filter-bar {
+    grid-row: 3 / -1;
+    position: sticky !important;
+    inset-block-start: 5rem !important;
+    margin-top: 1.25rem;
+    padding: 1rem 0 1rem 1.5rem;
+    border: 0;
+    background: transparent !important;
+  }
+  .listen-spread > .listen-filter-bar > .grid { grid-template-columns: minmax(0, 1fr); }
+  .listen-spread .listen-filter-tabs .listen-cat-row { display: flex; flex-wrap: wrap; overflow: visible; }
+  /* المشغّل العائم (كل الصفحات): يسكن الصفحة اليسرى — صفحة السياق — بدل
+     شريط يعبر الكعب فوق سطور الصفحتين؛ أزراره تبقى داخلها. */
+  .audio-dock-bar { left: .75rem; right: calc(50% + var(--duo-spine) / 2); max-width: none; margin: 0; }
+  .audio-dock-bar > div { flex-wrap: wrap; row-gap: .6rem; }
+  .audio-dock-bar > div > .flex-1 { flex-basis: calc(100% - 3.25rem); }
+  .audio-dock-bar > div > .flex-1 + * { margin-inline-start: auto; }
+  body.audio-dock-open .floating-actions { bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px)); }
+
+  /* ٢٤) الواجهة الإنجليزية (/en، اتجاه LTR فالصفحة الأولى هي اليسرى):
+     الاسم والعبارة على الصفحة الأولى، والتعريف والأبواب على المقابلة؛ «عن
+     الدكتور» نصاً وحقائقه؛ حلقات الأثر اثنتان في كل صفحة؛ الأبحاث المختارة
+     عنواناً وقائمة؛ الكتب ودعوة التعاون صفحتان. */
+  .en-hero { align-items: end; }
+  .en-hero > :nth-child(n+4) { grid-column: 3; }
+  .en-hero > :nth-child(4) { grid-row: 2; margin-top: 0; }
+  .en-hero > :nth-child(5) { grid-row: 3; align-self: end; margin-top: 1.5rem; }
+  /* أيقونات الشبكات بهامش سالب لمساحة اللمس؛ إن التفّت إلى أول السطر لا تتجاوز الصفحة. */
+  .en-hero > :nth-child(5) > span { padding-inline-start: 11px; }
+  .en-hero h1 { font-size: clamp(2.3rem, 5.4vw, 3.4rem); }
+  .en-hero > p:nth-child(3) { font-size: clamp(1.3rem, 2.8vw, 1.8rem); }
+  .en-about > :nth-child(3) { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin-top: 0; }
+  .en-impact > p { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
+  .en-impact .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
+  .en-impact .grid > :nth-child(3) { grid-column: 4; }
+  .en-impact .grid > :nth-child(4) { grid-column: 5; }
+  .en-selected > ul { grid-row: 1; margin-top: 0; }
+  .en-selected > div { flex-direction: column; align-items: flex-start; }
+  .en-home .duo-pair { align-items: start; }
+  .en-selected h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+  /* في LTR الصفحة الأولى (المهمة) هي اليسرى: الأزرار العائمة تعود إلى اليمنى. */
+  html[dir="ltr"] .floating-actions { --floating-right: max(.25rem, env(safe-area-inset-right, 0px)); left: auto; }
+  /* السيرة الإنجليزية (/en/cv): سيرة من عمودين كما تُطبع — التعليم والعضويات
+     الاستشارية على الصفحة الأولى، والتعيينات والعضويات الدولية والتحميل على
+     المقابلة؛ كل زوج أقسام على سطر واحد. */
+  .en-cv { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: start; }
+  .en-cv > * { grid-column: 1 / -1; min-width: 0; }
+  .en-cv > :nth-child(n+2):nth-child(even) { grid-column: 1; }
+  .en-cv > :nth-child(n+2):nth-child(odd) { grid-column: 3; }
+  .en-cv > :last-child > div { margin-top: 2.5rem; }
+  .en-cv ul.grid { grid-template-columns: minmax(0, 1fr); }
+  /* الأبحاث الإنجليزية (/en/research): الفهرس المرقّم على الصفحة الأولى،
+     والملفات العلمية على المقابلة ثابتة أثناء التصفح. */
+  .en-research > .duo-sheet__left { grid-row: 1 / span 2; position: sticky; top: 5.5rem; }
+  .en-research > .duo-sheet__left > div { border-bottom: 0; flex-direction: column; align-items: flex-start; gap: .75rem; }
+  .en-research > #english-research-list { grid-row: 1; }
+  /* التواصل الإنجليزي (/en/contact): الدعوة على الصفحة الأولى ثابتة، والنموذج
+     بخطواته على المقابلة؛ الشبكة على جذر الصفحة فلا يُعاد تركيب النموذج. */
+  .en-contact { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: start; }
+  .en-contact > * { grid-column: 1; grid-row: 1; min-width: 0; }
+  .en-contact > header { position: sticky; top: 0; padding-inline-end: 0; border-bottom: 0; }
+  .en-contact > header h1 { font-size: clamp(2rem, 4.4vw, 2.8rem); }
+  .en-contact > section { grid-column: 3; padding-top: 8rem; padding-inline-start: 0; }
+  .en-contact #booking-form { max-width: none; }
+  .en-contact #booking-form .grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* ٢٥) الأرشيف الإعلامي (/media): الواجهة والمسار الزمني على اليمنى،
+     و«ابحث داخل ما قيل» وفهرس السنوات والأنواع على اليسرى ثابتين أثناء
+     التصفح. داخل الصفحة الواحدة تُستعار هيئة الهاتف المضغوطة: السنة ترويسة
+     فوق صفوفها، والبطاقات الثانوية صورة بجانب نص. */
+  .media-spread > .media-desk { grid-row: 1 / span 6; position: sticky; top: 5.5rem; }
+  .media-spread > .media-desk .media-archive-index .editorial-tablist { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .media-spread > :not(.media-desk) { margin-top: 0; }
+  .media-spread > :not(.media-desk) + :not(.media-desk) { margin-top: 3rem; }
+  .media-spread .media-feature-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .media-spread .media-feature-card.is-lead { grid-row: auto; }
+  .media-spread .media-feature-card.is-secondary > a { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); }
+  .media-spread .media-feature-card.is-secondary .spatial-media { height: 100%; min-height: 7.6rem; aspect-ratio: auto !important; }
+  .media-spread .media-feature-card.is-secondary > a > div:last-child { padding: .85rem; }
+  .media-spread .media-editorial-intro > span { display: none; }
+  .media-spread .media-editorial-archive > .site-fade-up > div { grid-template-columns: minmax(0, 1fr); }
+  .media-spread .media-editorial-archive > .site-fade-up > div > p { text-align: start; }
+  .media-spread .media-year-group { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .media-spread .media-year-mark { display: flex; align-items: center; gap: .6rem; padding-block: 1rem .15rem; direction: rtl; text-align: start; }
+  .media-spread .media-year-mark i { position: static; flex: 1; width: auto; height: 1px; background: rgb(var(--c-ink) / .08) !important; }
+
+  /* ٢٦) البطاقة الرقمية (/card): الهوية وحفظ جهة الاتصال على اليمنى،
+     والملفات الأكاديمية والروابط والحجز على اليسرى — بطاقة مفتوحة. */
+  .card-spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-rows: repeat(5, auto) 1fr;
+    align-items: start;
+    max-width: 60rem;
+  }
+  .card-spread > * { grid-column: 1; min-width: 0; }
+  .card-spread > :nth-child(1) { margin-top: 1rem; }
+  .card-spread > :nth-child(n+6) { grid-column: 3; }
+  .card-spread > :nth-child(6) { grid-row: 1; margin-top: 0; }
+  .card-spread > :nth-child(7) { grid-row: 2 / 7; }
+  .card-spread > :nth-child(8) { grid-row: 7; }
+  .card-spread > button { justify-self: center; }
+
+  /* ٢٧) موسوعة تكنولوجيا التعليم (/publications/encyclopedia): العنوان
+     والتعريف وأزراره على اليمنى والغلاف على اليسرى؛ ثم الأبواب والشروحات
+     المرئية (ونتائج البحث) على اليمنى، والبحث في الموسوعة على اليسرى ثابتاً
+     أثناء التنقل بين الأبواب. حقيبة التدريس تحت الأبواب في صفحتها. */
+  .ency-hero { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 0; }
+  .ency-hero > :nth-child(1) { grid-column: 3; grid-row: 1; align-self: center; }
+  .ency-hero > :nth-child(2) { grid-column: 1; grid-row: 1; }
+  .ency-hero h1 { font-size: clamp(1.9rem, 4.2vw, 2.7rem); }
+  .ency-map > .site-fade-up:first-child { grid-column: 3; grid-row: 1 / span 8; position: sticky; top: 5.5rem; }
+  .ency-map > .site-fade-up:first-child + * { margin-top: 0; }
+  .ency-map > :nth-child(2) { margin-top: 0; }
+  #encyclopedia-teaching-kit > div { width: calc(50% - var(--duo-spine) / 2); margin-inline: 0; max-width: none; }
+
+  /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
+     الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */
+  .ent-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    align-content: center;
+    width: 100%;
+    padding-inline: clamp(1.5rem, 4.6vw, 2.75rem);
+  }
+  .ent-stage > * { grid-column: 1; }
+  .ent-stage > .ent-browse { justify-self: start; }
+  .ent-stage > .ent-doors { grid-column: 3; grid-row: 1 / span 5; align-self: center; margin-top: 0; }
+  .ent-root h2 { font-size: clamp(2rem, 4.6vw, 2.8rem); }
 }
 
 /* المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب

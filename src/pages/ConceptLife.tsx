@@ -190,7 +190,7 @@ export default function ConceptLife() {
   }, [stations])
 
   return (
-    <Page className="content-search">
+    <Page className="content-search duo-book">
       <PageHead
         label="سيرة مفهوم"
         title={term ? `«${term}»` : 'سيرة مفهوم'}
@@ -200,29 +200,28 @@ export default function ConceptLife() {
       />
 
       <section className="px-6 pb-24 pt-10 md:px-11">
-        <div className="mx-auto max-w-shell">
-          {kinds.length > 0 && (
-            <FadeUp>
-              <div className="flex flex-wrap gap-2 border-b border-hair pb-6">
-                {kinds.map(([kind, count]) => (
-                  <button key={kind} type="button" onClick={() => setActiveKind((current) => current === kind ? null : kind)} aria-pressed={activeKind === kind} className={`relative z-10 min-h-11 rounded-full border px-4 py-2 text-[.72rem] font-medium transition-colors ${activeKind === kind ? 'border-accent bg-accent text-canvas' : 'border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
-                    {kind} · {count}
-                  </button>
-                ))}
-              </div>
-            </FadeUp>
-          )}
-
-
-
-          {contextShift && (
-            <FadeUp>
-              <aside className="concept-shift-note" aria-label="ما الذي تغيّر؟">
-                <span>ما الذي تغيّر؟</span>
-                <p>{contextShift}</p>
-              </aside>
-            </FadeUp>
-          )}
+        <div className="concept-life duo-sheet mx-auto max-w-shell">
+          <div className="concept-life__aside duo-sheet__left">
+            {kinds.length > 0 && (
+              <FadeUp>
+                <div className="flex flex-wrap gap-2 border-b border-hair pb-6">
+                  {kinds.map(([kind, count]) => (
+                    <button key={kind} type="button" onClick={() => setActiveKind((current) => current === kind ? null : kind)} aria-pressed={activeKind === kind} className={`relative z-10 min-h-11 rounded-full border px-4 py-2 text-[.72rem] font-medium transition-colors ${activeKind === kind ? 'border-accent bg-accent text-canvas' : 'border-hair bg-wash text-soft hover:border-accent hover:text-accent'}`}>
+                      {kind} · {count}
+                    </button>
+                  ))}
+                </div>
+              </FadeUp>
+            )}
+            {contextShift && (
+              <FadeUp>
+                <aside className="concept-shift-note" aria-label="ما الذي تغيّر؟">
+                  <span>ما الذي تغيّر؟</span>
+                  <p>{contextShift}</p>
+                </aside>
+              </FadeUp>
+            )}
+          </div>
 
           {stations.length === 0 && (
             <FadeUp>

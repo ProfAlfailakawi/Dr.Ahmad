@@ -54,9 +54,9 @@ export default function Card() {
   ]
 
   return (
-    <Page>
+    <Page className="duo-book">
       <section className="flex min-h-[88svh] items-center justify-center px-6 py-20">
-        <div className="mx-auto w-full max-w-md text-center">
+        <div className="card-spread mx-auto w-full max-w-md text-center">
           <img decoding="async" src="/portrait.webp" alt="" width={1345} height={2048} className="mx-auto h-24 w-24 rounded-full border border-hair object-cover object-top" />
           <h1 className="mt-6 font-display text-[clamp(1.6rem,5vw,2.1rem)] font-bold leading-[1.25] text-ink">{profile.fullName}</h1>
           <p className="mt-2 text-[.86rem] font-light leading-[1.8] text-soft">{profile.eyebrow}</p>

@@ -924,7 +924,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
         <div className="mx-auto max-w-shell">
           <FadeUp><Link to="/publications" className="-my-2 inline-block py-2 text-[.8rem] text-soft transition-colors hover:text-accent"><Arrow kind="back" />كل المؤلفات</Link></FadeUp>
 
-          <div className="mt-8 grid items-start gap-9 lg:grid-cols-[minmax(15rem,.58fr)_minmax(0,1.42fr)] lg:gap-16">
+          <div className="ency-hero mt-8 grid items-start gap-9 lg:grid-cols-[minmax(15rem,.58fr)_minmax(0,1.42fr)] lg:gap-16">
             <FadeUp delay={0.04}>
               <div className="mx-auto w-full max-w-[18rem] overflow-hidden rounded-2xl border border-hair bg-white shadow-[0_24px_70px_-48px_rgba(20,31,45,.55)] lg:mx-0">
                 <img src={book.cover} srcSet={coverSrcSet(book.cover)} sizes="(max-width: 768px) 320px, 420px" alt={`غلاف كتاب ${book.title}`} width="1024" height="720" fetchPriority="high" decoding="async" className="w-full" />
@@ -981,7 +981,7 @@ export function EncyclopediaPortal({ book, articles: _articles, papers: _papers 
       </section>
 
       <section id="encyclopedia-map" aria-label="خريطة الموسوعة" className="scroll-mt-24 border-y border-hair px-6 py-12 md:px-11 md:py-16" aria-labelledby="encyclopedia-map-title">
-        <div className="mx-auto max-w-shell">
+        <div className="ency-map duo-sheet mx-auto max-w-shell">
           <FadeUp>
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>

@@ -217,11 +217,11 @@ export function EnglishCV() {
   const cv = useCvLinks()
 
   return (
-    <Page>
+    <Page className="duo-book">
       <PageHead label="Curriculum Vitae" title="Ahmad H. Alfailakawi" sub={profileEn.tagline} />
       <div className="px-6 py-14 md:px-11 md:py-16">
-        <div className="mx-auto max-w-shell">
-          <FadeUp>
+        <div className="en-cv mx-auto max-w-shell">
+          <FadeUp className="en-impact">
             <p className="mb-8 text-center text-[.76rem] font-semibold uppercase tracking-[.14em] text-accent">A documented record</p>
             <div className="mb-14 border-b border-hair pb-14"><Impact /></div>
           </FadeUp>
@@ -250,7 +250,7 @@ export function EnglishCV() {
           </Section>
 
           <Section title="Advisory & consulting">
-            <ul tabIndex={0} className="mobile-card-rail grid gap-6 md:grid-cols-2" style={{ direction: 'ltr' }}>
+            <ul tabIndex={0} className="mobile-card-rail duo-stack grid gap-6 md:grid-cols-2" style={{ direction: 'ltr' }}>
               {advisoryEn.map((a) => (
                 <li key={a.org}>
                   <span className="block text-[1rem] font-medium text-ink">{a.org}</span>
@@ -300,12 +300,12 @@ export function EnglishResearch() {
   const paged = usePagedList(papers, 12, String(papers.length))
 
   return (
-    <Page>
+    <Page className="duo-book">
       <PageHead label="Research" title="Peer-reviewed contributions" sub={`${papers.length} published papers on educational technology, e-learning systems and emerging technologies in higher education.`} />
       <div className="px-6 py-14 md:px-11 md:py-16">
-        <div className="mx-auto max-w-shell">
+        <div className="en-research duo-sheet mx-auto max-w-shell">
           {/* الملفان العلميان الرسميان — أيقونتان فقط، بلا أسماءٍ طويلة */}
-          <FadeUp>
+          <FadeUp className="duo-sheet__left">
             <div className="mb-10 flex items-center justify-between border-b border-hair pb-6">
               <span className="text-[.78rem] text-soft">Academic profiles</span>
               <span className="flex items-center gap-2.5">

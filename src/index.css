@@ -9311,15 +9311,38 @@ body {
   .en-hero > p:nth-child(3) { font-size: clamp(1.3rem, 2.8vw, 1.8rem); }
   .en-about > :nth-child(3) { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin-top: 0; }
   .en-impact > p { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
-  .en-impact > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
-  .en-impact > .grid > :nth-child(3) { grid-column: 4; }
-  .en-impact > .grid > :nth-child(4) { grid-column: 5; }
+  .en-impact .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
+  .en-impact .grid > :nth-child(3) { grid-column: 4; }
+  .en-impact .grid > :nth-child(4) { grid-column: 5; }
   .en-selected > ul { grid-row: 1; margin-top: 0; }
   .en-selected > div { flex-direction: column; align-items: flex-start; }
   .en-home .duo-pair { align-items: start; }
   .en-selected h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
   /* في LTR الصفحة الأولى (المهمة) هي اليسرى: الأزرار العائمة تعود إلى اليمنى. */
-  html[dir="ltr"] .floating-actions { left: auto; }
+  html[dir="ltr"] .floating-actions { --floating-right: max(.25rem, env(safe-area-inset-right, 0px)); left: auto; }
+  /* السيرة الإنجليزية (/en/cv): سيرة من عمودين كما تُطبع — التعليم والعضويات
+     الاستشارية على الصفحة الأولى، والتعيينات والعضويات الدولية والتحميل على
+     المقابلة؛ كل زوج أقسام على سطر واحد. */
+  .en-cv { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: start; }
+  .en-cv > * { grid-column: 1 / -1; min-width: 0; }
+  .en-cv > :nth-child(n+2):nth-child(even) { grid-column: 1; }
+  .en-cv > :nth-child(n+2):nth-child(odd) { grid-column: 3; }
+  .en-cv > :last-child > div { margin-top: 2.5rem; }
+  .en-cv ul.grid { grid-template-columns: minmax(0, 1fr); }
+  /* الأبحاث الإنجليزية (/en/research): الفهرس المرقّم على الصفحة الأولى،
+     والملفات العلمية على المقابلة ثابتة أثناء التصفح. */
+  .en-research > .duo-sheet__left { grid-row: 1 / span 2; position: sticky; top: 5.5rem; }
+  .en-research > .duo-sheet__left > div { border-bottom: 0; flex-direction: column; align-items: flex-start; gap: .75rem; }
+  .en-research > #english-research-list { grid-row: 1; }
+  /* التواصل الإنجليزي (/en/contact): الدعوة على الصفحة الأولى ثابتة، والنموذج
+     بخطواته على المقابلة؛ الشبكة على جذر الصفحة فلا يُعاد تركيب النموذج. */
+  .en-contact { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: start; }
+  .en-contact > * { grid-column: 1; grid-row: 1; min-width: 0; }
+  .en-contact > header { position: sticky; top: 0; padding-inline-end: 0; border-bottom: 0; }
+  .en-contact > header h1 { font-size: clamp(2rem, 4.4vw, 2.8rem); }
+  .en-contact > section { grid-column: 3; padding-top: 8rem; padding-inline-start: 0; }
+  .en-contact #booking-form { max-width: none; }
+  .en-contact #booking-form .grid { grid-template-columns: minmax(0, 1fr); }
 
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */

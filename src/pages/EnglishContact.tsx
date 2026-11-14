@@ -11,7 +11,7 @@ export default function EnglishContact() {
     return () => { html.setAttribute('lang', 'ar'); html.setAttribute('dir', 'rtl') }
   }, [])
   return (
-    <Page>
+    <Page className="duo-book en-contact">
       <header className="border-b border-hair px-6 pb-14 pt-32 md:px-11 md:pb-16 md:pt-40" dir="ltr">
         <div className="mx-auto max-w-shell">
           <FadeUp>

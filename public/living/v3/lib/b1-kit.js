@@ -1,7 +1,7 @@
 // b1 helpers: painted glyph medallions, a tiny tween list, bust figure, shake.
 import * as THREE from 'three';
-import { mat, glossy, goldMat, glow, ease, clamp01 } from '../../kit.js?v=36';
-import { canvasTexture, css, TAU } from './a1-kit.js?v=36';
+import { mat, glossy, goldMat, glow, ease, clamp01 } from '../../kit.js?v=37';
+import { canvasTexture, css, TAU } from './a1-kit.js?v=37';
 
 // draw a bold line glyph on a 2D canvas context, centred in a w*w box
 export function drawGlyph(g, key, w, col) {

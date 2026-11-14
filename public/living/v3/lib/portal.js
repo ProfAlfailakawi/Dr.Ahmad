@@ -2,7 +2,7 @@
 // The walls carry the door's pages in frames: discovered pages in full colour, the others still in shadow. A gold seal glows at the bottom.
 // The hole is real depth: an invisible mask writes depth over the paper around the opening, so the hall shows only through the opening.
 import * as THREE from 'three';
-import { ease, easeBack, clamp01, glow, sprite } from '../../kit.js?v=36';
+import { ease, easeBack, clamp01, glow, sprite } from '../../kit.js?v=37';
 
 const W = 0.5, D = 0.6, DEPTH = 0.85;
 const AR = (n) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);

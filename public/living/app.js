@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=36';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=36';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=36';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=36';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=36';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=37';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=37';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=37';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=37';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=37';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -665,7 +665,17 @@ async function startAR(id = packId) {
     ro?.observe(stageEl);
     const vv = window.visualViewport;
     vv?.addEventListener('resize', refit); addEventListener('orientationchange', refit); screen.orientation?.addEventListener?.('change', refit);
-    ar.cleanup = () => { refitTimers.forEach(clearTimeout); ro?.disconnect(); vv?.removeEventListener('resize', refit); removeEventListener('orientationchange', refit); screen.orientation?.removeEventListener?.('change', refit); };
+    // If the camera itself changes shape (a foldable that switches the preview's width and height), the recognition input no longer matches the
+    // picture: the camera is restarted once so everything is measured again. The browser reports it with the video element's own resize event.
+    const vid = mind.video, vBase = vid.videoWidth / Math.max(1, vid.videoHeight); let restartedAt = -1e9;
+    const onVideoShape = () => {
+      const a = vid.videoWidth / Math.max(1, vid.videoHeight);
+      if (!vBase || !a || Math.abs(a - vBase) / vBase < 0.02 || performance.now() - restartedAt < 6000) return;
+      restartedAt = performance.now(); ui.toast('الشاشة تغيّرت · نعيد ضبط الكاميرا…');
+      setTimeout(() => switchPack(packId), 300);
+    };
+    vid.addEventListener('resize', onVideoShape);
+    ar.cleanup = () => { vid.removeEventListener('resize', onVideoShape); refitTimers.forEach(clearTimeout); ro?.disconnect(); vv?.removeEventListener('resize', refit); removeEventListener('orientationchange', refit); screen.orientation?.removeEventListener?.('change', refit); };
     refit();
     $('loading').classList.add('hidden');
     $('scan').classList.remove('hidden');

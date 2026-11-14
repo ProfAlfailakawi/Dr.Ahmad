@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=36';
-import { animator, plinth, shadowBlob, V, TAU, softLight } from '../lib/a1-kit.js?v=36';
-import { medal, tweener } from '../lib/b1-kit.js?v=36';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=37';
+import { animator, plinth, shadowBlob, V, TAU, softLight } from '../lib/a1-kit.js?v=37';
+import { medal, tweener } from '../lib/b1-kit.js?v=37';
 
 export const meta = { free: true, center: [0.55, 0.65], typeLabel: 'مجسّم تفاعلي' };
 

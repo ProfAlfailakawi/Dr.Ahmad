@@ -2,8 +2,8 @@
 // Tap a cartridge: coins leave the jar, the three tubes fill. Reach all three rings within the budget.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=36';
-import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU, toAr } from '../lib/b4-kit.js?v=36';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=37';
+import { rising, halos, motes, blob, canvasTex, screen, paintText, TAU, toAr } from '../lib/b4-kit.js?v=37';
 
 export const meta = { free: true, center: [0.43, 0.5], typeLabel: 'لعبة ميزانية', title: 'وزّع ميزانية التعلم عن بعد' };
 

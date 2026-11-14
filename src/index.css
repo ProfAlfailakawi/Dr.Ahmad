@@ -9316,6 +9316,18 @@ body {
   .media-detail-stage > :nth-child(2) { grid-column: 3; }
   .media-detail-transcript { width: calc(50% - var(--duo-spine) / 2); margin-inline-start: auto; }
   .media-related-rail { scroll-snap-type: none; touch-action: auto; }
+
+  /* ٤٠) البطاقة الحيّة (/cards): بطاقة مفتوحة — الاسم والصفة والعبارة على
+     اليمنى، والأرقام والروابط وحفظ جهة الاتصال على اليسرى. */
+  .card-live__card { inline-size: min(94vw, 880px); display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; align-items: start; }
+  .card-live__card > * { grid-column: 1; min-width: 0; }
+  .card-live__card > .card-live__stats { grid-column: 3; grid-row: 1; }
+  .card-live__card > .card-live__links { grid-column: 3; grid-row: 2; }
+  .card-live__card > .card-live__actions { grid-column: 3; grid-row: 3; }
+  .card-live__name { font-size: clamp(34px, 5.6vw, 46px); }
+  /* «جارٍ تجهيز السيرة» (/cv-file/:kind): رسالة الانتظار في الصفحة الأولى. */
+  .cv-file-stage { justify-content: flex-start; }
+  .cv-file-stage > div { width: calc(50% - var(--duo-spine) / 2); }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

@@ -52,6 +52,7 @@ check(!norm(read('src/pages/mihwar.css')).includes('min-width:640px)and(max-widt
 const defs = [...read('src/index.css').matchAll(/--duo-cutout-w:\s*116px/g)]
 check(defs.length === 1, `--duo-cutout-w يجب أن يُعرَّف مرة واحدة (وُجد ${defs.length})`)
 check(/--duo-cutout-h:\s*116px/.test(read('src/index.css')), '--duo-cutout-h غير معرّف')
+check([...read('src/index.css').matchAll(/--duo-cutout-reach:\s*268px/g)].length === 1, '--duo-cutout-reach (المدى الرأسي للودجت 268px) يجب أن يُعرَّف مرة واحدة')
 const cutBlock = index.slice(0, index.indexOf('--duo-cutout-w:116px'))
 const lastMedia = cutBlock.lastIndexOf('@media')
 const head = cutBlock.slice(lastMedia)
@@ -85,6 +86,9 @@ const cutoutQueries = (css) => {
 const cutQs = ['src/index.css', 'src/pages/mihwar.css'].flatMap((f) => cutoutQueries(read(f)))
 check(!cutQs.some((x) => /display-mode/.test(x.q)), 'قاعدة حجز الركن ما زالت مشروطة بـ display-mode')
 const defQs = cutQs.filter((x) => x.defines)
+const reachDefs = ['src/index.css', 'src/pages/mihwar.css'].flatMap((f) => { const css = read(f); const out = []; const re = /@media([^{]+)\{/g; let m; while ((m = re.exec(css))) { let d = 1, i = re.lastIndex; while (i < css.length && d) { d += css[i] === '{' ? 1 : css[i] === '}' ? -1 : 0; i++ } if (/--duo-cutout-reach\s*:/.test(css.slice(re.lastIndex, i))) out.push(m[1].split(',').map((q) => q.trim())) } return out })
+check(reachDefs.length === 1 && reachDefs[0].length === 2 && reachDefs[0].every((q) => defQs.some((x) => x.q === q)), '--duo-cutout-reach يجب أن يُعرَّف داخل استعلامَي الشاشة الداخلية نفسيهما')
+check(!/(^|[^-])--duo-cutout-(w|h|reach)\s*:/.test(read('src/index.css').replace(/:root \{ --duo-cutout-w: 116px; --duo-cutout-h: 116px; --duo-cutout-reach: 268px; \}/, '')), 'متغيرات الحجز معرَّفة خارج استعلامَي الشاشة الداخلية')
 check(defQs.length >= 2, 'لم تُوجد استعلامات تعريف الحجز')
 const WANT = norm('screen and (min-width:721px) and (max-width:1000px) and (min-height:520px) and (max-height:960px) and (orientation:landscape)')
 const WANT_P = norm('screen and (min-width:640px) and (max-width:720px) and (min-height:520px) and (max-height:960px) and (orientation:portrait)')

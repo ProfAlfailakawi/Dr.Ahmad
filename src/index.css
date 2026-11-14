@@ -9452,6 +9452,21 @@ body {
   .cv-folds > * { min-width: 0; }
   .cv-folds .grid { grid-template-columns: minmax(0, 1fr); }
 
+  /* ٣١) اللقاءات القادمة (/upcoming): العنوان على اليمنى والدعوة على اليسرى؛
+     المواعيد بطاقات على اليمنى (التاريخ فوق العنوان)، واللقاءات المنقضية
+     والنشرة على اليسرى. */
+  .upcoming-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: end; }
+  .upcoming-head > :last-child { grid-column: 3; justify-self: start; }
+  .upcoming-body { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto auto 1fr; max-width: none; align-items: start; }
+  .upcoming-body > * { grid-column: 1; min-width: 0; }
+  .upcoming-body > :first-child { grid-row: 1 / span 3; }
+  .upcoming-body > .site-fade-up:has(> details) { grid-column: 3; grid-row: 1; }
+  .upcoming-body > .site-fade-up:last-child { grid-column: 3; grid-row: 2; }
+  .upcoming-body > .site-fade-up:has(> details) > details, .upcoming-body > .site-fade-up:last-child > div { margin-top: 0; }
+  .upcoming-body > .site-fade-up:has(> details) + .site-fade-up > div { margin-top: 1.5rem; }
+  .upcoming-body #upcoming-events-list .group { grid-template-columns: minmax(0, 1fr); gap: .6rem; }
+  .upcoming-body #upcoming-events-list .group > :first-child { border-left: 0; padding-left: 0; border-bottom: 1px solid var(--c-hair); padding-bottom: .6rem; }
+
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */
   .ent-stage {

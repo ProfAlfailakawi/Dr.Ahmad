@@ -44,12 +44,12 @@ export default function Upcoming() {
   const paged = usePagedList(future, 12, String(future.length))
 
   return (
-    <Page>
+    <Page className="duo-book">
       <header className="border-b border-hair px-6 pb-10 pt-28 md:px-11 md:pb-12 md:pt-32">
         <div className="mx-auto max-w-shell">
           <FadeUp>
             <Label>محتواي المعرفي</Label>
-            <div className="flex flex-wrap items-end justify-between gap-5">
+            <div className="upcoming-head flex flex-wrap items-end justify-between gap-5">
               <div>
                 <h1 className="font-display text-[clamp(2rem,5vw,3.2rem)] font-semibold leading-[1.25] text-ink">اللقاءات القادمة.</h1>
                 <p className="mt-3 max-w-2xl text-[.95rem] font-light leading-[1.8] text-soft">محاضرات وورش ومؤتمرات — بموعدها ورابط التسجيل المباشر.</p>
@@ -63,7 +63,7 @@ export default function Upcoming() {
       </header>
 
       <section className="px-6 py-10 md:px-11 md:py-14">
-        <div className="mx-auto max-w-4xl">
+        <div className="upcoming-body mx-auto max-w-4xl">
           {future.length > 0 ? (
             <>
             <ul id="upcoming-events-list" className="grid gap-3">

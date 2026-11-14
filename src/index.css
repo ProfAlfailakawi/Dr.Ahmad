@@ -9194,6 +9194,52 @@ body {
   .human-core .human-core__visual { grid-column: 1; grid-row: 1 / span 2; }
   .human-core .human-core__copy { grid-column: 2; grid-row: 1; }
   .human-core .human-core__cvrow { grid-column: 2; grid-row: 2; }
+
+  /* ١٨) أدوات الصفحتين المشتركة. سكك البطاقات الأفقية في الهاتف (‎.mobile-card-rail
+     وأخواتها، بـ!important في استعلام ≤767px) كانت تمرّ فوق الكعب: في الكتاب
+     المفتوح تصير ‎.duo-stack عموداً داخل صفحة واحدة، و‎.duo-pair عمودين يلتقيان
+     عند الكعب (الفجوة بعرضه)، فتجلس كل بطاقة في صفحتها. */
+  .duo-book :is(.duo-stack, .duo-pair) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 1rem !important;
+    overflow: visible !important;
+    width: auto;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .duo-book .duo-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: var(--duo-spine) !important; }
+  .duo-book :is(.duo-stack, .duo-pair) > * { flex: none; width: auto; max-width: none; min-width: 0; }
+  /* الشبكة ذات الأعمدة الثلاثة (صفحة | كعب | صفحة)؛ ‎.duo-sheet__right و__left
+     تحددان صفحة الابن، والرأسي ثابت على صفحة السياق أثناء التصفح. */
+  .duo-sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    align-items: start;
+  }
+  .duo-sheet > * { grid-column: 1; min-width: 0; }
+  .duo-sheet > .duo-sheet__left { grid-column: 3; }
+  .duo-sheet .site-pagination { width: auto; }
+
+  /* ١٩) «سؤال يُقلق التعليم» (/questions): السؤال الأحدث على اليمنى ورأيي فيه
+     وأدواته على اليسرى كالصفحة المقابلة؛ ثم الأسئلة السابقة عموداً على اليمنى
+     والعنوان والتصفية بالموضوع على اليسرى ثابتة أثناء القراءة. */
+  .question-now {
+    grid-template-areas: "meta . take" "q . take" "q . actions";
+    grid-template-rows: auto auto 1fr;
+  }
+  .question-now > :nth-child(1) { grid-area: meta; }
+  .question-now > :nth-child(2) { grid-area: q; }
+  .question-now > :nth-child(3) { grid-area: take; }
+  .question-now > :nth-child(4) { grid-area: actions; }
+  .question-now > :nth-child(3) > div { margin-top: 0; }
+  .question-now > :nth-child(4) > div { margin-top: 1.5rem; }
+  .question-now h2 { --question-size: clamp(1.6rem, 3.6vw, 2.3rem); font-size: var(--question-size); }
+  .questions-archive > .duo-sheet__left { grid-row: 1 / span 2; position: sticky; top: 5.5rem; }
+  .questions-archive > .duo-sheet__left > div { flex-direction: column; align-items: flex-start; margin-bottom: 0; }
 }
 
 /* المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب

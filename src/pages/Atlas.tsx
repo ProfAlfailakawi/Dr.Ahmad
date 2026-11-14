@@ -788,7 +788,7 @@ export default function Atlas() {
           <FadeUp>{categoryButtons}</FadeUp>
 
           <FadeUp delay={0.04}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 md:mb-5 md:gap-4">
+            <div className="atlas-search-row mb-3 flex flex-wrap items-center justify-between gap-3 md:mb-5 md:gap-4">
               <div className="w-full sm:max-w-[19rem]">
                 <input
                   value={query}
@@ -814,7 +814,7 @@ export default function Atlas() {
           </FadeUp>
 
           <FadeUp delay={0.06}>
-            <div className="mb-4 flex flex-wrap items-center gap-2.5 md:mb-5">
+            <div className="atlas-constellation-row mb-4 flex flex-wrap items-center gap-2.5 md:mb-5">
               <button type="button" onClick={() => { setCompareMode((value) => !value); setCompareIndexes([]) }} aria-pressed={compareMode} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${compareMode ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>مقارنة نجمتين</button>
               {journeyStars.length > 0 && <button type="button" onClick={() => setShowJourney((value) => !value)} aria-pressed={showJourney} className={`min-h-11 rounded-full border px-4 text-[.72rem] font-semibold transition-colors ${showJourney ? 'border-accent bg-accent text-canvas' : 'border-hair text-soft hover:border-accent hover:text-accent'}`}>بصمتي · {arDigits(journeyStars.length)}</button>}
               {constellations.length > 0 && (
@@ -832,7 +832,7 @@ export default function Atlas() {
   )
 
   return (
-    <Page>
+    <Page className="duo-atlas">
       <PageHead
         label="خريطة"
         title="سماء المقالات."
@@ -1201,7 +1201,7 @@ export default function Atlas() {
                 )}
               </motion.div>
             ) : (
-              <p className="pt-4 text-center text-[.84rem] font-light leading-relaxed text-soft">
+              <p className="atlas-sky-hint pt-4 text-center text-[.84rem] font-light leading-relaxed text-soft">
                 حرّك المؤشر فوق السماء أو اختر نجمة: سيظهر مسارها الزمني وكوكبة الأفكار حولها بهدوء.
               </p>
             )}
@@ -1210,7 +1210,7 @@ export default function Atlas() {
           {mobileSky && filtersBlock}
 
           <FadeUp delay={0.14}>
-            <div tabIndex={0} className="mobile-card-rail mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
+            <div tabIndex={0} className="mobile-card-rail duo-pair mt-12 grid gap-6 border-t border-hair pt-9 text-[.88rem] font-light text-soft sm:grid-cols-3">
               <p><span className="font-medium text-ink">الحجم</span> — كلّما كبرت النجمة، طال المقال.</p>
               <p><span className="font-medium text-ink">المسار</span> — خط متصل يروي قبل المقال وبعده داخل الموضوع نفسه.</p>
               <p><span className="font-medium text-ink">الكوكبة</span> — خط متقطع لصلةٍ فكرية، وهالة رقيقة للمقالات الصوتية.</p>

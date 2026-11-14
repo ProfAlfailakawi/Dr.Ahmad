@@ -9203,7 +9203,7 @@ body {
      وأخواتها، بـ!important في استعلام ≤767px) كانت تمرّ فوق الكعب: في الكتاب
      المفتوح تصير ‎.duo-stack عموداً داخل صفحة واحدة، و‎.duo-pair عمودين يلتقيان
      عند الكعب (الفجوة بعرضه)، فتجلس كل بطاقة في صفحتها. */
-  .duo-book :is(.duo-stack, .duo-pair) {
+  :is(.duo-book, .duo-atlas) :is(.duo-stack, .duo-pair) {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 1rem !important;
@@ -9215,12 +9215,12 @@ body {
     -webkit-mask-image: none;
     mask-image: none;
   }
-  .duo-book .duo-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: var(--duo-spine) !important; }
+  :is(.duo-book, .duo-atlas) .duo-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: var(--duo-spine) !important; }
   /* ‎.duo-quad: أربع لوحات صغيرة (أرقام) — اثنتان في كل صفحة. */
   .duo-book .duo-quad { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: .75rem; }
   .duo-book .duo-quad > :nth-child(4n+3) { grid-column: 4; }
   .duo-book .duo-quad > :nth-child(4n+4) { grid-column: 5; }
-  .duo-book :is(.duo-stack, .duo-pair) > * { flex: none; width: auto; max-width: none; min-width: 0; }
+  :is(.duo-book, .duo-atlas) :is(.duo-stack, .duo-pair) > * { flex: none; width: auto; max-width: none; min-width: 0; }
   /* الشبكة ذات الأعمدة الثلاثة (صفحة | كعب | صفحة)؛ ‎.duo-sheet__right و__left
      تحددان صفحة الابن، والرأسي ثابت على صفحة السياق أثناء التصفح. */
   .duo-sheet {
@@ -9333,6 +9333,16 @@ body {
   /* مدرّب التظليل العائم في المقال («ظلِّل جملةً تلمسك»): في الصفحة اليمنى حيث
      النص، لا شريط في منتصف الكعب. */
   .reader-highlight-coach { left: calc(50% + var(--duo-spine) / 2 + .75rem); right: max(1rem, env(safe-area-inset-right, 0px)); margin-inline: 0; max-width: none; }
+
+  /* ٤١) سماء المقالات (/atlas): السماء نفسها لوحة واحدة تمتد على الصفحتين
+     (رسم لا نص)، أما أدواتها فتلتزم الصفحات: المحاور والبحث والكوكبة على
+     اليمنى، وتبديل طريقة العرض على اليسرى، وتلميح السماء في الصفحة اليمنى. */
+  .duo-atlas .atlas-axis-filter { width: calc(50% - var(--duo-spine) / 2); flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .duo-atlas .atlas-search-row { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); }
+  .duo-atlas .atlas-search-row > :first-child { grid-column: 1; max-width: none; }
+  .duo-atlas .atlas-search-row > :last-child { grid-column: 3; justify-self: end; margin: 0; }
+  .duo-atlas .atlas-constellation-row { width: calc(50% - var(--duo-spine) / 2); }
+  .duo-atlas .atlas-sky-hint { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

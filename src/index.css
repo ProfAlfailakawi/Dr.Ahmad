@@ -9214,6 +9214,10 @@ body {
     mask-image: none;
   }
   .duo-book .duo-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: var(--duo-spine) !important; }
+  /* ‎.duo-quad: أربع لوحات صغيرة (أرقام) — اثنتان في كل صفحة. */
+  .duo-book .duo-quad { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: .75rem; }
+  .duo-book .duo-quad > :nth-child(4n+3) { grid-column: 4; }
+  .duo-book .duo-quad > :nth-child(4n+4) { grid-column: 5; }
   .duo-book :is(.duo-stack, .duo-pair) > * { flex: none; width: auto; max-width: none; min-width: 0; }
   /* الشبكة ذات الأعمدة الثلاثة (صفحة | كعب | صفحة)؛ ‎.duo-sheet__right و__left
      تحددان صفحة الابن، والرأسي ثابت على صفحة السياق أثناء التصفح. */

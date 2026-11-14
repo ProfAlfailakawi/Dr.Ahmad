@@ -97,7 +97,7 @@ export default function ThoughtOverview() {
   const periodsDraw = useDrawIn('thought-periods', 0.3)
 
   return (
-    <Page className="content-thought-overview page-journey">
+    <Page className="content-thought-overview page-journey duo-book">
       <PageHead
         label="الخريطة الفكرية"
         title="فكر د. أحمد في لقطة واحدة."
@@ -108,7 +108,7 @@ export default function ThoughtOverview() {
       <section className="px-6 py-14 md:px-11 md:py-20">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" {...statsDraw.props}>
+            <div className="duo-quad grid grid-cols-2 gap-3 lg:grid-cols-4" {...statsDraw.props}>
               {[
                 { label: 'سنوات الرحلة العلمية', value: `${getMinimumCompletedJourneyYears()}+`, note: `بدأت عام ${PROJECT_START_YEAR}`, Icon: CalendarRange, share: null as number | null },
                 { label: 'الكتب', value: number.format(books.length), note: 'مؤلفات علمية وفكرية منشورة', Icon: BookOpen, share: books.length },
@@ -133,7 +133,7 @@ export default function ThoughtOverview() {
           </FadeUp>
 
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1.12fr_.88fr]">
+          <div className="duo-pair mt-8 grid gap-6 lg:grid-cols-[1.12fr_.88fr]">
             <FadeUp delay={0.04}>
               <section className="h-full rounded-[1.75rem] border border-hair bg-canvas p-6 md:p-8" aria-labelledby="thought-themes-title">
                 <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
@@ -181,7 +181,7 @@ export default function ThoughtOverview() {
                 </div>
                 <span className="rounded-full border border-hair bg-canvas px-4 py-2 text-[.72rem] text-soft">أكثر محور اتساعاً: <strong className="text-ink">{model.evolving?.category || '—'}</strong></span>
               </div>
-              <div className="relative mt-9 grid gap-5 md:grid-cols-2 before:absolute before:right-4 before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-hair md:before:left-4 md:before:right-4 md:before:top-5 md:before:h-px md:before:w-auto" {...periodsDraw.props}>
+              <div className="duo-pair relative mt-9 grid gap-5 md:grid-cols-2 before:absolute before:right-4 before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-hair md:before:left-4 md:before:right-4 md:before:top-5 md:before:h-px md:before:w-auto" {...periodsDraw.props}>
                 {model.periods.map((period, index) => (
                   <div key={period.label} className="relative ms-9 rounded-2xl border border-hair bg-canvas p-5 md:ms-0 md:mt-7">
                     <span className="absolute -right-[2.25rem] top-4 flex h-4 w-4 items-center justify-center rounded-full border border-accent/40 bg-paper md:-top-[2.2rem] md:right-4"><span className="dw-pop h-1.5 w-1.5 rounded-full bg-accent" style={drawDelay(120 + index * 130)} /></span>
@@ -200,7 +200,7 @@ export default function ThoughtOverview() {
               <section className="mt-6 rounded-[1.75rem] border border-hair bg-canvas p-6 md:p-8" aria-labelledby="thought-relation-title">
                 <p className="text-[.72rem] font-semibold text-accent">العلاقات الأقوى داخل المكتبة</p>
                 <h2 id="thought-relation-title" className="mt-1 font-display text-2xl font-semibold text-ink">فكرة عبر أكثر من وسيط</h2>
-                <div className="mt-7 grid gap-3 md:grid-cols-3">
+                <div className="duo-pair mt-7 grid gap-3 md:grid-cols-3">
                   <Link to={`/articles/${model.strongest.article.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent">
                     <span className="text-[.72rem] font-semibold text-accent">مقال · {model.strongest.article.iso.slice(0, 4)}</span>
                     <strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{compact(model.strongest.article.title)}</strong>
@@ -208,14 +208,14 @@ export default function ThoughtOverview() {
                   {model.strongest.paper ? <Link to={`/research/${model.strongest.paper.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.72rem] font-semibold text-accent">بحث</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.paper.titleAr || model.strongest.paper.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة بحثية قوية بما يكفي للعرض.</div>}
                   {model.strongest.book ? <Link to={`/publications/${model.strongest.book.slug}`} className="rounded-2xl border border-hair bg-paper p-5 transition-colors hover:border-accent"><span className="text-[.72rem] font-semibold text-accent">كتاب</span><strong className="mt-2 block font-display text-[1rem] leading-[1.6] text-ink">{model.strongest.book.title}</strong></Link> : <div className="rounded-2xl border border-dashed border-hair p-5 text-[.78rem] text-soft">لا صلة كتابية قوية بما يكفي للعرض.</div>}
                 </div>
-                <p className="mt-5 text-[.72rem] font-light leading-relaxed text-soft">هنا تتجاور المواد التي تدور حول فكرةٍ واحدة، لتكشف امتدادها بين المقال والبحث والكتاب.</p>
+                <p className="duo-half mt-5 text-[.72rem] font-light leading-relaxed text-soft">هنا تتجاور المواد التي تدور حول فكرةٍ واحدة، لتكشف امتدادها بين المقال والبحث والكتاب.</p>
                 <Link to="/thought-paths" className="mt-4 inline-flex min-h-11 items-center text-[.78rem] font-semibold text-accent transition-colors hover:text-accent-deep">استكشف مسارات الفكرة<Arrow /></Link>
               </section>
             </FadeUp>
           )}
 
           <FadeUp delay={0.12}>
-            <nav className="mt-6 grid overflow-hidden rounded-[1.4rem] border border-hair bg-paper sm:grid-cols-2" aria-label="استكشاف أعمق للخريطة الفكرية">
+            <nav className="duo-pair mt-6 grid overflow-hidden rounded-[1.4rem] border border-hair bg-paper sm:grid-cols-2" aria-label="استكشاف أعمق للخريطة الفكرية">
               <Link to="/atlas" className="group flex min-h-16 items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-wash sm:border-l sm:border-hair">
                 <span><strong className="block text-[.82rem] font-semibold text-ink group-hover:text-accent">افتح سماء المقالات</strong><span className="mt-1 block text-[.72rem] text-soft">استكشاف بصري تفاعلي للأرشيف</span></span><span aria-hidden className="text-accent"><ArrowLeft aria-hidden size="1em" strokeWidth={1.6} className="inline-block align-[-0.125em]" /></span>
               </Link>

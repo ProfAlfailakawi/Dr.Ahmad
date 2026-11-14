@@ -196,6 +196,16 @@ const privacyArabic: LegalSection[] = [
       `قد نحدّث هذه السياسة عند تغير الوظائف أو المتطلبات. يظهر تاريخ آخر تحديث أعلى الصفحة. للاستفسارات أو طلبات الحقوق: ${EMAIL}.`,
     ],
   },
+  {
+    title: '11. معالجة إضافية للبيانات',
+    items: [
+      'يُرسَل السؤال الذي يكتبه أي زائر في صفحة «اسأل الأرشيف»، مع المقاطع المستخرجة من الأرشيف، إلى واجهة Google Gemini لتوليد الإجابة، وإلى Cloudflare Workers AI بديلاً تلقائياً عند تعذّر Gemini. لا يُرفق بالسؤال حساب.',
+      'يُسجَّل بريد المشترك في النشرة البريدية ضمن قاعدة بيانات Firebase، وتُرسَل رسائل النشرة وإشعارات التواصل عبر خدمة Resend.',
+      'عند تسجيل تظليل في مقال، يُنشأ معرّف مستخدم مجهول عبر Firebase Authentication لاحتساب التظليلات.',
+      'عند تفعيل مزامنة «مساحتي» الاختيارية، تُشفَّر بيانات القراءة داخل متصفحك قبل رفعها إلى Firestore، ويُستخدم رمز المزامنة مفتاحاً لفكّها.',
+      'تُستضاف ملفات الوسائط والصوت لدى Cloudflare R2.',
+    ],
+  },
 ]
 
 const privacyEnglish: LegalSection[] = [
@@ -271,6 +281,16 @@ const privacyEnglish: LegalSection[] = [
   {
     title: '10. Updates and contact',
     body: [`We may update this policy as features or requirements change. The latest revision date appears above. Privacy requests may be sent to ${EMAIL}.`],
+  },
+  {
+    title: '11. Additional data processing',
+    items: [
+      'A question typed by any visitor into “Ask the archive”, together with passages retrieved from the archive, is sent to Google’s Gemini API to generate the answer, and automatically to Cloudflare Workers AI as a fallback when Gemini is unavailable. No account is attached to the question.',
+      'A newsletter subscriber’s email address is stored in the Firebase database, and newsletter and contact notification emails are sent through Resend.',
+      'When a highlight is recorded in an article, an anonymous user identifier is created through Firebase Authentication to count highlights.',
+      'If you turn on the optional “My Space” sync, reading data is encrypted in your browser before it is uploaded to Firestore, and the sync code is the key used to decrypt it.',
+      'Media and audio files are hosted on Cloudflare R2.',
+    ],
   },
 ]
 
@@ -398,7 +418,7 @@ export function PrivacyPolicy() {
       title="سياسة الخصوصية"
       subtitle="كيف تُجمع البيانات وتُستخدم وتُحمى في الموقع وأداة النشر المرتبطة."
       englishTitle="Privacy Policy"
-      updated="13 يوليو 2026"
+      updated="14 نوفمبر 2026"
       arabic={privacyArabic}
       glance={[{ index: 1, icon: Database }, { index: 4, icon: Sparkles }, { index: 6, icon: ShieldCheck }, { index: 7, icon: UserCheck }]}
       english={privacyEnglish}

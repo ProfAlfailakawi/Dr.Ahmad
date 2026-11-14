@@ -35,7 +35,7 @@ export default function Publications() {
   useSeo({ title: 'الكتب المنشورة', path: '/publications', description: `${count} ضمن مشروع علمي وفكري بدأ عام 2015، ويتتبع التعليم والتكنولوجيا والتحول المجتمعي وأثرها في الإنسان.` })
   const reduce = useReducedMotion()
   return (
-    <Page className="content-books page-journey">
+    <Page className="content-books page-journey duo-book">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',

@@ -59,10 +59,11 @@ function LegalDocument({ path, label, title, subtitle, englishTitle, updated, ar
   useSeo({ title, path, description: subtitle })
 
   return (
-    <Page>
+    <Page className="duo-book">
       <PageHead label={label} title={title} sub={subtitle} />
       <div className="px-6 py-12 md:px-11 md:py-18">
-        <div className="mx-auto max-w-[980px]">
+        {/* في الكتاب المفتوح: النص العربي على اليمنى ونظيره الإنجليزي على اليسرى. */}
+        <div className="legal-spread mx-auto max-w-[980px]">
           <FadeUp>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hair bg-wash px-5 py-4 text-[.84rem] text-soft">
               <span>آخر تحديث: {updated}</span>

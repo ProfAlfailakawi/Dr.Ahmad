@@ -899,7 +899,7 @@ export default function ArticleDetail() {
   const article: ArticleRecord = { ...a, body: (preferences.vocalized && vocalizedBody) ? vocalizedBody : plainBody }
 
   return (
-    <Page className="content-articles article-journey">
+    <Page className="content-articles article-journey duo-book">
       {/* الشريط المتحرك جميل في الموقع كله؛ وفي السكينة يغيب مع كل ما ليس نصاً */}
       {!serenity && <ArticleProgressBar slug={article.slug} />}
 
@@ -918,8 +918,10 @@ export default function ArticleDetail() {
         className="article-shell px-6 pb-12 pt-32 md:px-11 md:pb-16 md:pt-40"
         data-print-citation={`للاستشهاد: ${a.title}، ${a.date}، الموقع الرسمي للدكتور أحمد حسين الفيلكاوي، ${SITE_URL}/articles/${a.slug}`}
       >
-        <div className="mx-auto max-w-[720px]">
-          <FadeUp delay={0.05}>
+        {/* في الشاشة الداخلية (كتاب مفتوح) تصير هذه الحاوية صفحتين: النص على اليمنى
+            ومكتب القارئ (الاستماع والأدوات) على اليسرى. CSS وحده، فلا يُعاد تركيب شيء. */}
+        <div className="article-spread mx-auto max-w-[720px]" data-duo-spread="article">
+          <FadeUp delay={0.05} className="article-spread__head">
             <div className="flex flex-wrap items-center gap-3 text-[.8rem]">
               <span className="font-semibold text-accent">{categoryLabel(a.cat)}</span>
               <span className="h-1 w-1 rounded-full bg-hair" />
@@ -940,6 +942,9 @@ export default function ArticleDetail() {
               <Reveal>{a.title}</Reveal>
             </h1>
             <div className="mt-6 h-[2px] w-16 bg-accent" />
+          </FadeUp>
+
+          <FadeUp delay={0.05} className="article-spread__desk">
             {article.body && (
               <div className="article-reading-actions serenity-hide mt-4 flex flex-wrap items-center gap-x-3 gap-y-3 pb-1">
                 <div id="article-audio" className="order-2 w-full min-w-0 sm:order-1 sm:w-auto sm:flex-1"><Listen compact slug={article.slug} title={article.title} text={article.body} audio={article.audio} audioControl={article.audioControl} /></div>
@@ -952,7 +957,7 @@ export default function ArticleDetail() {
             </Link>
           </FadeUp>
 
-          <FadeUp delay={0.12}>
+          <FadeUp delay={0.12} className="article-spread__body">
             {bodyLoading ? (
               <div className="mt-7 rounded-xl border border-hair bg-wash p-8 text-center text-soft">
                 أفتح نص المقال الكامل…
@@ -997,7 +1002,7 @@ export default function ArticleDetail() {
             )}
           </FadeUp>
 
-          <FadeUp className="serenity-hide">
+          <FadeUp className="article-spread__after serenity-hide">
             <div className="mt-10">
               {/* ألغيت واجهة «بعد القراءة» فقط؛ الأدوات نفسها باقية بلا حذف. */}
               <IdeaLife article={article} articles={articles} books={books} papers={papers} media={media} />
@@ -1020,7 +1025,7 @@ export default function ArticleDetail() {
             </div>
           </FadeUp>
 
-          <FadeUp className="serenity-hide">
+          <FadeUp className="article-spread__nav serenity-hide">
             <nav className="mt-7 border-t border-hair pt-3" aria-label="التنقل بين المقالات">
               <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 sm:gap-3">
                 <div className="flex min-w-0 items-center gap-1.5">

@@ -24,10 +24,10 @@ export default function NotFound() {
     : []
 
   return (
-    <Page>
+    <Page className="duo-book">
       <section className="not-found-stage relative overflow-hidden px-6 pb-24 pt-36 md:px-11 md:pt-44">
-        <div className="mx-auto max-w-[680px] text-center">
-          <FadeUp>
+        <div className="not-found-spread mx-auto max-w-[680px] text-center">
+          <FadeUp className="not-found-spread__message">
             <div className="relative py-6">
               {/* أفلاك هادئة من لغة الهوية — الرقم فكرة خرجت عن مدارها */}
               <div className="not-found-orbits" aria-hidden="true"><span /><span /><span /><i /></div>
@@ -53,7 +53,7 @@ export default function NotFound() {
           </FadeUp>
 
           {/* بحث */}
-          <FadeUp delay={0.08}>
+          <FadeUp delay={0.08} className="not-found-spread__search">
             <div className="relative mx-auto mt-10 max-w-[440px]">
               <input
                 value={q}
@@ -80,7 +80,7 @@ export default function NotFound() {
           </FadeUp>
 
           {/* وجهات */}
-          <FadeUp delay={0.14}>
+          <FadeUp delay={0.14} className="not-found-spread__routes">
             <ul className="mx-auto mt-12 max-w-[440px] border-t border-hair text-right">
               {links.map((l) => (
                 <li key={l.to} className="border-b border-hair">
@@ -99,7 +99,7 @@ export default function NotFound() {
             </ul>
           </FadeUp>
 
-          <FadeUp delay={0.2}>
+          <FadeUp delay={0.2} className="not-found-spread__home">
             <Link to="/" className="mt-11 inline-block rounded-full bg-accent px-8 py-3.5 font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep">
               العودة إلى الرئيسية
             </Link>

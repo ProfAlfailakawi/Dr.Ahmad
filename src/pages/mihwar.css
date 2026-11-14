@@ -75,3 +75,38 @@
   .main{padding-bottom:24px;padding-right:calc(127px + env(safe-area-inset-right,0px))}
   .toast{bottom:calc(16px + env(safe-area-inset-bottom,0px));right:124px}
 }
+
+/* ===== iPhone Duo — الكتاب المفتوح (١٤ نوفمبر ٢٠٢٦) =====
+   الشاشة الداخلية في وضع الكتاب (≈669×867 و≈951×585): صفحتان بينهما كعب
+   32px في منتصف النافذة، لا عمود ممطوط. الصفحة اليمنى فهرس العمل (العنوان
+   والبحث والتبويبات والتنبيه) والصفحة اليسرى المواد نفسها، فيختار القارئ
+   ثم يقرأ في الصفحة المقابلة. CSS وحده: لا يُعاد بناء شيء عند الطي. */
+@media (min-width:640px) and (max-width:720px) and (min-height:520px),
+       (min-width:880px) and (max-width:1000px) and (min-height:520px) and (min-aspect-ratio:7/5),
+       (horizontal-viewport-segments:2){
+  .main{display:grid;grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr);grid-auto-rows:min-content;align-content:start;column-gap:0}
+  .main>*{grid-column:1;min-width:0}
+  .main>.layout{grid-column:3;grid-row:1 / span 7;align-self:start}
+  .main>.skip{grid-column:auto}
+  .top{display:block}
+  .top-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .search-wrap{flex-wrap:wrap}
+  .search-wrap #search{flex:1 1 100%}
+  .sort{flex:1}
+  .notice{flex-direction:column;align-items:flex-start}
+  /* الكعب: خط شعري وظل طي خفيف، ثابت في منتصف النافذة حيث المفصل. */
+  .app::after{content:"";position:fixed;top:0;bottom:0;left:50%;width:32px;transform:translateX(-50%);pointer-events:none;z-index:3;
+    background:linear-gradient(90deg,transparent,rgb(24 49 46 / .022) 34%,rgb(24 49 46 / .09) calc(50% - .5px),rgb(24 49 46 / .09) calc(50% + .5px),rgb(24 49 46 / .022) 66%,transparent)}
+}
+/* الكتاب الطولي (عرض الهاتف في مِحور ≤680): الشريط السفلي يُقسَم على الصفحتين —
+   «العالم» و«شغلي» على اليمنى و«+ إضافة» على اليسرى — فلا يقع زر على الكعب. */
+@media (min-width:640px) and (max-width:680px) and (min-height:520px){
+  .mobile-nav{display:grid;grid-template-columns:1fr 1fr 32px 2fr;column-gap:0}
+  .mobile-nav button{margin-inline:4px}
+  .mobile-nav button:last-child{grid-column:4}
+}
+/* الكتاب العرضي: الشريط الجانبي (180px) جزء من الصفحة اليمنى، فيُحسب عرض
+   عمود الفهرس كي يقع الكعب في منتصف النافذة تماماً. */
+@media (min-width:880px) and (max-width:1000px) and (min-height:520px) and (min-aspect-ratio:7/5){
+  .main{grid-template-columns:calc(50vw - 197px - max(clamp(18px,4vw,58px),env(safe-area-inset-right,0px))) 34px minmax(0,1fr)}
+}

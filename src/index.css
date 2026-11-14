@@ -1762,7 +1762,8 @@ body.launch-spotlight-active .site-nav:not(.is-solid) button > span > span {
     margin-inline: auto;
     padding: 0;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 1rem .85rem !important;
+    /* --books-column-gap: الكتاب المفتوح يجعل الفجوة بعرض الكعب. */
+    gap: 1rem var(--books-column-gap, .85rem) !important;
     overflow: visible !important;
   }
   .content-books .mobile-card-rail > * {
@@ -8798,8 +8799,9 @@ html, body, #root { min-width: 0; max-width: 100%; }
 }
 
 /* الغلاف الطباعي للبطل: عمودان من 600px بدل تكرار تخطيط الهاتف.
-   الصورة على اليمين والنص على اليسار كما في md، والبطاقة تمتد عبر العمودين. */
-@media (min-width: 600px) and (max-width: 767px) {
+   الصورة على اليمين والنص على اليسار كما في md، والبطاقة تمتد عبر العمودين.
+   والمطوي عرضياً (594×368) عريض قصير: عمودان أيضاً، لا صورة تحت الحافة. */
+@media (min-width: 600px) and (max-width: 767px), (min-width: 540px) and (max-width: 767px) and (max-height: 480px) {
   .human-core { align-items: center; padding-top: 5.5rem; padding-bottom: 3.5rem; }
   .human-core .human-core__grid {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
@@ -8822,6 +8824,8 @@ html, body, #root { min-width: 0; max-width: 100%; }
 }
 
 /* أهداف لمس ≥44px على الشاشات اللمسية (روابط التواصل في التذييل). */
+/* (أُطلق من pointer:coarse: زر «مساحتي» في التذييل كان 40px في كل المقاسات.) */
+.site-footer .my-space-trigger { min-inline-size: 2.75rem; min-block-size: 2.75rem; }
 @media (pointer: coarse) {
   .my-space-trigger,
   .site-footer__icon-link,
@@ -8880,16 +8884,348 @@ body {
   .search-empty-state { padding-block: 2.5rem; }
 }
 
-/* ٣) المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب،
-   لا يعبر عمود القراءة خط الطي: يجلس النص كله في المقطع الأيمن (بداية
-   القراءة بالعربية). دون الـ API لا تُطبَّق هذه الكتلة أبداً.
-   في RTL يُتجاهل margin-left حين يُقيَّد العرض صراحةً، فنستعمل auto/0. */
-@media (horizontal-viewport-segments: 2) {
-  .article-shell > .mx-auto,
-  .not-found-stage > .mx-auto {
-    width: calc(env(viewport-segment-width 1 0, 50vw) - 3rem);
-    max-width: 720px;
-    margin-left: auto;
-    margin-right: 0;
+
+
+/* ============================================================
+   iPhone Duo — الكتاب المفتوح (جولة ١٤ نوفمبر ٢٠٢٦)
+   الشاشة الداخلية في وضع الكتاب ليست «آيباد صغيراً»: هي صفحتان بينهما
+   كعب. Safari لا يعلن المفصل، فالقرار من مساحة النافذة وحدها:
+   · كتاب طولي ≈ 669×867: عرض 640–720 وارتفاع ≥ 520.
+   · كتاب عرضي ≈ 951×585: عرض 880–1000 وارتفاع ≥ 520 ونسبة ≥ 7:5
+     (فلا يدخل آيباد طولي 768×1024 ولا 1024×768).
+   كل صفحة لها دور: المهمة الأساسية على اليمنى (بداية القراءة بالعربية)
+   والسياق على اليسرى. لا نص ولا زر يعبر الكعب (المركز ± 16px).
+   كل شيء CSS: لا يُعاد تركيب مكوّن عند الطي، فيبقى الصوت والتحديد والتمرير.
+   ============================================================ */
+@media (min-width: 640px) and (max-width: 720px) and (min-height: 520px),
+       (min-width: 880px) and (max-width: 1000px) and (min-height: 520px) and (min-aspect-ratio: 7/5),
+       (horizontal-viewport-segments: 2) {
+  :root {
+    --duo-spine: 32px;
+    /* الكعب: خط شعري في المنتصف وظل طيّ خفيف على جانبيه. */
+    --duo-fold: linear-gradient(90deg,
+      transparent 0,
+      rgb(var(--c-ink) / .018) 34%,
+      rgb(var(--c-ink) / .075) calc(50% - .5px),
+      rgb(var(--c-ink) / .075) calc(50% + .5px),
+      rgb(var(--c-ink) / .018) 66%,
+      transparent 100%);
   }
+  html.dark { --duo-fold: linear-gradient(90deg, transparent 0, rgb(0 0 0 / .16) 38%, rgb(var(--c-ink) / .1) calc(50% - .5px), rgb(var(--c-ink) / .1) calc(50% + .5px), rgb(0 0 0 / .16) 62%, transparent 100%); }
+
+  /* الكعب نفسه: خط ثابت في منتصف النافذة (حيث المفصل) تحت الشريط العلوي،
+     يُرسم فقط في الصفحات التي صارت كتاباً (.duo-book) وكل محتواها يحترمه.
+     (body::before وbody::after مشغولان بالضوء والملمس الورقي.) */
+  #main:has(.duo-book)::before {
+    content: "";
+    position: fixed;
+    z-index: 1;
+    top: 4rem;
+    bottom: 0;
+    left: 50%;
+    width: var(--duo-spine);
+    transform: translateX(-50%);
+    background: var(--duo-fold);
+    pointer-events: none;
+  }
+
+  /* ١) قارئ المقال: النص على اليمنى، ومكتب القارئ (الاستماع، حجم الخط،
+     الحفظ، موقع المقال في السماء) على اليسرى ثابتاً أثناء القراءة. */
+  .article-spread {
+    --duo-spread: 1;
+    display: grid;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-areas:
+      "head  . desk"
+      "body  . desk"
+      "after . desk"
+      "nav   . desk";
+    grid-template-rows: auto 1fr auto auto;
+    align-items: start;
+  }
+  .article-spread__head { grid-area: head; }
+  .article-spread__body { grid-area: body; }
+  .article-spread__after { grid-area: after; }
+  .article-spread__nav { grid-area: nav; }
+  .article-spread__desk {
+    grid-area: desk;
+    position: sticky;
+    top: 5.5rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--c-hair);
+  }
+  /* سلّم الطباعة يفرض حجم العنوان بـ var(--type-2xl)؛ نغيّر المتغير لا القاعدة. */
+  .article-spread__head h1 { --type-2xl: clamp(1.75rem, 3.7vw, 2.4rem); }
+  /* المكتب عمود ضيق: المشغّل بعرضه، والأدوات تحته. */
+  .article-spread__desk .article-reading-actions { margin-top: 0; flex-direction: column; align-items: stretch; }
+  .article-spread__desk .article-reading-actions > * { order: 0; width: 100%; flex: none; }
+  .article-spread__desk .article-reading-actions > :last-child { justify-content: flex-start; }
+  .article-spread__desk .article-atlas-knot { margin-top: .75rem; }
+
+  /* الشريط العلوي: عنوان الصفحة المصغّر يجلس على الصفحة اليمنى بجوار الشعار
+     بدل منتصف الشريط حيث الكعب. */
+  .site-nav .nav-page-echo {
+    left: auto;
+    right: 6.25rem;
+    max-width: calc(50vw - var(--duo-spine) / 2 - 6.25rem - 12px);
+    transform: none;
+    text-align: right;
+  }
+  /* الأزرار العائمة تنتقل إلى ذيل الصفحة اليسرى (صفحة السياق)، فلا تغطي
+     أطراف أسطر الصفحة اليمنى أثناء القراءة. */
+  .floating-actions { --floating-right: auto; left: max(.25rem, env(safe-area-inset-left, 0px)); }
+
+  /* ٢) رأس الصفحات الداخلية: العنوان على اليمنى، والوصف على اليسرى كتمهيد
+     الصفحة المقابلة، والكعب يمرّ بينهما. */
+  .page-head-scene__inner > .site-fade-up {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    align-items: end;
+  }
+  .page-head-scene__inner > .site-fade-up > * { grid-column: 1; }
+  .page-head-scene__inner > .site-fade-up > .page-head-scene__sub {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+    font-size: .98rem;
+  }
+  .page-head-scene .scene-heading__title { max-width: none; --type-3xl: clamp(2rem, 4.6vw, 2.9rem); }
+  .page-head-scene .scene-heading__rule { width: 100%; max-width: 100%; }
+
+  /* ٣) أرشيف المقالات: التصنيفات على اليمنى والبحث والتصفية على اليسرى،
+     والمختارات والفهرس عمودان يلتقيان عند الكعب لا فوقه. */
+  .articles-filter-bar > .max-w-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--duo-spine);
+    align-items: center;
+  }
+  .articles-filter-bar .editorial-tablist { padding-bottom: 0; }
+  .articles-filter-bar .editorial-tablist + div { margin-top: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .articles-filter-bar .editorial-tablist + div > :first-child { grid-column: 1 / -1; }
+  .duo-book .article-featured-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.25rem var(--duo-spine);
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .duo-book .article-featured-rail > * { width: auto; max-width: none; }
+  .duo-book #articles-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--duo-spine);
+  }
+  .duo-book #articles-list > li:nth-child(2) { border-top: 0; }
+  .duo-book #articles-list > li > a.group { display: flex; flex-direction: column; align-items: stretch; gap: .25rem; }
+  .duo-book #articles-list > li > a > time { width: auto; }
+  .articles-filter-bar .editorial-tablist { min-width: 0; }
+
+  /* ٤) التذييل: الشعار والتواصل على اليمنى، وروابط الموقع المختصرة على
+     اليسرى، وسطر الحقوق في الصفحة اليمنى. */
+  .site-footer__main {
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    justify-items: start;
+    align-items: start;
+    gap: .9rem 0;
+  }
+  .site-footer__main > .site-footer__mark { grid-column: 1; grid-row: 1; }
+  .site-footer__main > .site-social-dock { grid-column: 1; grid-row: 2; width: 100%; align-items: flex-start; }
+  .site-footer__main > .site-social-dock .site-social-dock__trigger { margin-inline: 0; }
+  .site-footer__main > .site-footer__utility { grid-column: 3; grid-row: 1 / span 2; justify-self: end; justify-content: flex-end; }
+  .site-footer__rights { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
+
+  /* ٥) صفحة 404: الرسالة والعودة على اليمنى، والبحث والوجهات على اليسرى. */
+  .not-found-spread {
+    display: grid;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-areas: "msg . search" "msg . routes" "home . routes";
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
+  }
+  .not-found-spread__message { grid-area: msg; }
+  .not-found-spread__search { grid-area: search; }
+  .not-found-spread__search > div { margin-top: 1.5rem; }
+  .not-found-spread__routes { grid-area: routes; }
+  .not-found-spread__routes > ul { margin-top: 1.75rem; }
+  .not-found-spread__home { grid-area: home; }
+  .not-found-stage .not-found-code { font-size: clamp(4.5rem, 11vw, 7rem); }
+
+  /* ٦) البحث: مدخل المعرفة والسؤال والتبويبات على اليمنى (ثابتة أثناء
+     التصفح)، والنتائج أو حالتها الفارغة على اليسرى. تبويب «داخل كتاب» لا
+     صفحة سؤال له، فيبقى كما هو. */
+  .search-entry { max-width: none; width: calc(50% - var(--duo-spine) / 2); margin-inline: 0; }
+  .search-spread:has(> .site-fade-up .search-field-shell) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-rows: repeat(5, auto) 1fr;
+    align-items: start;
+  }
+  .search-spread:has(> .site-fade-up .search-field-shell) > * { grid-column: 3; min-width: 0; }
+  .search-spread > .site-fade-up:has(.search-field-shell) { grid-column: 1; grid-row: 1 / -1; position: sticky; top: 5rem; }
+  .search-spread > .site-fade-up:has(.search-field-shell) + * > :first-child { margin-top: 0; }
+  .search-spread .search-empty-state { padding-block: 1rem 3rem; }
+  .site-fade-up:has(.search-field-shell) .rail { margin-inline: 0; padding-inline: 0; }
+  .search-spread > * > .border-t.py-20 { border-top: 0; padding-block: 1rem 3rem; }
+
+  /* ٧) التواصل: الدعوة والخدمات على اليمنى ثابتة، ونموذج الحجز على اليسرى. */
+  .contact-spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    align-items: start;
+  }
+  .contact-spread__intro { grid-column: 1; position: sticky; top: 5.5rem; }
+  .contact-spread__intro h1 { --type-3xl: clamp(2.2rem, 5vw, 3.2rem); }
+  /* الخدمات صفوف أفقية (أيقونة ثم وصف) بعرض الصفحة، لا ثلاث بطاقات ضيقة. */
+  .contact-spread__intro .contact-services { grid-template-columns: minmax(0, 1fr); }
+  .contact-spread__intro .contact-services > li { flex-direction: row; justify-content: flex-start; padding: .7rem 1rem; text-wrap: pretty; }
+  .contact-spread__intro .contact-services > li > span { flex: none; }
+  .contact-spread__form { grid-column: 3; }
+  .contact-spread__form > #booking-form { margin-top: 0; padding-top: 0; border-top: 0; }
+  .contact-spread__form > #booking-form > div { padding: 1.25rem; }
+  .contact-spread__form .grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* ٨) المؤلفات: الشبكة عمودان فجوتهما الكعب بالضبط، والموسوعة المميّزة
+     تأخذ صفحة واحدة بدل أن تمتد فوق المفصل. */
+  .content-books #books-grid { --books-column-gap: var(--duo-spine); column-gap: var(--duo-spine); }
+  .content-books #books-grid > [data-featured-encyclopedia] { grid-column: auto; }
+  .content-books #books-grid > [data-featured-encyclopedia] > div { display: flex; flex-direction: column; padding: 0; gap: 0; }
+  .content-books #books-grid > [data-featured-encyclopedia] > div > div { padding: 1rem 1.1rem 1.25rem; }
+  .content-books #books-grid > [data-featured-encyclopedia] h2 { font-size: 1.35rem; }
+
+  /* ٩) صفحة الكتاب: الغلاف والعنوان والبيانات والأفعال على اليمنى، ولمحة
+     الكتاب و«عن الكتاب» والفهرس على اليسرى. */
+  .book-spread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto 1fr;
+    align-items: start;
+  }
+  .book-spread > * { grid-column: 3; min-width: 0; }
+  .book-spread > .book-spread__back { grid-column: 1; grid-row: 1; }
+  .book-spread > .book-detail-layout { grid-column: 1; grid-row: 2 / -1; display: block; margin-top: 1.25rem; }
+  .book-spread > .book-detail-layout .book-detail-cover { max-width: 100%; margin-bottom: 1.5rem; }
+  .book-spread > .book-detail-layout h1 { --type-2xl: clamp(1.7rem, 3.6vw, 2.3rem); }
+  .book-spread > .book-spread__glance { grid-row: 2; margin-top: 1.25rem; }
+  .book-spread > .book-spread__about { grid-row: 3; }
+  .book-spread > .book-spread__toc { grid-row: 4; }
+  .book-spread > .book-spread__about > details { margin-top: 1.5rem; }
+  .book-spread > .book-spread__toc > section { margin-top: 1.5rem; }
+
+  /* ١١) الصفحات القانونية: النص العربي ومفاتيحه على اليمنى، والنسخة
+     الإنجليزية مقابلها على اليسرى — كتاب ثنائي اللغة. */
+  .legal-spread {
+    display: grid;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    grid-template-rows: repeat(4, auto) 1fr;
+    align-items: start;
+  }
+  .legal-spread > * { grid-column: 1; min-width: 0; }
+  .legal-spread > .site-fade-up:has(> article[lang="en"]) { grid-column: 3; grid-row: 1 / -1; }
+  .legal-spread > .site-fade-up > article[lang="en"] { margin-top: 0; }
+  .legal-spread article { padding-inline: 1.1rem; }
+  .legal-spread nav[aria-label="مفاتيح سريعة لمحتوى الصفحة"] { display: grid; }
+  .legal-spread nav[aria-label="مفاتيح سريعة لمحتوى الصفحة"] > a { width: 100%; }
+
+  /* ١٠) غلاف الرئيسية (كتاب طولي 640–720): الصورة صفحة والنص صفحة، وبطاقة
+     «المسيرة» تحت النص في الصفحة اليسرى بدل أن تمتد فوق الكعب. */
+  .human-core .human-core__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--duo-spine); }
+  .human-core .human-core__visual { grid-column: 1; grid-row: 1 / span 2; }
+  .human-core .human-core__copy { grid-column: 2; grid-row: 1; }
+  .human-core .human-core__cvrow { grid-column: 2; grid-row: 2; }
+}
+
+/* المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب
+   تُفعَّل صفحتا «الكتاب المفتوح» أعلاه أياً كان المقاس، ويأخذ الكعب عرض
+   المفصل الحقيقي (المسافة بين المقطعين) فيقع عليه تماماً. المقاطع فيزيائية:
+   (0 0) اليسرى و(1 0) اليمنى. دون الـ API لا تُطبَّق هذه الكتلة أبداً. */
+@media (horizontal-viewport-segments: 2) {
+  :root { --duo-spine: max(32px, calc(env(viewport-segment-left 1 0, 0px) - env(viewport-segment-right 0 0, 0px) + 16px)); }
+}
+
+/* وضع الحاسوب (عريض قصير: 951×350، 600×350، 594×368، والآيفون عرضياً):
+   المحتوى فوق، وأدوات القراءة في شريط سفلي ثابت لا يغطي النص — يُحجز له
+   حشو في أسفل المقال. الجهة اليمنى من الشريط متروكة للأزرار العائمة. */
+@media (max-height: 480px) and (min-aspect-ratio: 3/2) {
+  .article-spread__desk {
+    position: fixed;
+    z-index: 200;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin: 0;
+    padding: .4rem max(1.25rem, env(safe-area-inset-left, 0px)) calc(.4rem + env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px));
+    padding-right: max(3.75rem, calc(env(safe-area-inset-right, 0px) + 3rem));
+    background: rgb(var(--c-canvas) / .97);
+    border-top: 1px solid var(--c-hair);
+    transform: none;
+  }
+  .article-spread__desk .article-reading-actions { flex: 1; min-width: 0; margin: 0; padding: 0; flex-wrap: nowrap; }
+  .article-spread__desk .article-reading-actions > :first-child { order: 0; width: auto; flex: 1; }
+  .article-spread__desk .article-reading-actions > :last-child { order: 1; }
+  .article-spread__desk .article-atlas-knot { margin: 0; flex: none; }
+  .article-spread__desk .article-atlas-knot > span:last-child > span { display: none; }
+  .article-shell { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+  html.serenity-mode .article-spread__desk { display: none; }
+}
+
+/* العريض القصير (حاسوب 951×350 و600×350، مطوي عرضياً 594×368): رأس الصفحة
+   الداخلية كان يملأ الشاشة الأولى كلها. يصير سطراً تحريرياً من عمودين —
+   العنوان يميناً والوصف يساراً — فيظهر المحتوى تحته من أول نظرة. */
+@media (min-width: 540px) and (max-height: 480px) and (min-aspect-ratio: 3/2) {
+  .page-head-scene__inner > .site-fade-up {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    column-gap: 2rem;
+    align-items: end;
+  }
+  .page-head-scene__inner > .site-fade-up > * { grid-column: 1; }
+  .page-head-scene__inner > .site-fade-up > .page-head-scene__sub { grid-column: 2; grid-row: 1 / span 3; font-size: .9rem; line-height: 1.8; }
+  .page-head-scene .scene-heading__title { max-width: none; --type-3xl: clamp(1.7rem, 4.2vw, 2.3rem); }
+  .page-head-scene .scene-heading__rule { width: 100%; max-width: 100%; margin-top: .8rem; }
+  .page-head-scene { padding-block-end: 1.25rem !important; }
+  /* صفحة الكتاب: الغلاف والعنوان متجاوران بدل غلاف يملأ الشاشة الأولى. */
+  .content-book-detail > section:first-child { padding-top: 5rem; }
+  .book-spread > .book-detail-layout {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    gap: 1.75rem;
+    margin-top: .75rem;
+  }
+  .book-spread > .book-detail-layout .book-detail-cover { max-width: 100%; }
+  .book-spread > .book-detail-layout h1 { margin-top: .5rem; --type-2xl: clamp(1.5rem, 3.4vw, 2.1rem); }
+  /* التواصل والبحث و404: صفحتان متجاورتان في المشهد العرضي أيضاً، فلا تملأ
+     الدعوة أو الرأس الشاشة الأولى وحدها. */
+  .contact-spread, .not-found-spread, .search-spread:has(> .site-fade-up .search-field-shell) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2rem minmax(0, 1fr);
+    align-items: start;
+    max-width: none;
+  }
+  .contact-spread { padding-top: 0; }
+  .contact-spread__intro { grid-column: 1; }
+  .contact-spread__intro img { width: 4rem; height: 4rem; margin-bottom: .75rem; }
+  .contact-spread__intro h1 { --type-3xl: clamp(1.9rem, 4.4vw, 2.6rem); }
+  .contact-spread__intro .contact-services { grid-template-columns: minmax(0, 1fr); margin-top: 1rem; gap: .5rem; }
+  .contact-spread__intro .contact-services > li { flex-direction: row; justify-content: flex-start; padding: .5rem .85rem; }
+  .contact-spread__intro .contact-services > li > span { flex: none; width: 2.25rem; height: 2.25rem; }
+  .contact-spread__intro > .mt-10 { margin-top: 1rem; }
+  .contact-spread__form { grid-column: 3; }
+  .contact-spread__form > #booking-form { margin-top: 0; padding-top: 0; border-top: 0; }
+  .contact-spread__form .grid { grid-template-columns: minmax(0, 1fr); }
+  .not-found-spread { grid-template-areas: "msg . search" "msg . routes" "home . routes"; }
+  .not-found-spread__message { grid-area: msg; }
+  .not-found-spread__search { grid-area: search; }
+  .not-found-spread__search > div { margin-top: .5rem; }
+  .not-found-spread__routes { grid-area: routes; }
+  .not-found-spread__routes > ul { margin-top: 1rem; }
+  .not-found-spread__home { grid-area: home; }
+  .not-found-spread__home > a { margin-top: 1.25rem; }
+  .search-spread:has(> .site-fade-up .search-field-shell) > * { grid-column: 3; min-width: 0; }
+  .search-spread > .site-fade-up:has(.search-field-shell) { grid-column: 1; grid-row: 1 / span 6; }
+  .search-entry { width: calc(50% - 1rem); margin-inline: 0; max-width: none; }
+  section:has(> .contact-spread) { padding-top: 5rem; }
 }

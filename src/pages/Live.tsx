@@ -24,7 +24,7 @@ export default function Live() {
   return (
     <main dir="rtl" className="relative grid min-h-screen place-items-center overflow-hidden bg-canvas px-5 py-12 text-ink">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(ellipse_at_50%_0%,var(--tw-gradient-stops))] from-accent/15 via-transparent to-transparent" />
-      <section className="relative w-full max-w-2xl rounded-[2rem] border border-hair bg-canvas/90 p-7 shadow-2xl shadow-ink/5 backdrop-blur md:p-12">
+      <section className="live-card relative w-full max-w-2xl rounded-[2rem] border border-hair bg-canvas/90 p-7 shadow-2xl shadow-ink/5 backdrop-blur md:p-12">
         <a href="https://dr-alfailakawi.com" className="text-sm text-soft transition hover:text-accent">د. أحمد الفيلكاوي</a>
         <div className="mt-10 flex size-14 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
           <MonitorPlay aria-hidden size={27} strokeWidth={1.5} />

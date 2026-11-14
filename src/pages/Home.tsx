@@ -761,7 +761,7 @@ function NowHub() {
       <div className="mx-auto max-w-shell px-6 md:px-11">
         <SectionHead label="الآن" title="ما يستحق انتباهك." />
       </div>
-      <div className="rail home-motion-rail mt-1 flex gap-4 overflow-x-auto px-6 pb-5 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
+      <div className="now-hub-rail rail home-motion-rail mt-1 flex gap-4 overflow-x-auto px-6 pb-5 md:gap-5 md:px-[max(2.75rem,calc((100vw-1180px)/2))]">
         <FadeUp className="w-[70vw] max-w-[500px] shrink-0 md:w-[48vw]"><LatestCard compact /></FadeUp>
         <FadeUp delay={0.08} className="w-[58vw] max-w-[270px] shrink-0 md:w-[34vw]"><DailySpark compact /></FadeUp>
         {listenIsOpen && <FadeUp delay={0.12} className="w-[58vw] max-w-[270px] shrink-0 md:w-[31vw]"><MajlisSpark /></FadeUp>}
@@ -861,7 +861,7 @@ function SelectedWorks({ articles, books, papers, media }: { articles: ArticleRe
     <section className="border-t border-hair bg-wash px-6 py-[52px] md:px-11 md:py-[84px]">
       <div className="mx-auto max-w-shell">
         <SectionHead label="من الأرشيف اليوم" title="أربع زوايا، ورؤية تتجدّد." />
-        <div className="mobile-card-rail grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+        <div className="mobile-card-rail duo-pair grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {items.map((item, index) => {
             const inner = (
               <div className="archive-card group relative flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent/[.45] md:min-h-[270px]">
@@ -1050,7 +1050,7 @@ function HomeDepth({ books }: { articles: ArticleRecord[]; books: BookRecord[]; 
       <section className="border-t border-hair px-6 py-8 md:px-11 md:py-10">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <button ref={triggerRef} type="button" onClick={() => setActive('maps')} aria-haspopup="dialog" aria-expanded={Boolean(active)} aria-controls="home-thought-maps-dialog" className="group flex w-full items-center justify-between gap-5 border-y border-hair px-1 py-5 text-right transition-colors hover:border-accent md:py-6">
+            <button ref={triggerRef} type="button" data-duo-half onClick={() => setActive('maps')} aria-haspopup="dialog" aria-expanded={Boolean(active)} aria-controls="home-thought-maps-dialog" className="group flex w-full items-center justify-between gap-5 border-y border-hair px-1 py-5 text-right transition-colors hover:border-accent md:py-6">
               <span className="flex min-w-0 items-center gap-4">
                 <span aria-hidden className="relative h-9 w-9 shrink-0">
                   <span className="absolute inset-x-0 top-1/2 h-px bg-hair" />
@@ -1139,7 +1139,7 @@ export default function Home() {
 
 
   return (
-    <Page className="home-page">
+    <Page className="home-page duo-book">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@graph': [

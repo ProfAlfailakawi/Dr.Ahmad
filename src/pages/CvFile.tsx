@@ -122,7 +122,7 @@ export default function CvFile() {
   }, [fallback, kind])
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-canvas px-6" dir={kind === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="cv-file-stage flex min-h-[100dvh] items-center justify-center bg-canvas px-6" dir={kind === 'ar' ? 'rtl' : 'ltr'}>
       <div className="max-w-md text-center">
         {status === 'loading' ? (
           <>

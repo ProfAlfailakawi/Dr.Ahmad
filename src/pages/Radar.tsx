@@ -179,7 +179,7 @@ export default function Radar() {
   const paged = usePagedList(visibleWeeks, 1, `${year}:${visibleWeeks.length}`);
 
   return (
-    <Page>
+    <Page className="duo-book">
       <PageHead
         label="رادار الشبكة"
         title="أرشيف الرادار."
@@ -187,7 +187,7 @@ export default function Radar() {
       />
 
       <section className="px-6 py-14 md:px-11 md:py-16">
-        <div className="mx-auto max-w-shell">
+        <div className="radar-spread mx-auto max-w-shell">
           {items.length === 0 ? (
             <FadeUp>
               <div className="rounded-2xl border border-dashed border-hair px-6 py-16 text-center">

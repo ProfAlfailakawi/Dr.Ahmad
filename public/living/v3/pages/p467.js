@@ -2,8 +2,8 @@
 // Light build: every miniature is ONE merged vertex-coloured mesh, the words are painted into the face textures.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { mat, glossy, goldMat, shadowed, clamp01 } from '../../kit.js?v=39';
-import { scene, RoundedBox, TAU, contactShadow, paint } from '../lib/b8-kit.js?v=39';
+import { mat, glossy, goldMat, shadowed, clamp01 } from '../../kit.js?v=40';
+import { scene, RoundedBox, TAU, contactShadow, paint } from '../lib/b8-kit.js?v=40';
 export const meta = { free: true, center: [0.42, 0.62], typeLabel: 'مجسّم تفاعلي' };
 
 const GOLD = 0xd4ad55, CY = 0x4cc9f0;

@@ -1,4 +1,5 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, sign as nodeSign, timingSafeEqual } from 'node:crypto'
+import nodeHttp2 from 'node:http2'
 
 const safeString = (value, max = 2_000) => String(value ?? '').trim().slice(0, max)
 const cleanEmail = (value) => safeString(value, 320).toLowerCase()
@@ -107,15 +108,94 @@ async function resendBatch({ apiKey, messages, idempotencyKey }) {
   return payload
 }
 
+
+/* ═══ APNs مباشر لتطبيق iOS الأصلي ═══
+   توكن الجهاز من الغلاف الأصلي هو توكن APNs (hex) لا توكن FCM، فيُرسَل عبر HTTP/2 بمفتاح .p8.
+   متغيرات البيئة: APNS_KEY_P8 (يقبل \n) و APNS_KEY_ID و APNS_TEAM_ID و APNS_BUNDLE_ID
+   (الافتراضي com.dralfailakawi.library) و APNS_ENV = production | sandbox (الافتراضي production). */
+const apnsB64Url = (input) => Buffer.from(input).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+let apnsJwtCache = null
+function apnsJwt() {
+  const key = String(process.env.APNS_KEY_P8 || '').replace(/\\n/g, '\n').trim()
+  const keyId = String(process.env.APNS_KEY_ID || '').trim()
+  const teamId = String(process.env.APNS_TEAM_ID || '').trim()
+  if (!key || !keyId || !teamId) return null
+  const nowSec = Math.floor(Date.now() / 1000)
+  if (apnsJwtCache && nowSec - apnsJwtCache.issuedAt < 40 * 60) return apnsJwtCache.jwt
+  const header = apnsB64Url(JSON.stringify({ alg: 'ES256', kid: keyId }))
+  const claims = apnsB64Url(JSON.stringify({ iss: teamId, iat: nowSec }))
+  const signature = nodeSign('sha256', Buffer.from(`${header}.${claims}`), { key, dsaEncoding: 'ieee-p1363' })
+  const jwt = `${header}.${claims}.${apnsB64Url(signature)}`
+  apnsJwtCache = { jwt, issuedAt: nowSec }
+  return jwt
+}
+
+function sendApnsToToken(deviceToken, title, body, data = {}) {
+  const jwt = apnsJwt()
+  if (!jwt || !deviceToken) return Promise.resolve({ sent: false, reason: 'APNS_NOT_CONFIGURED' })
+  const topic = process.env.APNS_BUNDLE_ID || 'com.dralfailakawi.library'
+  const host = process.env.APNS_ENV === 'sandbox' ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com'
+  const payload = JSON.stringify({ aps: { alert: { title, body }, sound: 'default', 'thread-id': 'admin' }, ...data })
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (result) => {
+      if (settled) return
+      settled = true
+      try { client.close() } catch {}
+      resolve(result)
+    }
+    const client = nodeHttp2.connect(host)
+    client.on('error', (error) => finish({ sent: false, reason: `APNS_CONN ${error.message}` }))
+    const timer = setTimeout(() => finish({ sent: false, reason: 'APNS_TIMEOUT' }), 15_000)
+    const request = client.request({
+      ':method': 'POST',
+      ':path': `/3/device/${deviceToken}`,
+      authorization: `bearer ${jwt}`,
+      'apns-topic': topic,
+      'apns-push-type': 'alert',
+      'apns-priority': '10',
+      'apns-expiration': String(Math.floor(Date.now() / 1000) + 600),
+      'content-type': 'application/json',
+    })
+    let status = 0
+    let text = ''
+    request.on('response', (headers) => { status = Number(headers[':status'] || 0) })
+    request.setEncoding('utf8')
+    request.on('data', (chunk) => { text += chunk })
+    request.on('end', () => {
+      clearTimeout(timer)
+      if (status === 200) return finish({ sent: true })
+      let reason = ''
+      try { reason = String(JSON.parse(text).reason || '') } catch { reason = text.slice(0, 120) }
+      finish({ sent: false, dead: status === 410 || /BadDeviceToken|Unregistered|DeviceTokenNotForTopic/i.test(reason), reason: `APNS_${status} ${reason}` })
+    })
+    request.on('error', (error) => finish({ sent: false, reason: `APNS_REQ ${error.message}` }))
+    request.end(payload)
+  })
+}
+
 async function sendAdminPush(getFirestore, { title, body, url = '/admin?tab=inbox', tag = 'admin-alert' }) {
   try {
     const { db } = await getFirestore()
     const snapshot = await db.collection('admin_push_tokens').limit(200).get()
     const rows = snapshot.docs.map((document) => ({ id: document.id, ...(document.data() || {}) })).filter((row) => safeString(row.token, 4096))
     if (!rows.length) return { sent: 0, configured: false }
+    /* توكنات تطبيق iOS الأصلي (APNs) تذهب مباشرة إلى APNs؛ الباقي عبر FCM كما كان. */
+    const nativeRows = rows.filter((row) => row.platform === 'ios-native')
+    const fcmRows = rows.filter((row) => row.platform !== 'ios-native')
+    let nativeSent = 0
+    let nativeFailed = 0
+    if (nativeRows.length) {
+      const results = await Promise.all(nativeRows.map(async (row) => ({ row, result: await sendApnsToToken(row.token, safeString(title, 120), safeString(body, 360), { url: safeString(url, 500), tag: safeString(tag, 120) }) })))
+      nativeSent = results.filter((entry) => entry.result.sent).length
+      nativeFailed = results.length - nativeSent
+      await Promise.all(results.filter((entry) => entry.result.dead).map((entry) => db.collection('admin_push_tokens').doc(entry.row.id).delete().catch(() => {})))
+      for (const entry of results) if (!entry.result.sent && !entry.result.dead) console.warn('[admin-push] APNs:', entry.result.reason)
+    }
+    if (!fcmRows.length) return { sent: nativeSent, failed: nativeFailed, configured: true }
     const { getMessaging } = await import('firebase-admin/messaging')
     const response = await getMessaging().sendEachForMulticast({
-      tokens: rows.map((row) => row.token),
+      tokens: fcmRows.map((row) => row.token),
       data: {
         title: safeString(title, 120),
         body: safeString(body, 360),
@@ -132,11 +212,11 @@ async function sendAdminPush(getFirestore, { title, body, url = '/admin?tab=inbo
          عليه يمحو تسجيل جهاز الدكتور **نهائياً وبصمت**، فيسجّل الآيفون ثم لا
          يصله شيء أبداً بينما يظل الكمبيوتر يعلن النجاح فوقه. لا يُحذف رمزٌ
          إلا بإقرار FCM الصريح أنه غير مسجَّل. */
-      if (!result.success && /registration-token-not-registered|invalid-registration-token/i.test(code)) invalid.push(rows[index]?.id)
+      if (!result.success && /registration-token-not-registered|invalid-registration-token/i.test(code)) invalid.push(fcmRows[index]?.id)
       else if (!result.success && code) console.warn('[admin-push] رمزٌ فشل ولم يُحذف:', code)
     })
     await Promise.all(invalid.filter(Boolean).map((id) => db.collection('admin_push_tokens').doc(id).delete().catch(() => {})))
-    return { sent: response.successCount, failed: response.failureCount, configured: true }
+    return { sent: response.successCount + nativeSent, failed: response.failureCount + nativeFailed, configured: true }
   } catch (error) {
     console.warn('[admin-push]', error instanceof Error ? error.message : error)
     return { sent: 0, failed: 0, configured: false, error: safeString(error instanceof Error ? error.message : error, 300) }
@@ -245,7 +325,8 @@ export function createAdminCommunications({ getFirestore, verifyAdminRequest }) 
         if (method === 'POST') {
           const body = await readJson(req, 16_384)
           const token = safeString(body.token, 8_192)
-          if (token.length < 80) throw Object.assign(new Error('Invalid push token'), { status: 400 })
+          const isNativeToken = safeString(body.platform, 120) === 'ios-native' && /^[0-9a-f]{64,200}$/i.test(token)
+          if (token.length < 80 && !isNativeToken) throw Object.assign(new Error('Invalid push token'), { status: 400 })
           const id = createHash('sha256').update(token).digest('hex').slice(0, 40)
           await db.collection('admin_push_tokens').doc(id).set({
             token,

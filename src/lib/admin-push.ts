@@ -1,5 +1,6 @@
 import type { User } from 'firebase/auth'
 import { getFirebaseApp } from './firebase'
+import { isNativePushAvailable, registerNativePushToken, requestNativePushPermission } from '../native-push'
 
 export type AdminPushRegistration = {
   ok: boolean
@@ -36,6 +37,17 @@ export async function sendAdminPushTest(user: User): Promise<{ sent?: number; co
 }
 
 export async function registerAdminPush(user: User): Promise<AdminPushRegistration> {
+  /* داخل تطبيق iOS لا يوجد Notification ولا Service Worker: إذن النظام + توكن APNs. */
+  if (isNativePushAvailable()) {
+    const permission = await requestNativePushPermission()
+    if (permission !== 'granted') {
+      return { ok: false, message: 'إذن الإشعارات غير مفعّل. افتح إعدادات الجهاز ‹ الإشعارات وفعّله لهذا التطبيق.' }
+    }
+    const token = await registerNativePushToken()
+    if (!token) return { ok: false, message: 'تعذّر الحصول على رمز الإشعارات من الجهاز. أعد المحاولة.' }
+    const saved = await authorizedJson(user, '/api/admin/push', { method: 'POST', body: JSON.stringify({ token, platform: 'ios-native' }) })
+    return { ok: true, token, configured: true, registeredDevices: Number(saved.registeredDevices || 0) + 1, message: 'تم ربط هذا الجهاز بإشعارات التطبيق.' }
+  }
   if (typeof window === 'undefined' || typeof Notification === 'undefined' || !('serviceWorker' in navigator)) {
     return { ok: false, message: 'هذا المتصفح لا يدعم Push على الويب.' }
   }

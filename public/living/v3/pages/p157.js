@@ -1,7 +1,7 @@
 // p157 — a test bench: a prototype laptop and six chunky coins. Three coins carry false statements; tap one and it flips to the truth.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=34';
-import { rb, std, lit, gloss, brass, add, grp, hit, Seq, Pulse, touch, desk, at, TAU, INK, GOLD } from '../lib/a2.js?v=34';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=35';
+import { rb, std, lit, gloss, brass, add, grp, hit, Seq, Pulse, touch, desk, at, TAU, INK, GOLD } from '../lib/a2.js?v=35';
 
 export const meta = { free: true, center: [0.5, 0.42], typeLabel: 'لعبة كشف الأخطاء' };
 

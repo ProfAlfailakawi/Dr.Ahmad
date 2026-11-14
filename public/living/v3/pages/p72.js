@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=34';
-import { animator, shadowBlob, canvasTexture, V, TAU } from '../lib/a1-kit.js?v=34';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=35';
+import { animator, shadowBlob, canvasTexture, V, TAU } from '../lib/a1-kit.js?v=35';
 
-export const meta = { free: true, center: [0.2, 0.39], typeLabel: 'لعبة قرار' };   // the Kaaba in the printed picture (p72 coordinates; the print spans the 73|72 spread)
+export const meta = { free: true, center: [0.09, 0.43], typeLabel: 'لعبة قرار' };   // the middle of the book: the picture spans the gutter, and the gutter is the centre of the spread target, so a pose-scale error cannot push the scene sideways
 
 const GOLD = 0xd4ad55, WARM = 0xffcf6a;
 const ROUNDS = [

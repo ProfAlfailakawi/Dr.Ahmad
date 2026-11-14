@@ -1,9 +1,9 @@
 // p234 — a small computer lab as a game: six big, chunky monitors on a tiered desk, each showing a "?" for one statement; read it, judge it, and the screen turns green with a tick (three of them hide a subtle error).
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=34';
-import { softLight } from '../../v2/common.js?v=34';
-import { hints, finder, toAr, blobShadow, hitSphere } from '../lib/a3-kit.js?v=34';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=35';
+import { softLight } from '../../v2/common.js?v=35';
+import { hints, finder, toAr, blobShadow, hitSphere } from '../lib/a3-kit.js?v=35';
 
 export const meta = { free: true, center: [0.53, 0.3], typeLabel: 'لعبة تدقيق' };
 

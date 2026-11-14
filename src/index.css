@@ -8983,6 +8983,8 @@ body {
     grid-column: 3;
     grid-row: 1 / span 3;
     font-size: .98rem;
+    /* السطر الأخير يُحاذى إلى حافة الكعب تماماً؛ مسافة ربع سطر تبقيه في صفحته. */
+    padding-inline-start: .25rem;
   }
   .page-head-scene .scene-heading__title { max-width: none; --type-3xl: clamp(2rem, 4.6vw, 2.9rem); }
   .page-head-scene .scene-heading__rule { width: 100%; max-width: 100%; }
@@ -9254,6 +9256,13 @@ body {
      الرد، وخيوط الأرشيف والرسائل والأسئلة بطاقتان متقابلتان عند الكعب. */
   .inbox-page .duo-pair:has(> * > blockquote) { align-items: center; }
   .inbox-page .duo-pair blockquote { padding-inline: 1.5rem; }
+
+  /* ٢٢) سيرة المفهوم (/concept/:term): خيط المحطات على اليمنى، وأنواعها
+     للتصفية وملاحظة «ما الذي تغيّر؟» على اليسرى ثابتة أثناء القراءة. */
+  .concept-life > .duo-sheet__left { grid-row: 1 / span 3; position: sticky; top: 5.5rem; }
+  .concept-life > .duo-sheet__left .concept-shift-note { margin-top: 1.5rem; }
+  .concept-life > ol { margin-top: 0; }
+  .concept-life > ol li { grid-template-columns: 4.75rem minmax(0, 1fr); gap: .75rem; }
 }
 
 /* المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب

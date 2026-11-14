@@ -135,6 +135,37 @@ const overflow = (page) => page.evaluate(() => document.scrollingElement.scrollW
     await ctx.close()
   }
 
+  // I-5) مجلس الفكرة (/listen): حلقة مفتوحة بمشغّلها، ونص في البحث، والمشغّل
+  // العنصر نفسه عبر الطي (الشبكة على جذر الصفحة، لا إعادة تركيب).
+  {
+    const ctx = await browser.newContext({ reducedMotion: 'reduce', hasTouch: true, viewport: { width: 951, height: 585 } })
+    const page = await ctx.newPage()
+    await page.goto(BASE + '/listen', { waitUntil: 'load' })
+    await page.waitForTimeout(1500)
+    await page.locator('input[aria-label="بحث في أسئلة المجلس"]').fill('هل')
+    await page.waitForTimeout(500)
+    await page.locator('.majlis-row button').first().click()
+    await page.waitForTimeout(900)
+    await page.evaluate(() => { window.__duoPlayer = document.querySelector('.majlis-player-shell') })
+    const steps = []
+    for (const [w, h] of SEQ) {
+      await page.setViewportSize({ width: w, height: h })
+      await page.waitForTimeout(600)
+      steps.push(await page.evaluate(([w, h]) => {
+        const shell = document.querySelector('.majlis-player-shell')
+        return {
+          size: `${w}x${h}`,
+          playerOpen: !!shell,
+          samePlayerElement: !!shell && shell === window.__duoPlayer,
+          typed: document.querySelector('input[aria-label="بحث في أسئلة المجلس"]')?.value || '',
+          overflowX: document.scrollingElement.scrollWidth - document.scrollingElement.clientWidth,
+        }
+      }, [w, h]))
+    }
+    out.live.listen = { steps }
+    await ctx.close()
+  }
+
   // J) إجهاد: 200% نص، ليلي، تقليل حركة، لوحة مفاتيح (ارتفاع 350 مع حقل مركّز)، حواف غير متماثلة.
   const STRESS_PAGES = ['/', '/articles', ARTICLE, '/contact', '/search', '/no-such-page-duo', '/publications/teaching']
   const CASES = [

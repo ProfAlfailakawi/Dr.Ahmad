@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-14T00:08:53.332Z",
+ "generatedAt": "2026-11-14T03:57:19.018Z",
  "engine": "webkit",
  "live": {
   "article": {
@@ -201,6 +201,59 @@
      "size": "951x585",
      "dialogOpen": true,
      "typed": "تعليم"
+    }
+   ]
+  },
+  "listen": {
+   "steps": [
+    {
+     "size": "951x585",
+     "playerOpen": true,
+     "samePlayerElement": true,
+     "typed": "هل",
+     "overflowX": 0
+    },
+    {
+     "size": "669x867",
+     "playerOpen": true,
+     "samePlayerElement": true,
+     "typed": "هل",
+     "overflowX": 0
+    },
+    {
+     "size": "470x700",
+     "playerOpen": true,
+     "samePlayerElement": true,
+     "typed": "هل",
+     "overflowX": 0
+    },
+    {
+     "size": "382x580",
+     "playerOpen": true,
+     "samePlayerElement": true,
+     "typed": "هل",
+     "overflowX": 0
+    },
+    {
+     "size": "594x368",
+     "playerOpen": true,
+     "samePlayerElement": true,
+     "typed": "هل",
+     "overflowX": 0
+    },
+    {
+     "size": "951x350",
+     "playerOpen": true,
+     "samePlayerElement": true,
+     "typed": "هل",
+     "overflowX": 0
+    },
+    {
+     "size": "951x585",
+     "playerOpen": true,
+     "samePlayerElement": true,
+     "typed": "هل",
+     "overflowX": 0
     }
    ]
   }

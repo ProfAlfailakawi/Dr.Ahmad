@@ -3,27 +3,27 @@
   "label": "after",
   "base": "http://127.0.0.1:5110",
   "engine": "webkit",
-  "generatedAt": "2026-11-14T01:40:44.125Z",
-  "seconds": 512,
+  "generatedAt": "2026-11-14T03:56:47.716Z",
+  "seconds": 501,
   "snapshots": 234,
   "overflowX": [],
   "clipped": 0,
-  "smallTargets": 20,
-  "spineHitsInner": 28,
+  "smallTargets": 15,
+  "spineHitsInner": 0,
   "spineByPage": {
    "home": [
-    "669x867: top 0 / mid 8",
-    "951x585: top 0 / mid 7",
-    "669x520: top 0 / mid 8"
+    "669x867: top 0 / mid 0",
+    "951x585: top 0 / mid 0",
+    "669x520: top 0 / mid 0"
    ],
    "articles": [
-    "669x867: top 0 / mid 1",
-    "951x585: top 0 / mid 1",
-    "669x520: top 0 / mid 1"
+    "669x867: top 0 / mid 0",
+    "951x585: top 0 / mid 0",
+    "669x520: top 0 / mid 0"
    ],
    "article": [
-    "669x867: top 0 / mid 1",
-    "951x585: top 0 / mid 1",
+    "669x867: top 0 / mid 0",
+    "951x585: top 0 / mid 0",
     "669x520: top 0 / mid 0"
    ],
    "publications": [
@@ -57,7 +57,12 @@
     "669x520: top 0 / mid 0"
    ]
   },
-  "pageErrors": []
+  "pageErrors": [
+   "article@594x368: /127.0.0.1:5110/books/passages/v1/meta.json due to access control checks.",
+   "article@320x900: /127.0.0.1:5110/books/passages/v1/meta.json due to access control checks.",
+   "article@470x600: /127.0.0.1:5110/books/passages/v1/meta.json due to access control checks.",
+   "article@620x900: /127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
+  ]
  },
  "rows": [
   {
@@ -74,8 +79,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -94,8 +99,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -114,8 +119,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -134,8 +139,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -154,76 +159,11 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "text",
-      "el": "p.mt-4.max-w-2xl «تظهر النتيجة، ترتفع الزغاريد أو تنهال ال»",
-      "left": 119,
-      "right": 616,
-      "top": 556,
-      "at": 0.2
-     },
-     {
-      "kind": "control",
-      "el": "a.absolute.inset-0 «اقرأ مقال: النجاح الذي لا يفرح صاحبه»",
-      "left": 25,
-      "right": 644,
-      "top": 414,
-      "at": 0.2
-     },
-     {
-      "kind": "text",
-      "el": "span.block «أربع زوايا، ورؤية تتجدّد.»",
-      "left": 342,
-      "right": 645,
-      "top": 505,
-      "at": 0.6
-     },
-     {
-      "kind": "control",
-      "el": "a.block.h-full «بحثبأرشيفبحث محكّمفاعلية استخدام أعضاء ه»",
-      "left": 24,
-      "right": 645,
-      "top": 624,
-      "at": 0.6
-     },
-     {
-      "kind": "text",
-      "el": "h3.mt-2.5.line-clamp-3 «فاعلية استخدام أعضاء هيئة التدريس للوسائ»",
-      "left": 184,
-      "right": 628,
-      "top": 453,
-      "at": 0.8
-     },
-     {
-      "kind": "text",
-      "el": "span.mt-1.block «مدخل واحد إلى سماء المقالات، رحلة الأثر،»",
-      "left": 185,
-      "right": 589,
-      "top": 742,
-      "at": 0.8
-     },
-     {
-      "kind": "text",
-      "el": "span.mt-1.block «أي: خريطة تُريك كيف تتصل مقالاتي بعضها ب»",
-      "left": 263,
-      "right": 589,
-      "top": 776,
-      "at": 0.8
-     },
-     {
-      "kind": "control",
-      "el": "button.group.flex «خرائط الفكر والأثرمدخل واحد إلى سماء الم»",
-      "left": 24,
-      "right": 645,
-      "top": 695,
-      "at": 0.8
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -241,68 +181,11 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "control",
-      "el": "a.absolute.inset-0 «اقرأ مقال: النجاح الذي لا يفرح صاحبه»",
-      "left": 452,
-      "right": 906,
-      "top": 251,
-      "at": 0.2
-     },
-     {
-      "kind": "control",
-      "el": "button.relative.inline-flex «مشاركة المقال»",
-      "left": 488,
-      "right": 532,
-      "top": 287,
-      "at": 0.2
-     },
-     {
-      "kind": "text",
-      "el": "span.block «أربع زوايا، ورؤية تتجدّد.»",
-      "left": 476,
-      "right": 907,
-      "top": 387,
-      "at": 0.6
-     },
-     {
-      "kind": "control",
-      "el": "a.absolute.inset-0 «اقرأ مقال: أخطاء الماضي مازالت في زمن ال»",
-      "left": 487,
-      "right": 685,
-      "top": 522,
-      "at": 0.6
-     },
-     {
-      "kind": "control",
-      "el": "a.block.h-full «بحثبأرشيفبحث محكّمما أهمية استخدام أنظمة»",
-      "left": 265,
-      "right": 466,
-      "top": 521,
-      "at": 0.6
-     },
-     {
-      "kind": "text",
-      "el": "span.mt-1.block «مدخل واحد إلى سماء المقالات، رحلة الأثر،»",
-      "left": 380,
-      "right": 851,
-      "top": 479,
-      "at": 0.8
-     },
-     {
-      "kind": "control",
-      "el": "button.group.flex «خرائط الفكر والأثرمدخل واحد إلى سماء الم»",
-      "left": 44,
-      "right": 907,
-      "top": 428,
-      "at": 0.8
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -320,8 +203,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -340,8 +223,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -360,76 +243,11 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "text",
-      "el": "p.mt-4.max-w-2xl «تظهر النتيجة، ترتفع الزغاريد أو تنهال ال»",
-      "left": 119,
-      "right": 616,
-      "top": 267,
-      "at": 0.2
-     },
-     {
-      "kind": "control",
-      "el": "a.absolute.inset-0 «اقرأ مقال: النجاح الذي لا يفرح صاحبه»",
-      "left": 25,
-      "right": 644,
-      "top": 125,
-      "at": 0.2
-     },
-     {
-      "kind": "text",
-      "el": "span.block «أربع زوايا، ورؤية تتجدّد.»",
-      "left": 342,
-      "right": 645,
-      "top": 197,
-      "at": 0.6
-     },
-     {
-      "kind": "control",
-      "el": "a.absolute.inset-0 «اقرأ مقال: ثقافة التعليم الإلكتروني»",
-      "left": 25,
-      "right": 644,
-      "top": 318,
-      "at": 0.6
-     },
-     {
-      "kind": "text",
-      "el": "p.mt-2.line-clamp-2 «أينما جلست ضمن قواعد السلامة المعتادة أج»",
-      "left": 128,
-      "right": 628,
-      "top": 173,
-      "at": 0.8
-     },
-     {
-      "kind": "text",
-      "el": "span.mt-1.block «مدخل واحد إلى سماء المقالات، رحلة الأثر،»",
-      "left": 185,
-      "right": 589,
-      "top": 405,
-      "at": 0.8
-     },
-     {
-      "kind": "text",
-      "el": "span.mt-1.block «أي: خريطة تُريك كيف تتصل مقالاتي بعضها ب»",
-      "left": 263,
-      "right": 589,
-      "top": 439,
-      "at": 0.8
-     },
-     {
-      "kind": "control",
-      "el": "button.group.flex «خرائط الفكر والأثرمدخل واحد إلى سماء الم»",
-      "left": 24,
-      "right": 645,
-      "top": 358,
-      "at": 0.8
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -447,8 +265,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -467,8 +285,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -487,8 +305,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -507,8 +325,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -524,17 +342,11 @@
     "vw": 1440,
     "vh": 900,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -553,8 +365,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -573,8 +385,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -593,8 +405,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -613,8 +425,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -633,8 +445,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -653,8 +465,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -673,8 +485,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -693,8 +505,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -713,8 +525,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -733,8 +545,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -753,8 +565,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -773,8 +585,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -877,16 +689,7 @@
     "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "text",
-      "el": "time.w-32.shrink-0 «3 أبريل 2026»",
-      "left": 312,
-      "right": 319,
-      "top": 645,
-      "at": 0.6
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -908,16 +711,7 @@
     "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "text",
-      "el": "time.w-32.shrink-0 «3 أبريل 2026»",
-      "left": 453,
-      "right": 460,
-      "top": 467,
-      "at": 0.6
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -932,13 +726,7 @@
     "vw": 951,
     "vh": 350,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
@@ -985,16 +773,7 @@
     "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "text",
-      "el": "time.w-32.shrink-0 «3 أبريل 2026»",
-      "left": 312,
-      "right": 319,
-      "top": 412,
-      "at": 0.6
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -1349,17 +1128,11 @@
     "vw": 382,
     "vh": 580,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 41,
-      "h": 41
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": null,
-    "spreadOn": false
+    "spread": "block",
+    "spreadOn": true
    },
    "mid": null,
    "errors": []
@@ -1422,7 +1195,9 @@
     "spreadOn": true
    },
    "mid": null,
-   "errors": []
+   "errors": [
+    "/127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
+   ]
   },
   {
    "page": "article",
@@ -1435,23 +1210,20 @@
     "vw": 669,
     "vh": 867,
     "overflowX": 0,
-    "smallTargets": [],
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 40,
+      "h": 40
+     }
+    ],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
     "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "text",
-      "el": "p.min-w-0.text-[.8rem] «ظلِّل جملةً تلمسك: يتراءى صداها عبر السن»",
-      "left": 298,
-      "right": 474,
-      "top": 796,
-      "at": 0.6
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -1473,16 +1245,7 @@
     "spreadOn": true
    },
    "mid": {
-    "spineHits": [
-     {
-      "kind": "text",
-      "el": "p.min-w-0.text-[.8rem] «ظلِّل جملةً تلمسك: يتراءى صداها عبر السن»",
-      "left": 439,
-      "right": 615,
-      "top": 527,
-      "at": 0.4
-     }
-    ]
+    "spineHits": []
    },
    "errors": []
   },
@@ -1517,13 +1280,7 @@
     "vw": 600,
     "vh": 350,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
@@ -1543,13 +1300,7 @@
     "vw": 669,
     "vh": 520,
     "overflowX": 0,
-    "smallTargets": [
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
-     }
-    ],
+    "smallTargets": [],
     "clipped": [],
     "spineHits": [],
     "spread": "block",
@@ -1802,7 +1553,9 @@
     "spreadOn": true
    },
    "mid": null,
-   "errors": []
+   "errors": [
+    "/127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
+   ]
   },
   {
    "page": "article",
@@ -1842,7 +1595,9 @@
     "spreadOn": true
    },
    "mid": null,
-   "errors": []
+   "errors": [
+    "/127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
+   ]
   },
   {
    "page": "article",
@@ -1855,11 +1610,71 @@
     "vw": 470,
     "vh": 900,
     "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": "block",
+    "spreadOn": true
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
     "smallTargets": [
      {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
+      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
+      "w": 28,
+      "h": 28
      }
     ],
     "clipped": [],
@@ -1868,67 +1683,9 @@
     "spreadOn": true
    },
    "mid": null,
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "S",
-   "w": 620,
-   "h": 350,
-   "inner": false,
-   "top": {
-    "vw": 620,
-    "vh": 350,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "S",
-   "w": 620,
-   "h": 600,
-   "inner": false,
-   "top": {
-    "vw": 620,
-    "vh": 600,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
-  },
-  {
-   "page": "article",
-   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
-   "pose": "S",
-   "w": 620,
-   "h": 900,
-   "inner": false,
-   "top": {
-    "vw": 620,
-    "vh": 900,
-    "overflowX": 0,
-    "smallTargets": [],
-    "clipped": [],
-    "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
-   },
-   "mid": null,
-   "errors": []
+   "errors": [
+    "/127.0.0.1:5110/books/passages/v1/meta.json due to access control checks."
+   ]
   },
   {
    "page": "publications",
@@ -2750,11 +2507,6 @@
       "el": "a.inline-flex.h-8 «»",
       "w": 32,
       "h": 32
-     },
-     {
-      "el": "button.my-space-trigger.group «فتح مساحتي»",
-      "w": 40,
-      "h": 40
      }
     ],
     "clipped": [],
@@ -3265,8 +3017,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spread": null,
+    "spreadOn": false
    },
    "mid": null,
    "errors": []
@@ -3305,8 +3057,8 @@
     "smallTargets": [],
     "clipped": [],
     "spineHits": [],
-    "spread": "block",
-    "spreadOn": true
+    "spread": null,
+    "spreadOn": false
    },
    "mid": null,
    "errors": []

@@ -8,7 +8,11 @@ const routes = load('audit-routes.json')
 const live = load('live-and-stress.json')
 const rows = [...(routes ? routes.rows : []), ...(after ? after.rows : [])] // after يغلب: أحدث وأوسع
 // صفحات صُمّم لها الكتاب المفتوح وروجعت لقطاتها بالعين.
-const DESIGNED = new Set(['article', 'articles', 'publications', 'book', 'search-empty', 'search-start', 'contact', 'mihwar', 'not-found', 'mylib', 'privacy', 'terms', 'data-deletion'])
+const DESIGNED = new Set(['article', 'articles', 'publications', 'book', 'search-empty', 'search-start', 'contact', 'mihwar', 'not-found', 'mylib', 'privacy', 'terms', 'data-deletion',
+  // الجزآن 3 و4 (لقطات C/D روجعت بالعين لكل منها):
+  'home', 'launch', 'live', 'research', 'paper', 'encyclopedia', 'listen', 'radio', 'search-askbook', 'ask', 'decade', 'thought-paths', 'paths', 'path',
+  'concept', 'thought', 'atlas', 'media', 'media-detail', 'questions', 'radar', 'admin', 'curated', 'upcoming', 'inbox', 'about', 'cv', 'impact', 'cv-file',
+  'card', 'cards', 'en', 'en-cv', 'en-research', 'en-contact'])
 const REVIEWED = new Set(['home', 'article', 'articles', 'publications', 'book', 'search-empty', 'contact', 'mihwar', 'not-found', 'privacy'])
 const POSES = {
   A: ['382x580', '385x571', '320x568'], B: ['594x368'], C: ['669x867'], D: ['951x585'], E: ['951x350', '600x350'],
@@ -35,7 +39,7 @@ const cell = (page, pose) => {
 }
 const liveCell = (page) => {
   if (!live) return 'NOT_TESTED'
-  const map = { article: 'article', contact: 'contact', mihwar: 'mihwar', articles: 'dialog' }
+  const map = { article: 'article', contact: 'contact', mihwar: 'mihwar', articles: 'dialog', listen: 'listen' }
   const k = map[page]
   if (!k || !live.live[k]) return 'NOT_TESTED'
   return 'PASS'

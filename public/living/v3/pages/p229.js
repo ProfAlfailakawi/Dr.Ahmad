@@ -1,9 +1,9 @@
 // p229 — anatomy of the system unit as a technical exploded view: a silver case, a green motherboard with its sockets, a cooled CPU, RAM sticks, a hard disk and a disc drive that lift out, hover and dock back in.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=32';
-import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=32';
-import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=32';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=33';
+import { tagSprite, setSpr, softLight } from '../../v2/common.js?v=33';
+import { hints, finder, blobShadow, hitSphere } from '../lib/a3-kit.js?v=33';
 
 export const meta = { free: true, center: [0.41, 0.38], typeLabel: 'تشريح مجسّم' };
 

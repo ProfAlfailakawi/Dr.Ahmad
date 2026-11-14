@@ -1,7 +1,7 @@
 // p119 — communication as a puzzle that fits: a growing crowd, an exploding library, and a teacher whose funnel turns into a compass.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow, lightTube } from '../../kit.js?v=32';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, organic, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=32';
+import { P, ease, easeBack, clamp01, stag, glow, lightTube } from '../../kit.js?v=33';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, organic, at, rnd, TAU, INK, GOLD } from '../lib/a2.js?v=33';
 
 export const meta = { free: true, center: [0.5, 0.57], typeLabel: 'مجسّم تفاعلي' };
 

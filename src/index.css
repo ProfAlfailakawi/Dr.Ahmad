@@ -9252,6 +9252,17 @@ body {
   .path-spread > :nth-child(3) { grid-row: 1 / 4; margin-top: 0; }
   .path-spread > :nth-child(2) .flex { flex-direction: column; align-items: flex-start; }
   .path-spread ul.grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* ٣٤) رادار الشبكة (/radar): الأسابيع وموادها على اليمنى، والأرقام وحصاد
+     الأسابيع وتصفية السنوات على اليسرى. */
+  .radar-spread { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; align-items: start; }
+  .radar-spread > * { grid-column: 1; min-width: 0; }
+  .radar-spread > .site-fade-up { grid-column: 3; }
+  .radar-spread > .site-fade-up:only-child { grid-column: 1; }
+  .radar-spread > #radar-weeks { grid-row: 1 / span 4; }
+  .radar-spread > .site-fade-up > div { margin-top: 0; }
+  .radar-spread > .site-fade-up .overflow-x-auto { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .radar-spread > .site-fade-up [role="tablist"] { min-width: 0; flex-wrap: wrap; }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

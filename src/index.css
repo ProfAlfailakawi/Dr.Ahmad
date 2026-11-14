@@ -9414,6 +9414,20 @@ body {
   .admin-dock-grid > :nth-child(3) { grid-column: 4; }
   .admin-dock-grid > :nth-child(4) { grid-column: 5; }
 
+  /* ٢٩) سجل الأثر (/impact): كل رحلة أثر صفحتان — الأصل (العنوان) على
+     اليمنى وسلسلة أدلته على اليسرى؛ الأرقام على اليمنى والتصفية على اليسرى،
+     وحصاد السنوات في الصفحة اليسرى. */
+  .impact-lead, .impact-stats { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); }
+  .impact-lead > :last-child, .impact-stats > :last-child { grid-column: 3; justify-self: start; }
+  .impact-lead > :only-child, .impact-stats > :only-child { grid-column: 1; }
+  .impact-stats > ul { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); display: grid; width: auto; }
+  .impact-stats > ul > li { min-width: 0; }
+  .impact-stats > [role="tablist"] { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .impact-years { max-width: none; padding-inline-start: calc(50% + var(--duo-spine) / 2); }
+  .impact-chains { max-width: none; }
+  .impact-chains .impact-chain { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 0; }
+  .impact-chain > ol { grid-column: 3; }
+
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */
   .ent-stage {

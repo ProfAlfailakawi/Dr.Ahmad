@@ -290,7 +290,7 @@ export default function Curated() {
   const latestAdded = dynamic[0]?.added ? fmtAdded(dynamic[0].added) : "";
 
   return (
-    <Page className="content-curated page-journey">
+    <Page className="content-curated page-journey duo-book">
       <PageHead
         label="مختارات د. أحمد"
         title="ما يستحق أن يبقى في المشهد."
@@ -298,8 +298,8 @@ export default function Curated() {
       />
 
       <section className="border-b border-hair px-6 py-12 md:px-11 md:py-16">
-        <div className="mx-auto max-w-shell">
-          <FadeUp>
+        <div className="curated-feature duo-sheet mx-auto max-w-shell">
+          <FadeUp className="duo-sheet__left">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <span className="inline-flex items-center gap-2.5 text-[.78rem] font-semibold text-accent">
@@ -358,8 +358,8 @@ export default function Curated() {
       </section>
 
       <section className="px-6 py-14 md:px-11 md:py-16">
-        <div className="mx-auto max-w-shell">
-          <FadeUp>
+        <div className="curated-archive duo-sheet mx-auto max-w-shell">
+          <FadeUp className="duo-sheet__left">
             <div className="edge-fade overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="editorial-tablist flex min-w-max gap-1.5" role="tablist" aria-label="تصفية مختارات د. أحمد">
                 {["الكل", ...curioKinds].map((itemKind) => (

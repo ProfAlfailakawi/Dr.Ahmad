@@ -9240,6 +9240,15 @@ body {
   .question-now h2 { --question-size: clamp(1.6rem, 3.6vw, 2.3rem); font-size: var(--question-size); }
   .questions-archive > .duo-sheet__left { grid-row: 1 / span 2; position: sticky; top: 5.5rem; }
   .questions-archive > .duo-sheet__left > div { flex-direction: column; align-items: flex-start; margin-bottom: 0; }
+
+  /* ٢٠) المختارات (/curated): المادة المختارة على اليمنى، وحالة التجدد
+     ومفاتيح الواجهة (اختيار اليوم، كتاب الشهر…) على اليسرى؛ ثم الأرشيف عموداً
+     على اليمنى وتصفية الأنواع ثابتة على اليسرى. الألسنة تلتف داخل صفحتها. */
+  :is(.curated-feature, .curated-archive) > .duo-sheet__left { grid-row: 1 / span 2; position: sticky; top: 5.5rem; }
+  :is(.curated-feature, .curated-archive) > .duo-sheet__left .overflow-x-auto { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  :is(.curated-feature, .curated-archive) > .duo-sheet__left .editorial-tablist { min-width: 0; flex-wrap: wrap; }
+  .curated-feature > .duo-sheet__left > div { flex-direction: column; align-items: flex-start; }
+  .curated-feature > [role="tabpanel"], .curated-archive > #curated-grid { grid-row: 1; margin-top: 0; max-width: none; }
 }
 
 /* المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب

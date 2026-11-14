@@ -9225,6 +9225,15 @@ body {
   .duo-sheet > * { grid-column: 1; min-width: 0; }
   .duo-sheet > .duo-sheet__left { grid-column: 3; }
   .duo-sheet .site-pagination { width: auto; }
+  /* ‎.duo-half: كتلة قصيرة (بحث، عبارة) تجلس في الصفحة اليمنى بعرضها.
+     ‎.duo-chapter: فصل طويل — رأسه (أول ابن) على اليسرى ثابتاً، وما بعده
+     على اليمنى. */
+  .duo-half { width: calc(50% - var(--duo-spine) / 2); max-width: none; margin-inline: 0; }
+  .duo-chapter { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; max-width: none; }
+  .duo-chapter > * { grid-column: 1; min-width: 0; }
+  .duo-chapter > :first-child { grid-column: 3; grid-row: 1 / span 30; position: sticky; top: 5.5rem; }
+  .duo-chapter > :nth-child(2) { margin-top: 0; }
+  .duo-chapter > :first-child > .flex { flex-direction: column; align-items: flex-start; }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

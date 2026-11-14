@@ -4,3 +4,5 @@
    حين تتسع المساحة ويبدأ من الأعلى حين تضيق. */
 .mihwar-gate{display:flex;flex-direction:column;min-height:0;padding:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}.mihwar-gate>*{margin:auto}
 @media (max-height:480px){.mihwar-login{padding:22px 26px}.mihwar-login h1{margin-top:6px}.mihwar-login label{margin:10px 0}}
+/* ركن الودجت (iPhone Duo): بطاقة الدخول تحجز يمين الشاشة الفيزيائي؛ الصفر خارج Duo. */
+.mihwar-gate{padding-right:max(24px,env(safe-area-inset-right,0px),var(--duo-widget-inset,0px))}

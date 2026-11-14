@@ -301,3 +301,38 @@ node docs/iphone-duo-final/make-matrix.cjs                               # جد�
 7. إن كان Safari يعرض علم «Viewport Segments» في الإعدادات التجريبية فعّله: هل يتسع الكعب ليطابق المفصل تماماً؟
 8. **/listen:** افتح حلقة واستمع ثم اطوِ وافتح: هل يستمر الصوت والمشغّل في مكانه؟ هل المشغّل العائم في الصفحة اليسرى لا فوق الكعب؟
 9. صوّر أي صفحة تبدو ممطوطة أو صفحتها اليسرى فارغة لتكون التالية.
+
+
+## ركن الودجت (جولة ١٤ نوفمبر ٢٠٢٦ — الفرع `duo-widget-corner-1114`)
+
+> **الحالة: غير مكتمل التحقق.** التنفيذ مكتوب، لكن حارس التقاطع الكامل (Safari + APP) **لم يُشغَّل حتى النهاية** (انظر «النتيجة»). لا يُعدّ هذا القسم قبولاً.
+
+### السبب الجذري (من الكود)
+1. **الشرط ضيّق جداً**: كانت `--duo-cutout-w/h` تُعرَّف في `src/index.css` تحت استعلامين فقط: عرضي 721–1000×520–960 وطولي **640–720×520–960**. لذلك لا ينطبق الحجز على الشاشة الخارجية 382×580 ولا 470×780 ولا 594×368 (الكتاب المطوي عرضياً)، وهي مقاسات الودجت الحقيقية. «قبل»: على 382×580 الشعار وعنوان الغلاف تحت الإطار (`docs/iphone-duo-widget-corner/before-382x580.png`).
+2. **الحجم**: مربع 116×116 بدل 70px × حتى 30% من الارتفاع.
+3. **التغطية**: الحجز يمسّ الشريط العلوي والقائمة وغلاف الرئيسية فقط، لا رؤوس الصفحات ولا بطاقة دخول مِحور ولا البحث ولا زر «تخطَّ».
+4. في التطبيق (`apple/capacitor.config.json`: `server.url` + `contentInset: never`) تكون `env(safe-area-inset-*)` صفراً والارتفاع كاملاً بلا أشرطة متصفح، فبوابات النسبة/الارتفاع وحدها لا تكفي.
+
+### القياسات (مصدر واحد في `:root` بـ`src/index.css`)
+`--duo-widget-w: 70px` · `--duo-widget-gap: 8px` · `--duo-widget-h: clamp(64px, 30vh, 200px)` · `--duo-widget-inset = w + gap`. الأصفار خارج Duo. تُطبَّق على اليمين **الفيزيائي** (`padding-right`/`right`، لا `inline-end`).
+الاستعلامات السبعة: طولي 360–720 بنسبة ≥ 29/50 · عرضي الكتاب 721–1000×520–960 · عرضي مضغوط 540–800×340–519 بنسبة ≤ 17/10 · العرضان الفريدان 382 و470 طولياً بأي ارتفاع (للتطبيق بارتفاعه الكامل) · الارتفاعان 382 و470 عرضياً. آيفون العادي (390×844…) خارجها. **هندسة الأوضاع العرضية لم تُتحقَّق على جهاز.**
+
+### التطبيق (Capacitor) مقابل Safari
+UA الـWKWebView بلا `Safari/`، و`navigator.standalone` غير معرّف، و`display-mode` ليس standalone، والارتفاع كامل، و`window.Capacitor` موجود. لذلك لا يعتمد الكشف على أي إشارة Safari. الحارس يحاكي سياق APP في WebKit مكتبي (UA + `Capacitor.isNativePlatform()=true` + DPR 2 + ارتفاعات كاملة 382×780، 382×844، 470×900، 669×1000، 951×700). **هذه محاكاة وليست WKWebView حقيقياً**: يجب أن يؤكّد المالك بـ`?duo-debug=1` في TestFlight. الصفحتان المضمّنتان `apple/www/index.html` و`offline.html` أخذتا القاعدة نفسها. لا يوجد شريط «أضف للشاشة الرئيسية» في هذا الريبو (لا `beforeinstallprompt` ولا شريط)، فلم يُغيَّر شيء.
+
+### الجرد (ما حُجز)
+`.site-nav > div` (الشعار والأدوات) · `.skip-link` · قائمة الموقع `.site-menu-inner` · `.page-head-scene__inner` (رؤوس الصفحات) · `.human-core__copy` (غلاف الرئيسية) · `.article-shell > header` · `.not-found-stage` · `.search-palette-shortcuts/head` · `.human-core__words` (قصّ زخرفي) · `main:has(> .live-card)` · مِحور: `.main>.top/.notice` و`.mihwar-gate` · `apple/www/index.html` و`offline.html`. الجرد الكامل لـ`position: fixed|sticky` (45 قاعدة CSS و41 صنف Tailwind) لم يُراجَع عنصراً عنصراً بعد؛ المعتمد على القياس: الحارس. ثابتات القاع والخلفيات الممتدة (`body::before/::after`، `.radio-glow`، `.ent-root`، `.pwa-launch`، `.card-live` ملء الشاشة) لا تتقاطع أو بلا محتوى: «لا يحتاج» دون مراجعة بصرية لكل منها.
+
+### الصور
+`docs/iphone-duo-widget-corner/before-*.png` (WebKit مكتبي على بناء الفرع الأساسي المحلي). صور «بعد» **لم تُلتقط بعد**. `shoot.mjs` يلتقطها.
+
+### النتيجة
+- `node scripts/test-duo-book.mjs`: نجح (19 مقاساً + استعلامات الحجز السبعة على 28 مقاساً).
+- قياس الأساس على 382×580 (12 حالة، الفرع الأساسي): **81 تقاطعاً** في 12/12 حالة (الشعار، عنوان الغلاف، القائمة، رأس المقالات، دخول مِحور، البحث).
+- حارس `npm run test:duo-widget` بعد الإصلاح: **لم يُنجَز** — القفل المشترك `/tmp/duo-heavy.lock` بقي محجوزاً بعملية يتيمة لوكيل آخر (`node dist/server.cjs` في academicos)، فلم أحصل على دوري.
+
+### فحص المالك على الجهاز
+افتح `?duo-debug=1` (في Safari ثم في التطبيق من TestFlight): يجب أن يظهر `duo-widget: ACTIVE` و`Capacitor: native ios` في التطبيق، وألا يغطي الإطار الأحمر أي نص أو زر. أرسل لقطة.
+
+### دخول Google
+**غير موجود** في هذا الريبو: لا `signInWithPopup/Redirect` ولا `GoogleAuthProvider` ولا `OAuthProvider` في `src`، والدخول بالبريد وكلمة المرور فقط (`src/pages/Admin.tsx:164-167`، `src/pages/Mihwar.tsx:136-137`). غلاف Capacitor يفتح الموقع فعلاً عبر `server.url` (`apple/capacitor.config.json`)، لكن لا مسار Google/Apple فيه، فخطأ «missing initial state» لا ينطبق هنا. لو أُضيف Google لاحقاً: `@capgo/capacitor-social-login` ثم `signInWithCredential`، مع iOS client ID وURL scheme في `Info.plist`، ثم `npx cap sync ios` وأرشفة جديدة لـTestFlight (لا يُنفَّذ الآن).

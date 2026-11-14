@@ -381,3 +381,22 @@ html.dark .radio-glow-live { mix-blend-mode: screen; opacity: calc(var(--radio-l
 body:has(.radio-root) .site-footer {
   padding-block-end: calc(5.25rem + env(safe-area-inset-bottom, 0px)) !important;
 }
+
+/* iPhone Duo — الكتاب المفتوح (الشروط نفسها في index.css): الجملة الحيّة
+   بطلة الصفحة اليمنى، و«على الهواء» واللهجة وجدول ما يلي على اليسرى؛ لا
+   سطر يعبر الكعب. زر الاستماع الثابت في ذيل الصفحة اليسرى أصلاً. */
+@media screen and (min-width: 640px) and (max-width: 720px) and (min-height: 520px),
+       screen and (min-width: 880px) and (max-width: 1000px) and (min-height: 520px) and (min-aspect-ratio: 7/5),
+       screen and (horizontal-viewport-segments: 2) {
+  .radio-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine, 32px) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
+    max-width: none;
+  }
+  .radio-stage > * { grid-column: 3; min-width: 0; }
+  .radio-stage > .radio-now { grid-column: 1; grid-row: 1 / -1; align-self: center; padding-top: 0; }
+  .radio-stage > .radio-variants { margin-top: 1rem; }
+  .radio-stage > .radio-next { grid-row: 3; margin-top: 2rem; }
+}

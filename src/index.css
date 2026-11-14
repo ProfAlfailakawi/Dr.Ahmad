@@ -9234,6 +9234,9 @@ body {
   .duo-chapter > :first-child { grid-column: 3; grid-row: 1 / span 30; position: sticky; top: 5.5rem; }
   .duo-chapter > :nth-child(2) { margin-top: 0; }
   .duo-chapter > :first-child > .flex { flex-direction: column; align-items: flex-start; }
+  .duo-chapter > :nth-child(2) > :first-child { margin-top: 0; }
+  .duo-chapter > :first-child h2 { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
+  .duo-half [role="tablist"] { flex-wrap: wrap; row-gap: .25rem; overflow: visible; -webkit-mask-image: none; mask-image: none; }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

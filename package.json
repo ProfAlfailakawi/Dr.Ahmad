@@ -105,6 +105,7 @@
     "citations:sync": "node scripts/sync-scholar-citations.mjs",
     "images:optimize": "node scripts/optimize-images.mjs",
     "test:day": "node scripts/test-day-default.mjs",
+    "test:install-banner": "node scripts/test-install-banner.mjs",
     "test:atlas-compare": "node scripts/test-atlas-compare.mjs",
     "test:journey": "node scripts/test-journey-stepper.mjs",
     "test:draw": "node scripts/test-draw-in.mjs",

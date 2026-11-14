@@ -9789,12 +9789,43 @@ body {
    ============================================================ */
 @media screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape),
        screen and (min-width: 640px) and (max-width: 720px) and (min-height: 520px) and (max-height: 960px) and (orientation: portrait) {
-  :root { --duo-cutout-w: 116px; --duo-cutout-h: 116px; }
+  :root { --duo-cutout-w: 116px; --duo-cutout-h: 116px; --duo-cutout-reach: 268px; }
   .site-nav > div { padding-right: max(1.5rem, env(safe-area-inset-right, 0px), var(--duo-cutout-w)); }
   /* القائمة: أول بند يبدأ تحت صندوق الودجت لا تحته. */
   .site-menu-overlay .site-menu-inner { padding-top: max(var(--duo-cutout-h), 1.4rem); }
   .site-menu-overlay .site-menu-inner { padding-right: max(1.5rem, var(--duo-cutout-w)); }
   main:has(> .live-card) { padding-top: calc(var(--duo-cutout-h) + 1rem); }
+  /* استوديو المحاضرات: رابط اسم الدكتور في رأس البطاقة يترك يمينه للودجت. */
+  .live-card > a:first-child, .live-card > div:nth-child(2) { margin-right: calc(var(--duo-cutout-w) - 2.5rem); }
+  /* الراديو: شارة «على الهواء» وأزرار اللهجة تضيق جانب الودجت. */
+  .radio-stage .radio-onair, .radio-stage .radio-variants { padding-right: calc(var(--duo-cutout-w) - 1.5rem); }
+  .radio-stage .radio-now { padding-right: calc(var(--duo-cutout-w) - 1.5rem); }
+  /* مركز البحث (نافذة ثابتة): صف الحقل وروابط المسارات والنتائج تبقى يسار الودجت.
+     اللوحة بعرض 42rem في الوسط، فالحشو يتناقص كلما اتسعت النافذة عنها. */
+  [role="dialog"][aria-label="مركز البحث الذكي"] { --duo-pad: max(1.25rem, calc(var(--duo-cutout-w) + .5rem - max(0px, (100vw - 42rem) / 2))); }
+  [role="dialog"][aria-label="مركز البحث الذكي"] > div > div:first-child,
+  [role="dialog"][aria-label="مركز البحث الذكي"] .search-palette-shortcuts,
+  [role="dialog"][aria-label="مركز البحث الذكي"] > div > div:last-child { padding-right: var(--duo-pad); }
   /* كلمات الغلاف الزخرفية (وعي، مستقبل…) لا تقع تحت صندوق الودجت. */
   .human-core__words { clip-path: polygon(0 0, calc(100% - var(--duo-cutout-w)) 0, calc(100% - var(--duo-cutout-w)) var(--duo-cutout-h), 100% var(--duo-cutout-h), 100% 100%, 0 100%); }
+}
+/* ودجت النظام: المربّع المحجوز كله = يمين النافذة × أعلى 268px (--duo-cutout-reach).
+   الطولي الداخلي: أول كتلة في الصفحة (الرأس) تضيق جانب الودجت بدل أن يمر عنوان تحته. */
+@media screen and (min-width: 640px) and (max-width: 720px) and (min-height: 520px) and (max-height: 960px) and (orientation: portrait) {
+  .signature-page > :first-child { padding-right: max(1.5rem, calc(var(--duo-cutout-w) + .5rem)); }
+  /* قارئ المقال: ترويسة المقال (التصنيف والتاريخ والعنوان) وصف أدوات القراءة تضيق جانب الودجت. */
+  .article-spread__head, .article-spread__desk { padding-right: calc(var(--duo-cutout-w) - 1rem); }
+}
+/* الكتاب: الودجت على الصفحة اليمنى وحدها. حشوُ الشبكة نفسها يزيح الكعب، فيُضيَّق ابنُ العمود الأول فقط
+   (رأس الصفحة والشبكات ذات الصفحتين)، وما ليس شبكة صفحتين يضيق كله. */
+@media screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape) {
+  .signature-page > :first-child:not(:has(.duo-sheet, .page-head-scene__inner > .site-fade-up)) { padding-right: max(1.5rem, calc(var(--duo-cutout-w) + .5rem)); }
+  .page-head-scene__inner:dir(rtl) > .site-fade-up > :not(.page-head-scene__sub),
+  .page-head-scene__inner:dir(ltr) > .site-fade-up > .page-head-scene__sub,
+  .signature-page > :first-child:dir(rtl) .duo-sheet > :not(.duo-sheet__left),
+  .signature-page > :first-child:dir(ltr) .duo-sheet > .duo-sheet__left { padding-right: calc(var(--duo-cutout-w) - 1rem); }
+  /* قارئ المقال: الترويسة أول ما في العمود الأول (الصفحة اليمنى). */
+  .article-spread__head, .article-spread__desk { padding-right: calc(var(--duo-cutout-w) - 2.25rem); }
+  /* بوابة الإنجليزية: قائمة الأبواب على اليمين. */
+  .ent-stage > .ent-doors { margin-right: calc(var(--duo-cutout-w) - 2rem); }
 }

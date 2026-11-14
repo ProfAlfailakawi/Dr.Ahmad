@@ -1,7 +1,7 @@
 // Shared helpers for the a8 batch of hand-built pages (387 … 429).
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=38';
-import { tagSprite, setSpr } from '../../v2/common.js?v=38';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=39';
+import { tagSprite, setSpr } from '../../v2/common.js?v=39';
 
 export const TAU = Math.PI * 2;
 export const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
@@ -97,7 +97,7 @@ export function shake(obj, t0, now, amp = 0.012) { const k = now - t0; return k 
 export { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, tagSprite, setSpr };
 
 // ---- round 2 additions -----------------------------------------------------
-import { lightPool, softLight } from '../../v2/common.js?v=38';
+import { lightPool, softLight } from '../../v2/common.js?v=39';
 export { lightPool, softLight };
 // a soft dark contact shadow lying on the page
 let _sh;

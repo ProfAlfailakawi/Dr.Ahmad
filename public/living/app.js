@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=38';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=38';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=38';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=38';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=38';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=39';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=39';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=39';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=39';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=39';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -331,6 +331,9 @@ function stopExperience() {
 const fitBox = new THREE.Box3(), fitV = new THREE.Vector3();
 function fitScene(c, dt) {
   if (c.fit === undefined) { c.fit = 1; c.fitT = 1; c.fitN = 0; }
+  // A page's scene stays at exactly the size of its printed figure: no automatic shrinking (it moved the scene off the print and looked like a
+  // zoom-out on every page). Only museums, the cover film and other special scenes, which are not tied to a printed figure, may still shrink to fit.
+  if (c.exp.kind === 'page') { c.fit = 1; c.fitT = 1; return; }
   if (c.t > 1.7 && c.e > 0.95 && !c.drag && ++c.fitN % 20 === 0 && Math.abs(c.yaw) < 0.07 && Math.abs(c.pitch) < 0.07 && Math.abs(c.zoom - 1) < 0.05) {
     c.pivot.updateMatrixWorld(true);
     fitBox.setFromObject(c.pivot.children[0]);

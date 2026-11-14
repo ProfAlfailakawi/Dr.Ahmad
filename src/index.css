@@ -9292,6 +9292,21 @@ body {
   .duo-book .now-hub-rail > :first-child { grid-column: 1; grid-row: 1 / span 3; }
   .now-hub-rail > span[aria-hidden] { display: none; }
   .duo-book [data-duo-half] { width: calc(50% - var(--duo-spine) / 2); }
+
+  /* ٣٨) العقل الحي (/ask) وسؤال الكتاب (/search?tab=askbook): مدخل المعرفة
+     خياران في صفحتين؛ السؤال على اليسرى ثابتاً والجواب (أو «كيف يعمل») على
+     اليمنى؛ في سؤال الكتاب قائمة الكتب على اليمنى والسؤال على اليسرى. */
+  .duo-book .knowledge-entry { max-width: none; }
+  .duo-book .knowledge-entry > .grid { column-gap: calc(var(--duo-spine) + .5rem); }
+  .duo-book .knowledge-entry > .flex { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); }
+  .duo-book .knowledge-entry > .flex > :last-child { grid-column: 3; justify-self: end; }
+  .duo-book :has(> .knowledge-entry) { max-width: none; }
+  .ask-desk > :first-child > .flex { flex-direction: column; align-items: stretch; }
+  .ask-book-gateway { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: start; }
+  .ask-book-gateway > div { grid-column: 1; min-width: 0; }
+  .ask-book-gateway > form { grid-column: 3; margin-top: 0; }
+  .ask-book-gateway .ask-book-rail { flex-direction: column; overflow: visible; scroll-snap-type: none; -webkit-mask-image: none; mask-image: none; }
+  .ask-book-gateway .ask-book-rail > button { width: auto; max-width: none; }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

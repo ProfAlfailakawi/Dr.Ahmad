@@ -742,7 +742,7 @@ export default function Search() {
           </FadeUp>}
 
           {tab === 'askbook' && <FadeUp delay={0.08}>
-            <section className="mt-8 min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-hair bg-wash p-4 sm:p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
+            <section className="ask-book-gateway mt-8 min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-hair bg-wash p-4 sm:p-5 md:p-7" aria-labelledby="ask-book-gateway-title">
               <div className="min-w-0">
                 <h2 id="ask-book-gateway-title" className="break-words font-display text-[clamp(1.35rem,2.8vw,2rem)] font-semibold leading-[1.45] text-ink">بحث ذكي داخل كتاب من كتب الدكتور.</h2>
 

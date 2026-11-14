@@ -665,7 +665,7 @@ export default function AskLibrary() {
   };
 
   return (
-    <Page className="content-thought-paths page-journey">
+    <Page className="content-thought-paths page-journey duo-book">
       <PageHead
         label="العقل الحي"
         title="اسأل الأرشيف سؤالاً حقيقياً."
@@ -675,7 +675,7 @@ export default function AskLibrary() {
       <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>
 
       <section className="px-6 py-14 md:px-11 md:py-16">
-        <div className="mx-auto max-w-3xl">
+        <div className="ask-desk duo-chapter mx-auto max-w-3xl">
           <FadeUp>
             <div className="flex flex-col gap-2.5 sm:flex-row">
               <input

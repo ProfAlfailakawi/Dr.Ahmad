@@ -487,7 +487,9 @@ function ThoughtCompass() {
 
   return (
     <section className="border-t border-hair px-6 py-10 md:px-11 md:py-[86px]">
-      <div className="mx-auto max-w-shell">
+      {/* في الكتاب المفتوح: البوصلة (المحاور والخريطة) على اليمنى، ومقالات المحور
+          ومداخله على اليسرى — فلا يقع مركز الخريطة على المفصل. */}
+      <div className="compass-spread mx-auto max-w-shell">
         <FadeUp><Label>بوصلة الفكر</Label></FadeUp>
         <FadeUp delay={0.05}>
           <h2 className="mb-7 font-display text-[clamp(2rem,5vw,3.3rem)] font-semibold leading-[1.25] text-ink md:mb-10">

@@ -1,5 +1,7 @@
 # iPhone Duo — قبول الجولة النهائية: الكتاب المفتوح (14 نوفمبر 2026)
 
+> **الجزء الثاني (بعد دمج #229):** «بوصلة الفكر» في الرئيسية (المحاور والخريطة يميناً ومقالات المحور يساراً، فلا يقع مركز الخريطة على المفصل)، الأبحاث (القائمة يميناً والفهرسة والتصفية يساراً ثابتة)، لوحات «بالأرقام» (الحلقات يميناً والخط الزمني يساراً)، شريط المنظومة الفكرية ترويسةً على الصفحة اليمنى (العقد، مسارات الفكر، المسارات، الفكر، الأثر)، ترقيم الصفحات في ذيل الصفحة اليمنى، «عالم الكتاب» فهرساً من عمودين، صدى العنوان في الشريط العلوي مخفي في الشاشة الداخلية، وكل الاستعلامات مقيّدة بـ `screen` (مراجعة Codex على #229). القياس صار يمسح الصفحة كلها (خمسة مواضع) لا أعلاها فقط.
+
 تبني هذه الجولة على [IPHONE-DUO-ADAPTIVE-QUALITY.md](IPHONE-DUO-ADAPTIVE-QUALITY.md) (#226) ولا تعيد فتح ما حُلّ فيها (موضع القراءة، الارتفاع المضغوط، حواف الأمان، عمود مِحور الجانبي في 600×350).
 
 **المشكلة:** الشاشة الداخلية في وضع الكتاب (≈669×867 طولياً و≈951×585 عرضياً) كانت تعرض عموداً واحداً ممطوطاً كصفحة آيباد، والعنوان والفقرات والأزرار تعبر خط المفصل.
@@ -61,115 +63,115 @@
 
 الوضعيات: **A** مطوي طولي (382×580، 385×571، 320×568) · **B** مطوي عرضي (594×368) · **C** كتاب طولي (669×867) · **D** كتاب عرضي (951×585) · **E** حاسوب (951×350، 600×350) · **F** نصف/قصير داخلي (669×520، 600×480) · **G** لوحي/مكتبي (768×1024 … 1440×900) · **H** هواتف مرجعية (360×640، 390×844، 844×390) · **I** انتقال حي بلا إعادة تحميل · **J** إجهاد الوصول.
 
-المنصة: Playwright WebKit، `VITE_DEMO_MODE=1` (بيانات وهمية، Firestore وهمي، `/api/*` معترَضة؛ لا كتابة إلى أي خادم)، لمس، تقليل الحركة. الصفحات التسع الأولى قيست في 26 مقاساً؛ بقية المسارات في 9 مقاسات مفتاحية (382×580، 594×368، 669×867، 951×585، 951×350، 600×350، 669×520، 390×844، 1280×800)، فخلية لا مقاس لها هناك = `NOT_TESTED`. «على الكعب» = عدد العناصر النصية أو التفاعلية الظاهرة التي تقطع المنطقة (المركز ± 16px) في أعلى الصفحة وعند 35% منها.
+المنصة: Playwright WebKit، `VITE_DEMO_MODE=1` (بيانات وهمية، Firestore وهمي، `/api/*` معترَضة؛ لا كتابة إلى أي خادم)، لمس، تقليل الحركة. الصفحات التسع الأولى قيست في 26 مقاساً؛ بقية المسارات في 9 مقاسات مفتاحية (382×580، 594×368، 669×867، 951×585، 951×350، 600×350، 669×520، 390×844، 1280×800)، فخلية لا مقاس لها هناك = `NOT_TESTED`. «على الكعب» = عدد العناصر النصية أو التفاعلية الظاهرة التي تقطع المنطقة (المركز ± 16px) في أعلى الصفحة وعند 20% و40% و60% و80% منها.
 
 | الشاشة | المسار | A | B | C | D | E | F | G | H | I | J |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| home | `/` | PASS | PASS | PARTIAL (9 على الكعب) | PARTIAL (3 على الكعب) | PASS | PARTIAL (4 على الكعب) | PASS | PASS | NOT_TESTED | PARTIAL |
-| articles | `/articles` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL |
-| article | `/articles/aggression-in-the-sky-and-steadfastness-withinarabic` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL |
+| home | `/` | PASS | PASS | PARTIAL (8 على الكعب) | PARTIAL (7 على الكعب) | PASS | PARTIAL (8 على الكعب) | PASS | PASS | NOT_TESTED | PARTIAL |
+| articles | `/articles` | PASS | PASS | PARTIAL (1 على الكعب) | PARTIAL (1 على الكعب) | PASS | PARTIAL (1 على الكعب) | PASS | PASS | PASS | PARTIAL |
+| article | `/articles/aggression-in-the-sky-and-steadfastness-withinarabic` | PASS | PASS | PARTIAL (1 على الكعب) | PARTIAL (1 على الكعب) | PASS | PASS | PASS | PASS | PASS | PARTIAL |
 | publications | `/publications` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_TESTED | NOT_TESTED |
 | book | `/publications/teaching` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_TESTED | PARTIAL |
 | search-empty | `/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_TESTED | PARTIAL |
 | contact | `/contact` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL |
 | mihwar | `/mihwar` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_TESTED |
 | not-found | `/no-such-page-duo` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_TESTED | PARTIAL |
-| launch | `/launch` | PASS·م | PASS·م | PARTIAL (9 على الكعب) | PARTIAL (3 على الكعب) | PASS·م | PARTIAL (3 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| launch | `/launch` | PASS·م | PASS·م | PARTIAL (10 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (9 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 | live | `/live` | PASS·م | PASS·م | PARTIAL (10 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (8 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| research | `/research` | PASS·م | PASS·م | PARTIAL (8 على الكعب) | PARTIAL (3 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| paper | `/research/faculty-attitudes-edtech` | PASS·م | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| encyclopedia | `/publications/encyclopedia` | PASS·م | PASS·م | PARTIAL (15 على الكعب) | PARTIAL (2 على الكعب) | PASS·م | PARTIAL (8 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| listen | `/listen` | PASS·م | PASS·م | PARTIAL (23 على الكعب) | PARTIAL (13 على الكعب) | PASS·م | PARTIAL (1 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| radio | `/radio` | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| research | `/research` | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| paper | `/research/faculty-attitudes-edtech` | PASS·م | PASS·م | PARTIAL (17 على الكعب) | PARTIAL (16 على الكعب) | PASS·م | PARTIAL (12 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| encyclopedia | `/publications/encyclopedia` | PASS·م | PASS·م | PARTIAL (27 على الكعب) | PARTIAL (13 على الكعب) | PASS·م | PARTIAL (23 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| listen | `/listen` | PASS·م | PASS·م | PARTIAL (44 على الكعب) | PARTIAL (27 على الكعب) | PASS·م | PARTIAL (39 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| radio | `/radio` | PASS·م | PASS·م | PARTIAL (8 على الكعب) | PARTIAL (4 على الكعب) | PASS·م | PARTIAL (5 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 | search-start | `/search` | PASS·م | PASS·م | PASS | PASS | PASS·م | PASS | PASS·م | PASS·م | NOT_TESTED | PARTIAL |
-| search-askbook | `/search?tab=askbook` | PASS·م | PASS·م | PARTIAL (6 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | PARTIAL |
-| ask | `/ask` | PASS·م | PASS·م | PARTIAL (5 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| decade | `/decade` | PASS·م | PASS·م | PARTIAL (5 على الكعب) | PARTIAL (5 على الكعب) | PASS·م | PARTIAL (2 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| thought-paths | `/thought-paths` | PASS·م | PASS·م | PARTIAL (14 على الكعب) | PARTIAL (10 على الكعب) | PASS·م | PARTIAL (9 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| paths | `/paths` | PASS·م | PASS·م | PARTIAL (12 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (7 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| path | `/paths/ai-and-the-learner` | PASS·م | PASS·م | PARTIAL (12 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (8 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| concept | `/concept/%D8%A7%D9%84%D8%AA%D8%B9%D9%84%D9%8A%D9%85` | PASS·م | PASS·م | PARTIAL (34 على الكعب) | PARTIAL (22 على الكعب) | PASS·م | PARTIAL (15 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| thought | `/thought` | PASS·م | PASS·م | PARTIAL (2 على الكعب) | PARTIAL (2 على الكعب) | PASS·م | PARTIAL (2 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| atlas | `/atlas` | PASS·م | PASS·م | PARTIAL (4 على الكعب) | PARTIAL (2 على الكعب) | PASS·م | PARTIAL (3 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| media | `/media` | PASS·م | PASS·م | PARTIAL (7 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| media-detail | `/media/radio-idaa` | PASS·م | PASS·م | PARTIAL (5 على الكعب) | PARTIAL (3 على الكعب) | PASS·م | PARTIAL (3 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| questions | `/questions` | PASS·م | PASS·م | PARTIAL (11 على الكعب) | PARTIAL (6 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| radar | `/radar` | PASS·م | PASS·م | PARTIAL (2 على الكعب) | PASS·م | PASS·م | PARTIAL (9 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| admin | `/admin` | PASS·م | PASS·م | PARTIAL (20 على الكعب) | PARTIAL (12 على الكعب) | PASS·م | PARTIAL (14 على الكعب) | FAIL ( 4 مقصوص) | PASS·م | NOT_TESTED | NOT_TESTED |
-| curated | `/curated` | PASS·م | PASS·م | PARTIAL (13 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (8 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| upcoming | `/upcoming` | PASS·م | PASS·م | PARTIAL (17 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (13 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| inbox | `/inbox` | PASS·م | PASS·م | PARTIAL (7 على الكعب) | PARTIAL (4 على الكعب) | PASS·م | PARTIAL (3 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| about | `/about` | PASS·م | PASS·م | PARTIAL (8 على الكعب) | PASS·م | PASS·م | PARTIAL (5 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| cv | `/cv` | PASS·م | PASS·م | PARTIAL (8 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (7 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| impact | `/impact` | PASS·م | PASS·م | PARTIAL (1 على الكعب) | PARTIAL (1 على الكعب) | PASS·م | PARTIAL (1 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| search-askbook | `/search?tab=askbook` | PASS·م | PASS·م | PARTIAL (6 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (5 على الكعب) | PASS·م | PASS·م | NOT_TESTED | PARTIAL |
+| ask | `/ask` | PASS·م | PASS·م | PARTIAL (8 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (7 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| decade | `/decade` | PASS·م | PASS·م | PARTIAL (16 على الكعب) | PARTIAL (12 على الكعب) | PASS·م | PARTIAL (11 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| thought-paths | `/thought-paths` | PASS·م | PASS·م | PARTIAL (14 على الكعب) | PARTIAL (10 على الكعب) | PASS·م | PARTIAL (12 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| paths | `/paths` | PASS·م | PASS·م | PARTIAL (12 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (10 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| path | `/paths/ai-and-the-learner` | PASS·م | PASS·م | PARTIAL (14 على الكعب) | PARTIAL (12 على الكعب) | PASS·م | PARTIAL (12 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| concept | `/concept/%D8%A7%D9%84%D8%AA%D8%B9%D9%84%D9%8A%D9%85` | PASS·م | PASS·م | PARTIAL (83 على الكعب) | PARTIAL (53 على الكعب) | PASS·م | PARTIAL (67 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| thought | `/thought` | PASS·م | PASS·م | PARTIAL (9 على الكعب) | PARTIAL (6 على الكعب) | PASS·م | PARTIAL (9 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| atlas | `/atlas` | PASS·م | PASS·م | PARTIAL (4 على الكعب) | PARTIAL (5 على الكعب) | PASS·م | PARTIAL (5 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| media | `/media` | PASS·م | PASS·م | PARTIAL (30 على الكعب) | PARTIAL (22 على الكعب) | PASS·م | PARTIAL (24 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| media-detail | `/media/radio-idaa` | PASS·م | PASS·م | PARTIAL (6 على الكعب) | PARTIAL (5 على الكعب) | PASS·م | PARTIAL (5 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| questions | `/questions` | PASS·م | PASS·م | PARTIAL (10 على الكعب) | PARTIAL (18 على الكعب) | PASS·م | PARTIAL (9 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| radar | `/radar` | PASS·م | PASS·م | PARTIAL (11 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (11 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| admin | `/admin` | PASS·م | PASS·م | PARTIAL (24 على الكعب) | PARTIAL (17 على الكعب) | PASS·م | PARTIAL (21 على الكعب) | FAIL ( 4 مقصوص) | PASS·م | NOT_TESTED | NOT_TESTED |
+| curated | `/curated` | PASS·م | PASS·م | PARTIAL (13 على الكعب) | PARTIAL (10 على الكعب) | PASS·م | PARTIAL (11 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| upcoming | `/upcoming` | PASS·م | PASS·م | PARTIAL (20 على الكعب) | PARTIAL (10 على الكعب) | PASS·م | PARTIAL (15 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| inbox | `/inbox` | PASS·م | PASS·م | PARTIAL (8 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| about | `/about` | PASS·م | PASS·م | PARTIAL (13 على الكعب) | PARTIAL (3 على الكعب) | PASS·م | PARTIAL (12 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| cv | `/cv` | PASS·م | PASS·م | PARTIAL (18 على الكعب) | PARTIAL (17 على الكعب) | PASS·م | PARTIAL (13 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| impact | `/impact` | PASS·م | PASS·م | PARTIAL (18 على الكعب) | PARTIAL (22 على الكعب) | PASS·م | PARTIAL (17 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 | cv-file | `/cv-file/ar` | PASS·م | PASS·م | PARTIAL (4 على الكعب) | PARTIAL (4 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| card | `/card` | PASS·م | PASS·م | PARTIAL (19 على الكعب) | PARTIAL (15 على الكعب) | PASS·م | PARTIAL (14 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| card | `/card` | PASS·م | PASS·م | PARTIAL (25 على الكعب) | PARTIAL (21 على الكعب) | PASS·م | PARTIAL (20 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 | cards | `/cards` | PASS·م | PASS·م | PASS·م | PARTIAL (2 على الكعب) | PASS·م | PARTIAL (2 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 | privacy | `/privacy` | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | NOT_TESTED | NOT_TESTED |
 | terms | `/terms` | PASS·م | PASS·م | PASS | PASS | PASS·م | PASS | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 | data-deletion | `/data-deletion` | PASS·م | PASS·م | PASS | PASS | PASS·م | PASS | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 | mylib | `/mylib` | PASS·م | PASS·م | PASS | PASS | PASS·م | PASS | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| en | `/en` | PASS·م | PASS·م | PARTIAL (26 على الكعب) | PARTIAL (21 على الكعب) | PASS·م | PARTIAL (17 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| en-cv | `/en/cv` | PASS·م | PASS·م | PARTIAL (4 على الكعب) | PARTIAL (3 على الكعب) | PASS·م | PARTIAL (4 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| en-research | `/en/research` | PASS·م | PASS·م | PARTIAL (13 على الكعب) | PARTIAL (7 على الكعب) | PASS·م | PARTIAL (5 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
-| en-contact | `/en/contact` | PASS·م | PASS·م | PARTIAL (10 على الكعب) | PARTIAL (6 على الكعب) | PASS·م | PARTIAL (6 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| en | `/en` | PASS·م | PASS·م | PARTIAL (35 على الكعب) | PARTIAL (20 على الكعب) | PASS·م | PARTIAL (27 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| en-cv | `/en/cv` | PASS·م | PASS·م | PARTIAL (16 على الكعب) | PARTIAL (9 على الكعب) | PASS·م | PARTIAL (15 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| en-research | `/en/research` | PASS·م | PASS·م | PARTIAL (32 على الكعب) | PARTIAL (24 على الكعب) | PASS·م | PARTIAL (21 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
+| en-contact | `/en/contact` | PASS·م | PASS·م | PARTIAL (12 على الكعب) | PARTIAL (8 على الكعب) | PASS·م | PARTIAL (8 على الكعب) | PASS·م | PASS·م | NOT_TESTED | NOT_TESTED |
 
-**عناصر على الكعب في الشاشات الداخلية (669×867 + 951×585 + 669×520، أعلى الصفحة و35% منها)، قبل وبعد لكل مسار** (`audit-routes-before.json` مقيس على `origin/main`):
+**عناصر على الكعب في الشاشات الداخلية لكل مسار** (669×867 + 951×585 + 669×520، كل منها في أعلى الصفحة وعند 20/40/60/80% من طولها؛ أي عنصر يُعدّ مرة واحدة في كل مقاس). هذا العدّ أشدّ من عدّ الجزء الأول (موضعان فقط)، فلا يُقارن به رقماً برقم:
 
-| المسار | قبل (main) | بعد |
-|---|---|---|
-| home | 17 | 16 |
-| articles | 62 | 0 |
-| article | 30 | 0 |
-| publications | 26 | 0 |
-| book | 27 | 0 |
-| search-empty | 27 | 0 |
-| contact | 28 | 0 |
-| mihwar | 18 | 0 |
-| not-found | 38 | 0 |
-| launch | 27 | 15 |
-| live | 26 | 26 |
-| research | 24 | 15 |
-| paper | 0 | 4 |
-| encyclopedia | 21 | 25 |
-| listen | 50 | 37 |
-| radio | 15 | 0 |
-| search-start | 33 | 0 |
-| search-askbook | 19 | 17 |
-| ask | 18 | 16 |
-| decade | 13 | 12 |
-| thought-paths | 25 | 33 |
-| paths | 34 | 27 |
-| path | 35 | 28 |
-| concept | 38 | 71 |
-| thought | 13 | 6 |
-| atlas | 10 | 9 |
-| media | 20 | 18 |
-| media-detail | 12 | 11 |
-| questions | 24 | 21 |
-| radar | 4 | 11 |
-| admin | 46 | 46 |
-| curated | 24 | 28 |
-| upcoming | 31 | 38 |
-| inbox | 21 | 14 |
-| about | 17 | 13 |
-| cv | 20 | 23 |
-| impact | 5 | 3 |
-| cv-file | 12 | 12 |
-| card | 51 | 48 |
-| cards | 4 | 4 |
-| privacy | 33 | 0 |
-| terms | 24 | 0 |
-| data-deletion | 26 | 0 |
-| mylib | 38 | 0 |
-| en | 48 | 64 |
-| en-cv | 16 | 11 |
-| en-research | 28 | 25 |
-| en-contact | 28 | 22 |
-| **المجموع** | **1206** | **769** |
+| المسار | عناصر على الكعب |
+|---|---|
+| home | 23 |
+| articles | 3 |
+| article | 2 |
+| publications | 0 |
+| book | 0 |
+| search-empty | 0 |
+| contact | 0 |
+| mihwar | 0 |
+| not-found | 0 |
+| launch | 27 |
+| live | 26 |
+| research | 0 |
+| paper | 45 |
+| encyclopedia | 63 |
+| listen | 110 |
+| radio | 17 |
+| search-start | 0 |
+| search-askbook | 18 |
+| ask | 22 |
+| decade | 39 |
+| thought-paths | 36 |
+| paths | 29 |
+| path | 38 |
+| concept | 203 |
+| thought | 24 |
+| atlas | 14 |
+| media | 76 |
+| media-detail | 16 |
+| questions | 37 |
+| radar | 30 |
+| admin | 62 |
+| curated | 34 |
+| upcoming | 45 |
+| inbox | 20 |
+| about | 28 |
+| cv | 48 |
+| impact | 57 |
+| cv-file | 12 |
+| card | 66 |
+| cards | 4 |
+| privacy | 0 |
+| terms | 0 |
+| data-deletion | 0 |
+| mylib | 0 |
+| en | 82 |
+| en-cv | 40 |
+| en-research | 77 |
+| en-contact | 28 |
+| **المجموع** | **1501** |
 
 
-**القراءة الصريحة للمصفوفة:** صُمّم الكتاب المفتوح في 13 مساراً بلا أي عنصر على الكعب (المقال، الأرشيف، المؤلفات، الكتاب، البحث بحالتيه، التواصل، مِحور، 404 و`/mylib`، القانونية الثلاث، `/radio` الذي صار نظيفاً بإصلاح التذييل والشريط المشتركين) وفي غلاف الرئيسية. ورُوجعت لقطات الصفحات التسع الأولى والخصوصية بالعين في 669×867 و951×585 و951×350 و600×350 و594×368 و382×580. عدد العناصر على الكعب في المسارات كلها نزل من 1206 إلى 769. بقية المسارات لا تتمدد أفقياً ولا يُقصّ فيها شيء، لكنها ما زالت **عموداً واحداً في الشاشة الداخلية** وبعض عناصرها يعبر الكعب (`PARTIAL`). هي قائمة العمل التالية (القسم 7).
+**القراءة الصريحة للمصفوفة (بعد الجزء الثاني):** 12 مساراً بلا أي عنصر على الكعب في الصفحة كلها: المؤلفات، صفحة الكتاب، البحث بحالتيه، التواصل، مِحور، 404 و`/mylib`، الأبحاث، القانونية الثلاث. المقال والأرشيف والرئيسية صارت كتاباً في أغلبها وبقيت فيها عناصر قليلة في أعماقها (تلميح «ظلِّل جملة» العائم، تاريخ في «بصمة القارئ»، سكك الرئيسية السفلى). **بقية المسارات (32) ما زالت عموداً واحداً في الشاشة الداخلية** وفيها عناصر على الكعب؛ لا تمرير أفقي ولا قص فيها (عدا `/admin` السابق).
 
 ## 5. الانتقال الحي (I) — صفحة واحدة بلا إعادة تحميل
 
@@ -202,8 +204,8 @@
 **P0:** لا شيء معروف.
 
 **P1**
-1. 34 مساراً (منها بقية الرئيسية) لم يُصمَّم لها كتاب مفتوح بعد، وعناصر منها تعبر الكعب (العدد لكل مسار في الجدول أعلاه): أكثرها `/concept/:term`، `/en`، `/card`، `/admin`، `/upcoming`، `/listen`، `/thought-paths`، `/paths`. الترتيب المقترح بحسب الزيارات: `/research` و`/research/:slug`، `/listen`، `/media` و`/media/:slug`، `/cv`، `/paths`، `/concept/:term`، ثم الإنجليزية.
-2. الرئيسية بعد الغلاف: مخطط «التعليم» الدائري مركزه في منتصف الشاشة، والسكك الأفقية للبطاقات تمر فوق الكعب أثناء السحب (السحب جزء من الهوية، و«النقزة» ممنوعة فلا snap إلزامي). يحتاج قراراً تصميمياً من المالك.
+1. 32 مساراً لم يُصمَّم لها كتاب مفتوح بعد، وعناصر منها تعبر الكعب (العدد لكل مسار في الجدول أعلاه): أكثرها `/concept/:term`، `/en`، `/card`، `/admin`، `/upcoming`، `/listen`، `/thought-paths`، `/paths`. الترتيب المقترح بحسب الزيارات: `/research` و`/research/:slug`، `/listen`، `/media` و`/media/:slug`، `/cv`، `/paths`، `/concept/:term`، ثم الإنجليزية.
+2. الرئيسية: البوصلة والغلاف صارا كتاباً؛ بقيت «أربع زوايا» وسكك البحوث والإعلام و«خرائط الفكر» في أسفلها تمر فوق الكعب (السحب الأفقي جزء من الهوية، و«النقزة» ممنوعة فلا snap إلزامي).
 3. التشغيل الصوتي الفعلي أثناء الطي لم يُختبر.
 
 **P2**

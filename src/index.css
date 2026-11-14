@@ -5726,7 +5726,9 @@ html.dark .content-book-detail .book-detail-cover {
 /* ── مساحة اللمس ──
    الإصبع تحتاج نحو 44 بكسل، والعين تكتفي بأقلّ. هذه توسّع ما تلمسه اليد
    دون أن تُكبّر ما تراه العين — فلا يتغيّر تخطيطٌ ولا حجم. */
-.tap-44 { position: relative; }
+/* :where يصفّر الخصوصية، فتبقى absolute/fixed/sticky المصرَّح بها على العنصر (مثل زر حفظ اللقاء
+   فوق بطاقة الإعلام) ولا يطمسها position:relative فيسقط الزر خارج البطاقة ويُقصّ. */
+:where(.tap-44) { position: relative; }
 .tap-44::after {
   content: "";
   position: absolute;
@@ -7049,6 +7051,9 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   .media-feature-card.is-secondary > a > div:last-child { padding: .85rem; }
   .media-feature-card.is-secondary h3 { font-size: .88rem; line-height: 1.55; }
   .media-feature-card.is-secondary > a > div:last-child > div:last-child { display: none; }
+  /* زر الحفظ يجلس في ركن عمود النص السفلي مع حشوة تحجز له مكانه، وإلا غطّى العنوان الطويل وقصّه. */
+  .media-feature-card.is-secondary > .absolute { top: auto; bottom: .4rem; left: .5rem; }
+  .media-feature-card.is-secondary > a > div:last-child { padding-bottom: 3.4rem; }
   /* السنة صارت ترويسة فوق الصفوف بدل عمود 56px يضيّق العنوان إلى كلمتين على 320 */
   .media-year-group { grid-template-columns: minmax(0,1fr); gap: 0; }
   .media-year-mark { display: flex; align-items: center; gap: .6rem; padding-block: 1rem .15rem; font-size: .76rem; direction: rtl; text-align: start; }
@@ -9477,6 +9482,8 @@ body {
   .media-spread .media-feature-card.is-secondary > a { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); }
   .media-spread .media-feature-card.is-secondary .spatial-media { height: 100%; min-height: 7.6rem; aspect-ratio: auto !important; }
   .media-spread .media-feature-card.is-secondary > a > div:last-child { padding: .85rem; }
+  .media-spread .media-feature-card.is-secondary > .absolute { top: auto; bottom: .4rem; left: .5rem; }
+  .media-spread .media-feature-card.is-secondary > a > div:last-child { padding-bottom: 3.4rem; }
   .media-spread .media-editorial-intro > span { display: none; }
   .media-spread .media-editorial-archive > .site-fade-up > div { grid-template-columns: minmax(0, 1fr); }
   .media-spread .media-editorial-archive > .site-fade-up > div > p { text-align: start; }

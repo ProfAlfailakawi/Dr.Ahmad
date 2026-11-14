@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=39';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=39';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=39';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=39';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=39';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=40';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=40';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=40';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=40';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=40';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -569,7 +569,7 @@ let ar = null, rotor = null;
 
 const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
 
-const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=16`), location.href).href;
+const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=17`), location.href).href;
 let fastWorkers = [];
 function packFailed() {
   $('loading').classList.remove('hidden');
@@ -585,7 +585,7 @@ async function startAR(id = packId) {
     const cores = navigator.hardwareConcurrency || 4;
     fastWorkers = captureWorkers(Math.min(4, Math.max(2, cores - 2)));
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=16`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=17`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 1, missTolerance: 10,
     });
     // MindAR creates its controller inside start(); the fast matching is attached at that moment, before the pages load.
@@ -600,8 +600,8 @@ async function startAR(id = packId) {
     let ids = pack.ids, packNo = PACKS.indexOf(pack);
     const slots = Math.max(...PACKS.map((p) => p.ids.length));
     // A page can be recognised through more than one target: the 73|72 picture is recognised from either page, and both open the scene of page 72.
-    // The second target sits in page 72's coordinates as the page to its left (u from -1 to 0).
-    const ALIAS = { 'prophetic-gentleness-case-73': { of: 'prophetic-gentleness-case', crop: [-1, 0, 0, 1] } };
+    // Both targets are the PICTURE only (rich in features, stable tracking); the second one is the picture's part on page 73, in page 72's coordinates (u from -0.38 to 0).
+    const ALIAS = { 'prophetic-gentleness-case-73': { of: 'prophetic-gentleness-case', crop: [-0.38, 0.25, 0.0, 0.93] } };
     const expOf = (i) => { const al = ALIAS[ids[i]], k = EXPERIENCES.findIndex((x) => x.id === (al ? al.of : ids[i])); return k < 0 ? null : [k, al ? { ...EXPERIENCES[k], crop: al.crop } : EXPERIENCES[k]]; };
     const anchors = Array.from({ length: slots }, (_, i) => {
       const a = mind.addAnchor(i);

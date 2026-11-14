@@ -3,7 +3,7 @@
 //   bridge(): two facing pages talk. Moving from one page to the page opposite it draws a bridge of light across the gutter, carrying the first page's title over.
 //   paperVideo: the page's YouTube video plays on the paper itself, standing on the page and following it, instead of leaving the book.
 import * as THREE from 'three';
-import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=39';
+import { glow, sprite, ease, easeBack, clamp01, PAGE_H } from './kit.js?v=40';
 
 // ------------------------------------------------------------ visits (kept on the device only)
 const VKEY = 'living-encyclopedia:visits';

@@ -12,7 +12,7 @@ let loader = null;   // { worker, pack, waiters } kept alive from page load unti
 // Started as early as possible, so the download runs while the libraries load.
 export function startPack(url) {
   if (loader) return loader;
-  const l = loader = { worker: new Native(new URL('./fast-index.js?v=39', import.meta.url)), pack: null, onCands: null, onFail: null, failed: false };
+  const l = loader = { worker: new Native(new URL('./fast-index.js?v=40', import.meta.url)), pack: null, onCands: null, onFail: null, failed: false };
   const fail = () => { l.failed = true; l.onFail?.(); };
   l.worker.onerror = fail;
   l.worker.onmessage = ({ data }) => {

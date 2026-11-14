@@ -9016,6 +9016,8 @@ body {
   .duo-book #articles-list > li:nth-child(2) { border-top: 0; }
   .duo-book #articles-list > li > a.group { display: flex; flex-direction: column; align-items: stretch; gap: .25rem; }
   .duo-book #articles-list > li > a > time { width: auto; }
+  /* بداية العمود الأيسر ملاصقة للكعب: ربع سطر يبقي التاريخ والعنوان في صفحتهما. */
+  .duo-book #articles-list > li:nth-child(even) { padding-inline-start: .25rem; }
   .articles-filter-bar .editorial-tablist { min-width: 0; }
 
   /* ٤) التذييل: الشعار والتواصل على اليمنى، وروابط الموقع المختصرة على
@@ -9328,6 +9330,9 @@ body {
   /* «جارٍ تجهيز السيرة» (/cv-file/:kind): رسالة الانتظار في الصفحة الأولى. */
   .cv-file-stage { justify-content: flex-start; }
   .cv-file-stage > div { width: calc(50% - var(--duo-spine) / 2); }
+  /* مدرّب التظليل العائم في المقال («ظلِّل جملةً تلمسك»): في الصفحة اليمنى حيث
+     النص، لا شريط في منتصف الكعب. */
+  .reader-highlight-coach { left: calc(50% + var(--duo-spine) / 2 + .75rem); right: max(1rem, env(safe-area-inset-right, 0px)); margin-inline: 0; max-width: none; }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

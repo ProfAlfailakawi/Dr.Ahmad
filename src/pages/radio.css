@@ -385,9 +385,7 @@ body:has(.radio-root) .site-footer {
 /* iPhone Duo — الكتاب المفتوح (الشروط نفسها في index.css): الجملة الحيّة
    بطلة الصفحة اليمنى، و«على الهواء» واللهجة وجدول ما يلي على اليسرى؛ لا
    سطر يعبر الكعب. زر الاستماع الثابت في ذيل الصفحة اليسرى أصلاً. */
-@media screen and (min-width: 640px) and (max-width: 720px) and (min-height: 520px),
-       screen and (min-width: 880px) and (max-width: 1000px) and (min-height: 520px) and (min-aspect-ratio: 7/5),
-       screen and (horizontal-viewport-segments: 2) {
+@media screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape) {
   .radio-stage {
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--duo-spine, 32px) minmax(0, 1fr);

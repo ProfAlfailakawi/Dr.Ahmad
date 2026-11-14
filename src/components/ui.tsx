@@ -450,7 +450,7 @@ function Overlay({ close, openSearch }: { close: () => void; openSearch: () => v
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_75%_35%,rgba(62,92,120,.055),transparent_65%)]" />
 
       <div className="relative min-h-0 flex-1 max-md:mt-[calc(4rem+env(safe-area-inset-top))] [@media(max-height:500px)]:mt-[calc(4rem+env(safe-area-inset-top))] overflow-y-auto overscroll-contain">
-        <div className="flex min-h-full items-start px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(5.4rem+env(safe-area-inset-top))] max-md:pt-[1.4rem] md:items-center md:px-11 md:py-28 md:[@media(max-height:500px)]:pt-12">
+        <div className="site-menu-inner flex min-h-full items-start px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(5.4rem+env(safe-area-inset-top))] max-md:pt-[1.4rem] md:items-center md:px-11 md:py-28 md:[@media(max-height:500px)]:pt-12">
         <div className="site-menu-groups mx-auto grid w-full max-w-shell gap-5 md:grid-cols-3 md:gap-x-12 md:gap-y-10">
           {groups.map((g, gi) => (
             <div key={g.label} className="border-b border-hair pb-5 md:border-0 md:pb-0">
@@ -635,7 +635,7 @@ function EnglishOverlay({ close, openSearch }: { close: () => void; openSearch: 
       exit={reduce ? { opacity: 0 } : { y: '-100%' }}
       transition={{ duration: .44, ease: EASE }}
     >
-      <div className="flex flex-1 items-center overflow-y-auto px-6 py-28 md:px-11">
+      <div className="site-menu-inner flex flex-1 items-center overflow-y-auto px-6 py-28 md:px-11">
         <div className="mx-auto w-full max-w-shell">
           <p className="text-[.72rem] font-semibold uppercase text-accent">Navigate</p>
           <nav className="mt-6 grid gap-1 md:max-w-2xl" aria-label="English pages">

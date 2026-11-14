@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { bookFlowReveal, isBookFlow } from './book-flow'
 
 /**
  * يحفظ موضع القراءة حين يتغيّر عرض النافذة دون إعادة تحميل:
@@ -32,6 +33,20 @@ export function useKeepReadingPlace(containerId: string, enabled = true) {
       const body = document.getElementById(containerId)
       if (!body) { anchor = null; return }
       const line = readingLine()
+      const flow = body.closest<HTMLElement>('[data-book-flow]')
+      if (isBookFlow(flow)) {
+        // الكتاب المفتوح: الصفحة الحالية هي أول كتلة تبدأ داخل نافذة التقليب (لا مسافة عمودية).
+        const f = flow.getBoundingClientRect()
+        const rtl = getComputedStyle(flow).direction === 'rtl'
+        for (const el of body.querySelectorAll(BLOCKS)) {
+          const r = el.getBoundingClientRect()
+          if (!r.height || (rtl ? r.left >= f.right : r.right <= f.left) || (rtl ? r.right <= f.left : r.left >= f.right)) continue
+          anchor = { el, ratio: 0 }
+          return
+        }
+        anchor = null
+        return
+      }
       if (body.getBoundingClientRect().top > line) { anchor = null; return }
       for (const el of body.querySelectorAll(BLOCKS)) {
         const r = el.getBoundingClientRect()
@@ -52,6 +67,8 @@ export function useKeepReadingPlace(containerId: string, enabled = true) {
       restoreFrame = window.requestAnimationFrame(() => {
         restoreFrame = 0
         if (!saved || !saved.el.isConnected) { capture(); return }
+        // دخلنا الكتاب (أو خرجنا منه): في الكتاب نقلّب إلى الورقة التي فيها الفقرة.
+        if (bookFlowReveal(saved.el)) { anchor = saved; return }
         const r = saved.el.getBoundingClientRect()
         const delta = r.top + saved.ratio * r.height - readingLine()
         if (Math.abs(delta) > 2) window.scrollTo({ top: window.scrollY + delta, left: 0, behavior: 'instant' as ScrollBehavior })
@@ -60,12 +77,12 @@ export function useKeepReadingPlace(containerId: string, enabled = true) {
     }
 
     capture()
-    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true })
     window.addEventListener('resize', onResize, { passive: true })
     return () => {
       if (frame) window.cancelAnimationFrame(frame)
       if (restoreFrame) window.cancelAnimationFrame(restoreFrame)
-      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('scroll', onScroll, true)
       window.removeEventListener('resize', onResize)
     }
   }, [containerId, enabled])

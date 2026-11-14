@@ -588,17 +588,18 @@ export default function Search() {
 
 
   return (
-    <Page className="content-search page-journey">
+    <Page className="content-search page-journey duo-book">
       <PageHead
         label="بحث"
         title="البحث العميق."
         sub="يفهم ما تقصده حتى لو لم تعرف عنوان المادة أو كلماتها، ثم يفتح الكتب والمقالات والأبحاث واللقاءات معاً."
       />
 
-      {tab !== 'askbook' && <div className="px-6 pt-8 md:px-11"><div className="mx-auto max-w-3xl"><KnowledgeEntry /></div></div>}
+      {tab !== 'askbook' && <div className="px-6 pt-8 md:px-11"><div className="search-entry mx-auto max-w-3xl"><KnowledgeEntry /></div></div>}
 
       <section className="px-6 py-10 md:px-11 md:py-12">
-        <div className="mx-auto max-w-shell">
+        {/* في الكتاب المفتوح: السؤال والتبويبات على اليمنى والنتائج على اليسرى. */}
+        <div className="search-spread mx-auto max-w-shell">
           {tab !== 'askbook' && <FadeUp>
             <div className="border-b border-hair pb-8">
               <div className="search-field-shell relative">

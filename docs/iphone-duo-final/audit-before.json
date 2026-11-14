@@ -1,0 +1,7070 @@
+{
+ "summary": {
+  "label": "before",
+  "base": "http://127.0.0.1:5110",
+  "engine": "webkit",
+  "generatedAt": "2026-11-13T23:35:44.155Z",
+  "seconds": 424,
+  "snapshots": 234,
+  "overflowX": [],
+  "clipped": 0,
+  "smallTargets": 15,
+  "spineHitsInner": 273,
+  "spineByPage": {
+   "home": [
+    "669x867: top 1 / mid 10",
+    "951x585: top 0 / mid 3",
+    "669x520: top 1 / mid 4"
+   ],
+   "articles": [
+    "669x867: top 9 / mid 20",
+    "951x585: top 3 / mid 14",
+    "669x520: top 6 / mid 12"
+   ],
+   "article": [
+    "669x867: top 8 / mid 8",
+    "951x585: top 3 / mid 6",
+    "669x520: top 4 / mid 5"
+   ],
+   "publications": [
+    "669x867: top 3 / mid 10",
+    "951x585: top 2 / mid 0",
+    "669x520: top 3 / mid 7"
+   ],
+   "book": [
+    "669x867: top 2 / mid 8",
+    "951x585: top 4 / mid 5",
+    "669x520: top 1 / mid 6"
+   ],
+   "search-empty": [
+    "669x867: top 6 / mid 7",
+    "951x585: top 3 / mid 4",
+    "669x520: top 3 / mid 3"
+   ],
+   "contact": [
+    "669x867: top 4 / mid 7",
+    "951x585: top 3 / mid 5",
+    "669x520: top 3 / mid 5"
+   ],
+   "mihwar-gate": [
+    "669x867: top 3 / mid 3",
+    "951x585: top 3 / mid 3",
+    "669x520: top 3 / mid 3"
+   ],
+   "not-found": [
+    "669x867: top 8 / mid 8",
+    "951x585: top 3 / mid 6",
+    "669x520: top 4 / mid 5"
+   ]
+  },
+  "pageErrors": []
+ },
+ "rows": [
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "control",
+      "el": "a.human-core__cv.group «المسار الأكاديمي والمهنيالمسيرة التي صنع»",
+      "left": 25,
+      "right": 645,
+      "top": 612
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span «هوية»",
+      "left": 316,
+      "right": 343,
+      "top": 85
+     },
+     {
+      "kind": "text",
+      "el": "span.dna-hubcl «التعليم»",
+      "left": 317,
+      "right": 353,
+      "top": 438
+     },
+     {
+      "kind": "text",
+      "el": "span.sr-only «حين يصبح الامتحان هو الهدف»",
+      "left": 192,
+      "right": 385,
+      "top": 622
+     },
+     {
+      "kind": "text",
+      "el": "time.text-[.72rem].text-soft «10 أبريل 2026»",
+      "left": 299,
+      "right": 323,
+      "top": 642
+     },
+     {
+      "kind": "text",
+      "el": "h3.mt-2.5.font-display «حين يصبح الامتحان هو الهدف»",
+      "left": 169,
+      "right": 364,
+      "top": 690
+     },
+     {
+      "kind": "text",
+      "el": "span.editorial-micro-label.w-fit «أرشيف»",
+      "left": 305,
+      "right": 339,
+      "top": 800
+     },
+     {
+      "kind": "text",
+      "el": "span.line-clamp-2.text-[.86rem] «كل ما كتبته في التعليم»",
+      "left": 234,
+      "right": 364,
+      "top": 830
+     },
+     {
+      "kind": "control",
+      "el": "button.dna-segb «هوية»",
+      "left": 303,
+      "right": 356,
+      "top": 70
+     },
+     {
+      "kind": "control",
+      "el": "a.absolute.inset-0 «اقرأ مقال: حين يصبح الامتحان هو الهدف»",
+      "left": 138,
+      "right": 384,
+      "top": 616
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «أرشيفكل ما كتبته في التعليم»",
+      "left": 129,
+      "right": 381,
+      "top": 780
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span «بحث»",
+      "left": 469,
+      "right": 494,
+      "top": 151
+     },
+     {
+      "kind": "text",
+      "el": "span.dna-hubcl «التعليم»",
+      "left": 458,
+      "right": 494,
+      "top": 511
+     },
+     {
+      "kind": "control",
+      "el": "button.dna-segb «بحث»",
+      "left": 456,
+      "right": 507,
+      "top": 136
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "control",
+      "el": "a.human-core__cv.group «المسار الأكاديمي والمهنيالمسيرة التي صنع»",
+      "left": 25,
+      "right": 645,
+      "top": 485
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.dna-hubcl «التعليم»",
+      "left": 317,
+      "right": 353,
+      "top": 326
+     },
+     {
+      "kind": "text",
+      "el": "span.sr-only «حين يصبح الامتحان هو الهدف»",
+      "left": 192,
+      "right": 385,
+      "top": 511
+     },
+     {
+      "kind": "control",
+      "el": "button.dna-segb «هوية»",
+      "left": 303,
+      "right": 356,
+      "top": -41
+     },
+     {
+      "kind": "control",
+      "el": "a.absolute.inset-0 «اقرأ مقال: حين يصبح الامتحان هو الهدف»",
+      "left": 138,
+      "right": 384,
+      "top": 505
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "home",
+   "path": "/",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «أفكارٌ تلاحق زمنها.»",
+      "left": 283,
+      "right": 645,
+      "top": 177
+     },
+     {
+      "kind": "text",
+      "el": "p.page-head-scene__sub.mt-4 «مقالاتٌ أكتبها منذ عام 2015، أقرأ فيها ت»",
+      "left": 241,
+      "right": 475,
+      "top": 310
+     },
+     {
+      "kind": "text",
+      "el": "button.editorial-tab.shrink-0 «تكنولوجيا»",
+      "left": 315,
+      "right": 368,
+      "top": 443
+     },
+     {
+      "kind": "text",
+      "el": "span.sr-only «تصفية المقالات حسب السنة»",
+      "left": 185,
+      "right": 327,
+      "top": 497
+     },
+     {
+      "kind": "text",
+      "el": "h3.mt-4.break-words «العدوان في السماء… والثبات في الداخل»",
+      "left": 317,
+      "right": 620,
+      "top": 715
+     },
+     {
+      "kind": "text",
+      "el": "blockquote.mt-3.line-clamp-4 ««حين تعلو صفارات الإنذار، لا يرتجف الصوت»",
+      "left": 169,
+      "right": 620,
+      "top": 757
+     },
+     {
+      "kind": "control",
+      "el": "input.w-full.rounded-full «بحث»",
+      "left": 334,
+      "right": 645,
+      "top": 489
+     },
+     {
+      "kind": "control",
+      "el": "select.min-h-11.w-full «كل السنوات202620252021202020192018201720»",
+      "left": 182,
+      "right": 326,
+      "top": 493
+     },
+     {
+      "kind": "control",
+      "el": "a.spatial-card.group «المجتمع · الأبرز01العدوان في السماء… وال»",
+      "left": 24,
+      "right": 645,
+      "top": 651
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «نحن لا نعيش أزمة معلومات… نحن نعيش أزمة »",
+      "left": 162,
+      "right": 509,
+      "top": -4
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «هذا جيلٌ يعرف كثيراً عن العالم… وقليلاً »",
+      "left": 166,
+      "right": 509,
+      "top": 125
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «كان الناس قديماً يخافون من جهلهم… اليوم »",
+      "left": 187,
+      "right": 509,
+      "top": 254
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «لنعمل من أجل بحث علمي»",
+      "left": 318,
+      "right": 509,
+      "top": 347
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «تتفعّل في وقتنا الراهن في ظل أزمة وباء ا»",
+      "left": 241,
+      "right": 509,
+      "top": 382
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «حين يصبح الامتحان هو الهدف»",
+      "left": 287,
+      "right": 509,
+      "top": 476
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «في ليالي الامتحانات يتغيّر شكل البيت. تخ»",
+      "left": 185,
+      "right": 509,
+      "top": 511
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «العدوان في السماء… والثبات في الداخل»",
+      "left": 218,
+      "right": 509,
+      "top": 605
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «حين تعلو صفارات الإنذار، لا يرتجف الصوت »",
+      "left": 180,
+      "right": 509,
+      "top": 640
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «أبناءٌ يعرفون المطلوب… ويجهلون لماذا»",
+      "left": 220,
+      "right": 509,
+      "top": 734
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «في المدارس والبيوت نرى مشهداً يتكرر بهدو»",
+      "left": 146,
+      "right": 509,
+      "top": 769
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «الإعلام الشريك العضيد للعملية التعليمية»",
+      "left": 199,
+      "right": 509,
+      "top": 863
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «26 ديسمبر 2025حين ماتت الحقيقة ونجت الرو»",
+      "left": 24,
+      "right": 645,
+      "top": -67
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «19 ديسمبر 2025جيلٌ بلا جذورهذا جيلٌ يعرف»",
+      "left": 24,
+      "right": 645,
+      "top": 62
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «28 نوفمبر 2025ذكاءٌ بلا ضميركان الناس قد»",
+      "left": 24,
+      "right": 645,
+      "top": 191
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «12 مايو 2020لنعمل من أجل بحث علميتتفعّل »",
+      "left": 24,
+      "right": 645,
+      "top": 320
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «10 أبريل 2026حين يصبح الامتحان هو الهدفف»",
+      "left": 24,
+      "right": 645,
+      "top": 449
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «6 مارس 2026العدوان في السماء… والثبات في»",
+      "left": 24,
+      "right": 645,
+      "top": 578
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «30 يناير 2026أبناءٌ يعرفون المطلوب… ويجه»",
+      "left": 24,
+      "right": 645,
+      "top": 707
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «11 يناير 2021الإعلام الشريك العضيد للعمل»",
+      "left": 24,
+      "right": 645,
+      "top": 835
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «أفكارٌ تلاحق زمنها.»",
+      "left": 392,
+      "right": 907,
+      "top": 152
+     },
+     {
+      "kind": "text",
+      "el": "button.editorial-tab.shrink-0 «هوية»",
+      "left": 481,
+      "right": 509,
+      "top": 426
+     },
+     {
+      "kind": "control",
+      "el": "input.w-full.rounded-full «بحث»",
+      "left": 354,
+      "right": 907,
+      "top": 472
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "button.editorial-tab.shrink-0 «هوية»",
+      "left": 481,
+      "right": 509,
+      "top": 91
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «أبناءٌ يعرفون المطلوب… لكن من علّمهم الم»",
+      "left": 406,
+      "right": 764,
+      "top": -8
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «في أحد الصفوف، رفعتُ سؤالاً بسيطاً: لماذ»",
+      "left": 312,
+      "right": 764,
+      "top": 27
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «نحن لا نعيش أزمة معلومات… نحن نعيش أزمة »",
+      "left": 324,
+      "right": 764,
+      "top": 156
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «هذا جيلٌ يعرف كثيراً عن العالم… وقليلاً »",
+      "left": 282,
+      "right": 764,
+      "top": 285
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «كان الناس قديماً يخافون من جهلهم… اليوم »",
+      "left": 318,
+      "right": 764,
+      "top": 389
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «تتفعّل في وقتنا الراهن في ظل أزمة وباء ا»",
+      "left": 444,
+      "right": 496,
+      "top": 518
+     },
+     {
+      "kind": "control",
+      "el": "input.w-full.rounded-full «بحث»",
+      "left": 354,
+      "right": 907,
+      "top": 137
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «20 فبراير 2026أبناءٌ يعرفون المطلوب… لكن»",
+      "left": 44,
+      "right": 907,
+      "top": -36
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «26 ديسمبر 2025حين ماتت الحقيقة ونجت الرو»",
+      "left": 44,
+      "right": 907,
+      "top": 93
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «19 ديسمبر 2025جيلٌ بلا جذورهذا جيلٌ يعرف»",
+      "left": 44,
+      "right": 907,
+      "top": 222
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «28 نوفمبر 2025ذكاءٌ بلا ضميركان الناس قد»",
+      "left": 44,
+      "right": 907,
+      "top": 326
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «12 مايو 2020لنعمل من أجل بحث علميتتفعّل »",
+      "left": 44,
+      "right": 907,
+      "top": 455
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «10 أبريل 2026حين يصبح الامتحان هو الهدفف»",
+      "left": 44,
+      "right": 907,
+      "top": 584
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «أفكارٌ تلاحق زمنها.»",
+      "left": 283,
+      "right": 645,
+      "top": 155
+     },
+     {
+      "kind": "text",
+      "el": "p.page-head-scene__sub.mt-4 «مقالاتٌ أكتبها منذ عام 2015، أقرأ فيها ت»",
+      "left": 241,
+      "right": 475,
+      "top": 288
+     },
+     {
+      "kind": "text",
+      "el": "button.editorial-tab.shrink-0 «تكنولوجيا»",
+      "left": 315,
+      "right": 368,
+      "top": 399
+     },
+     {
+      "kind": "text",
+      "el": "span.sr-only «تصفية المقالات حسب السنة»",
+      "left": 185,
+      "right": 327,
+      "top": 453
+     },
+     {
+      "kind": "control",
+      "el": "input.w-full.rounded-full «بحث»",
+      "left": 334,
+      "right": 645,
+      "top": 445
+     },
+     {
+      "kind": "control",
+      "el": "select.min-h-11.w-full «كل السنوات202620252021202020192018201720»",
+      "left": 182,
+      "right": 326,
+      "top": 449
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «نحن لا نعيش أزمة معلومات… نحن نعيش أزمة »",
+      "left": 254,
+      "right": 509,
+      "top": -8
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «هذا جيلٌ يعرف كثيراً عن العالم… وقليلاً »",
+      "left": 166,
+      "right": 509,
+      "top": 96
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «كان الناس قديماً يخافون من جهلهم… اليوم »",
+      "left": 187,
+      "right": 509,
+      "top": 225
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «لنعمل من أجل بحث علمي»",
+      "left": 318,
+      "right": 509,
+      "top": 319
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «تتفعّل في وقتنا الراهن في ظل أزمة وباء ا»",
+      "left": 241,
+      "right": 509,
+      "top": 354
+     },
+     {
+      "kind": "text",
+      "el": "span.block.text-[1.08rem] «حين يصبح الامتحان هو الهدف»",
+      "left": 287,
+      "right": 509,
+      "top": 448
+     },
+     {
+      "kind": "text",
+      "el": "span.mt-1.5.block «في ليالي الامتحانات يتغيّر شكل البيت. تخ»",
+      "left": 185,
+      "right": 509,
+      "top": 483
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «26 ديسمبر 2025حين ماتت الحقيقة ونجت الرو»",
+      "left": 24,
+      "right": 645,
+      "top": -95
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «19 ديسمبر 2025جيلٌ بلا جذورهذا جيلٌ يعرف»",
+      "left": 24,
+      "right": 645,
+      "top": 34
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «28 نوفمبر 2025ذكاءٌ بلا ضميركان الناس قد»",
+      "left": 24,
+      "right": 645,
+      "top": 163
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «12 مايو 2020لنعمل من أجل بحث علميتتفعّل »",
+      "left": 24,
+      "right": 645,
+      "top": 291
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «10 أبريل 2026حين يصبح الامتحان هو الهدفف»",
+      "left": 24,
+      "right": 645,
+      "top": 420
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "articles",
+   "path": "/articles",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 40,
+      "h": 40
+     }
+    ],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «العدوان في السماء… والثبات في الداخل»",
+      "left": 81,
+      "right": 645,
+      "top": 181
+     },
+     {
+      "kind": "text",
+      "el": "span.font-normal.text-soft/90 «· أين يقع هذا المقال بين أفكار الأرشيف»",
+      "left": 340,
+      "right": 525,
+      "top": 282
+     },
+     {
+      "kind": "text",
+      "el": "p.mt-11.border-r-2 «حين تعلو صفارات الإنذار، لا يرتجف الصوت »",
+      "left": 263,
+      "right": 619,
+      "top": 358
+     },
+     {
+      "kind": "text",
+      "el": "p.font-display.text-[1.4rem] «النص الكامل قيد الإضافة للأرشيف.»",
+      "left": 177,
+      "right": 492,
+      "top": 522
+     },
+     {
+      "kind": "text",
+      "el": "p.mx-auto.mt-3 «أبقيت بيانات المقال ومصدره حتى لا ينقطع »",
+      "left": 155,
+      "right": 514,
+      "top": 577
+     },
+     {
+      "kind": "text",
+      "el": "a.mt-6.inline-block «اقرأ في مصدره الأصلي»",
+      "left": 271,
+      "right": 419,
+      "top": 676
+     },
+     {
+      "kind": "control",
+      "el": "a.article-atlas-knot.serenity-hide «موقعها في السماء · أين يقع هذا المقال بي»",
+      "left": 340,
+      "right": 645,
+      "top": 266
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «حياة هذه الفكرةاختبار فكري · خيط معرفياس»",
+      "left": 24,
+      "right": 645,
+      "top": 803
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
+      "w": 28,
+      "h": 28
+     },
+     {
+      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
+      "w": 28,
+      "h": 28
+     }
+    ],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "p «الكبار يتابعون التحليلات، والصغار يلتقطو»",
+      "left": 303,
+      "right": 645,
+      "top": 72
+     },
+     {
+      "kind": "text",
+      "el": "p «قد لا يفهم الطفل معنى «تصعيد» أو «منظوما»",
+      "left": 62,
+      "right": 645,
+      "top": 138
+     },
+     {
+      "kind": "text",
+      "el": "p «لكن في اللحظة نفسها التي نسمع فيها صفارة»",
+      "left": 62,
+      "right": 645,
+      "top": 277
+     },
+     {
+      "kind": "text",
+      "el": "p «الوطن لا يُحمى بالشعارات، بل بيقظة العيو»",
+      "left": 99,
+      "right": 645,
+      "top": 415
+     },
+     {
+      "kind": "text",
+      "el": "p «وفي خضمّ هذا التوتر، يظهر صوتٌ آخر…صوتٌ »",
+      "left": 62,
+      "right": 645,
+      "top": 481
+     },
+     {
+      "kind": "text",
+      "el": "p «حرية التعبير قيمة نحتمي بها جميعاً، لكنه»",
+      "left": 149,
+      "right": 645,
+      "top": 619
+     },
+     {
+      "kind": "text",
+      "el": "p «الوطن ليس وجهة نظر مؤقتة، ولا بطاقة هوية»",
+      "left": 62,
+      "right": 645,
+      "top": 685
+     },
+     {
+      "kind": "text",
+      "el": "p «في لحظات الخطر، لا يُطلب من الجميع أن يت»",
+      "left": 62,
+      "right": 645,
+      "top": 787
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «العدوان في السماء… والثبات في الداخل»",
+      "left": 413,
+      "right": 836,
+      "top": 255
+     },
+     {
+      "kind": "text",
+      "el": "p.dropcap «حين تعلو صفارات الإنذار، لا يرتجف الصوت »",
+      "left": 253,
+      "right": 775,
+      "top": 564
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «استمع»",
+      "left": 172,
+      "right": 836,
+      "top": 423
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
+      "w": 28,
+      "h": 28
+     }
+    ],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "p «وفي خضمّ هذا التوتر، يظهر صوتٌ آخر…صوتٌ »",
+      "left": 253,
+      "right": 836,
+      "top": 39
+     },
+     {
+      "kind": "text",
+      "el": "p «حرية التعبير قيمة نحتمي بها جميعاً، لكنه»",
+      "left": 340,
+      "right": 836,
+      "top": 177
+     },
+     {
+      "kind": "text",
+      "el": "p «الوطن ليس وجهة نظر مؤقتة، ولا بطاقة هوية»",
+      "left": 253,
+      "right": 836,
+      "top": 243
+     },
+     {
+      "kind": "text",
+      "el": "p «في لحظات الخطر، لا يُطلب من الجميع أن يت»",
+      "left": 253,
+      "right": 836,
+      "top": 345
+     },
+     {
+      "kind": "text",
+      "el": "p «الأزمات لا تختبر قوة الدفاع فقط، بل قوة »",
+      "left": 253,
+      "right": 836,
+      "top": 447
+     },
+     {
+      "kind": "text",
+      "el": "p «صفارات الإنذار قد تعلن احتمال خطر، لكنها»",
+      "left": 253,
+      "right": 836,
+      "top": 549
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 40,
+      "h": 40
+     }
+    ],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «العدوان في السماء… والثبات في الداخل»",
+      "left": 81,
+      "right": 645,
+      "top": 181
+     },
+     {
+      "kind": "text",
+      "el": "span.font-normal.text-soft/90 «· أين يقع هذا المقال بين أفكار الأرشيف»",
+      "left": 340,
+      "right": 525,
+      "top": 282
+     },
+     {
+      "kind": "text",
+      "el": "p.mt-11.border-r-2 «حين تعلو صفارات الإنذار، لا يرتجف الصوت »",
+      "left": 263,
+      "right": 619,
+      "top": 358
+     },
+     {
+      "kind": "control",
+      "el": "a.article-atlas-knot.serenity-hide «موقعها في السماء · أين يقع هذا المقال بي»",
+      "left": 340,
+      "right": 645,
+      "top": 266
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
+      "w": 28,
+      "h": 28
+     },
+     {
+      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
+      "w": 28,
+      "h": 28
+     }
+    ],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "p «حرية التعبير قيمة نحتمي بها جميعاً، لكنه»",
+      "left": 149,
+      "right": 645,
+      "top": 45
+     },
+     {
+      "kind": "text",
+      "el": "p «الوطن ليس وجهة نظر مؤقتة، ولا بطاقة هوية»",
+      "left": 62,
+      "right": 645,
+      "top": 111
+     },
+     {
+      "kind": "text",
+      "el": "p «في لحظات الخطر، لا يُطلب من الجميع أن يت»",
+      "left": 62,
+      "right": 645,
+      "top": 213
+     },
+     {
+      "kind": "text",
+      "el": "p «الأزمات لا تختبر قوة الدفاع فقط، بل قوة »",
+      "left": 62,
+      "right": 645,
+      "top": 315
+     },
+     {
+      "kind": "text",
+      "el": "p «صفارات الإنذار قد تعلن احتمال خطر، لكنها»",
+      "left": 62,
+      "right": 645,
+      "top": 417
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "article",
+   "path": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.article-signal-mark.article-pull-quote__action «فتح إشارة المقال»",
+      "w": 28,
+      "h": 28
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «كتبٌ تبني مشروعاً واحداً.»",
+      "left": 161,
+      "right": 645,
+      "top": 177
+     },
+     {
+      "kind": "text",
+      "el": "p.page-head-scene__sub.mt-4 «9 كتب ترسم مساراً بدأ عام 2015؛ من التعل»",
+      "left": 233,
+      "right": 446,
+      "top": 310
+     },
+     {
+      "kind": "control",
+      "el": "a.block.w-full «»",
+      "left": 25,
+      "right": 644,
+      "top": 497
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 44,
+      "h": 44
+     }
+    ],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "h2.break-words.font-display «حوكمة الذكاء الاصطناعي والبيانات الضخمة»",
+      "left": 161,
+      "right": 328,
+      "top": 18
+     },
+     {
+      "kind": "text",
+      "el": "h2.break-words.font-display «المدارس الذكية»",
+      "left": 227,
+      "right": 328,
+      "top": 328
+     },
+     {
+      "kind": "text",
+      "el": "h2.break-words.font-display «الطفل والتكنولوجيا»",
+      "left": 200,
+      "right": 328,
+      "top": 636
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.h-10 «ابحث داخل كتاب مناهج وطرق التدريس (تكنول»",
+      "left": 341,
+      "right": 385,
+      "top": 19
+     },
+     {
+      "kind": "control",
+      "el": "a.min-w-0.flex-1 «حوكمة الذكاء الاصطناعي والبيانات الضخمة»",
+      "left": 76,
+      "right": 328,
+      "top": 19
+     },
+     {
+      "kind": "control",
+      "el": "a.block «»",
+      "left": 341,
+      "right": 645,
+      "top": 82
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.h-10 «ابحث داخل كتاب تكنولوجيا ذوي الاحتياجات »",
+      "left": 341,
+      "right": 385,
+      "top": 329
+     },
+     {
+      "kind": "control",
+      "el": "a.min-w-0.flex-1 «المدارس الذكية»",
+      "left": 76,
+      "right": 328,
+      "top": 329
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.h-10 «ابحث داخل كتاب العالم الافتراضي»",
+      "left": 341,
+      "right": 385,
+      "top": 637
+     },
+     {
+      "kind": "control",
+      "el": "a.min-w-0.flex-1 «الطفل والتكنولوجيا»",
+      "left": 76,
+      "right": 328,
+      "top": 637
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «كتبٌ تبني مشروعاً واحداً.»",
+      "left": 219,
+      "right": 907,
+      "top": 152
+     },
+     {
+      "kind": "control",
+      "el": "a.block.w-full «»",
+      "left": 473,
+      "right": 874,
+      "top": 528
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «كتبٌ تبني مشروعاً واحداً.»",
+      "left": 161,
+      "right": 645,
+      "top": 155
+     },
+     {
+      "kind": "text",
+      "el": "p.page-head-scene__sub.mt-4 «9 كتب ترسم مساراً بدأ عام 2015؛ من التعل»",
+      "left": 233,
+      "right": 446,
+      "top": 288
+     },
+     {
+      "kind": "control",
+      "el": "a.block.w-full «»",
+      "left": 25,
+      "right": 644,
+      "top": 453
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "h2.break-words.font-display «حوكمة الذكاء الاصطناعي والبيانات الضخمة»",
+      "left": 161,
+      "right": 328,
+      "top": -10
+     },
+     {
+      "kind": "text",
+      "el": "h2.break-words.font-display «المدارس الذكية»",
+      "left": 227,
+      "right": 328,
+      "top": 300
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.h-10 «ابحث داخل كتاب مناهج وطرق التدريس (تكنول»",
+      "left": 341,
+      "right": 385,
+      "top": -9
+     },
+     {
+      "kind": "control",
+      "el": "a.min-w-0.flex-1 «حوكمة الذكاء الاصطناعي والبيانات الضخمة»",
+      "left": 76,
+      "right": 328,
+      "top": -9
+     },
+     {
+      "kind": "control",
+      "el": "a.block «»",
+      "left": 341,
+      "right": 645,
+      "top": 53
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.h-10 «ابحث داخل كتاب تكنولوجيا ذوي الاحتياجات »",
+      "left": 341,
+      "right": 385,
+      "top": 301
+     },
+     {
+      "kind": "control",
+      "el": "a.min-w-0.flex-1 «المدارس الذكية»",
+      "left": 76,
+      "right": 328,
+      "top": 301
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "publications",
+   "path": "/publications",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «مناهج وطرق التدريس (تكنولوجيا التعليم)»",
+      "left": 57,
+      "right": 645,
+      "top": 456
+     },
+     {
+      "kind": "text",
+      "el": "p.mt-5.text-[1.08rem] «مناهج وطرق التدريس الحديثة في ضوء تكنولو»",
+      "left": 247,
+      "right": 645,
+      "top": 624
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.text-[.72rem].text-soft «PDF»",
+      "left": 333,
+      "right": 353,
+      "top": 58
+     },
+     {
+      "kind": "text",
+      "el": "span.line-clamp-1 «يربط المناهج وطرق التدريس بتكامل التكنول»",
+      "left": 198,
+      "right": 598,
+      "top": 168
+     },
+     {
+      "kind": "text",
+      "el": "li.rounded-full.border «مشرفو المناهج»",
+      "left": 281,
+      "right": 357,
+      "top": 212
+     },
+     {
+      "kind": "text",
+      "el": "span.min-w-0 «الفصل الأقرب لمشكلتك الصفية أو مقررِك»",
+      "left": 290,
+      "right": 531,
+      "top": 254
+     },
+     {
+      "kind": "text",
+      "el": "span.grove-title «اتجاهات الهيئة التدريسية نحو استخدام تكن»",
+      "left": 144,
+      "right": 593,
+      "top": 829
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.min-h-11 «عرض عيّنة الكتابPDF»",
+      "left": 312,
+      "right": 472,
+      "top": 42
+     },
+     {
+      "kind": "control",
+      "el": "summary.flex.cursor-pointer «عن الكتابفكرة الكتاب وسياقه وطريقة قراءت»",
+      "left": 25,
+      "right": 644,
+      "top": 352
+     },
+     {
+      "kind": "control",
+      "el": "a.grove-box «بحث محكّماتجاهات الهيئة التدريسية نحو اس»",
+      "left": 96,
+      "right": 608,
+      "top": 777
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.text-[.76rem].font-semibold «كتاب منشور»",
+      "left": 401,
+      "right": 463,
+      "top": 254
+     },
+     {
+      "kind": "text",
+      "el": "span.block «مناهج وطرق التدريس (تكنولوجيا التعليم)»",
+      "left": 199,
+      "right": 463,
+      "top": 284
+     },
+     {
+      "kind": "text",
+      "el": "p.mt-4.text-[.92rem] «بالاشتراك مع د. عبدالعزيز دخيل العنزي»",
+      "left": 382,
+      "right": 463,
+      "top": 547
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.h-8 «»",
+      "left": 419,
+      "right": 463,
+      "top": 481
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.line-clamp-1 «يربط المناهج وطرق التدريس بتكامل التكنول»",
+      "left": 452,
+      "right": 852,
+      "top": 214
+     },
+     {
+      "kind": "text",
+      "el": "li.rounded-full.border «مصممو التعليم»",
+      "left": 423,
+      "right": 501,
+      "top": 258
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.min-h-11 «ابحث في هذا الكتاب»",
+      "left": 301,
+      "right": 463,
+      "top": 31
+     },
+     {
+      "kind": "control",
+      "el": "button.inline-flex.min-h-11 «عرض الاستشهاد المرجعي»",
+      "left": 317,
+      "right": 463,
+      "top": 87
+     },
+     {
+      "kind": "control",
+      "el": "summary.flex.cursor-pointer «عن الكتابفكرة الكتاب وسياقه وطريقة قراءت»",
+      "left": 45,
+      "right": 906,
+      "top": 398
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «مناهج وطرق التدريس (تكنولوجيا التعليم)»",
+      "left": 57,
+      "right": 645,
+      "top": 456
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.text-[.72rem].text-soft «PDF»",
+      "left": 333,
+      "right": 353,
+      "top": 194
+     },
+     {
+      "kind": "text",
+      "el": "span.line-clamp-1 «يربط المناهج وطرق التدريس بتكامل التكنول»",
+      "left": 198,
+      "right": 598,
+      "top": 304
+     },
+     {
+      "kind": "text",
+      "el": "li.rounded-full.border «مشرفو المناهج»",
+      "left": 281,
+      "right": 357,
+      "top": 348
+     },
+     {
+      "kind": "text",
+      "el": "span.min-w-0 «الفصل الأقرب لمشكلتك الصفية أو مقررِك»",
+      "left": 290,
+      "right": 531,
+      "top": 390
+     },
+     {
+      "kind": "control",
+      "el": "a.inline-flex.min-h-11 «عرض عيّنة الكتابPDF»",
+      "left": 312,
+      "right": 472,
+      "top": 178
+     },
+     {
+      "kind": "control",
+      "el": "summary.flex.cursor-pointer «عن الكتابفكرة الكتاب وسياقه وطريقة قراءت»",
+      "left": 25,
+      "right": 644,
+      "top": 488
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.inline-flex.h-8 «»",
+      "w": 32,
+      "h": 32
+     },
+     {
+      "el": "button.my-space-trigger.group «فتح مساحتي»",
+      "w": 40,
+      "h": 40
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "book",
+   "path": "/publications/teaching",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "p.page-head-scene__sub.mt-4 «يفهم ما تقصده حتى لو لم تعرف عنوان الماد»",
+      "left": 247,
+      "right": 645,
+      "top": 310
+     },
+     {
+      "kind": "text",
+      "el": "span.knowledge-entry-note.mt-1 «جواب مركّب من مواد الموقع ومصادره فقط»",
+      "left": 115,
+      "right": 320,
+      "top": 568
+     },
+     {
+      "kind": "text",
+      "el": "button.min-h-11.shrink-0 «كتب الدكتور0»",
+      "left": 267,
+      "right": 333,
+      "top": 814
+     },
+     {
+      "kind": "control",
+      "el": "a.group.min-w-0 «أبحث عن مادةمقال، بحث، كتاب أو كلمة في ا»",
+      "left": 338,
+      "right": 627,
+      "top": 526
+     },
+     {
+      "kind": "control",
+      "el": "a.group.min-w-0 «أسأل الأرشيفجواب مركّب من مواد الموقع وم»",
+      "left": 42,
+      "right": 332,
+      "top": 526
+     },
+     {
+      "kind": "control",
+      "el": "input.w-full.rounded-none «بحث في الأرشيف كله»",
+      "left": 24,
+      "right": 645,
+      "top": 685
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "button.min-h-11.shrink-0 «كتب الدكتور0»",
+      "left": 267,
+      "right": 333,
+      "top": 59
+     },
+     {
+      "kind": "text",
+      "el": "button.search-query-suggestion «ما أبرز الأفكار والتطبيقات المرتبطة بـ«ز»",
+      "left": 210,
+      "right": 428,
+      "top": 335
+     },
+     {
+      "kind": "text",
+      "el": "p.font-display.text-[1.5rem] «لا نتائج دقيقة.»",
+      "left": 269,
+      "right": 400,
+      "top": 547
+     },
+     {
+      "kind": "text",
+      "el": "p.mt-3.text-[.95rem] «جرّب كلمة أوسع، أو بدّل التبويب، أو ألغِ»",
+      "left": 176,
+      "right": 493,
+      "top": 603
+     },
+     {
+      "kind": "text",
+      "el": "p.text-[.8rem].text-soft «أو ابدأ بإحدى هذه الأفكار»",
+      "left": 277,
+      "right": 392,
+      "top": 655
+     },
+     {
+      "kind": "text",
+      "el": "button.min-h-10.rounded-full «المعلم»",
+      "left": 289,
+      "right": 328,
+      "top": 699
+     },
+     {
+      "kind": "text",
+      "el": "button.min-h-10.rounded-full «الطفل والتكنولوجيا»",
+      "left": 281,
+      "right": 388,
+      "top": 751
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.knowledge-entry-note.mt-1 «جواب مركّب من مواد الموقع ومصادره فقط»",
+      "left": 256,
+      "right": 461,
+      "top": 552
+     },
+     {
+      "kind": "control",
+      "el": "a.group.min-w-0 «أبحث عن مادةمقال، بحث، كتاب أو كلمة في ا»",
+      "left": 479,
+      "right": 840,
+      "top": 511
+     },
+     {
+      "kind": "control",
+      "el": "a.group.min-w-0 «أسأل الأرشيفجواب مركّب من مواد الموقع وم»",
+      "left": 112,
+      "right": 473,
+      "top": 511
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "button.min-h-11.shrink-0 «لقاءات الدكتور0»",
+      "left": 406,
+      "right": 488,
+      "top": 133
+     },
+     {
+      "kind": "text",
+      "el": "button.search-query-suggestion «ما التحديات والنتائج التي يناقشها الأرشي»",
+      "left": 230,
+      "right": 485,
+      "top": 409
+     },
+     {
+      "kind": "text",
+      "el": "p.font-display.text-[1.5rem] «لا نتائج دقيقة.»",
+      "left": 410,
+      "right": 541,
+      "top": 569
+     },
+     {
+      "kind": "control",
+      "el": "input.w-full.rounded-none «بحث في الأرشيف كله»",
+      "left": 44,
+      "right": 907,
+      "top": -29
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "p.page-head-scene__sub.mt-4 «يفهم ما تقصده حتى لو لم تعرف عنوان الماد»",
+      "left": 247,
+      "right": 645,
+      "top": 288
+     },
+     {
+      "kind": "control",
+      "el": "a.group.min-w-0 «أبحث عن مادةمقال، بحث، كتاب أو كلمة في ا»",
+      "left": 338,
+      "right": 627,
+      "top": 482
+     },
+     {
+      "kind": "control",
+      "el": "a.group.min-w-0 «أسأل الأرشيفجواب مركّب من مواد الموقع وم»",
+      "left": 42,
+      "right": 332,
+      "top": 482
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "button.min-h-11.shrink-0 «كتب الدكتور0»",
+      "left": 267,
+      "right": 333,
+      "top": 31
+     },
+     {
+      "kind": "text",
+      "el": "button.search-query-suggestion «ما أبرز الأفكار والتطبيقات المرتبطة بـ«ز»",
+      "left": 210,
+      "right": 428,
+      "top": 307
+     },
+     {
+      "kind": "text",
+      "el": "p.font-display.text-[1.5rem] «لا نتائج دقيقة.»",
+      "left": 269,
+      "right": 400,
+      "top": 518
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "search-empty",
+   "path": "/search?q=%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2%D8%B2",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.text-[.8rem].font-semibold «للاستشارة أو التعاون»",
+      "left": 258,
+      "right": 364,
+      "top": 253
+     },
+     {
+      "kind": "text",
+      "el": "span.block «لنعمل معاً.»",
+      "left": 227,
+      "right": 442,
+      "top": 283
+     },
+     {
+      "kind": "text",
+      "el": "li.flex.items-center «محاضرات وورش عمل»",
+      "left": 265,
+      "right": 404,
+      "top": 495
+     },
+     {
+      "kind": "text",
+      "el": "a.inline-flex.min-h-11 «احجز موعداً»",
+      "left": 298,
+      "right": 371,
+      "top": 623
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "a.inline-flex.min-h-11 «احجز موعداً»",
+      "left": 298,
+      "right": 371,
+      "top": -1
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «استشارةرأي خبير في مشروع أو تحدٍّ تعليمي»",
+      "left": 341,
+      "right": 612,
+      "top": 278
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «محاضرة أو ورشةحضورياً أو عن بُعد — للجها»",
+      "left": 57,
+      "right": 329,
+      "top": 278
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «لقاء إعلاميتلفزيون، إذاعة، بودكاست، صحاف»",
+      "left": 341,
+      "right": 612,
+      "top": 418
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «أخرىتعاون بحثي، فكرة، أو أي شيء آخر»",
+      "left": 57,
+      "right": 329,
+      "top": 418
+     },
+     {
+      "kind": "control",
+      "el": "a.site-footer__mark «د. أحمد حسين الفيلكاوي»",
+      "left": 309,
+      "right": 361,
+      "top": 801
+     },
+     {
+      "kind": "control",
+      "el": "button.site-social-dock__trigger «فتح روابط التواصل»",
+      "left": 313,
+      "right": 357,
+      "top": 860
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.text-[.8rem].font-semibold «للاستشارة أو التعاون»",
+      "left": 399,
+      "right": 505,
+      "top": 285
+     },
+     {
+      "kind": "text",
+      "el": "span.block «لنعمل معاً.»",
+      "left": 322,
+      "right": 629,
+      "top": 312
+     },
+     {
+      "kind": "text",
+      "el": "li.flex.items-center «محاضرات وورش عمل»",
+      "left": 406,
+      "right": 545,
+      "top": 538
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "a.inline-flex.min-h-11 «احجز موعداً»",
+      "left": 439,
+      "right": 512,
+      "top": 58
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «استشارةرأي خبير في مشروع أو تحدٍّ تعليمي»",
+      "left": 482,
+      "right": 866,
+      "top": 369
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «محاضرة أو ورشةحضورياً أو عن بُعد — للجها»",
+      "left": 85,
+      "right": 470,
+      "top": 369
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «لقاء إعلاميتلفزيون، إذاعة، بودكاست، صحاف»",
+      "left": 482,
+      "right": 866,
+      "top": 482
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «أخرىتعاون بحثي، فكرة، أو أي شيء آخر»",
+      "left": 85,
+      "right": 470,
+      "top": 482
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.text-[.8rem].font-semibold «للاستشارة أو التعاون»",
+      "left": 258,
+      "right": 364,
+      "top": 253
+     },
+     {
+      "kind": "text",
+      "el": "span.block «لنعمل معاً.»",
+      "left": 227,
+      "right": 442,
+      "top": 283
+     },
+     {
+      "kind": "text",
+      "el": "li.flex.items-center «محاضرات وورش عمل»",
+      "left": 265,
+      "right": 404,
+      "top": 495
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "a.inline-flex.min-h-11 «احجز موعداً»",
+      "left": 298,
+      "right": 371,
+      "top": -1
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «استشارةرأي خبير في مشروع أو تحدٍّ تعليمي»",
+      "left": 341,
+      "right": 612,
+      "top": 278
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «محاضرة أو ورشةحضورياً أو عن بُعد — للجها»",
+      "left": 57,
+      "right": 329,
+      "top": 278
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «لقاء إعلاميتلفزيون، إذاعة، بودكاست، صحاف»",
+      "left": 341,
+      "right": 612,
+      "top": 418
+     },
+     {
+      "kind": "control",
+      "el": "button.group.flex «أخرىتعاون بحثي، فكرة، أو أي شيء آخر»",
+      "left": 57,
+      "right": 329,
+      "top": 418
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "contact",
+   "path": "/contact",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "div.site-footer__rights «© 2026 د. أحمد حسين الفيلكاوي · جميع الح»",
+      "left": 254,
+      "right": 373,
+      "top": 348
+     },
+     {
+      "kind": "control",
+      "el": "a.site-footer__mark «د. أحمد حسين الفيلكاوي»",
+      "left": 309,
+      "right": 361,
+      "top": 99
+     },
+     {
+      "kind": "control",
+      "el": "button.site-social-dock__trigger «فتح روابط التواصل»",
+      "left": 313,
+      "right": 357,
+      "top": 158
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "div.site-footer__rights «© 2026 د. أحمد حسين الفيلكاوي · جميع الح»",
+      "left": 254,
+      "right": 373,
+      "top": 348
+     },
+     {
+      "kind": "control",
+      "el": "a.site-footer__mark «د. أحمد حسين الفيلكاوي»",
+      "left": 309,
+      "right": 361,
+      "top": 99
+     },
+     {
+      "kind": "control",
+      "el": "button.site-social-dock__trigger «فتح روابط التواصل»",
+      "left": 313,
+      "right": 357,
+      "top": 158
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.site-social-dock__heading «منصات أكاديمية»",
+      "left": 470,
+      "right": 551,
+      "top": 115
+     },
+     {
+      "kind": "control",
+      "el": "a «ResearchGate»",
+      "left": 483,
+      "right": 527,
+      "top": 132
+     },
+     {
+      "kind": "control",
+      "el": "a «Wikidata»",
+      "left": 483,
+      "right": 527,
+      "top": 181
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.site-social-dock__heading «منصات أكاديمية»",
+      "left": 470,
+      "right": 551,
+      "top": 115
+     },
+     {
+      "kind": "control",
+      "el": "a «ResearchGate»",
+      "left": 483,
+      "right": 527,
+      "top": 132
+     },
+     {
+      "kind": "control",
+      "el": "a «Wikidata»",
+      "left": 483,
+      "right": 527,
+      "top": 181
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "div.site-footer__rights «© 2026 د. أحمد حسين الفيلكاوي · جميع الح»",
+      "left": 254,
+      "right": 373,
+      "top": 348
+     },
+     {
+      "kind": "control",
+      "el": "a.site-footer__mark «د. أحمد حسين الفيلكاوي»",
+      "left": 309,
+      "right": 361,
+      "top": 99
+     },
+     {
+      "kind": "control",
+      "el": "button.site-social-dock__trigger «فتح روابط التواصل»",
+      "left": 313,
+      "right": 357,
+      "top": 158
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "div.site-footer__rights «© 2026 د. أحمد حسين الفيلكاوي · جميع الح»",
+      "left": 254,
+      "right": 373,
+      "top": 348
+     },
+     {
+      "kind": "control",
+      "el": "a.site-footer__mark «د. أحمد حسين الفيلكاوي»",
+      "left": 309,
+      "right": 361,
+      "top": 99
+     },
+     {
+      "kind": "control",
+      "el": "button.site-social-dock__trigger «فتح روابط التواصل»",
+      "left": 313,
+      "right": 357,
+      "top": 158
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.tebyan-link.inline-flex «تبيان — منصة عامة مستقلة»",
+      "w": 40,
+      "h": 40
+     },
+     {
+      "el": "a.schedule-link.inline-flex «الجدول»",
+      "w": 40,
+      "h": 37
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.tebyan-link.inline-flex «تبيان — منصة عامة مستقلة»",
+      "w": 40,
+      "h": 40
+     },
+     {
+      "el": "a.schedule-link.inline-flex «الجدول»",
+      "w": 40,
+      "h": 37
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [
+     {
+      "el": "a.tebyan-link.inline-flex «تبيان — منصة عامة مستقلة»",
+      "w": 40,
+      "h": 40
+     },
+     {
+      "el": "a.schedule-link.inline-flex «الجدول»",
+      "w": 40,
+      "h": 37
+     }
+    ],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "mihwar-gate",
+   "path": "/mihwar",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "A",
+   "w": 382,
+   "h": 580,
+   "inner": false,
+   "top": {
+    "vw": 382,
+    "vh": 580,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "A",
+   "w": 385,
+   "h": 571,
+   "inner": false,
+   "top": {
+    "vw": 385,
+    "vh": 571,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "A",
+   "w": 320,
+   "h": 568,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 568,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "B",
+   "w": 594,
+   "h": 368,
+   "inner": false,
+   "top": {
+    "vw": 594,
+    "vh": 368,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "C",
+   "w": 669,
+   "h": 867,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «هذه الصفحة خرجت عن المدار.»",
+      "left": 136,
+      "right": 533,
+      "top": 242
+     },
+     {
+      "kind": "text",
+      "el": "p.not-found-copy.mx-auto «ربما تغيّر عنوانها بعد تجديد الموقع، ورب»",
+      "left": 143,
+      "right": 526,
+      "top": 316
+     },
+     {
+      "kind": "text",
+      "el": "a.mt-11.inline-block «العودة إلى الرئيسية»",
+      "left": 271,
+      "right": 398,
+      "top": 859
+     },
+     {
+      "kind": "control",
+      "el": "input.not-found-search.w-full «بحث»",
+      "left": 115,
+      "right": 555,
+      "top": 409
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المقالات الفكرية143»",
+      "left": 115,
+      "right": 555,
+      "top": 518
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «الكتب المنشورة9»",
+      "left": 115,
+      "right": 555,
+      "top": 587
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المساهمات العلمية17»",
+      "left": 115,
+      "right": 555,
+      "top": 656
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «السيرة الأكاديمية»",
+      "left": 115,
+      "right": 555,
+      "top": 725
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 867,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "a.mt-11.inline-block «العودة إلى الرئيسية»",
+      "left": 271,
+      "right": 398,
+      "top": 336
+     },
+     {
+      "kind": "text",
+      "el": "div.site-footer__rights «© 2026 د. أحمد حسين الفيلكاوي · جميع الح»",
+      "left": 254,
+      "right": 373,
+      "top": 860
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المقالات الفكرية143»",
+      "left": 115,
+      "right": 555,
+      "top": -5
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «الكتب المنشورة9»",
+      "left": 115,
+      "right": 555,
+      "top": 64
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المساهمات العلمية17»",
+      "left": 115,
+      "right": 555,
+      "top": 133
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «السيرة الأكاديمية»",
+      "left": 115,
+      "right": 555,
+      "top": 202
+     },
+     {
+      "kind": "control",
+      "el": "a.site-footer__mark «د. أحمد حسين الفيلكاوي»",
+      "left": 309,
+      "right": 361,
+      "top": 612
+     },
+     {
+      "kind": "control",
+      "el": "button.site-social-dock__trigger «فتح روابط التواصل»",
+      "left": 313,
+      "right": 357,
+      "top": 670
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "D",
+   "w": 951,
+   "h": 585,
+   "inner": true,
+   "top": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «هذه الصفحة خرجت عن المدار.»",
+      "left": 193,
+      "right": 758,
+      "top": 291
+     },
+     {
+      "kind": "text",
+      "el": "p.not-found-copy.mx-auto «ربما تغيّر عنوانها بعد تجديد الموقع، ورب»",
+      "left": 284,
+      "right": 667,
+      "top": 385
+     },
+     {
+      "kind": "control",
+      "el": "input.not-found-search.w-full «بحث»",
+      "left": 256,
+      "right": 696,
+      "top": 479
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 951,
+    "vh": 585,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "a.mt-11.inline-block «العودة إلى الرئيسية»",
+      "left": 412,
+      "right": 539,
+      "top": 422
+     },
+     {
+      "kind": "control",
+      "el": "input.not-found-search.w-full «بحث»",
+      "left": 256,
+      "right": 696,
+      "top": -27
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المقالات الفكرية143»",
+      "left": 256,
+      "right": 696,
+      "top": 81
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «الكتب المنشورة9»",
+      "left": 256,
+      "right": 696,
+      "top": 150
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المساهمات العلمية17»",
+      "left": 256,
+      "right": 696,
+      "top": 219
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «السيرة الأكاديمية»",
+      "left": 256,
+      "right": 696,
+      "top": 288
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "E",
+   "w": 951,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 951,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "E",
+   "w": 600,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "F",
+   "w": 669,
+   "h": 520,
+   "inner": true,
+   "top": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "span.block «هذه الصفحة خرجت عن المدار.»",
+      "left": 136,
+      "right": 533,
+      "top": 242
+     },
+     {
+      "kind": "text",
+      "el": "p.not-found-copy.mx-auto «ربما تغيّر عنوانها بعد تجديد الموقع، ورب»",
+      "left": 143,
+      "right": 526,
+      "top": 316
+     },
+     {
+      "kind": "control",
+      "el": "input.not-found-search.w-full «بحث»",
+      "left": 115,
+      "right": 555,
+      "top": 409
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المقالات الفكرية143»",
+      "left": 115,
+      "right": 555,
+      "top": 518
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": {
+    "vw": 669,
+    "vh": 520,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [
+     {
+      "kind": "text",
+      "el": "a.mt-11.inline-block «العودة إلى الرئيسية»",
+      "left": 271,
+      "right": 398,
+      "top": 336
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المقالات الفكرية143»",
+      "left": 115,
+      "right": 555,
+      "top": -5
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «الكتب المنشورة9»",
+      "left": 115,
+      "right": 555,
+      "top": 64
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «المساهمات العلمية17»",
+      "left": 115,
+      "right": 555,
+      "top": 133
+     },
+     {
+      "kind": "control",
+      "el": "a.group.flex «السيرة الأكاديمية»",
+      "left": 115,
+      "right": 555,
+      "top": 202
+     }
+    ],
+    "spread": null,
+    "spreadOn": false
+   },
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "F",
+   "w": 600,
+   "h": 480,
+   "inner": false,
+   "top": {
+    "vw": 600,
+    "vh": 480,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "G",
+   "w": 768,
+   "h": 1024,
+   "inner": false,
+   "top": {
+    "vw": 768,
+    "vh": 1024,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "G",
+   "w": 1024,
+   "h": 768,
+   "inner": false,
+   "top": {
+    "vw": 1024,
+    "vh": 768,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "G",
+   "w": 1280,
+   "h": 800,
+   "inner": false,
+   "top": {
+    "vw": 1280,
+    "vh": 800,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "G",
+   "w": 1440,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 1440,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "H",
+   "w": 360,
+   "h": 640,
+   "inner": false,
+   "top": {
+    "vw": 360,
+    "vh": 640,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "H",
+   "w": 390,
+   "h": 844,
+   "inner": false,
+   "top": {
+    "vw": 390,
+    "vh": 844,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "H",
+   "w": 844,
+   "h": 390,
+   "inner": false,
+   "top": {
+    "vw": 844,
+    "vh": 390,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 320,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 320,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 320,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 320,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 470,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 470,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 470,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 470,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 620,
+   "h": 350,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 350,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 620,
+   "h": 600,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 600,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  },
+  {
+   "page": "not-found",
+   "path": "/no-such-page-duo",
+   "pose": "S",
+   "w": 620,
+   "h": 900,
+   "inner": false,
+   "top": {
+    "vw": 620,
+    "vh": 900,
+    "overflowX": 0,
+    "smallTargets": [],
+    "clipped": [],
+    "spineHits": [],
+    "spread": null,
+    "spreadOn": false
+   },
+   "mid": null,
+   "errors": []
+  }
+ ]
+}

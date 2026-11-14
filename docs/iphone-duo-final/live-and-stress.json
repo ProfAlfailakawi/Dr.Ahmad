@@ -1,0 +1,528 @@
+{
+ "generatedAt": "2026-11-14T00:08:53.332Z",
+ "engine": "webkit",
+ "live": {
+  "article": {
+   "paragraphs": 17,
+   "steps": [
+    {
+     "size": "951x585",
+     "markTop": 140,
+     "markVisible": true,
+     "selection": true,
+     "spread": "grid",
+     "overflowX": 0,
+     "sameNode": true
+    },
+    {
+     "size": "669x867",
+     "markTop": 121,
+     "markVisible": true,
+     "selection": true,
+     "spread": "grid",
+     "overflowX": 0,
+     "sameNode": true
+    },
+    {
+     "size": "470x700",
+     "markTop": 121,
+     "markVisible": true,
+     "selection": true,
+     "spread": "block",
+     "overflowX": 0,
+     "sameNode": true
+    },
+    {
+     "size": "382x580",
+     "markTop": 120,
+     "markVisible": true,
+     "selection": true,
+     "spread": "block",
+     "overflowX": 0,
+     "sameNode": true
+    },
+    {
+     "size": "594x368",
+     "markTop": 93,
+     "markVisible": true,
+     "selection": true,
+     "spread": "block",
+     "overflowX": 0,
+     "sameNode": true
+    },
+    {
+     "size": "951x350",
+     "markTop": 88,
+     "markVisible": true,
+     "selection": true,
+     "spread": "block",
+     "overflowX": 0,
+     "sameNode": true
+    },
+    {
+     "size": "951x585",
+     "markTop": 138,
+     "markVisible": true,
+     "selection": true,
+     "spread": "grid",
+     "overflowX": 0,
+     "sameNode": true
+    }
+   ],
+   "errors": []
+  },
+  "contact": {
+   "steps": [
+    {
+     "size": "951x585",
+     "message": 36,
+     "name": "اختبار",
+     "overflowX": 0
+    },
+    {
+     "size": "669x867",
+     "message": 36,
+     "name": "اختبار",
+     "overflowX": 0
+    },
+    {
+     "size": "470x700",
+     "message": 36,
+     "name": "اختبار",
+     "overflowX": 0
+    },
+    {
+     "size": "382x580",
+     "message": 36,
+     "name": "اختبار",
+     "overflowX": 0
+    },
+    {
+     "size": "594x368",
+     "message": 36,
+     "name": "اختبار",
+     "overflowX": 0
+    },
+    {
+     "size": "951x350",
+     "message": 36,
+     "name": "اختبار",
+     "overflowX": 0
+    },
+    {
+     "size": "951x585",
+     "message": 36,
+     "name": "اختبار",
+     "overflowX": 0
+    }
+   ]
+  },
+  "mihwar": {
+   "hostFound": true,
+   "host": "mihwar-app, [data-mihwar-host]",
+   "steps": [
+    {
+     "size": "951x585",
+     "search": "",
+     "selectedTab": "الأبحاث",
+     "overflowX": 0
+    },
+    {
+     "size": "669x867",
+     "search": "",
+     "selectedTab": "لك",
+     "overflowX": 0
+    },
+    {
+     "size": "470x700",
+     "search": "",
+     "selectedTab": "لك",
+     "overflowX": 0
+    },
+    {
+     "size": "382x580",
+     "search": "",
+     "selectedTab": "لك",
+     "overflowX": 0
+    },
+    {
+     "size": "594x368",
+     "search": "",
+     "selectedTab": "لك",
+     "overflowX": 0
+    },
+    {
+     "size": "951x350",
+     "search": "",
+     "selectedTab": "لك",
+     "overflowX": 0
+    },
+    {
+     "size": "951x585",
+     "search": "",
+     "selectedTab": "لك",
+     "overflowX": 0
+    }
+   ]
+  },
+  "dialog": {
+   "steps": [
+    {
+     "size": "951x585",
+     "dialogOpen": true,
+     "typed": "تعليم"
+    },
+    {
+     "size": "669x867",
+     "dialogOpen": true,
+     "typed": "تعليم"
+    },
+    {
+     "size": "470x700",
+     "dialogOpen": true,
+     "typed": "تعليم"
+    },
+    {
+     "size": "382x580",
+     "dialogOpen": true,
+     "typed": "تعليم"
+    },
+    {
+     "size": "594x368",
+     "dialogOpen": true,
+     "typed": "تعليم"
+    },
+    {
+     "size": "951x350",
+     "dialogOpen": true,
+     "typed": "تعليم"
+    },
+    {
+     "size": "951x585",
+     "dialogOpen": true,
+     "typed": "تعليم"
+    }
+   ]
+  }
+ },
+ "stress": [
+  {
+   "case": "text-200",
+   "page": "/",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/",
+   "size": "382x580",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/articles",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/articles",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/articles",
+   "size": "382x580",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "size": "382x580",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/contact",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/contact",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/contact",
+   "size": "382x580",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/search",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/search",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/search",
+   "size": "382x580",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/no-such-page-duo",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/no-such-page-duo",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/no-such-page-duo",
+   "size": "382x580",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/publications/teaching",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/publications/teaching",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "text-200",
+   "page": "/publications/teaching",
+   "size": "382x580",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/articles",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/articles",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/contact",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/contact",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/search",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/search",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/no-such-page-duo",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/no-such-page-duo",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/publications/teaching",
+   "size": "669x867",
+   "overflowX": 0
+  },
+  {
+   "case": "dark",
+   "page": "/publications/teaching",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/",
+   "size": "594x368",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/articles",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/articles",
+   "size": "594x368",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/articles/aggression-in-the-sky-and-steadfastness-withinarabic",
+   "size": "594x368",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/contact",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/contact",
+   "size": "594x368",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/search",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/search",
+   "size": "594x368",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/no-such-page-duo",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/no-such-page-duo",
+   "size": "594x368",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/publications/teaching",
+   "size": "951x585",
+   "overflowX": 0
+  },
+  {
+   "case": "safe-area-asym",
+   "page": "/publications/teaching",
+   "size": "594x368",
+   "overflowX": 0
+  },
+  {
+   "case": "keyboard-350",
+   "page": "/contact",
+   "focused": "TEXTAREA",
+   "value": "اختبار",
+   "focusedInView": false,
+   "overflowX": 0
+  },
+  {
+   "case": "keyboard-350",
+   "page": "/search",
+   "focused": "INPUT",
+   "value": "اختبار",
+   "focusedInView": false,
+   "overflowX": 0
+  },
+  {
+   "case": "keyboard-350",
+   "page": "/articles",
+   "focused": "INPUT",
+   "value": "اختبار",
+   "focusedInView": false,
+   "overflowX": 0
+  }
+ ]
+}

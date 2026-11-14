@@ -27,10 +27,11 @@ export default function Contact() {
   }, [location.hash])
 
   return (
-    <Page>
+    <Page className="duo-book">
       <section className="px-6 pb-20 pt-32 text-center md:px-11 md:pb-24 md:pt-40">
-        <div className="mx-auto max-w-shell">
-          <FadeUp>
+        {/* في الكتاب المفتوح: الدعوة على اليمنى ونموذج الحجز على اليسرى. */}
+        <div className="contact-spread mx-auto max-w-shell">
+          <FadeUp className="contact-spread__intro">
             <img src="/portrait.webp" alt="" width={1345} height={2048} decoding="async" className="mx-auto mb-6 h-24 w-24 rounded-full border border-hair object-cover object-top" />
             <Label center>للاستشارة أو التعاون</Label>
             <h1 className="font-display text-[clamp(2.6rem,8vw,5.2rem)] font-bold leading-[1.25] text-ink">
@@ -56,7 +57,7 @@ export default function Contact() {
 
 
 
-          <FadeUp delay={0.08}>
+          <FadeUp delay={0.08} className="contact-spread__form">
             <div id="booking-form" tabIndex={-1} aria-label="نموذج حجز موعد" className="mt-14 scroll-mt-24 border-t border-hair pt-12 outline-none md:mt-16 md:pt-16">
               <ContactForm />
             </div>

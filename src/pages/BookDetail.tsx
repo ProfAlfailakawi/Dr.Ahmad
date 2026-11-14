@@ -271,8 +271,10 @@ export default function BookDetail() {
     <Page className="content-book-detail">
       <JsonLd data={structuredData} />
       <section className="px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-28 md:px-11 md:pb-24 md:pt-44">
-        <div className="mx-auto max-w-shell">
-          <FadeUp>
+        {/* في الكتاب المفتوح: الغلاف والعنوان والأفعال على اليمنى، ولمحة الكتاب
+            ووصفه وفهرسه على اليسرى. */}
+        <div className="book-spread mx-auto max-w-shell">
+          <FadeUp className="book-spread__back">
             <Link to="/publications" viewTransition className="-my-2 inline-block py-2 text-[.85rem] text-soft transition-colors hover:text-accent"><Arrow kind="back" />كل المؤلفات</Link>
           </FadeUp>
 
@@ -352,9 +354,9 @@ export default function BookDetail() {
             </FadeUp>
           </div>
 
-          <FadeUp delay={0.12}><BookGlance slug={book.slug} /></FadeUp>
+          <FadeUp delay={0.12} className="book-spread__glance"><BookGlance slug={book.slug} /></FadeUp>
 
-          <FadeUp delay={0.14}>
+          <FadeUp delay={0.14} className="book-spread__about">
             <details className="group mx-auto mt-14 max-w-[880px] overflow-hidden rounded-2xl border border-hair bg-canvas">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 px-5 py-5 md:px-7">
                 <span>
@@ -367,7 +369,7 @@ export default function BookDetail() {
             </details>
           </FadeUp>
 
-          <FadeUp delay={0.18}>
+          <FadeUp delay={0.18} className="book-spread__toc">
             <section className="book-toc mx-auto mt-12 max-w-[880px] overflow-hidden rounded-2xl border border-hair bg-canvas" aria-labelledby="book-toc-title">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-hair px-5 py-5 md:px-7">
                 <div>

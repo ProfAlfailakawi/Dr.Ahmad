@@ -123,7 +123,7 @@ export default function Articles() {
   const shown = paged.pageItems
 
   return (
-    <Page className="content-articles page-journey">
+    <Page className="content-articles page-journey duo-book">
       <PageHead
         label="المقالات الفكرية"
         title="أفكارٌ تلاحق زمنها."

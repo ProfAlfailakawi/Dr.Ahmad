@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=38';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=39';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { animator, canvasTexture, shadowBlob, V, TAU } from '../lib/a1-kit.js?v=38';
+import { animator, canvasTexture, shadowBlob, V, TAU } from '../lib/a1-kit.js?v=39';
 
 export const meta = { free: true, center: [0.4, 0.27], typeLabel: 'لعبة ترتيب' };
 

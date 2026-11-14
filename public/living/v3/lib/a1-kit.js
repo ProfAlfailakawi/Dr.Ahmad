@@ -1,7 +1,7 @@
 // Shared helpers for the a1 builder pages: a plinth, a piece animator (rise-in, bump on touch, pulse hint) and tidy labels.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, PAGE_H } from '../../kit.js?v=38';
-import { softLight, tagSprite, setSpr } from '../../v2/common.js?v=38';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, PAGE_H } from '../../kit.js?v=39';
+import { softLight, tagSprite, setSpr } from '../../v2/common.js?v=39';
 
 export const TAU = Math.PI * 2;
 export const css = (c) => '#' + c.toString(16).padStart(6, '0');

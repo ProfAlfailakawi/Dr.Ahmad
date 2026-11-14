@@ -9396,6 +9396,24 @@ body {
   .ency-map > :nth-child(2) { margin-top: 0; }
   #encyclopedia-teaching-kit > div { width: calc(50% - var(--duo-spine) / 2); margin-inline: 0; max-width: none; }
 
+  /* ٢٨) لوحة التحكم (/admin، لوحة «اليوم»): التحية على اليمنى والأدوات على
+     اليسرى؛ «ماذا تريد؟» على اليمنى، وقرارات اليوم ونبض الموقع على اليسرى؛
+     قائمة المجال المطوية في الصفحة اليسرى، وشريط المجالات السفلي اثنان في
+     كل صفحة. (الأدوات الأخرى تبقى عموداً واحداً بلا كعب مرسوم.) */
+  .admin-book .admin-head { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: center; }
+  .admin-book .admin-head > :last-child { grid-column: 3; justify-content: flex-end; }
+  .admin-book .admin-shell section > details:first-child { width: calc(50% - var(--duo-spine) / 2); margin-inline-start: auto; }
+  .admin-today { grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); gap: 1.25rem 0; align-items: start; }
+  .admin-today > * { grid-column: 3; min-width: 0; }
+  .admin-today > :first-child { grid-column: 1; grid-row: 1 / span 2; }
+  .admin-today > section:last-child > .grid { grid-template-columns: minmax(0, 1fr); }
+  .admin-today > section:last-child > h3 { font-size: 1.05rem; }
+  .admin-today > section:last-child > .grid > button { padding-inline: 0; border-top: 1px solid var(--c-hair); }
+  .admin-today > section:last-child > .grid > button:first-child { border-top: 0; }
+  .admin-dock-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: .375rem; }
+  .admin-dock-grid > :nth-child(3) { grid-column: 4; }
+  .admin-dock-grid > :nth-child(4) { grid-column: 5; }
+
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */
   .ent-stage {

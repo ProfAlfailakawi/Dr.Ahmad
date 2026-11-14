@@ -412,11 +412,11 @@ function Panel({ email }: { email: string }) {
   }
 
   return (
-    <Page>
+    <Page className={tab === 'dashboard' ? 'duo-book admin-book' : 'admin-book'}>
       <AdminTaskFavicon />
       <div className="admin-shell mx-auto box-border w-full max-w-[1440px] overflow-x-clip px-4 pb-32 pt-28 sm:px-6 md:px-10 md:pb-24 md:pt-32">
         <PushGateBanner />
-        <div className="mb-7 grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between md:mb-9">
+        <div className="admin-head mb-7 grid min-w-0 gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between md:mb-9">
           <div className="min-w-0">
             <p className="mb-1 text-[.78rem] font-semibold uppercase text-accent">لوحة التحكم</p>
             <h1 className="font-display text-3xl font-bold text-ink">أهلاً دكتور.</h1>

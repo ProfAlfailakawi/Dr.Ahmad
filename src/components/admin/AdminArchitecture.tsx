@@ -268,7 +268,7 @@ export function AdminMobileNav({ tab, onSelect }: { tab: AdminTab; onSelect: (ta
   }, [])
   return (
     <nav ref={navRef} aria-label="تنقل مجالات لوحة التحكم" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-[280] rounded-2xl border border-hair bg-canvas/95 p-2 shadow-[0_24px_70px_-34px_rgba(21,22,26,.65)] backdrop-blur lg:hidden">
-      <div className="grid min-w-0 grid-cols-4 gap-1.5">
+      <div className="admin-dock-grid grid min-w-0 grid-cols-4 gap-1.5">
         {ADMIN_GROUPS.map((group) => {
           const active = area === group.area
           return <button key={group.area} type="button" onClick={() => onSelect(defaultTabForArea(group.area))} className={`min-h-11 min-w-0 rounded-xl px-1.5 py-2 text-[.66rem] font-semibold leading-[1.25] transition-colors sm:text-[.72rem] ${active ? 'bg-accent text-canvas' : 'border border-hair bg-canvas text-soft'}`}>{group.label}</button>
@@ -449,7 +449,7 @@ export function TodayDashboard({ articles, books, papers, media, onOpen }: { art
   }, [audioNeedsReview, data, drafts, namer, scheduled])
 
   return (
-    <div className="grid gap-5">
+    <div className="admin-today grid gap-5">
       <DrAhmadRoom articles={articles} books={books} papers={papers} media={media} onOpen={onOpen} />
       <DnaStatusHeader
         className="admin-command-head"

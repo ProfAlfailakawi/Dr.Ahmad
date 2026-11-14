@@ -1,7 +1,7 @@
 // p365 — fat glossy letters spell "blog" on a laptop; word tiles sit on the keys. Touch the letters (they leap) and each word.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=35';
-import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool } from '../lib/a7.js?v=35';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed } from '../../kit.js?v=36';
+import { TAU, canvasTex, rbox, lit, rig, hints, burstAt, lightPool } from '../lib/a7.js?v=36';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'مجسّم تفاعلي' };
 

@@ -9278,6 +9278,20 @@ body {
   .live-card > :nth-child(8) { grid-row: 4 / span 2; }
   .live-card > :nth-child(9) { grid-row: 6; text-align: start; }
   .live-card h1 { font-size: clamp(2rem, 4.4vw, 2.6rem); }
+
+  /* ٣٧) الرئيسية — العمق: رأس القسم (العنوان يميناً والرابط يساراً) في كل
+     صفحات الكتاب؛ «الآن» صفحتان بدل سكة أفقية تعبر الكعب: المقال الأحدث على
+     اليمنى، وشرارة اليوم والمجلس و«في مثل هذا الأسبوع» على اليسرى؛ «أربع
+     زوايا» بطاقتان في كل صفحة؛ مدخل «خرائط الفكر» في الصفحة اليمنى. */
+  .duo-book .section-head-scene { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); align-items: end; }
+  .duo-book .section-head-scene > :first-child { grid-column: 1; min-width: 0; }
+  .duo-book .section-head-scene > a { grid-column: 3; justify-self: end; }
+  .duo-book .section-head-scene h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); }
+  .now-hub-rail { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-auto-rows: auto; gap: 1rem 0; overflow: visible; padding-inline: clamp(1.5rem, 4.6vw, 2.75rem); }
+  .duo-book .now-hub-rail > * { grid-column: 3; width: auto; max-width: none; min-width: 0; }
+  .duo-book .now-hub-rail > :first-child { grid-column: 1; grid-row: 1 / span 3; }
+  .now-hub-rail > span[aria-hidden] { display: none; }
+  .duo-book [data-duo-half] { width: calc(50% - var(--duo-spine) / 2); }
   /* سطر «يُجهَّز…» أثناء التحميل الكسول: في الصفحة اليمنى لا على الكعب. */
   .duo-loading-note { text-align: start; padding-inline-end: calc(50% + var(--duo-spine) / 2); }
 

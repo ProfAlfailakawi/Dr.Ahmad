@@ -1,9 +1,9 @@
 // p363: the blog as a six-sided jewel cube. Touch it and it tumbles to a new face; or touch one of the six glyph coins around its base to roll that face to you.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=36';
-import { inked } from '../../pencil.js?v=36';
-import { TAU, css, rising, halos, motes, blob, dais, canvasTex, glyph, paintWrap, roundRect, faceMat } from '../lib/b6-kit.js?v=36';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=37';
+import { inked } from '../../pencil.js?v=37';
+import { TAU, css, rising, halos, motes, blob, dais, canvasTex, glyph, paintWrap, roundRect, faceMat } from '../lib/b6-kit.js?v=37';
 
 export const meta = { free: true, center: [0.5, 0.56], typeLabel: 'مجسّم تفاعلي', title: 'تشريح التدوين' };
 

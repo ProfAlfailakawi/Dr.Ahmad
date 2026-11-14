@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=36';
-import { scene, RoundedBox, TAU, person2, contactShadow } from '../lib/a8-kit.js?v=36';
+import { mat, glossy, goldMat, shadowed, glow, stag, ease, easeBack, clamp01, label } from '../../kit.js?v=37';
+import { scene, RoundedBox, TAU, person2, contactShadow } from '../lib/a8-kit.js?v=37';
 export const meta = { free: true, center: [0.56, 0.345], typeLabel: 'خريطة ضوئية' };
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 const TECH = [

@@ -3,7 +3,7 @@
 // experience turn in front of it, and the title forms. Everything is drawn in code (no video file, no images), so it costs nothing to load.
 // Tap the scene to watch it again.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, sprite, mat, glossy } from '../../kit.js?v=36';
+import { P, ease, easeBack, clamp01, glow, glowTexture, fontsReady, sprite, mat, glossy } from '../../kit.js?v=37';
 
 export const meta = { free: true, center: [0.5, 0.5], typeLabel: 'الغلاف' };
 

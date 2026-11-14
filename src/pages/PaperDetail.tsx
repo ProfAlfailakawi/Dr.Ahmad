@@ -216,7 +216,7 @@ export default function PaperDetail() {
   }
 
   return (
-    <Page className="content-research research-detail-page">
+    <Page className="content-research research-detail-page duo-book">
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'ScholarlyArticle',
@@ -238,7 +238,7 @@ export default function PaperDetail() {
       }} />
 
       <article className="px-4 pb-12 pt-32 sm:px-6 md:px-11 md:pb-16 md:pt-40">
-        <div className="mx-auto max-w-[960px]">
+        <div className="paper-spread mx-auto max-w-[960px]">
           <FadeUp>
             <div className="flex items-center justify-between gap-4">
               <Link to="/research" viewTransition className="inline-flex min-h-11 items-center text-[.85rem] font-medium text-soft transition-colors hover:text-accent"><ArrowRight aria-hidden size={15} strokeWidth={1.6} className="-mt-0.5 me-1 inline" />كل المساهمات العلمية</Link>

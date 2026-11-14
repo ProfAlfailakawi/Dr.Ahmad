@@ -9467,6 +9467,25 @@ body {
   .upcoming-body #upcoming-events-list .group { grid-template-columns: minmax(0, 1fr); gap: .6rem; }
   .upcoming-body #upcoming-events-list .group > :first-child { border-left: 0; padding-left: 0; border-bottom: 1px solid var(--c-hair); padding-bottom: .6rem; }
 
+  /* ٣٢) جواز البحث (/research/:slug): غلاف البحث (العنوان والدوريّة) وفهرس
+     طبقاته الثلاث على اليسرى، والفهرس ثابت أثناء القراءة؛ الطبقات نفسها
+     على اليمنى ثم «داخل المشروع» والبحث التالي. شبكات البطاقات داخل الطبقة
+     عمود واحد في صفحتها. */
+  .paper-spread { display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr); grid-template-rows: auto auto 1fr; max-width: none; align-items: start; }
+  .paper-spread > * { grid-column: 1; min-width: 0; }
+  .paper-spread > :first-child { grid-column: 1 / -1; }
+  .paper-spread > :nth-child(2) { grid-column: 3; grid-row: 2; }
+  .paper-spread > .research-section-nav { grid-column: 3; grid-row: 3; position: sticky; top: 5rem; margin: 1.25rem 0 0; padding-inline: 0; border-bottom: 0; background: transparent; backdrop-filter: none; }
+  .paper-spread > .research-section-nav nav { flex-direction: column; gap: 0; }
+  .paper-spread > .research-section-nav nav > button { flex-direction: row; justify-content: flex-start; gap: .6rem; text-align: start; border-bottom: 1px solid var(--c-hair); }
+  .paper-spread > .research-evidence-thread-wrap { grid-row: 2 / span 2; margin-top: 1.5rem; }
+  .paper-spread > :nth-child(2) > .research-hero { margin-top: 1.5rem; }
+  .paper-spread .research-hero h1 { font-size: clamp(1.5rem, 3.4vw, 2.1rem); }
+  .paper-spread .research-evidence-thread-wrap .grid { grid-template-columns: minmax(0, 1fr); }
+  .paper-spread details .grid { grid-template-columns: minmax(0, 1fr); }
+  /* «الخطوة التالية» أسفل الصفحات: سطر في الصفحة اليمنى. */
+  .duo-book .next-step-thread { width: calc(50% - var(--duo-spine) / 2); }
+
   /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
      الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */
   .ent-stage {

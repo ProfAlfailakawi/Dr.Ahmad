@@ -1,7 +1,7 @@
 // Shared helpers for the a3 builder's pages: plinths, text on surfaces, touch hints, discovery counter.
 import * as THREE from 'three';
-import { mat, goldMat, clamp01, ease } from '../../kit.js?v=33';
-import { softLight } from '../../v2/common.js?v=33';
+import { mat, goldMat, clamp01, ease } from '../../kit.js?v=34';
+import { softLight } from '../../v2/common.js?v=34';
 
 export const toAr = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
 export const css = (c) => '#' + c.toString(16).padStart(6, '0');

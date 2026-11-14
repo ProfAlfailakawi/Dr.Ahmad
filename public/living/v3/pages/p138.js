@@ -1,7 +1,7 @@
 // p138 — six inkwells in a ring, each with a reed pen: a contribution appears in the middle, tap the scholar whose pen wrote it.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=33';
-import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, slab, blob, at, shuffled, TAU, INK, GOLD } from '../lib/a2.js?v=33';
+import { P, ease, easeBack, clamp01, stag, glow } from '../../kit.js?v=34';
+import { rb, lathe, std, lit, gloss, glass, brass, add, grp, hit, Seq, Pulse, touch, chip, plinth, slab, blob, at, shuffled, TAU, INK, GOLD } from '../lib/a2.js?v=34';
 
 export const meta = { free: true, center: [0.5, 0.7], typeLabel: 'لعبة مطابقة' };
 

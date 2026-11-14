@@ -1,10 +1,10 @@
 // p469 — a concept map as a hanging mobile: the future of educational technology balances on a brass stand; every idea hangs from the one it depends on.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=33';
-import { inked } from '../../pencil.js?v=33';
-import { lightPool } from '../../v2/common.js?v=33';
-import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=33';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow } from '../../kit.js?v=34';
+import { inked } from '../../pencil.js?v=34';
+import { lightPool } from '../../v2/common.js?v=34';
+import { Seq, Hints, Tag, TAU, V, wpos, softShadow } from '../lib/a9-kit.js?v=34';
 
 export const meta = { free: true, center: [0.5, 0.575], typeLabel: 'مجسّم معلّق', title: 'شبكة مستقبل التعليم' };
 

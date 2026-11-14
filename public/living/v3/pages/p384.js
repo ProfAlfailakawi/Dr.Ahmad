@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, contactShadow, paintTex, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, drawText } from '../lib/b7-kit.js?v=33';
+import { scene, contactShadow, paintTex, rr, RB, GL, TAU, sm, mat, glossy, goldMat, shadowed, glow, ease, easeBack, clamp01, burstAt, lightPool, drawText } from '../lib/b7-kit.js?v=34';
 export const meta = { free: true, center: [0.52, 0.26], typeLabel: 'مجسّم تفاعلي' };
 
 // A message travels phone -> relay tower -> phone. Two discs choose what it carries: bare text (SMS) or text + picture (MMS).

@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=33';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=33';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=33';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=33';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=33';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=34';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=34';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=34';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=34';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=34';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -291,26 +291,28 @@ function startExperience(index, root, camera, mode) {
   sfx.wake();
   if (exp.door) sfx.signature?.(exp.door);
   current.extras = []; current.sun = sun;
-  // the printed figure itself rises from the paper and melts into the scene (ordinary pages, with the camera)
-  if (exp.kind === 'page' && mode === 'ar') {
-    try { const lift = liftOff({ parent: outer, frame: captureFrame(), rect: exp.crop ? exp.crop.map((x) => Math.min(1, Math.max(0, x))) : [0.08, 0.1, 0.92, 0.9], fx, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16) }); if (lift) current.extras.push(lift); } catch { /* no picture: the scene simply starts */ }
-  }
-  const pageNo = exp.kind === 'page' ? +String(exp.page).replace(/\D/g, '') : 0;
-  if (prevTrail && performance.now() - prevTrail.at < 15000 && (mode === 'ar' || DEV)) {
-    // two facing pages talk: the page left behind sends its title across the gutter on a bridge of light
-    if (pageNo && prevTrail.no && isFacing(pageNo, prevTrail.no)) current.extras.push(bridge({ parent: outer, fx, sfx, side: pageNo > prevTrail.no ? 1 : -1, center: exp.center || [0.5, 0.6], color: prevTrail.color, title: prevTrail.title }));
-    else trail(fx, prevTrail.color, exp.center || [0.5, 0.6]);
-  }
-  trailMemory = { at: performance.now(), color: TYPES[exp.type]?.c || '#d4ad55', no: pageNo, title: exp.title };
-  if (pageNo) { try { localStorage.setItem('living-encyclopedia:lastPage', String(pageNo)); } catch { /* private mode */ } }
-  // the page remembers the reader: from the second visit on, a deeper question waits in its corner
-  if (exp.kind === 'page' && (mode === 'ar' || DEV)) {
-    const visits = bumpVisit(exp.id);
-    if (visits >= 2) {
-      const mem = memory({ parent: outer, taps, ui, sfx, fx, id: exp.id, title: exp.title, visits, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16), center: exp.center || [0.5, 0.6] });
-      current.extras.push({ update: () => { mem.update(current.t); return true; } });
+  try {
+    // the printed figure itself rises from the paper and melts into the scene (ordinary pages, with the camera)
+    if (exp.kind === 'page' && mode === 'ar') {
+      try { const lift = liftOff({ parent: outer, frame: captureFrame(), rect: exp.crop ? exp.crop.map((x) => Math.min(1, Math.max(0, x))) : [0.08, 0.1, 0.92, 0.9], fx, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16) }); if (lift) current.extras.push(lift); } catch { /* no picture: the scene simply starts */ }
     }
-  }
+    const pageNo = exp.kind === 'page' ? +String(exp.page).replace(/\D/g, '') : 0;
+    if (prevTrail && performance.now() - prevTrail.at < 15000 && (mode === 'ar' || DEV)) {
+      // two facing pages talk: the page left behind sends its title across the gutter on a bridge of light
+      if (pageNo && prevTrail.no && isFacing(pageNo, prevTrail.no)) current.extras.push(bridge({ parent: outer, fx, sfx, side: pageNo > prevTrail.no ? 1 : -1, center: exp.center || [0.5, 0.6], color: prevTrail.color, title: prevTrail.title }));
+      else trail(fx, prevTrail.color, exp.center || [0.5, 0.6]);
+    }
+    trailMemory = { at: performance.now(), color: TYPES[exp.type]?.c || '#d4ad55', no: pageNo, title: exp.title };
+    if (pageNo) { try { localStorage.setItem('living-encyclopedia:lastPage', String(pageNo)); } catch { /* private mode */ } }
+    // the page remembers the reader: from the second visit on, a deeper question waits in its corner
+    if (exp.kind === 'page' && (mode === 'ar' || DEV)) {
+      const visits = bumpVisit(exp.id);
+      if (visits >= 2) {
+        const mem = memory({ parent: outer, taps, ui, sfx, fx, id: exp.id, title: exp.title, visits, color: parseInt((TYPES[exp.type]?.c || '#d4ad55').slice(1), 16), center: exp.center || [0.5, 0.6] });
+        current.extras.push({ update: () => { mem.update(current.t); return true; } });
+      }
+    }
+  } catch (e) { noteError('start', e); }
   lecture.sendState();
   return current;
 }
@@ -350,6 +352,15 @@ function fitScene(c, dt) {
   c.fit = THREE.MathUtils.damp(c.fit, c.fitT, 2.5, dt);
 }
 
+// A failure in an extra (light, video, bridge, memory, lift) must never stop the scan; it is shown once as a small line so it can be reported.
+let lastNote = 0;
+addEventListener('error', (e) => { if (e.filename && !/living/.test(e.filename)) return; noteError('js', e.error || e.message); });
+addEventListener('unhandledrejection', (e) => noteError('promise', e.reason));
+function noteError(where, e) {
+  console.warn('[living]', where, e);
+  if (performance.now() - lastNote < 8000) return; lastNote = performance.now();
+  try { ui.toast(`تنبيه تقني (${where}): ${String(e?.message || e).slice(0, 60)}`); } catch { /* the toast itself is not essential */ }
+}
 function tick(dt) {
   const c = current; if (!c) return;
   if (activeCanvas) syncLines(activeCanvas.clientWidth || 1, activeCanvas.clientHeight || 1);
@@ -371,7 +382,7 @@ function tick(dt) {
   c.pivot.scale.set(c.zoom * c.fit, c.zoom * c.fit * grow, c.zoom * c.fit);
   if (c.exp.kind === 'page' && !c.rose && c.t > 0.35 + D * 0.55) { c.rose = true; c.fx.burst(new THREE.Vector3(c.pivot.position.x, 0.02, c.pivot.position.z), 0xffd27a, 18, 0.35, 0.022); }
   c.inst.update(c.t, dt, ease(c.e));
-  if (c.extras?.length) c.extras = c.extras.filter((x) => x.update(dt) !== false);
+  if (c.extras?.length) c.extras = c.extras.filter((x) => { try { return x.update(dt) !== false; } catch (e) { noteError('extra', e); return false; } });
   c.fx.update(dt);
 }
 
@@ -635,9 +646,9 @@ async function startAR(id = packId) {
     renderer.setAnimationLoop(() => {
       const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
       tick(dt);
-      roomLight($('arStage').querySelector('video'), now, dt, [hemi, current?.sun]);
+      try { roomLight($('arStage').querySelector('video'), now, dt, [hemi, current?.sun]); } catch (e) { noteError('light', e); }
       renderer.render(scene, camera);
-      paperVideo.render(scene, camera);
+      try { paperVideo.render(scene, camera); } catch (e) { noteError('video', e); }
       if (test) testFrame(now);
     });
     ar = { mind, anchors };

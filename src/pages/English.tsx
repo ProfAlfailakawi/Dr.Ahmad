@@ -74,12 +74,12 @@ export function EnglishHome() {
   useTrackView('/en', 'English — Home')
 
   return (
-    <Page>
+    <Page className="duo-book en-home">
       <Suspense fallback={null}><EnglishThreshold /></Suspense>
       {/* المشهد الأول — الهوية */}
       <section className="flex min-h-[92svh] flex-col justify-center border-b border-hair px-6 pt-24 md:px-11">
         <div className="mx-auto w-full max-w-shell">
-          <FadeUp>
+          <FadeUp className="en-hero duo-sheet">
             <Label>{profileEn.eyebrow}</Label>
             <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,5rem)] font-bold leading-[1.08] text-ink">
               Ahmad H. Alfailakawi
@@ -112,7 +112,7 @@ export function EnglishHome() {
       {/* عن الدكتور */}
       <section className="border-b border-hair px-6 py-20 md:px-11">
         <div className="mx-auto max-w-shell">
-          <FadeUp>
+          <FadeUp className="en-about duo-sheet">
             <Label>About</Label>
             <p className="mt-6 max-w-[760px] text-[1.12rem] font-light leading-[2] text-ink">{profileEn.about}</p>
             <div className="mt-8 flex flex-wrap gap-2.5">
@@ -130,7 +130,7 @@ export function EnglishHome() {
       {/* الأثر */}
       <section className="border-b border-hair px-6 py-20 md:px-11">
         <div className="mx-auto max-w-shell">
-          <FadeUp>
+          <FadeUp className="en-impact">
             <p className="mb-10 text-center text-[.76rem] font-semibold uppercase tracking-[.14em] text-accent">A documented record</p>
             <Impact />
           </FadeUp>
@@ -140,7 +140,7 @@ export function EnglishHome() {
       {/* مختارات بحثية */}
       <section className="border-b border-hair px-6 py-20 md:px-11">
         <div className="mx-auto max-w-shell">
-          <FadeUp>
+          <FadeUp className="en-selected duo-sheet">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <Label>Selected research</Label>
@@ -150,7 +150,7 @@ export function EnglishHome() {
                 All {papers.length} papers<Arrow ltr />
               </Link>
             </div>
-            <ul tabIndex={0} className="mobile-card-rail mt-10 grid gap-8 md:grid-cols-3" style={{ direction: 'ltr' }}>
+            <ul tabIndex={0} className="mobile-card-rail duo-stack duo-sheet__left mt-10 grid gap-8 md:grid-cols-3" style={{ direction: 'ltr' }}>
               {papers.slice(0, 3).map((p) => (
                 <li key={p.slug} className="border-l-2 border-hair pl-5 transition-colors hover:border-accent">
                   <p className="text-[1rem] font-medium leading-[1.6] text-ink">{paperTitlesEn[p.slug] || p.slug}</p>
@@ -166,7 +166,7 @@ export function EnglishHome() {
       <section className="px-6 py-20 md:px-11">
         <div className="mx-auto max-w-shell">
           <FadeUp>
-            <div className="grid gap-12 md:grid-cols-2 md:items-center">
+            <div className="duo-pair grid gap-12 md:grid-cols-2 md:items-center">
               <div>
                 <Label>Books</Label>
                 <h2 className="mt-3 font-display text-[clamp(1.6rem,3.5vw,2.3rem)] font-bold leading-[1.3] text-ink">

@@ -9296,6 +9296,44 @@ body {
   .audio-dock-bar > div > .flex-1 { flex-basis: calc(100% - 3.25rem); }
   .audio-dock-bar > div > .flex-1 + * { margin-inline-start: auto; }
   body.audio-dock-open .floating-actions { bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px)); }
+
+  /* ٢٤) الواجهة الإنجليزية (/en، اتجاه LTR فالصفحة الأولى هي اليسرى):
+     الاسم والعبارة على الصفحة الأولى، والتعريف والأبواب على المقابلة؛ «عن
+     الدكتور» نصاً وحقائقه؛ حلقات الأثر اثنتان في كل صفحة؛ الأبحاث المختارة
+     عنواناً وقائمة؛ الكتب ودعوة التعاون صفحتان. */
+  .en-hero { align-items: end; }
+  .en-hero > :nth-child(n+4) { grid-column: 3; }
+  .en-hero > :nth-child(4) { grid-row: 2; margin-top: 0; }
+  .en-hero > :nth-child(5) { grid-row: 3; align-self: end; margin-top: 1.5rem; }
+  /* أيقونات الشبكات بهامش سالب لمساحة اللمس؛ إن التفّت إلى أول السطر لا تتجاوز الصفحة. */
+  .en-hero > :nth-child(5) > span { padding-inline-start: 11px; }
+  .en-hero h1 { font-size: clamp(2.3rem, 5.4vw, 3.4rem); }
+  .en-hero > p:nth-child(3) { font-size: clamp(1.3rem, 2.8vw, 1.8rem); }
+  .en-about > :nth-child(3) { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin-top: 0; }
+  .en-impact > p { width: calc(50% - var(--duo-spine) / 2); text-align: start; }
+  .en-impact > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) var(--duo-spine) repeat(2, minmax(0, 1fr)); column-gap: 0; }
+  .en-impact > .grid > :nth-child(3) { grid-column: 4; }
+  .en-impact > .grid > :nth-child(4) { grid-column: 5; }
+  .en-selected > ul { grid-row: 1; margin-top: 0; }
+  .en-selected > div { flex-direction: column; align-items: flex-start; }
+  .en-home .duo-pair { align-items: start; }
+  .en-selected h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+  /* في LTR الصفحة الأولى (المهمة) هي اليسرى: الأزرار العائمة تعود إلى اليمنى. */
+  html[dir="ltr"] .floating-actions { left: auto; }
+
+  /* بوابة الإنجليزية العائمة («Every door is open»): العنوان والتمهيد على
+     الصفحة الأولى، والأبواب الثلاثة على المقابلة، لا عمود واحد فوق المفصل. */
+  .ent-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--duo-spine) minmax(0, 1fr);
+    align-content: center;
+    width: 100%;
+    padding-inline: clamp(1.5rem, 4.6vw, 2.75rem);
+  }
+  .ent-stage > * { grid-column: 1; }
+  .ent-stage > .ent-browse { justify-self: start; }
+  .ent-stage > .ent-doors { grid-column: 3; grid-row: 1 / span 5; align-self: center; margin-top: 0; }
+  .ent-root h2 { font-size: clamp(2rem, 4.6vw, 2.8rem); }
 }
 
 /* المفصل (تحسين تدريجي). حين يعلن Safari مقاطع العرض في وضع الكتاب

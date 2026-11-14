@@ -107,9 +107,9 @@
    المتغيرات --duo-cutout-w/h تُعرَّف في index.css (:root) وتورَّث إلى هذا الظل.
    الكتاب العرضي: الشريط الجانبي (وفيه الشعار) على اليمين فينزل شعاره تحت الصندوق.
    الطولي: كتلة العنوان تترك للودجت يمينها. الخلفيات تبقى حتى الحافة. */
-@media (display-mode:standalone) and screen and (min-width:721px) and (max-width:1000px) and (min-height:520px) and (max-height:960px) and (orientation:landscape){
+@media screen and (display-mode:standalone) and (min-width:721px) and (max-width:1000px) and (min-height:520px) and (max-height:960px) and (orientation:landscape){
   .side{padding-top:calc(var(--duo-cutout-h,0px) + 8px)}
 }
-@media (display-mode:standalone) and screen and (min-width:640px) and (max-width:720px) and (min-height:520px) and (max-height:960px) and (orientation:portrait){
+@media screen and (display-mode:standalone) and (min-width:640px) and (max-width:720px) and (min-height:520px) and (max-height:960px) and (orientation:portrait){
   .main>.top,.main>.notice{padding-right:var(--duo-cutout-w,0px)}
 }

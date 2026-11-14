@@ -1,8 +1,8 @@
 // p211 — a split brain: slate-and-chalk left hemisphere, painted right hemisphere; each swings open like a bowl to show its world, and a light bridge joins them.
 import * as THREE from 'three';
-import { P, ease, easeBack, clamp01, glow, lightTube } from '../../kit.js?v=35';
-import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, plinth, blob, rnd, TAU } from '../lib/a2.js?v=35';
-import { plate, damp } from '../lib/b3-kit.js?v=35';
+import { P, ease, easeBack, clamp01, glow, lightTube } from '../../kit.js?v=36';
+import { rb, lathe, std, gloss, brass, add, grp, hit, Seq, Pulse, touch, plinth, blob, rnd, TAU } from '../lib/a2.js?v=36';
+import { plate, damp } from '../lib/b3-kit.js?v=36';
 
 export const meta = { free: true, center: [0.45, 0.68], typeLabel: 'مجسّم تفاعلي' };
 

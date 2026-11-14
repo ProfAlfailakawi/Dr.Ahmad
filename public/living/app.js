@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=35';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=35';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=35';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=35';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=35';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=36';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=36';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=36';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=36';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=36';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -653,7 +653,20 @@ async function startAR(id = packId) {
     });
     ar = { mind, anchors };
     if (TEST) window.__mind = mind;   // field-test diagnostics (?test)
-    [100, 600, 1500].forEach((ms) => setTimeout(() => dispatchEvent(new Event('resize')), ms));
+    // A foldable that is opened or closed, a rotated tablet, a split-screen window or a toolbar that appears all change the stage size, often
+    // after the window's own resize event has already fired. The stage is watched directly, and MindAR is told to re-fit the camera picture and
+    // the projection a few times as the layout settles, so the scene stays on the print.
+    let refitTimers = [];
+    const refit = () => {
+      refitTimers.forEach(clearTimeout);
+      refitTimers = [0, 80, 250, 600, 1200, 2400].map((ms) => setTimeout(() => { try { mind.resize(); } catch { /* the camera was stopped */ } }, ms));
+    };
+    const stageEl = $('arStage'), ro = typeof ResizeObserver === 'function' ? new ResizeObserver(refit) : null;
+    ro?.observe(stageEl);
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', refit); addEventListener('orientationchange', refit); screen.orientation?.addEventListener?.('change', refit);
+    ar.cleanup = () => { refitTimers.forEach(clearTimeout); ro?.disconnect(); vv?.removeEventListener('resize', refit); removeEventListener('orientationchange', refit); screen.orientation?.removeEventListener?.('change', refit); };
+    refit();
     $('loading').classList.add('hidden');
     $('scan').classList.remove('hidden');
     // the book-map star was removed from the camera view
@@ -671,6 +684,7 @@ function stopAR() {
   clearInterval(rotor); rotor = null;
   fastWorkers.forEach((w) => w.terminate()); stopPack(); fastWorkers = [];
   if (!ar) return;
+  try { ar.cleanup?.(); } catch { /* nothing to clean */ }
   try { ar.mind.renderer.setAnimationLoop(null); ar.mind.stop(); } catch { /* already stopped */ }
   $('arStage').innerHTML = ''; ar = null;
 }

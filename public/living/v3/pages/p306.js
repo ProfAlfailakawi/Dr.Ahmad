@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=35';
-import { inked } from '../../pencil.js?v=35';
-import { Rig, hexCoin, retext, V, TAU } from '../lib/a5-kit.js?v=35';
+import { P, ease, easeBack, clamp01, stag, mat, glossy, goldMat, shadowed, glow, sprite, lightTube } from '../../kit.js?v=36';
+import { inked } from '../../pencil.js?v=36';
+import { Rig, hexCoin, retext, V, TAU } from '../lib/a5-kit.js?v=36';
 
 export const meta = { free: true, center: [0.33, 0.8], typeLabel: 'لعبة: سباق الزمن' };
 

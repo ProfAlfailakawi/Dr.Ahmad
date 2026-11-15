@@ -17,6 +17,13 @@
     padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   }
   main { max-width: 26rem; }
+  /* ركن الودجت (iPhone Duo): الاستعلامات نفسها في src/index.css؛ المحتوى يحجز يمين الشاشة الفيزيائي. */
+  @media screen and (orientation: portrait) and (max-width: 720px) and (min-height: 360px),
+  screen and (orientation: landscape) and (min-width: 540px) and (max-width: 1000px) and (min-height: 300px) and (max-height: 960px),
+  screen and (horizontal-viewport-segments: 2) {
+    body { padding-right: max(24px, env(safe-area-inset-right), 104px); padding-top: max(24px, env(safe-area-inset-top), clamp(64px, 31vh, 270px)); }
+  }
+
   h1 { font: -apple-system-title2; font-weight: 700; margin: 0 0 .5rem; }
   p { color: var(--muted); line-height: 1.6; margin: 0 0 1.5rem; }
   .en { direction: ltr; font-size: .9em; }

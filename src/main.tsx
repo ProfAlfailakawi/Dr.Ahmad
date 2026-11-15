@@ -30,6 +30,11 @@ function healOnce() {
   void healStaleBundles()
 }
 
+/* تشخيص ركن الودجت (iPhone Duo): يُحمَّل فقط عند ‎?duo-debug=1‎. */
+if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('duo-debug')) {
+  void import('./lib/duo-debug').then((m) => { const go = () => m.installDuoDebug(); if (document.body) go(); else addEventListener('DOMContentLoaded', go) })
+}
+
 /* وضع العرض التوضيحي: ردود /api/* تجريبية بلا خادم (يُفعَّل بـ VITE_DEMO_MODE=1 فقط). */
 if (DEMO_MODE) installDemoApi()
 

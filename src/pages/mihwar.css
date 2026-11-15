@@ -104,12 +104,11 @@
 
 /* ===== ودجت النظام (جولة ٢) =====
    على الشاشة الداخلية (تبويب المتصفح أو التطبيق المثبّت) يطفو ودجت النظام فوق الزاوية العلوية اليمنى.
-   المتغيرات --duo-cutout-w/h تُعرَّف في index.css (:root) وتورَّث إلى هذا الظل.
+   المتغيرات --duo-widget-* تُعرَّف في index.css (:root) وتورَّث إلى هذا الظل.
    الكتاب العرضي: الشريط الجانبي (وفيه الشعار) على اليمين فينزل شعاره تحت الصندوق.
    الطولي: كتلة العنوان تترك للودجت يمينها. الخلفيات تبقى حتى الحافة. */
 @media screen and (min-width:721px) and (max-width:1000px) and (min-height:520px) and (max-height:960px) and (orientation:landscape){
-  .side{padding-top:calc(var(--duo-cutout-h,0px) + 8px)}
+  .side{padding-top:calc(var(--duo-widget-h,0px) + 8px)}
 }
-@media screen and (min-width:640px) and (max-width:720px) and (min-height:520px) and (max-height:960px) and (orientation:portrait){
-  .main>.top,.main>.notice{padding-right:var(--duo-cutout-w,0px)}
-}
+/* كل الوضعيات: المتغيرات تُعرَّف في index.css وهي أصفار خارج Duo، فلا قيد على استعلام هنا. */
+.main>.top,.main>.notice{padding-right:var(--duo-widget-inset,0px)}

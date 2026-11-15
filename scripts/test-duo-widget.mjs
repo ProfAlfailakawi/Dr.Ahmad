@@ -180,7 +180,9 @@ const runCase = async (ctx0, { label, vp, url, state, scheme, text200, port }) =
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 })
     await page.addStyleTag({ content: 'html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important}' })
     if (text200) await page.addStyleTag({ content: 'html{font-size:200%!important}' })
-    await wait(1600)
+    /* لا فحص قبل أن تُرسم الصفحة فعلاً (وإلا نجح الحارس على صفحة فارغة). */
+    await page.waitForFunction(() => document.querySelectorAll('#root *').length > 40, null, { timeout: 60000 })
+    await wait(1200)
     if (state) await state(page)
     const dlgMissing = state?.expectDialog && !(await page.locator('[role=dialog]').count())
     await wait(500)
@@ -201,9 +203,9 @@ const runCase = async (ctx0, { label, vp, url, state, scheme, text200, port }) =
   } finally { await page.close() }
 }
 
-const openMenu = Object.assign(async (page) => { await page.locator('button.site-menu-trigger').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'القائمة مفتوحة', expectDialog: true })
-const openSearch = Object.assign(async (page) => { await page.locator('button[aria-label="مركز البحث الموحد"]').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'البحث مفتوح', expectDialog: true })
-const openMySpace = Object.assign(async (page) => { await page.locator('[aria-label*="مساحتي"], .my-space-trigger').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'مساحتي (sheet)', expectDialog: true })
+const openMenu = Object.assign(async (page) => { await page.evaluate(() => document.querySelector('button.site-menu-trigger')?.click()); await wait(900) }, { label: 'القائمة مفتوحة', expectDialog: true })
+const openSearch = Object.assign(async (page) => { await page.evaluate(() => document.querySelector('button[aria-label="مركز البحث الموحد"]')?.click()); await wait(900) }, { label: 'البحث مفتوح', expectDialog: true })
+const openMySpace = Object.assign(async (page) => { await page.evaluate(() => document.querySelector('.my-space-trigger')?.click()); await wait(900) }, { label: 'مساحتي (sheet)', expectDialog: true })
 const openReaderTools = Object.assign(async (page) => { await page.evaluate(() => window.scrollTo(0, 900)); await wait(500); await page.locator('.floating-actions button').first().click({ timeout: 3000 }).catch(() => {}); await wait(700) }, { label: 'أدوات القارئ' })
 
 const t0 = Date.now()
@@ -261,7 +263,8 @@ await Promise.all(Array.from({ length: WORKERS }, async () => { while (cursor < 
 const ncCtx = await browser.newContext({ viewport: { width: 457, height: 678 }, isMobile: true, hasTouch: true })
 const ncPage = await ncCtx.newPage()
 await ncPage.goto(`http://localhost:${BASE_PORT}/__missing__`, { waitUntil: 'domcontentloaded', timeout: 90000 })
-await wait(1500)
+await ncPage.waitForFunction(() => document.querySelectorAll('#root *').length > 40, null, { timeout: 60000 })
+await wait(1200)
 await ncPage.evaluate(() => { const b = document.createElement('button'); b.textContent = 'تحكّم'; b.style.cssText = 'position:fixed;top:30px;right:12px;z-index:99999'; document.body.appendChild(b) })
 const nc = await ncPage.evaluate(scan, { scrolled: false, zoneW: 96, vh: 678 })
 await ncCtx.close()

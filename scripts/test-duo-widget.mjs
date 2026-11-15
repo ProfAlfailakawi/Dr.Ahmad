@@ -33,7 +33,7 @@ const ONLY = process.env.DUO_VP ? process.env.DUO_VP.split(',') : null
 const VIEWPORTS = ONLY ? ALL_VIEWPORTS.filter((v) => ONLY.includes(v.tag)) : ALL_VIEWPORTS
 const ROUTES = ['/', '/articles', '/articles/__first__', '/publications', '/research', '/listen', '/search', '/contact', '/cv', '/en', '/mihwar', '/admin']
 /* مقاسات تطبيق Capacitor بارتفاع كامل (بلا أشرطة متصفح). */
-const TALL = [[382, 780], [382, 844], [470, 900], [669, 1000], [951, 700]].map(([w, h]) => ({ w, h, tag: `${w}x${h}` }))
+const TALL = [[382, 780], [382, 844], [470, 900], [669, 1000], [951, 700], [720, 900], [951, 669], [951, 800], [1000, 960]].map(([w, h]) => ({ w, h, tag: `${w}x${h}` }))
 const WK_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
 const QUICK_ROUTES = ['/', '/articles', '/contact', '/mihwar']
 
@@ -126,18 +126,31 @@ const scan = ({ scrolled, zoneW, vh }) => {
       const text = (el.innerText || el.getAttribute('aria-label') || el.alt || '').trim().slice(0, 40)
       if (bleed || decorative) { bleeds.push({ el: name, kind, why: bleed ? 'data-duo-bleed' : 'زخرفة aria-hidden' }); continue }
       const r = rects.find(inZone)
+      /* محجوب خلف طبقة معتمة (بوابة ملء الشاشة، قصّ clip-path): لا يراه أحد فلا يُعدّ. */
+      if (getComputedStyle(el).pointerEvents !== 'none') {
+        const px = Math.min(vw - 1, Math.max(0, (Math.max(r.left, zone.x) + Math.min(r.right, zone.r)) / 2)), py = Math.min(innerHeight - 1, Math.max(0, (Math.max(r.top, 0) + Math.min(r.bottom, zone.b)) / 2))
+        let top = document.elementFromPoint(px, py)
+        while (top && top.shadowRoot) { const inner = top.shadowRoot.elementFromPoint(px, py); if (!inner || inner === top) break; top = inner }
+        if (top && !(el === top || el.contains(top) || top.contains(el) || (el.getRootNode() instanceof ShadowRoot && el.getRootNode().host.contains(top)))) { bleeds.push({ el: name, kind, why: 'محجوب خلف طبقة' }); continue }
+      }
       hits.push({ el: name, kind, text, rect: [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)], fixed: fixedish(el) })
     }
   }
   visit(document)
+  /* المتغيرات غير المسجّلة لا تُحَلّ في getComputedStyle (clamp يبقى نصاً)، فيُقاس الركن بعنصر مجسّ فعلي. */
+  const probe = document.createElement('div')
+  probe.style.cssText = 'position:fixed;top:0;right:0;visibility:hidden;pointer-events:none;width:var(--duo-widget-w);height:var(--duo-widget-h)'
+  document.body.appendChild(probe)
+  const pr = probe.getBoundingClientRect(); probe.remove()
   const cs = getComputedStyle(document.documentElement)
-  return { hits, bleeds, zone, vars: { w: cs.getPropertyValue('--duo-widget-w').trim(), h: cs.getPropertyValue('--duo-widget-h').trim(), gap: cs.getPropertyValue('--duo-widget-gap').trim() } }
+  return { probe: { w: Math.round(pr.width * 10) / 10, h: Math.round(pr.height * 10) / 10, wantH: Math.round(zoneH * 10) / 10 }, hits, bleeds, zone, vars: { w: cs.getPropertyValue('--duo-widget-w').trim(), h: cs.getPropertyValue('--duo-widget-h').trim(), gap: cs.getPropertyValue('--duo-widget-gap').trim() } }
 }
 
 const { webkit } = await import('playwright')
 await ensureServer(BASE_PORT, true)
 await ensureServer(REAL_PORT, false)
-const browser = await webkit.launch()
+let browser = await webkit.launch()
+const relaunch = async () => { try { await browser.close() } catch {} browser = await webkit.launch(); ctxs.clear() }
 const results = []
 const bleedTally = new Map()
 const note = (c) => { const k = `${c.kind}|${c.el}|${c.why}`; bleedTally.set(k, (bleedTally.get(k) || 0) + 1) }
@@ -152,23 +165,34 @@ const resolveRoute = async (page, route, port) => {
   return href || null
 }
 
-const runCase = async (ctx, { label, vp, url, state, scheme, text200, port }) => {
-  const page = await ctx.newPage()
+const LABEL = process.env.DUO_LABEL ? new RegExp(process.env.DUO_LABEL) : null
+const runCase = async (ctx0, { label, vp, url, state, scheme, text200, port }) => {
+  if (LABEL && !LABEL.test(label)) return
+  let ctx = ctx0
+  let page
+  try { page = await ctx.newPage() } catch {
+    /* انهار WebKit (ذاكرة/قتل خارجي): يُعاد الإطلاق مرة ويُعاد السياق. */
+    await relaunch()
+    ctx = await getCtx(vp, scheme)
+    page = await ctx.newPage()
+  }
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 })
     await page.addStyleTag({ content: 'html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;transition-duration:.001s!important}' })
     if (text200) await page.addStyleTag({ content: 'html{font-size:200%!important}' })
     await wait(1600)
     if (state) await state(page)
+    const dlgMissing = state?.expectDialog && !(await page.locator('[role=dialog]').count())
     await wait(500)
     const rec = { label: (vp.app ? '[APP] ' : '') + label, vp: vp.tag, scheme, text200, state: state?.label || '', hits: [], bleeds: [], vars: null }
     for (const sy of [0, 700]) {
-      if (sy) { await page.evaluate((y) => window.scrollTo(0, y), sy); await wait(350) }
+      await page.evaluate((y) => window.scrollTo(0, y), sy); await wait(sy ? 350 : 200)
       const r = await page.evaluate(scan, { scrolled: sy > 0, zoneW: 96, vh: vp.h })
-      rec.vars = r.vars
+      rec.vars = r.vars; rec.probe = r.probe
       rec.hits.push(...r.hits.map((h) => ({ ...h, sy })))
       rec.bleeds.push(...r.bleeds)
     }
+    if (dlgMissing) rec.error = 'لم يظهر الحوار المتوقع (الحالة لم تُفتح)'
     rec.bleeds.forEach(note)
     results.push(rec)
     return rec
@@ -177,9 +201,9 @@ const runCase = async (ctx, { label, vp, url, state, scheme, text200, port }) =>
   } finally { await page.close() }
 }
 
-const openMenu = Object.assign(async (page) => { await page.locator('button.site-menu-trigger').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'القائمة مفتوحة' })
-const openSearch = Object.assign(async (page) => { await page.locator('button[aria-label="مركز البحث الموحد"]').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'البحث مفتوح' })
-const openMySpace = Object.assign(async (page) => { await page.locator('[aria-label*="مساحتي"], .my-space-trigger').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'مساحتي (sheet)' })
+const openMenu = Object.assign(async (page) => { await page.locator('button.site-menu-trigger').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'القائمة مفتوحة', expectDialog: true })
+const openSearch = Object.assign(async (page) => { await page.locator('button[aria-label="مركز البحث الموحد"]').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'البحث مفتوح', expectDialog: true })
+const openMySpace = Object.assign(async (page) => { await page.locator('[aria-label*="مساحتي"], .my-space-trigger').first().click({ timeout: 4000 }).catch(() => {}); await wait(900) }, { label: 'مساحتي (sheet)', expectDialog: true })
 const openReaderTools = Object.assign(async (page) => { await page.evaluate(() => window.scrollTo(0, 900)); await wait(500); await page.locator('.floating-actions button').first().click({ timeout: 3000 }).catch(() => {}); await wait(700) }, { label: 'أدوات القارئ' })
 
 const t0 = Date.now()
@@ -233,22 +257,33 @@ for (const vp of EXTRA) { for (const route of ['/', '/articles', '/mihwar']) job
 const WORKERS = Number(process.env.DUO_WORKERS || 1)
 let cursor = 0
 await Promise.all(Array.from({ length: WORKERS }, async () => { while (cursor < jobs.length) await jobs[cursor++]() }))
+/* ضابط سلبي: زر مزروع داخل الركن يجب أن يُكشف، وإلا فالحارس أعمى. */
+const ncCtx = await browser.newContext({ viewport: { width: 457, height: 678 }, isMobile: true, hasTouch: true })
+const ncPage = await ncCtx.newPage()
+await ncPage.goto(`http://localhost:${BASE_PORT}/__missing__`, { waitUntil: 'domcontentloaded', timeout: 90000 })
+await wait(1500)
+await ncPage.evaluate(() => { const b = document.createElement('button'); b.textContent = 'تحكّم'; b.style.cssText = 'position:fixed;top:30px;right:12px;z-index:99999'; document.body.appendChild(b) })
+const nc = await ncPage.evaluate(scan, { scrolled: false, zoneW: 96, vh: 678 })
+await ncCtx.close()
+const negativeControlOk = nc.hits.some((h) => h.el.startsWith('button'))
 for (const ctx of ctxs.values()) await (await ctx).close()
 await browser.close()
 stop()
 
 const failedLoads = results.filter((r) => r.error)
+const missed = failedLoads.filter((r) => /الحوار المتوقع/.test(r.error))
 const bad = results.filter((r) => r.hits.length)
 const totalHits = results.reduce((s, r) => s + r.hits.length, 0)
-const inactive = NO_VAR ? [] : results.filter((r) => !r.error && r.vars && (r.vars.w !== '96px' || !r.vars.h))
+const inactive = NO_VAR ? [] : results.filter((r) => !r.error && (!r.probe || r.probe.w !== 96 || !(r.probe.h > 0) || Math.abs(r.probe.h - r.probe.wantH) > 1.5))
 console.log(`duo-widget (WebKit، سياقان: Safari وAPP/Capacitor مُحاكى): ${results.length} حالة، ${VIEWPORTS.length + (ONLY ? 0 : TALL.length)} مقاساً، ${Math.round((Date.now() - t0) / 1000)}ث`)
 console.log(`  حالات بها تقاطع: ${bad.length} · مجموع التقاطعات: ${totalHits} · أخطاء تحميل: ${failedLoads.length} · حالات الركن فيها غير نشط: ${inactive.length}`)
 const byEl = new Map()
 for (const r of bad) for (const h of r.hits) { const k = `${h.kind}|${h.el}${h.fixed ? ' [ثابت]' : ''}`; const e = byEl.get(k) || { n: 0, cases: new Set(), sample: h }; e.n++; e.cases.add(`${r.label}@${r.vp}`); byEl.set(k, e) }
 for (const [k, e] of [...byEl].sort((a, b) => b[1].n - a[1].n).slice(0, 60)) console.log(`  ✗ ${k} ×${e.n} مثال: «${e.sample.text}» [${e.sample.rect}] في ${[...e.cases][0]}`)
+console.log(`  ضابط سلبي (زر مزروع في الركن يُكشف): ${negativeControlOk ? 'نجح' : 'فشل — الحارس أعمى'}`)
 console.log(`  استثناءات مسجّلة (خلفيات/زخرفة): ${[...bleedTally.values()].reduce((a, b) => a + b, 0)} في ${bleedTally.size} نوعاً`)
 for (const [k, n] of [...bleedTally].sort((a, b) => b[1] - a[1]).slice(0, 15)) console.log(`    · ${k} ×${n}`)
 for (const f of failedLoads.slice(0, 8)) console.log(`  ! خطأ: ${f.label}@${f.vp}: ${f.error}`)
 if (inactive.length) console.log(`  ! الركن غير نشط في: ${[...new Set(inactive.map((r) => r.vp))].join(', ')}`)
 if (JSON_OUT) writeFileSync(resolve(ROOT, JSON_OUT), JSON.stringify({ results, bleeds: [...bleedTally] }, null, 1))
-process.exit(bad.length || failedLoads.length > results.length * 0.05 || inactive.length ? 1 : 0)
+process.exit(!negativeControlOk || bad.length || missed.length || failedLoads.length > results.length * 0.05 || inactive.length ? 1 : 0)

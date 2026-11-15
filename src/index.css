@@ -9815,8 +9815,15 @@ body {
   main:has(> .live-card) { padding-top: calc(var(--duo-widget-h) + 1rem); }
   /* رؤوس الصفحات والغلاف: العنوان وما فوقه يحجزان عمود البداية الفيزيائي. */
   .page-head-scene__inner, .human-core__copy, .article-shell > header, .not-found-stage { padding-right: var(--duo-widget-inset); }
-  /* الأوراق والنوافذ (modal/sheet/لوحة البحث) تبدأ تحت الركن أو تحجز يمينه. */
-  .search-palette-shortcuts, .search-palette-head { padding-right: var(--duo-widget-inset); }
+  /* الأوراق والنوافذ (modal/sheet/لوحة البحث) تحجز يمين الركن. لوحة البحث بعرض 42rem في الوسط، فالحشو يتناقص كلما اتسعت النافذة عنها. */
+  [role="dialog"][aria-label="مركز البحث الذكي"] { --duo-pad: max(1.25rem, calc(var(--duo-widget-inset) - max(0px, (100vw - 42rem) / 2))); }
+  [role="dialog"][aria-label="مركز البحث الذكي"] > div > div:first-child,
+  [role="dialog"][aria-label="مركز البحث الذكي"] .search-palette-shortcuts,
+  [role="dialog"][aria-label="مركز البحث الذكي"] > div > div:last-child { padding-right: var(--duo-pad); }
+  .my-space-head { padding-right: max(1.25rem, var(--duo-widget-inset)); }
+  .my-space-body > :first-child { padding-right: max(1.5rem, var(--duo-widget-inset)); }
+  .site-menu-footer { padding-right: max(1.5rem, var(--duo-widget-inset)); }
+  .articles-filter-bar, .listen-filter-bar { padding-right: max(1.5rem, var(--duo-widget-inset)); }
   /* كلمات الغلاف الزخرفية (وعي، مستقبل…) لا تقع تحت صندوق الودجت. */
   .human-core__words { clip-path: polygon(0 0, calc(100% - var(--duo-widget-w)) 0, calc(100% - var(--duo-widget-w)) var(--duo-widget-h), 100% var(--duo-widget-h), 100% 100%, 0 100%); }
   /* استوديو المحاضرات: رابط اسم الدكتور في رأس البطاقة يترك يمينه للودجت. */

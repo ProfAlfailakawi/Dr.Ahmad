@@ -5,11 +5,11 @@
  * يفتح الموقع (وضع العرض التوضيحي) في Playwright WebKit على مقاسات الـDuo المعروفة، طولياً وعرضياً،
  * فاتحاً وداكناً ونصاً ‎200%‎، ثم يعدّ العناصر المهمة (نص مرئي، a/button/input/select/textarea/
  * [role=tab|button|link]/img/svg/video) التي يتقاطع صندوقها مع مستطيل الركن الفيزيائي:
- *     x ≥ vw − widget-w   و   y ≤ widget-h        (widget-h = clamp(64px, 30vh, 200px))
+ *     x ≥ vw − widget-w   و   y ≤ widget-h        (widget-h = clamp(64px, 31vh, 270px))
  * الخلفيات الممتدة (علامة data-duo-bleed، أو أيقونة زخرفية aria-hidden بلا تفاعل) تُسجَّل استثناءً ولا تُعدّ.
  * عند scrollY=0 تُفحص الصفحة كلها؛ بعد التمرير تُفحص العناصر الثابتة/اللاصقة فقط (المحتوى يمرّ تحت الودجت بطبيعته).
  *
- * الاستعمال:  node scripts/test-duo-widget.mjs [--quick] [--no-var-check] [--json=out.json]
+ * الاستعمال:  node scripts/test-duo-widget.mjs [--lite|--quick] [--no-var-check] [--json=out.json]
  *   --no-var-check: لا يشترط أن تكون متغيرات الركن مفعّلة (لقياس الفرع الأساسي قبل الإصلاح).
  * المتطلبات: playwright (webkit) مثبّت. يشغّل vite بنفسه إن لم يجد خادماً على المنفذ.
  */
@@ -21,12 +21,13 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const args = new Set(process.argv.slice(2))
 const QUICK = args.has('--quick')
+const LITE = args.has('--lite')
 const NO_VAR = args.has('--no-var-check')
 const JSON_OUT = [...args].find((a) => a.startsWith('--json='))?.slice(7)
 const BASE_PORT = 47931
 const REAL_PORT = 47932
 
-const SIZES = [[382, 580], [470, 780], [594, 368], [669, 867], [951, 585]]
+const SIZES = [[382, 580], [457, 678], [457, 760], [470, 780], [594, 368], [669, 867], [951, 585]]
 const ALL_VIEWPORTS = SIZES.flatMap(([w, h]) => [{ w, h, tag: `${w}x${h}` }, { w: h, h: w, tag: `${h}x${w}` }])
 const ONLY = process.env.DUO_VP ? process.env.DUO_VP.split(',') : null
 const VIEWPORTS = ONLY ? ALL_VIEWPORTS.filter((v) => ONLY.includes(v.tag)) : ALL_VIEWPORTS
@@ -51,7 +52,7 @@ process.on('exit', stop)
 /* ---- يُنفَّذ داخل الصفحة ---- */
 const scan = ({ scrolled, zoneW, vh }) => {
   const vw = window.innerWidth
-  const zoneH = Math.min(200, Math.max(64, vh * 0.3))
+  const zoneH = Math.min(270, Math.max(64, vh * 0.31))
   const zone = { x: vw - zoneW, y: 0, r: vw, b: zoneH }
   const hits = [], bleeds = []
   const INTERACTIVE = 'a[href],button,input,select,textarea,summary,[role=tab],[role=button],[role=link],[role=menuitem],[tabindex]:not([tabindex="-1"])'
@@ -163,7 +164,7 @@ const runCase = async (ctx, { label, vp, url, state, scheme, text200, port }) =>
     const rec = { label: (vp.app ? '[APP] ' : '') + label, vp: vp.tag, scheme, text200, state: state?.label || '', hits: [], bleeds: [], vars: null }
     for (const sy of [0, 700]) {
       if (sy) { await page.evaluate((y) => window.scrollTo(0, y), sy); await wait(350) }
-      const r = await page.evaluate(scan, { scrolled: sy > 0, zoneW: 70, vh: vp.h })
+      const r = await page.evaluate(scan, { scrolled: sy > 0, zoneW: 96, vh: vp.h })
       rec.vars = r.vars
       rec.hits.push(...r.hits.map((h) => ({ ...h, sy })))
       rec.bleeds.push(...r.bleeds)
@@ -182,7 +183,7 @@ const openMySpace = Object.assign(async (page) => { await page.locator('[aria-la
 const openReaderTools = Object.assign(async (page) => { await page.evaluate(() => window.scrollTo(0, 900)); await wait(500); await page.locator('.floating-actions button').first().click({ timeout: 3000 }).catch(() => {}); await wait(700) }, { label: 'أدوات القارئ' })
 
 const t0 = Date.now()
-const routes = QUICK ? QUICK_ROUTES : ROUTES
+const routes = QUICK || LITE ? QUICK_ROUTES : ROUTES
 const jobs = []
 const ctxs = new Map()
 const getCtx = async (vp, scheme, app = vp.app) => {
@@ -216,16 +217,16 @@ const EXTRA = ONLY ? [] : ctxVps(TALL)
 /* ١) كل المسارات على كل المقاسات (Safari ثم APP): فاتح، نص عادي. */
 for (const vp of MAIN) for (const route of routes) jobs.push(pageJob(vp, route, 'light', false))
 /* ٢) داكن + نص 200% على مجموعة أصغر من المسارات. */
-const subset = QUICK ? ['/'] : ['/', '/mihwar']
+const subset = QUICK || LITE ? ['/'] : ['/', '/mihwar']
 for (const vp of MAIN) for (const route of subset) { jobs.push(pageJob(vp, route, 'dark', false)); jobs.push(pageJob(vp, route, 'light', true)) }
 /* ٣) حالات الحالة: قائمة جانبية، بحث، sheet، 404. */
-for (const vp of MAIN) for (const scheme of ['light', 'dark']) {
+for (const vp of MAIN) for (const scheme of LITE ? ['light'] : ['light', 'dark']) {
   jobs.push(stateJob(vp, scheme, '/ + القائمة', '/', openMenu))
   if (scheme === 'light') jobs.push(stateJob(vp, scheme, '/ + القائمة (نص 200%)', '/', openMenu, true))
   jobs.push(stateJob(vp, scheme, '/ + البحث (modal)', '/', openSearch))
   if (scheme === 'light') jobs.push(stateJob(vp, scheme, '/ + مساحتي (sheet)', '/', openMySpace))
   if (scheme === 'light') jobs.push(stateJob(vp, scheme, '/en + القائمة', '/en', openMenu))
-  if (scheme === 'light') jobs.push(stateJob(vp, scheme, '/__missing__ (404)', '/__missing__', null))
+  if (scheme === 'light' && !LITE) jobs.push(stateJob(vp, scheme, '/__missing__ (404)', '/__missing__', null))
 }
 /* ٤) ارتفاعات التطبيق الكاملة: صفحات رئيسية + قائمة. */
 for (const vp of EXTRA) { for (const route of ['/', '/articles', '/mihwar']) jobs.push(pageJob(vp, route, 'light', false)); jobs.push(stateJob(vp, 'light', '/ + القائمة', '/', openMenu)) }
@@ -239,7 +240,7 @@ stop()
 const failedLoads = results.filter((r) => r.error)
 const bad = results.filter((r) => r.hits.length)
 const totalHits = results.reduce((s, r) => s + r.hits.length, 0)
-const inactive = NO_VAR ? [] : results.filter((r) => !r.error && r.vars && (r.vars.w !== '70px' || !r.vars.h))
+const inactive = NO_VAR ? [] : results.filter((r) => !r.error && r.vars && (r.vars.w !== '96px' || !r.vars.h))
 console.log(`duo-widget (WebKit، سياقان: Safari وAPP/Capacitor مُحاكى): ${results.length} حالة، ${VIEWPORTS.length + (ONLY ? 0 : TALL.length)} مقاساً، ${Math.round((Date.now() - t0) / 1000)}ث`)
 console.log(`  حالات بها تقاطع: ${bad.length} · مجموع التقاطعات: ${totalHits} · أخطاء تحميل: ${failedLoads.length} · حالات الركن فيها غير نشط: ${inactive.length}`)
 const byEl = new Map()

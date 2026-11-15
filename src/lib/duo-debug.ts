@@ -17,6 +17,12 @@ const probe = (name: string): number => {
 
 export function installDuoDebug() {
   if (typeof document === 'undefined' || document.getElementById('duo-debug-frame')) return
+  /* معايرة حيّة على الجهاز: ?duo-debug=1&duo-w=110&duo-h=270 تُبدّل المتغيرين على documentElement (مع duo-debug فقط). */
+  const q = new URLSearchParams(location.search)
+  const ow = parseFloat(q.get('duo-w') || ''), oh = parseFloat(q.get('duo-h') || '')
+  if (ow > 0) document.documentElement.style.setProperty('--duo-widget-w', `${ow}px`)
+  if (oh > 0) document.documentElement.style.setProperty('--duo-widget-h', `${oh}px`)
+  if (ow > 0) document.documentElement.style.setProperty('--duo-widget-inset', `calc(${ow}px + var(--duo-widget-gap))`)
   const frame = document.createElement('div')
   frame.id = 'duo-debug-frame'
   frame.setAttribute('aria-hidden', 'true')
@@ -37,7 +43,8 @@ export function installDuoDebug() {
     const w0 = parseFloat(v('--duo-widget-w'))
     const standalone = (navigator as Navigator & { standalone?: boolean }).standalone === true || matchMedia('(display-mode: standalone)').matches
     panel.textContent = [
-      `duo-widget: ${w0 > 0 ? 'ACTIVE' : 'inactive'}`,
+      `duo-widget: ${w0 > 0 ? 'ACTIVE' : 'inactive'}  override duo-w=${ow > 0 ? ow : '-'} duo-h=${oh > 0 ? oh : '-'}`,
+      'send screenshot with frame; adjust duo-w/duo-h until the red frame covers the capsule',
       `--duo-widget-w ${v('--duo-widget-w')}  gap ${v('--duo-widget-gap')}  h ${v('--duo-widget-h')}`,
       `frame ${frame.offsetWidth}x${frame.offsetHeight}px (physical top-right)`,
       `safe-area t/r/b/l: ${[probe('top'), probe('right'), probe('bottom'), probe('left')].join(' / ')}`,

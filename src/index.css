@@ -9781,19 +9781,16 @@ body {
    ركن الودجت — iPhone Duo (مصدر واحد للحقيقة)
    على Duo يطفو ودجت النظام (مصباح + حساب/موقع + وقت + بطارية) فوق الزاوية
    العلوية اليمنى الفيزيائية، خارج safe-area. قياسه من لقطة 1371×2034:
-   عرض ≈58–64pt + ≈6pt بُعداً عن الحافة = 70px، وارتفاعه حتى ≈30% من الشاشة بحدّ 200px.
+   تقدير من لقطات التطبيق الحقيقية (لا قياس جهاز): عمود الودجت ≈54pt يبدأ ≈20pt من اليمين (حافته اليسرى ≈75pt)
+   ومن y≈20pt حتى ≈166pt، والمعايرة ٢٫٩٥px/pt تعطي نافذة التطبيق ≈457×678؛ وقياس #247 المستقل ≈30–110px عرضاً
+   و y≈92–268. فالمجال غير مؤكد بين 84–112px عرضاً و174–270px ارتفاعاً، فاعتُمد الأكبر: 96px × clamp(64px,31vh,270px).
+   للمعايرة على الجهاز: ‎?duo-debug=1&duo-w=110&duo-h=270‎.
    --duo-widget-w/h: مستطيل الركن؛ --duo-widget-gap: هواء بين المحتوى والمستطيل؛
    --duo-widget-inset = w + gap: ما يحجزه المحتوى على اليمين الفيزيائي (left/right لا inline-end:
    في RTL تذهب بداية السطر إلى اليمين، لكن الودجت فيزيائي لا يتبع الاتجاه).
-   الأصفار خارج Duo فلا يتأثر أي جهاز آخر. الجهاز يُعرَّف بالنافذة لا بنوعه (Safari لا يعلن المفصل):
-     ١) طولي: عرض 360–720 ونسبة ≥ 29/50 (382×580، 470×780، 669×867، 594×368 مقلوباً…).
-        آيفون العادي (≤ 0.5) وSE (≈0.56) خارج النسبة.
-     ٢) عرضي الكتاب المفتوح: 721–1000 × 520–960 (951×585).
-     ٣) عرضي مضغوط: 540–800 × 340–519 ونسبة ≤ 17/10 (594×368، 780×470، 580×382).
-        آيفون عرضياً (≥ 1.78) خارجه.
-     ٤) تطبيق Capacitor (WKWebView) بلا أشرطة متصفح: الارتفاع كامل فلا تصلح بوابات النسبة/الارتفاع.
-        فيُضاف العرض الفريد للشاشة الخارجية 382 و470 (لا آيفون بهما: 375/390/393/402/414/428/430/440)
-        طولياً مهما كان الارتفاع، ومقلوباً عرضياً بالارتفاع نفسه.
+   الكشف عام لا بعروض دقيقة (نافذة التطبيق ≈457×678 ليست من المقاسات «المعروفة»، والتطبيق بلا أشرطة متصفح فارتفاعه كامل):
+     ١) طولي: عرض ≤ 720 وارتفاع ≥ 360 (يشمل كل ارتفاع وكل آيفون طولي: الاحتياط الآمن).
+     ٢) عرضي: 540–1000 × 300–960.   ٣) ‎horizontal-viewport-segments: 2‎ إن أعلنه المتصفح.
    هندسة الودجت في الأوضاع العرضية لم تُتحقَّق على جهاز حقيقي.
    ============================================================ */
 :root {
@@ -9802,17 +9799,13 @@ body {
   --duo-widget-h: 0px;
   --duo-widget-inset: 0px;
 }
-@media screen and (orientation: portrait) and (min-width: 360px) and (max-width: 720px) and (min-aspect-ratio: 29/50),
-       screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape),
-       screen and (min-width: 540px) and (max-width: 800px) and (min-height: 340px) and (max-height: 519px) and (orientation: landscape) and (max-aspect-ratio: 17/10),
-       screen and (orientation: portrait) and (max-width: 720px) and (min-width: 381px) and (max-width: 383px),
-       screen and (orientation: portrait) and (max-width: 720px) and (min-width: 469px) and (max-width: 471px),
-       screen and (orientation: landscape) and (max-width: 1000px) and (min-height: 381px) and (max-height: 383px),
-       screen and (orientation: landscape) and (max-width: 1000px) and (min-height: 469px) and (max-height: 471px) {
+@media screen and (orientation: portrait) and (max-width: 720px) and (min-height: 360px),
+       screen and (orientation: landscape) and (min-width: 540px) and (max-width: 1000px) and (min-height: 300px) and (max-height: 960px),
+       screen and (horizontal-viewport-segments: 2) {
   :root {
-    --duo-widget-w: 70px;
+    --duo-widget-w: 96px;
     --duo-widget-gap: 8px;
-    --duo-widget-h: clamp(64px, 30vh, 200px);
+    --duo-widget-h: clamp(64px, 31vh, 270px);
     --duo-widget-inset: calc(var(--duo-widget-w) + var(--duo-widget-gap));
   }
   .site-nav > div { padding-right: max(1.5rem, env(safe-area-inset-right, 0px), var(--duo-widget-inset)); }

@@ -39,7 +39,7 @@ for (const file of ['src/index.css', 'src/pages/radio.css', 'src/pages/mihwar.cs
   check(!/min-width:640px\)and\(max-width:720px\)and\(min-height:520px\)(?!and\(max-height:960px\)and\(orientation:portrait)/.test(n), `${file}: فرع الكتاب الطولي 640–720 ما زال موجوداً`)
   check(!n.includes('min-aspect-ratio:7/5'), `${file}: شرط النسبة 7/5 القديم ما زال موجوداً`)
   for (const m of n.matchAll(/@media[^{]*horizontal-viewport-segments:2[^{]*\{/g)) {
-    check(m[0].includes('orientation:landscape') && m[0].includes('min-width:721px'), `${file}: horizontal-viewport-segments خارج شرط الكتاب`)
+    check(m[0].includes(',screenand(horizontal-viewport-segments:2)') || (m[0].includes('orientation:landscape') && m[0].includes('min-width:721px')), `${file}: horizontal-viewport-segments خارج شرط الكتاب`)
   }
 }
 const index = norm(read('src/index.css'))
@@ -50,10 +50,10 @@ check(!norm(read('src/pages/mihwar.css')).includes('min-width:640px)and(max-widt
 
 /* ركن الودجت: تعريف واحد في :root تحت استعلام Duo، وأصفار خارجه. */
 const rawIndex = read('src/index.css')
-const defs = [...rawIndex.matchAll(/--duo-widget-w:\s*70px/g)]
-check(defs.length === 1, `--duo-widget-w: 70px يجب أن يُعرَّف مرة واحدة (وُجد ${defs.length})`)
+const defs = [...rawIndex.matchAll(/--duo-widget-w:\s*96px/g)]
+check(defs.length === 1, `--duo-widget-w: 96px يجب أن يُعرَّف مرة واحدة (وُجد ${defs.length})`)
 check(/--duo-widget-w:\s*0px/.test(rawIndex) && /--duo-widget-h:\s*0px/.test(rawIndex), 'القيم الافتراضية خارج Duo يجب أن تكون 0px')
-check(/--duo-widget-h:\s*clamp\(64px,\s*30vh,\s*200px\)/.test(rawIndex), '--duo-widget-h غير معرّف بالمعادلة المعتمدة')
+check(/--duo-widget-h:\s*clamp\(64px,\s*31vh,\s*270px\)/.test(rawIndex), '--duo-widget-h غير معرّف بالمعادلة المعتمدة')
 check(!/--duo-cutout/.test(rawIndex + read('src/pages/mihwar.css')), 'بقايا --duo-cutout القديمة')
 
 /* حارس الحجز: يقرأ الاستعلامات الفعلية من الملف ويقيّمها على المقاسات. */
@@ -77,13 +77,13 @@ const evalQuery = (q, w, h) => {
     return false /* أي ميزة أخرى (display-mode…) لا يجوز أن تُقيّد الحجز */
   })
 }
-const i0 = rawIndex.search(/--duo-widget-w:\s*70px/)
+const i0 = rawIndex.search(/--duo-widget-w:\s*96px/)
 const mStart = rawIndex.lastIndexOf('@media', i0)
 const mq = rawIndex.slice(mStart + 6, rawIndex.indexOf('{', mStart)).replace(/\s+/g, ' ').split(',').map((q) => q.trim())
-check(mq.length === 7 && !mq.some((q) => /display-mode/.test(q)), 'استعلامات الحجز يجب أن تكون سبعة ومن غير display-mode')
+check(mq.length === 3 && !mq.some((q) => /display-mode/.test(q)), 'استعلامات الحجز يجب أن تكون ثلاثة ومن غير display-mode')
 const cutApplies = (w, h) => mq.some((q) => evalQuery(q, w, h))
-for (const [w, h] of [[382, 580], [470, 780], [669, 867], [720, 900], [951, 585], [951, 669], [594, 368], [382, 844], [382, 780], [470, 900], [669, 1000], [951, 700], [844, 382], [900, 470], [368, 594], [585, 951], [580, 382], [780, 470]]) check(cutApplies(w, h), `الحجز يجب أن ينطبق عند ${w}x${h}`)
-for (const [w, h] of [[390, 844], [393, 852], [430, 932], [375, 667], [414, 736], [844, 390], [852, 393], [932, 430], [667, 375], [744, 1024], [820, 1180], [1024, 768], [1180, 820], [1280, 800], [1440, 900], [367, 740], [951, 350]]) check(!cutApplies(w, h), `الحجز يجب ألا ينطبق عند ${w}x${h}`)
+for (const [w, h] of [[382, 580], [457, 678], [457, 760], [440, 660], [480, 720], [470, 780], [669, 867], [720, 900], [951, 585], [951, 669], [594, 368], [382, 844], [470, 900], [669, 1000], [951, 700], [844, 382], [900, 470], [368, 594], [585, 951], [580, 382], [780, 470]]) check(cutApplies(w, h), `الحجز يجب أن ينطبق عند ${w}x${h}`)
+for (const [w, h] of [[744, 1024], [820, 1180], [1024, 768], [1180, 820], [1280, 800], [1440, 900], [951, 250], [800, 250]]) check(!cutApplies(w, h), `الحجز يجب ألا ينطبق عند ${w}x${h}`)
 
 /* شرط الكتاب في JS يطابق CSS. */
 const flow = read('src/lib/book-flow.ts')

@@ -1546,6 +1546,23 @@ html.dark .human-core__scan { mix-blend-mode: screen; }
   .human-core__micro { margin-bottom: .65rem; font-size: .56rem; letter-spacing: .12em; } /* latin — direction: ltr */
   .human-core__words { opacity: .5; }
   .human-core__words span { font-size: .75rem; }
+
+  /* Keep the Arabic hero heading inside the text column on Duo's narrow outer screen. */
+  @media (max-width: 500px) {
+    .human-core .human-core__grid { grid-template-columns: minmax(0, 1fr); }
+    .human-core .human-core__copy { min-width: 0; padding-inline: 0; }
+    .human-core .human-core__title {
+      width: 100%;
+      min-width: 0;
+      font-size: clamp(1.7rem, 7vw, 2rem);
+    }
+    .human-core .human-core__title-line {
+      width: 100%;
+      max-width: 100%;
+      white-space: normal;
+    }
+    .human-core .human-core__tagline { white-space: normal; text-wrap: pretty; }
+  }
   .human-core__portrait-shell { margin-top: -.2rem; }
   .human-core__portrait { margin-inline: auto; }
   .human-core__signal { margin-block: 1.15rem; }

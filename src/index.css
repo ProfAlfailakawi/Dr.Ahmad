@@ -1193,11 +1193,24 @@ html.dark .not-found-search {
   .content-book-detail .book-detail-layout {
     gap: 1.65rem;
   }
+  .content-book-detail .book-detail-layout > * {
+    min-width: 0;
+    max-width: 100%;
+  }
   .content-book-detail .book-detail-cover {
-    width: min(78vw, 20rem);
+    width: min(100%, 20rem);
+    min-width: 0;
+    max-width: 100%;
     box-shadow: 0 22px 48px -34px rgb(var(--c-ink) / .45);
   }
+  .content-book-detail .book-detail-copy {
+    min-width: 0;
+    max-width: 100%;
+  }
   .content-book-detail .book-detail-copy > h1 {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
     margin-top: .7rem;
     font-size: clamp(1.75rem, 8vw, 2.35rem);
     line-height: 1.35;

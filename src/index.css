@@ -8821,9 +8821,8 @@ html, body, #root { min-width: 0; max-width: 100%; }
 }
 
 /* الغلاف الطباعي للبطل: عمودان من 600px بدل تكرار تخطيط الهاتف.
-   الصورة على اليمين والنص على اليسار كما في md، والبطاقة تمتد عبر العمودين.
-   والمطوي عرضياً (594×368) عريض قصير: عمودان أيضاً، لا صورة تحت الحافة. */
-@media (min-width: 600px) and (max-width: 767px), screen and (min-width: 540px) and (max-width: 767px) and (max-height: 480px) {
+   الصورة على اليمين والنص على اليسار كما في md، والبطاقة تمتد عبر العمودين. */
+@media (min-width: 600px) and (max-width: 767px) {
   .human-core { align-items: center; padding-top: 5.5rem; padding-bottom: 3.5rem; }
   .human-core .human-core__grid {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
@@ -8835,6 +8834,37 @@ html, body, #root { min-width: 0; max-width: 100%; }
   .human-core .human-core__tagline { white-space: normal; text-wrap: balance; font-size: .9rem; }
   .human-core .human-core__title { font-size: clamp(2rem, 6.4vw, 2.6rem); }
   .human-core .human-core__portrait-shell { max-width: min(300px, calc((100svh - 9rem) * .657)); min-width: 12rem; }
+  .human-core .human-core__portrait-media { max-height: none; }
+}
+
+/* الوضع العرضي الخارجي قصير الارتفاع: عمود مقروء للنص وصورة مضبوطة
+   على المساحة المتاحة، بدلاً من قص العنوان العربي عند حد العمود. */
+@media screen and (min-width: 540px) and (max-width: 767px) and (max-height: 480px) {
+  .human-core { align-items: center; padding-top: 4.5rem; padding-bottom: 1.25rem; }
+  .human-core .human-core__grid {
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+    gap: 1rem;
+    align-items: center;
+  }
+  .human-core .human-core__copy { min-width: 0; padding-inline: 0; order: 2; }
+  .human-core .human-core__visual { min-width: 0; order: 1; }
+  .human-core .human-core__cvrow { grid-column: 1 / -1; }
+  .human-core .human-core__tagline { white-space: normal; text-wrap: pretty; font-size: .9rem; }
+  .human-core .human-core__title {
+    width: 100%;
+    min-width: 0;
+    font-size: clamp(1.45rem, 5vw, 1.9rem);
+  }
+  .human-core .human-core__title-line {
+    width: auto;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .human-core .human-core__portrait-shell {
+    max-width: min(100%, calc((100svh - 7rem) * .657));
+    min-width: 0;
+  }
   .human-core .human-core__portrait-media { max-height: none; }
 }
 

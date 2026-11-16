@@ -8822,7 +8822,7 @@ html, body, #root { min-width: 0; max-width: 100%; }
 
 /* الغلاف الطباعي للبطل: عمودان من 600px بدل تكرار تخطيط الهاتف.
    الصورة على اليمين والنص على اليسار كما في md، والبطاقة تمتد عبر العمودين. */
-@media (min-width: 600px) and (max-width: 767px) {
+@media (orientation: landscape) and (min-width: 600px) and (max-width: 767px) {
   .human-core { align-items: center; padding-top: 5.5rem; padding-bottom: 3.5rem; }
   .human-core .human-core__grid {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
@@ -8866,6 +8866,15 @@ html, body, #root { min-width: 0; max-width: 100%; }
     min-width: 0;
   }
   .human-core .human-core__portrait-media { max-height: none; }
+}
+
+/* الجهاز الداخلي الطولي: يبقى النص بعرض مريح، وتُحجّم الصورة ككتلة مركزية. */
+@media (min-width: 600px) and (max-width: 767px) and (min-height: 768px) {
+  .human-core .human-core__portrait-shell {
+    width: min(78vw, 18rem);
+    max-width: 100%;
+    min-width: 0;
+  }
 }
 
 /* الشاشة الواسعة القصيرة (مفتوح عرضياً 951×600، نصف عريض): الصورة لا تتجاوز

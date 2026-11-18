@@ -14,7 +14,7 @@
   },
   "ios": {
     "contentInset": "never",
-    "backgroundColor": "#FCFCFA",
+    "backgroundColor": "#767682",
     "scheme": "Dr.Alfailakawi",
     "limitsNavigationsToAppBoundDomains": false,
     "preferredContentMode": "mobile"
@@ -23,7 +23,7 @@
     "SplashScreen": {
       "launchShowDuration": 600,
       "launchAutoHide": true,
-      "backgroundColor": "#FCFCFA",
+      "backgroundColor": "#767682",
       "showSpinner": false
     },
     "PushNotifications": {

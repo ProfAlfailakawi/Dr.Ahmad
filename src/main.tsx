@@ -17,6 +17,7 @@ import './components/elevation.css'
 import './components/elevation-2.css'
 import './polish.css'
 import './beauty.css'
+import './duo.css'
 import { installPolishReveal } from './lib/polish-reveal'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
@@ -28,6 +29,45 @@ function healOnce() {
     sessionStorage.setItem('chunk-heal', '1')
   } catch { /* حارس التكرار اختياري */ }
   void healStaleBundles()
+}
+
+/* علامات iPhone Duo على <html> (تُقرأ في src/duo.css وحده):
+   · data-shell: «app» داخل التطبيق أو تطبيق الشاشة الرئيسية، وإلا «browser».
+   · data-device: «duo» لشاشة شبه مربّعة (الخارجية 466×678، الداخلية 669×951).
+     فلا تمسّ قواعد الدوو الهاتف العادي ولا iPad.
+   · data-widget-side: جهة عمود الساعة كما يبلغها iOS (safe-area)؛ صفرٌ في Safari. */
+if (typeof document !== 'undefined') {
+  const html = document.documentElement
+  const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
+  const standalone = (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia?.('(display-mode: standalone)').matches
+  html.dataset.shell = cap?.isNativePlatform?.() || standalone ? 'app' : 'browser'
+  /* الجهاز الحقيقي: نسبة الخارجية ≈1.484، فالقرار من ثلاث قرائن على آيفون/غلاف iOS، وكل iPad ضلعه القصير ≥744 فيبقى «other». */
+  const appleHandheld = /iPhone|iPod/.test(navigator.userAgent) || (window as Window & { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() === 'ios'
+  const nearSquare = (a: number, b: number) => { const lo = Math.min(a, b), hi = Math.max(a, b); return lo >= 400 && lo <= 720 && hi / lo <= 1.62 }
+  const markDevice = () => {
+    const vShort = Math.min(window.innerWidth, window.innerHeight)
+    const duo = appleHandheld && Math.min(screen.width, screen.height) <= 720 && (
+      nearSquare(screen.width, screen.height) || nearSquare(screen.availWidth, screen.availHeight) || (vShort > 500 && vShort <= 720))
+    html.dataset.device = duo ? 'duo' : 'other'
+  }
+  markDevice()
+  window.addEventListener('resize', markDevice)
+  window.addEventListener('orientationchange', () => window.setTimeout(markDevice, 300))
+  const probe = document.createElement('div')
+  probe.setAttribute('aria-hidden', 'true')
+  probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)'
+  html.appendChild(probe)
+  const markSide = () => {
+    const cs = getComputedStyle(probe), l = parseFloat(cs.paddingLeft) || 0, r = parseFloat(cs.paddingRight) || 0
+    html.dataset.widgetSide = l > 20 && l > r ? 'left' : r > 20 ? 'right' : 'none'
+  }
+  markSide()
+  /* حدث resize قد يسبق تحديث الحدود، فيُراقَب المسبار نفسه أيضاً. */
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(markSide).observe(probe, { box: 'border-box' })
+  for (const ms of [120, 600, 1500, 3000]) window.setTimeout(markSide, ms)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) markSide() })
+  window.addEventListener('resize', () => { requestAnimationFrame(markSide); window.setTimeout(markSide, 400) })
+  window.addEventListener('orientationchange', () => window.setTimeout(markSide, 400))
 }
 
 /* تشخيص ركن الودجت (iPhone Duo): يُحمَّل فقط عند ‎?duo-debug=1‎. */

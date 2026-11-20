@@ -1,0 +1,128 @@
+/* ============================================================
+   iPhone Duo — نمط المالك المعتمد (١٩ نوفمبر ٢٠٢٦)
+   كل قاعدة هنا تحت html[data-device="duo"] (العلامة من src/main.tsx)، فلا يتغيّر
+   شيء على iPhone العادي ولا iPad.
+   · المنطقة الممنوعة: لا نص ولا زر تحت الساعة/البطارية ولا تحت أزرار Safari
+     العائمة. الخلفيات تمتد تحتها، والمحتوى يقف قبلها.
+   · المصدر الوحيد للحدود: env(safe-area-inset-*) كما يبلغها iOS — في التطبيق
+     (عمود الساعة في الخارجية، شريطها في الداخلية الطولية) وفي Safari أيضاً
+     (أزراره العائمة على اليسار في الخارجية العرضية).
+   ============================================================ */
+
+/* ١) الحجز القديم الثابت (96px × 31vh) يصير صفراً على Duo: الجسم نفسه يبتعد عن
+   الحواف بقدر ما يبلغه iOS (أدناه وفي index.css)، فلا شريط فارغ في Safari ولا
+   حجز مضاعف في التطبيق. ‎!important‎ يغلب القيم التي يحقنها الغلاف الأصلي على
+   ‎<html style>‎ — فالحدود تأتي من env() وحدها. */
+html[data-device="duo"] {
+  --duo-safe-top: env(safe-area-inset-top, 0px);
+  --duo-safe-right: env(safe-area-inset-right, 0px);
+  --duo-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --duo-safe-left: env(safe-area-inset-left, 0px);
+  --duo-widget-w: 0px !important;
+  --duo-widget-h: 0px !important;
+  --duo-widget-gap: 0px !important;
+  --duo-widget-inset: 0px !important;
+}
+
+/* ٢) الصفحة: الجسم يبتعد عن الحواف الأربع؛ لونه يبقى ممتداً تحتها. */
+html[data-device="duo"] body {
+  padding-top: var(--duo-safe-top);
+  padding-left: var(--duo-safe-left);
+  padding-right: var(--duo-safe-right);
+}
+
+/* ٣) الشريط العلوي الثابت: خلفيته تمتد تحت شريط الساعة، ومحتواه تحته. */
+html[data-device="duo"] .site-nav { padding-top: var(--duo-safe-top); }
+html[data-device="duo"] .site-nav > div {
+  padding-left: max(1.25rem, calc(var(--duo-safe-left) + .75rem));
+  padding-right: max(1.25rem, calc(var(--duo-safe-right) + .75rem));
+}
+html[data-device="duo"] .site-scroll-progress { top: calc(63px + var(--duo-safe-top)) !important; }
+
+/* ٤) الطبقات الثابتة على الشاشة كلها (القائمة، مساحتي، البحث، النوافذ، الأوراق):
+   حدٌّ شفاف بقدر الحواف يُضاف إلى حشوها دون أن يمحوه، والخلفية (border-box)
+   تبقى ممتدة تحت الساعة وأزرار Safari. */
+html[data-device="duo"] :is(.site-menu-overlay, .my-space-overlay, .fixed.inset-0:is([role="dialog"], [aria-modal="true"], [role="presentation"], :has(> [role="dialog"]))) {
+  box-sizing: border-box;
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--duo-safe-top) var(--duo-safe-right) var(--duo-safe-bottom) var(--duo-safe-left);
+}
+
+/* ٥) الشاشة الخارجية (طولية أو عرضية) والداخلية طولياً: رأس الصفحة مضغوط —
+   عنوان قصير، والوصف سطران — فيظهر المحتوى من أول نظرة. */
+@media (max-width: 720px), (max-height: 480px) {
+  html[data-device="duo"] .page-head-scene {
+    min-height: 0;
+    padding-block-start: 4.75rem !important;
+    padding-block-end: 1.25rem !important;
+  }
+  html[data-device="duo"] .page-head-scene .scene-heading__title {
+    max-width: none;
+    font-size: clamp(1.45rem, 6.2vw, 1.85rem) !important;
+    line-height: 1.4 !important;
+    --type-3xl: clamp(1.45rem, 6.2vw, 1.85rem);
+  }
+  html[data-device="duo"] .page-head-scene .scene-heading__rule { margin-top: .6rem; height: 4px; }
+  html[data-device="duo"] .page-head-scene__sub {
+    margin-top: .6rem !important;
+    font-size: .9rem !important;
+    line-height: 1.75 !important;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  html[data-device="duo"] .article-shell h1 { font-size: clamp(1.5rem, 6.4vw, 1.95rem) !important; line-height: 1.45 !important; }
+}
+
+/* ٦) الداخلية عرضياً (كتاب مفتوح، الكعب على المفصل في index.css): الرأس أقصر،
+   فيبدأ محتوى الصفحتين في أول نظرة ولا تبقى الصفحة اليسرى فارغة تحت عنوان وحده. */
+@media screen and (min-width: 721px) and (max-width: 1000px) and (orientation: landscape) {
+  html[data-device="duo"] .page-head-scene {
+    min-height: 0;
+    padding-block-start: 5.25rem !important;
+    padding-block-end: 1.5rem !important;
+  }
+  html[data-device="duo"] .page-head-scene .scene-heading__title {
+    font-size: clamp(1.7rem, 3.4vw, 2.3rem) !important;
+    line-height: 1.35 !important;
+  }
+}
+
+/* ٧) التطبيق على الشاشة الخارجية: عمود الساعة (حدّ iOS الجانبي) يحمل أزرار
+   البحث والقائمة كبسولةً زجاجية تحت الساعة، ويتبع جهته بعد التدوير. */
+@media (max-width: 520px), (max-height: 480px) {
+  html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center {
+    position: fixed;
+    top: calc(var(--duo-safe-top) + 10.5rem);
+    flex-direction: column;
+    gap: .5rem;
+    padding: .4rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--c-ink) / .08);
+    background: rgb(var(--c-canvas) / .72);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+    box-shadow: 0 10px 28px -14px rgb(var(--c-ink) / .35);
+  }
+  html[data-device="duo"][data-shell="app"][data-widget-side="right"] .site-nav > div > .flex.items-center { right: max(.25rem, calc((var(--duo-safe-right) - 3.6rem) / 2)); }
+  html[data-device="duo"][data-shell="app"][data-widget-side="left"] .site-nav > div > .flex.items-center { left: max(.25rem, calc((var(--duo-safe-left) - 3.6rem) / 2)); }
+  html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center .site-menu-trigger > span[class*="sm:block"] { display: none; }
+  html[data-device="duo"][data-shell="app"] .site-menu-discovery { display: none; }
+}
+
+/* ٨) الأشرطة الثابتة الأفقية (لوحة التحكم، أدوات القراءة، المشغّلات): تقف قبل
+   عمود الساعة وأزرار Safari الجانبية. الشريط العلوي يُستثنى لأن خلفيته ممتدة.
+   (محور داخل Shadow DOM يقرأ --duo-safe-* نفسها في mihwar.css، وهي صفر خارج Duo.) */
+html[data-device="duo"] .fixed:is(.inset-x-0, .inset-x-3, .inset-x-4):not(.site-nav) {
+  margin-left: var(--duo-safe-left);
+  margin-right: var(--duo-safe-right);
+}
+
+/* ٩) محور: إطاره ثابت على الشاشة كلها (لا يرث حشو الجسم)، فيبتعد محتواه عن
+   شريط الساعة وعمودها وخلفيته ممتدة تحتهما. */
+html[data-device="duo"] .mihwar-frame {
+  box-sizing: border-box;
+  padding: var(--duo-safe-top) var(--duo-safe-right) 0 var(--duo-safe-left);
+}

@@ -111,3 +111,11 @@ html[data-device="duo"] :is(.site-menu-overlay, .my-space-overlay, .fixed.inset-
   html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center .site-menu-trigger > span[class*="sm:block"] { display: none; }
   html[data-device="duo"][data-shell="app"] .site-menu-discovery { display: none; }
 }
+
+/* ٨) الأشرطة الثابتة الأفقية (لوحة التحكم، أدوات القراءة، المشغّلات): تقف قبل
+   عمود الساعة وأزرار Safari الجانبية. الشريط العلوي يُستثنى لأن خلفيته ممتدة.
+   (محور داخل Shadow DOM يقرأ --duo-safe-* نفسها في mihwar.css، وهي صفر خارج Duo.) */
+html[data-device="duo"] .fixed:is(.inset-x-0, .inset-x-3, .inset-x-4):not(.site-nav) {
+  margin-left: var(--duo-safe-left);
+  margin-right: var(--duo-safe-right);
+}

@@ -82,8 +82,26 @@ const mStart = rawIndex.lastIndexOf('@media', i0)
 const mq = rawIndex.slice(mStart + 6, rawIndex.indexOf('{', mStart)).replace(/\s+/g, ' ').split(',').map((q) => q.trim())
 check(mq.length === 3 && !mq.some((q) => /display-mode/.test(q)), 'استعلامات الحجز يجب أن تكون ثلاثة ومن غير display-mode')
 const cutApplies = (w, h) => mq.some((q) => evalQuery(q, w, h))
-for (const [w, h] of [[382, 580], [951, 800], [1000, 960], [867, 669], [457, 678], [457, 760], [440, 660], [480, 720], [470, 780], [669, 867], [720, 900], [951, 585], [951, 669], [594, 368], [382, 844], [470, 900], [669, 1000], [951, 700], [844, 382], [900, 470], [368, 594], [585, 951], [580, 382], [780, 470]]) check(cutApplies(w, h), `الحجز يجب أن ينطبق عند ${w}x${h}`)
+for (const [w, h] of [[382, 580], [951, 800], [1000, 960], [867, 669], [457, 678], [457, 760], [440, 660], [480, 720], [470, 780], [669, 867], [720, 900], [951, 585], [951, 669], [594, 368], [382, 844], [470, 900], [669, 1000], [951, 700], [844, 382], [900, 470], [368, 594], [585, 951], [580, 382], [780, 470]]) check(cutApplies(w, h), `استعلام الحجز (مع بوابة الدوو) يجب أن ينطبق عند ${w}x${h}`)
 for (const [w, h] of [[744, 1024], [820, 1180], [1024, 768], [1180, 820], [1280, 800], [1440, 900], [951, 250], [800, 250]]) check(!cutApplies(w, h), `الحجز يجب ألا ينطبق عند ${w}x${h}`)
+
+/* الحجز الثابت للدوو وحده: الاستعلام أعلاه بالمقاس وحده فيلتقط كل iPhone طولي (390/402/430) ونوافذ iPad والحاسوب
+   الضيقة، فكل قاعدة داخله يجب أن تكون تحت بوابة data-device="duo" (src/main.tsx)، وإلا عاد الشريط الفارغ يمين الصفحة. */
+{
+  const bodyStart = rawIndex.indexOf('{', mStart) + 1
+  const body = rawIndex.slice(bodyStart, rawIndex.indexOf('\n}\n', bodyStart)).replace(/\/\*[\s\S]*?\*\//g, '')
+  const selectors = [...body.matchAll(/([^{}]+)\{[^{}]*\}/g)].map((m) => m[1].trim())
+  check(selectors.length >= 10, `كتلة الحجز: قواعد أقل من المتوقع (${selectors.length})`)
+  const parts = selectors.flatMap((sel) => { const out = []; let d = 0, cur = ''; for (const ch of sel) { if ('(['.includes(ch)) d++; if (')]'.includes(ch)) d--; if (ch === ',' && d === 0) { out.push(cur); cur = '' } else cur += ch } return [...out, cur] }).map((x) => x.trim())
+  for (const part of parts) check(/^(:where\(html\[data-device="duo"\]\)|:root\[data-device="duo"\])/.test(part), `كتلة الحجز: «${part}» بلا بوابة data-device="duo" فيصل الحجز إلى iPhone العادي`)
+  /* ولا تعريف حيّ لمتغيّرات الودجت خارج بوابة الدوو في أي مكان آخر من الملف. */
+  for (const m of rawIndex.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]*)\{[^{}]*--duo-widget-(?:w|gap|h|inset)\s*:\s*(?!\s|0px)[^;]+;/g)) check(/\[data-device="duo"\]/.test(m[1]), `index.css: «${m[1].trim()}» يضع متغيّر الودجت بلا بوابة الدوو`)
+  /* صفحتا التطبيق الاحتياطيتان بلا JS: لا حجز ثابت فيهما بالمقاس. */
+  for (const f of ['apple/www/index.html', 'apple/www/offline.html']) {
+    const page = read(f).replace(/\/\*[\s\S]*?\*\//g, '')
+    check(!/104px|96px/.test(page) && !/@media[^{]*max-width:\s*720px/.test(page), `${f}: حجز ثابت لركن الودجت بالمقاس وحده`)
+  }
+}
 
 /* شرط الكتاب في JS يطابق CSS. */
 const flow = read('src/lib/book-flow.ts')

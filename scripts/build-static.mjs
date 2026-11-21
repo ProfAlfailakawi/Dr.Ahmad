@@ -423,7 +423,7 @@ const STATIC = [
      تعمل داخل التطبيق وتموت خارجه: عطبٌ لا يُرى إلا بعد النشر. */
   { path: '/listen', title: 'مجلس الفكرة', desc: 'حلقات حوارية مسموعة من مقالات د. أحمد حسين الفيلكاوي، بصوتين ونصٍّ يسير مع الصوت.' },
   { path: '/live', title: 'استوديو المحاضرات الحي', desc: 'بوابة خاصة لفتح استوديو المحاضرات المحلي على جهاز الدكتور أحمد.', robots: 'noindex, nofollow' },
-  { path: '/radio', title: 'الإذاعة', desc: 'بثٌّ متواصل من فكر د. أحمد حسين الفيلكاوي: حلقةٌ تتلو حلقة بساعة الكويت، والجملة المنطوقة أمامك لحظةً بلحظة.' },
+  { path: '/radio', title: 'الإذاعة', desc: 'بثٌّ متواصل من فكر د. أحمد حسين الفيلكاوي: حلقةٌ تتلو حلقة بساعة الكويت، والجملة المنطوقة أمامك لحظةً بلحظة.', robots: 'noindex, follow' },
   { path: '/media', title: 'الظهور الإعلامي', desc: 'لقاءات تلفزيونية وإذاعية.' },
   { path: '/questions', title: 'سؤال يُقلق التعليم', desc: 'زاوية متجددة: سؤال جديد كل يومين يوقظ التفكير في التعليم، بصياغة عربية واضحة.' },
   { path: '/radar', title: 'أرشيف الرادار', desc: 'نافذة أسبوعية على أفكار ودراسات ومستجدات تستحق المتابعة، محفوظة في أرشيف زمني واضح.' },
@@ -446,7 +446,7 @@ const STATIC = [
   { path: '/thought-paths', title: 'مسار الفكرة', desc: 'رحلات تربط المقال بالسؤال والبحث والكتاب واللقاء لتكشف كيف تطورت الفكرة عبر السنوات.' },
   { path: '/paths', title: 'مسارات التعلّم', desc: 'مسارات قصيرة منتقاة تمزج المقال والحلقة المسموعة ومدخل الموسوعة وفصل الكتاب في ترتيبٍ واحد، مع حفظ تقدّمك في متصفحك.' },
   ...learningPaths.map((path) => ({ path: `/paths/${path.id}`, title: path.title, desc: path.intro })),
-  { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.' },
+  { path: '/search', title: 'البحث العميق', desc: 'بحث متقدم في عناوين المقالات ونصوصها وتصنيفاتها وسنواتها.', robots: 'noindex, follow' },
   { path: '/admin', title: 'لوحة التحكم', desc: 'لوحة إدارة خاصة.', robots: 'noindex, nofollow' },
   { path: '/mihwar', title: 'مِحور', desc: 'مساحة عمل خاصة بصاحب الموقع.', robots: 'noindex, nofollow' },
   /* المرآة الإنجليزية */
@@ -530,7 +530,8 @@ const LEGAL_STATIC = {
       ['الذكاء الاصطناعي', 'قد يرسل نص يختاره المسؤول إلى Gemini لتجهيز مسودة أو إلى Azure Speech لإنشاء صوت. يجب عدم إدخال أسرار أو بيانات حساسة، ومراجعة المخرجات قبل النشر.'],
       ['الاحتفاظ والحماية', 'نحتفظ بالبيانات للمدة اللازمة للتشغيل والأمان والالتزامات القانونية. تُحذف أو تُعطل رموز الوصول بعد فصل الحساب أو قبول طلب حذف موثق، مع احتمال بقاء نسخ محدودة مؤقتاً في النسخ الاحتياطية.'],
       ['حقوقك', 'يمكنك طلب الوصول أو التصحيح أو الحذف حيث ينطبق، وإلغاء صلاحيات Meta أو LinkedIn من إعدادات المنصة، ومسح بيانات الموقع المحلية من المتصفح.'],
-      ['التواصل', 'لطلبات الخصوصية: ah.alfailakawi@paaet.edu.kw. آخر تحديث: 13 يوليو 2026.'],
+      ['الإعلانات وملفات تعريف الارتباط', 'قد يعرض الموقع إعلانات Google AdSense. يستخدم مورّدون خارجيون، ومنهم Google، ملفات تعريف الارتباط لعرض الإعلانات بناءً على زياراتك السابقة لهذا الموقع أو لمواقع أخرى، ويتيح ذلك لـ Google وشركائها عرض إعلانات بناءً على زياراتك. يمكنك إيقاف الإعلانات المخصّصة من https://adssettings.google.com أو عبر https://www.aboutads.info. ولزوار المنطقة الاقتصادية الأوروبية والمملكة المتحدة وسويسرا تُطلب الموافقة قبل استخدام ملفات الارتباط الإعلانية.'],
+      ['التواصل', 'لطلبات الخصوصية: ah.alfailakawi@paaet.edu.kw. آخر تحديث: 21 نوفمبر 2026.'],
     ],
     en: [
       ['Scope', 'This policy applies to the official website of Dr. Ahmad Hussein Alfailakawi and Dr Alfailakawi Publishing, including website visits, contact messages, authorized administration and optional Meta or LinkedIn connections.'],
@@ -540,7 +541,8 @@ const LEGAL_STATIC = {
       ['AI', 'Text selected by an administrator may be sent to Gemini or Azure Speech. Do not submit secrets or sensitive personal information, and review all output before publication.'],
       ['Retention and security', 'We retain data only as reasonably necessary. Connection data and tokens are deleted or disabled after verified deletion or disconnection, subject to limited backup and security-log retention.'],
       ['Your choices', 'You may request access, correction or deletion where applicable, revoke platform permissions, and clear local website data through your browser.'],
-      ['Contact', 'Privacy requests: ah.alfailakawi@paaet.edu.kw. Last updated: July 13, 2026.'],
+      ['Advertising and cookies', 'This website may display Google AdSense ads. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this website or other websites, which enables Google and its partners to serve ads based on those visits. You may opt out of personalized advertising at https://adssettings.google.com or https://www.aboutads.info. Visitors from the EEA, the UK and Switzerland are asked for consent before advertising cookies are used.'],
+      ['Contact', 'Privacy requests: ah.alfailakawi@paaet.edu.kw. Last updated: November 21, 2026.'],
     ],
   },
   '/terms': {
@@ -1614,8 +1616,12 @@ for (const derived of ['/atlas', '/thought', '/decade', '/impact', '/thought-pat
 
 
 
+/* مقالٌ منشور مرتين بنصٍّ شبه متطابق: النسخة المكررة تحوَّل 301 في firebase.json
+   إلى النسخة ذات رابط المصدر المحدد، فلا مكان لها في خريطة الموقع. */
+const SITEMAP_DUPLICATES = new Set(['/articles/qabas-201911-001'])
+
 const sitemapEntries = publicRoutes
-  .filter((r) => (SHOW_EN || r.lang !== 'en') && !r.robots)
+  .filter((r) => (SHOW_EN || r.lang !== 'en') && !r.robots && !SITEMAP_DUPLICATES.has(r.path))
   .map((r) => ({
     loc: `${SITE}${r.path}`,
     lastmod: isoFor(r) || HUB_ISO[r.path] || '',

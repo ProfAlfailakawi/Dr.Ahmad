@@ -10,6 +10,11 @@
     ],
     "redirects": [
       {
+        "source": "/articles/qabas-201911-001",
+        "destination": "/articles/lets-achieve-a-higher-level-of-quality-education",
+        "type": 301
+      },
+      {
         "source": "/ar",
         "destination": "/",
         "type": 301

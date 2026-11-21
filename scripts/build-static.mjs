@@ -376,6 +376,10 @@ const archiveMedia = existsSync(mediaArchivePath)
   : []
 const media = mergeCloudAdditions('media', [...localMedia, ...archiveMedia], cloudCms.media)
   .filter((item) => item.title && item.slug && (item.url || item.audioUrl || item.audioFile))
+const bookKnowledgePath = resolve(ROOT, 'src/data/book-knowledge.json')
+const bookKnowledge = existsSync(bookKnowledgePath)
+  ? JSON.parse(readFileSync(bookKnowledgePath, 'utf8'))
+  : { books: [] }
 const mediaTranscriptsPath = resolve(ROOT, 'src/data/media-transcripts.json')
 const mediaTranscripts = existsSync(mediaTranscriptsPath)
   ? JSON.parse(readFileSync(mediaTranscriptsPath, 'utf8'))
@@ -971,6 +975,17 @@ function generateBodyHtml(path, lang = 'ar') {
     const slug = path.split('/').pop()
     const b = books.find(x => x.slug === slug)
     if (b) {
+      /* النسخة الثابتة كانت تحمل سطر الوصف وحده، بينما الصفحة الحية تعرض بيانات
+         النشر والفهرس. ننسخ هنا ما تعرضه الصفحة الحية فقط، من المصادر نفسها. */
+      const kb = (bookKnowledge.books || []).find((x) => x.slug === b.slug)
+      const facts = [
+        ['المؤلفون', b.coAuthors ? `د. أحمد حسين الفيلكاوي، ${b.coAuthors}` : 'د. أحمد حسين الفيلكاوي'],
+        ['سنة النشر', b.year], ['الطبعة', b.edition], ['الناشر', b.publisher],
+        ['عدد الصفحات', b.pageCount], ['ردمك ISBN', b.isbn],
+      ].filter(([, v]) => v)
+      const factsHtml = facts.length ? `<dl style="display:grid;grid-template-columns:max-content 1fr;gap:.5rem 1.25rem;font-family:'Tajawal',sans-serif;margin:0 0 2rem;">${facts.map(([k, v]) => `<dt style="color:#626A76;">${esc(k)}</dt><dd style="margin:0;color:#15161A;">${esc(String(v))}</dd>`).join('')}</dl>` : ''
+      const longHtml = b.longDescription && b.longDescription !== b.desc ? `<p style="line-height:1.9;font-size:1.08rem;color:#15161A;font-family:'Tajawal',sans-serif;">${esc(b.longDescription)}</p>` : ''
+      const tocHtml = kb?.concepts?.length ? `<section style="margin-top:2.5rem;"><h2 style="font-family:'El Messiri',serif;color:#15161A;">فهرس المحتويات</h2><ol style="font-family:'Tajawal',sans-serif;line-height:2;color:#15161A;padding-right:1.25rem;">${kb.concepts.map((c) => `<li>${esc(String(c.title || ''))}${c.pageStart ? ` <span style="color:#626A76;">(ص ${esc(String(c.pageStart))}${c.pageEnd && c.pageEnd !== c.pageStart ? `–${esc(String(c.pageEnd))}` : ''})</span>` : ''}</li>`).join('')}</ol></section>` : ''
       contentHtml = `
         <main style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;" dir="rtl">
           <div style="margin-bottom: 2rem; text-align: right;">
@@ -984,6 +999,9 @@ function generateBodyHtml(path, lang = 'ar') {
             <section style="background: rgba(62, 92, 120, 0.03); padding: 2.5rem; border-radius: 8px; border-right: 4px solid #3E5C78; margin-bottom: 2rem;">
               <p style="line-height: 1.8; font-size: 1.15rem; color: #15161A; font-family: 'Tajawal', sans-serif; margin: 0;">${esc(b.desc)}</p>
             </section>
+            ${factsHtml}
+            ${longHtml}
+            ${tocHtml}
           </article>
         </main>
       `

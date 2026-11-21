@@ -206,6 +206,17 @@ const privacyArabic: LegalSection[] = [
       'تُستضاف ملفات الوسائط والصوت لدى Cloudflare R2.',
     ],
   },
+  {
+    title: '12. الإعلانات وملفات تعريف الارتباط',
+    items: [
+      'قد يعرض الموقع إعلانات يقدّمها Google AdSense. يستخدم مورّدون خارجيون، ومنهم Google، ملفات تعريف الارتباط (الكوكيز) لعرض الإعلانات بناءً على زياراتك السابقة لهذا الموقع أو لمواقع أخرى على الإنترنت.',
+      'يتيح استخدام Google لملفات تعريف الارتباط الإعلانية لها ولشركائها عرض الإعلانات على زوارنا بناءً على زياراتهم لهذا الموقع و/أو لمواقع أخرى.',
+      'يمكنك إيقاف الإعلانات المخصّصة من إعدادات الإعلانات لدى Google: https://adssettings.google.com، أو إيقاف استخدام المورّدين الخارجيين لملفات تعريف الارتباط للإعلانات المخصّصة عبر https://www.aboutads.info.',
+      'لمعرفة كيف تستخدم Google البيانات عند استخدامك مواقع شركائها: https://policies.google.com/technologies/partner-sites.',
+      'لزوار المنطقة الاقتصادية الأوروبية والمملكة المتحدة وسويسرا، تُطلب موافقتك على ملفات تعريف الارتباط الإعلانية عبر إشعار موافقة قبل استخدامها.',
+      'يمكنك حذف ملفات تعريف الارتباط أو حظرها من إعدادات المتصفح في أي وقت؛ وقد تتأثر بذلك بعض وظائف الموقع.',
+    ],
+  },
 ]
 
 const privacyEnglish: LegalSection[] = [
@@ -290,6 +301,17 @@ const privacyEnglish: LegalSection[] = [
       'When a highlight is recorded in an article, an anonymous user identifier is created through Firebase Authentication to count highlights.',
       'If you turn on the optional “My Space” sync, reading data is encrypted in your browser before it is uploaded to Firestore, and the sync code is the key used to decrypt it.',
       'Media and audio files are hosted on Cloudflare R2.',
+    ],
+  },
+  {
+    title: '12. Advertising and cookies',
+    items: [
+      'This website may display ads served by Google AdSense. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to this website or other websites.',
+      'Google’s use of advertising cookies enables it and its partners to serve ads to our visitors based on their visits to this site and/or other sites on the Internet.',
+      'You may opt out of personalized advertising by visiting Google Ads Settings at https://adssettings.google.com, or opt out of third-party vendors’ use of cookies for personalized advertising at https://www.aboutads.info.',
+      'To learn how Google uses data when you use its partners’ sites: https://policies.google.com/technologies/partner-sites.',
+      'Visitors from the European Economic Area, the United Kingdom and Switzerland are asked for consent through a consent notice before advertising cookies are used.',
+      'You can delete or block cookies in your browser settings at any time; some website features may be affected.',
     ],
   },
 ]
@@ -418,7 +440,7 @@ export function PrivacyPolicy() {
       title="سياسة الخصوصية"
       subtitle="كيف تُجمع البيانات وتُستخدم وتُحمى في الموقع وأداة النشر المرتبطة."
       englishTitle="Privacy Policy"
-      updated="14 نوفمبر 2026"
+      updated="21 نوفمبر 2026"
       arabic={privacyArabic}
       glance={[{ index: 1, icon: Database }, { index: 4, icon: Sparkles }, { index: 6, icon: ShieldCheck }, { index: 7, icon: UserCheck }]}
       english={privacyEnglish}

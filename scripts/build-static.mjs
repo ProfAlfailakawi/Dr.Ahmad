@@ -380,6 +380,10 @@ const bookKnowledgePath = resolve(ROOT, 'src/data/book-knowledge.json')
 const bookKnowledge = existsSync(bookKnowledgePath)
   ? JSON.parse(readFileSync(bookKnowledgePath, 'utf8'))
   : { books: [] }
+const mediaArchiveTranscriptsPath = resolve(ROOT, 'src/data/media-archive-transcripts.json')
+const mediaArchiveTranscripts = existsSync(mediaArchiveTranscriptsPath)
+  ? (() => { const d = JSON.parse(readFileSync(mediaArchiveTranscriptsPath, 'utf8')); return d.items || d })()
+  : {}
 const mediaTranscriptsPath = resolve(ROOT, 'src/data/media-transcripts.json')
 const mediaTranscripts = existsSync(mediaTranscriptsPath)
   ? JSON.parse(readFileSync(mediaTranscriptsPath, 'utf8'))
@@ -1113,7 +1117,13 @@ function generateBodyHtml(path, lang = 'ar') {
     if (item) {
       const itemVideoId = youtubeId(item.url)
       const videoThumbnail = item.thumbnail || (itemVideoId ? `https://i.ytimg.com/vi/${itemVideoId}/hqdefault.jpg` : '')
-      const transcript = item.transcript || mediaTranscripts[itemVideoId] || ''
+      /* التفريغ الزمني لكل اللقاءات يسكن media-archive-transcripts.json (يعرضه
+         التطبيق الحي)، وكانت النسخة الثابتة لا تقرأ إلا الملف القديم لأربعة لقاءات. */
+      const archived = mediaArchiveTranscripts[itemVideoId] || mediaArchiveTranscripts[item.id]
+      const archivedText = archived?.available && Array.isArray(archived.segments)
+        ? archived.segments.map((s) => String(s.displayText || '').trim()).filter(Boolean).join('\n')
+        : ''
+      const transcript = item.transcript || mediaTranscripts[itemVideoId] || archivedText || ''
       // رابط الصوت الموقّع من اللوحة، أو مجلد الاستضافة الخارجي إن عُرِّف متغيره.
       const mediaAudioBase = String(process.env.VITE_MEDIA_AUDIO_BASE_URL || process.env.VITE_AUDIO_BASE_URL || '').replace(/\/+$/, '')
       const hostedAudio = item.audioUrl

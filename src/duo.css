@@ -95,7 +95,7 @@ html[data-device="duo"] :is(.site-menu-overlay, .my-space-overlay, .fixed.inset-
 @media (max-width: 520px), (max-height: 480px) {
   html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center {
     position: fixed;
-    top: calc(var(--duo-safe-top) + 10.5rem);
+    top: calc(var(--duo-safe-top) + 11.25rem);
     flex-direction: column;
     gap: .5rem;
     padding: .4rem;
@@ -125,4 +125,36 @@ html[data-device="duo"] .fixed:is(.inset-x-0, .inset-x-3, .inset-x-4):not(.site-
 html[data-device="duo"] .mihwar-frame {
   box-sizing: border-box;
   padding: var(--duo-safe-top) var(--duo-safe-right) 0 var(--duo-safe-left);
+}
+
+/* ١٠) التطبيق على الخارجية: الخلفية تمتد كاملةً حتى الحافة تحت عمود الساعة والبطارية، والمحتوى وحده يقف قبله.
+   الجسم يحجز الحدّ بحشوه، فكانت خلفيات الأقسام (الغلاف، الشرائح الملوّنة، الخطوط الفاصلة) تنتهي عنده ويبقى
+   عمودٌ بلون مختلف. هنا تمتد صناديق الأقسام الكبرى فوق حشو الجسم بهامش سالب وتستردّه حدّاً شفافاً من الداخل:
+   الخلفية والحدّ العلوي يرسمان تحته (background-clip الافتراضي)، ومربّع المحتوى لا يتغيّر.
+   وكذلك الأشرطة الثابتة العريضة (inset-x-0) ذات الخلفية. اللوحات الطافية (inset-x-3/4) تبقى قبل العمود كما هي. */
+@media (max-width: 520px), (max-height: 480px) {
+  html[data-device="duo"][data-shell="app"][data-widget-side="right"] :is(main, .signature-page, .home-idea-thread) > :is(section, header, footer),
+  html[data-device="duo"][data-shell="app"][data-widget-side="right"] .site-footer {
+    margin-right: calc(var(--duo-safe-right) * -1);
+    border-right: var(--duo-safe-right) solid transparent;
+    background-origin: border-box;
+  }
+  html[data-device="duo"][data-shell="app"][data-widget-side="left"] :is(main, .signature-page, .home-idea-thread) > :is(section, header, footer),
+  html[data-device="duo"][data-shell="app"][data-widget-side="left"] .site-footer {
+    margin-left: calc(var(--duo-safe-left) * -1);
+    border-left: var(--duo-safe-left) solid transparent;
+    background-origin: border-box;
+  }
+  html[data-device="duo"][data-shell="app"][data-widget-side="right"] .human-core > .human-core__wash { right: calc(var(--duo-safe-right) * -1); }
+  html[data-device="duo"][data-shell="app"][data-widget-side="left"] .human-core > .human-core__wash { left: calc(var(--duo-safe-left) * -1); }
+  html[data-device="duo"][data-shell="app"][data-widget-side="right"] .fixed.inset-x-0:not(.site-nav) {
+    margin-right: 0;
+    border-right: var(--duo-safe-right) solid transparent;
+    background-origin: border-box;
+  }
+  html[data-device="duo"][data-shell="app"][data-widget-side="left"] .fixed.inset-x-0:not(.site-nav) {
+    margin-left: 0;
+    border-left: var(--duo-safe-left) solid transparent;
+    background-origin: border-box;
+  }
 }

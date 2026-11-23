@@ -158,3 +158,34 @@ html[data-device="duo"] .mihwar-frame {
     background-origin: border-box;
   }
 }
+
+/* ١١) الرصف من الطرفين (justify) في الأعمدة الضيّقة: في وضع الكتاب يجري المقال عمودين بعرض ≈380pt،
+   وعلى الشاشة الخارجية والداخلية الطولية عمودٌ واحد ضيّق كذلك، فكان الرصف يفتح فراغاتٍ واسعة بين الكلمات
+   (العربية بلا تمديد كشيدة في المتصفح). على الدوو يُرصف المتن من جهة البدء كما على الهاتف (عقد المحاذاة
+   أعلى index.css). الطباعة تبقى justify (هذه القاعدة للشاشة وحدها). */
+@media screen {
+  html[data-device="duo"] :is(.article-body, .article-body-synced, .article-body-synced .synced-paragraph),
+  html[data-device="duo"] :is(.article-body, .article-body-synced) :is(p, li, blockquote) {
+    text-align: start !important;
+    text-align-last: start !important;
+    word-spacing: normal;
+  }
+}
+
+/* ١٢) حركة شريط التنقّل (قرار المالك 2026-11-23، المرجع: schedule-kw/src/styles/88-dock-motion.css): الشريط هنا
+   زرّان (البحث والقائمة) بلا وجهاتٍ نشطة، فلا مؤشّر منزلق؛ يبقى منه الضغطةُ الفورية تحت الإصبع (scale .9 في 90ms)
+   والعودةُ بنابضٍ خفيف (260ms)، على الهاتف والدوو. بصريّ فقط؛ «تقليل الحركة» = بلا حركة. */
+.site-nav > div > .flex.items-center > button {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), border-color .3s, color .3s;
+}
+.site-nav > div > .flex.items-center > button:active {
+  transform: scale(.9);
+  transition-duration: .09s;
+  transition-timing-function: ease-out;
+}
+.site-nav > div > .flex.items-center > button:focus-visible { outline: 2px solid rgb(var(--c-accent)); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .site-nav > div > .flex.items-center > button,
+  .site-nav > div > .flex.items-center > button:active { transition: none; transform: none; }
+}

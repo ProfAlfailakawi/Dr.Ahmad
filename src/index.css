@@ -6790,6 +6790,10 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
   pointer-events: none;
   opacity: .62;
 }
+/* نهاية السطر في العربية هي الحافة اليسرى، فالبُعد عنها يُقاس بحدّ iOS الأيسر لا الأيمن. كان يُقاس بالأيمن،
+   فعلى الجهاز الذي له حدٌّ أيمن (عمود الساعة في iPhone Duo، والآيفون عرضاً) ينزاح الخط 84pt إلى داخل الصفحة
+   ويمرّ بدائرته فوق نصّ المقال. */
+.idea-signature-trace:dir(rtl) { inset-inline-end: max(7px, env(safe-area-inset-left)); }
 .idea-signature-trace__base,
 .idea-signature-trace__ink {
   position: absolute;
@@ -6833,9 +6837,11 @@ html.dark .content-books a > div[style*="aspect-ratio"] {
     inset-inline-end: max(1.1rem, calc((100vw - 1340px) / 2));
     opacity: .72;
   }
+  .idea-signature-trace:dir(rtl) { inset-inline-end: max(1.1rem, calc((100vw - 1340px) / 2)); }
 }
 @media (max-width: 430px) {
   .idea-signature-trace { inset-inline-end: 2px; width: 10px; opacity: .38; }
+  .idea-signature-trace:dir(rtl) { inset-inline-end: max(2px, env(safe-area-inset-left)); }
   .idea-signature-trace__base,
   .idea-signature-trace__ink { inset-inline-end: 4px; }
   .idea-signature-trace__dot { inset-inline-end: 1px; width: 6px; height: 6px; }

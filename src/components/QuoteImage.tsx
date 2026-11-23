@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { imageSaveFallbackFeedback } from '../lib/image-save-fallback'
 import { renderQuoteCard } from '../lib/quote-card'
 import { SocialIcon } from './icons'
 import { ClarifiedIconAction } from './ClarifiedIconAction'
@@ -63,11 +64,7 @@ export function QuoteImage({ text, attribution }: { text: string; attribution: s
       setFeedback('بدأ تنزيل الصورة.')
     } catch (reason) {
       if ((reason as DOMException)?.name === 'AbortError') return
-      const objectUrl = URL.createObjectURL(blob)
-      const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer')
-      if (!opened) URL.revokeObjectURL(objectUrl)
-      else window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
-      setFeedback(opened ? 'فُتحت الصورة؛ احفظها من قائمة المتصفح.' : 'تعذّر فتح الصورة. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.')
+      setFeedback(imageSaveFallbackFeedback(blob))
     }
   }
 

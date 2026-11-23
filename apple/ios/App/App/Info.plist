@@ -35,6 +35,10 @@
 	<string>public.app-category.books</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>تُستخدم الكاميرا عند اختيارك تشغيل تجربة تعتمد على الكاميرا أو التقاط صورة داخل التطبيق فقط.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يُستخدم للوصول إلى الصور والملفات التي تختارها بنفسك لرفعها داخل التطبيق، ولا يُقرأ شيء آخر من مكتبتك.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

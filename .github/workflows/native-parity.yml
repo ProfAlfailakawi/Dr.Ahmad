@@ -29,7 +29,7 @@ jobs:
           head = re.compile(r"^\s{0,3}#{1,6}\s*.*apple\s*/\s*google\s*/\s*iphone\s*duo", re.I)
           start = next((i for i, l in enumerate(lines) if head.search(l)), None)
           if start is None:
-              print("::error::وصف طلب الدمج يخلو من قسم «Apple / Google / iPhone Duo». أضف عنوانًا بهذا الاسم واذكر تحته ما فُحص وما عُدّل وما لم يُنفَّذ ولماذا.")
+              print("::error::وصف طلب الدمج يخلو من قسم «Apple / Google / iPhone Duo». أضف عنواناً بهذا الاسم واذكر تحته ما فُحص وما عُدّل وما لم يُنفَّذ ولماذا.")
               sys.exit(1)
           section = []
           for l in lines[start + 1:]:

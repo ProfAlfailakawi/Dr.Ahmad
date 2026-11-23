@@ -1,3 +1,5 @@
+import { isNativeShell } from './native-shell.ts'
+
 type PrintOptions = {
   selector?: string
   title?: string
@@ -11,6 +13,8 @@ const escapeHtml = (value = '') => value
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#039;')
+
+export const NATIVE_AFTER_PRINT_MS = 4000
 
 const mobileLike = () => {
   if (typeof window === 'undefined') return false
@@ -26,6 +30,21 @@ const mobileLike = () => {
  */
 export function printSiteContent({ selector = '#main', title = document.title, beforePrint, afterPrint }: PrintOptions = {}) {
   beforePrint?.()
+
+  /* داخل التطبيق الأصلي (WKWebView) لا توجد نوافذ منبثقة ولا تبويبات: window.open يعيد null
+     أو يفتح صفحةً فارغة. والغلاف يحوّل window.print() في الإطار الرئيسي إلى ورقة الطباعة
+     الأصلية، فنطبع الصفحة نفسها بقواعد @media print. الورقة الأصلية لا تُطلق afterprint،
+     فنستدعي afterPrint بعد مهلة قصيرة (مرة واحدة) كي لا تبقى الصفحة في وضع الطباعة. */
+  if (isNativeShell()) {
+    if (afterPrint) {
+      let done = false
+      const finish = () => { if (done) return; done = true; window.removeEventListener('afterprint', finish); afterPrint() }
+      window.addEventListener('afterprint', finish, { once: true })
+      window.setTimeout(finish, NATIVE_AFTER_PRINT_MS)
+    }
+    window.print()
+    return true
+  }
 
   if (!mobileLike()) {
     if (afterPrint) window.addEventListener('afterprint', afterPrint, { once: true })

@@ -27,6 +27,8 @@ import { AdminTaskFavicon, AdminTaskIndicator } from '../components/admin/AdminT
 import { NewsletterCenter } from '../components/admin/NewsletterCenter'
 import { InboxIntelligence, InboxInsightBadges } from '../components/admin/InboxIntelligence'
 import { registerAdminPush, sendAdminPushTest } from '../lib/admin-push'
+import { initialAdminPushPermission, readAdminPushPermission, type AdminPushPermission } from '../lib/admin-push-state'
+import { isNativeShell } from '../lib/native-shell'
 import { useSeo } from '../components/seo'
 import { arabicCountPhrase, MESSAGE_PLAIN_FORMS, SUBSCRIBER_FORMS } from '../lib/arabic-count.ts'
 import {
@@ -178,7 +180,7 @@ function Login({ blockedEmail = '' }: { blockedEmail?: string }) {
           <svg viewBox="0 0 24 24" className="h-[1.25rem] w-[1.25rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.4" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></svg>
         </div>
         <h1 className="mb-8 font-display text-3xl font-bold text-ink">لوحة التحكم</h1>
-        {pwaEntry && <p className="mb-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-soft"><strong className="text-accent">بوابة المالك.</strong> وصلت من نسخة PWA. في المرات القادمة اضغط مطولاً على شعار الموقع حتى يكتمل الخط الرفيع، أو استخدم اختصار «غرفة القيادة» من قائمة أيقونة التطبيق.</p>}
+        {pwaEntry && !isNativeShell() && <p className="mb-5 rounded-2xl border border-accent/25 bg-accent/[.05] px-4 py-3 text-[.8rem] leading-relaxed text-soft"><strong className="text-accent">بوابة المالك.</strong> وصلت من نسخة PWA. في المرات القادمة اضغط مطولاً على شعار الموقع حتى يكتمل الخط الرفيع، أو استخدم اختصار «غرفة القيادة» من قائمة أيقونة التطبيق.</p>}
         {blockedEmail && (
           <div className="mb-5 rounded-2xl border border-hair bg-wash px-4 py-3 text-[.8rem] leading-relaxed text-soft">
             <strong className="text-ink">جلسة غير معتمدة.</strong> الحساب الحالي {blockedEmail} لا يملك صلاحية الإنتاج. سجّل أدناه بحساب المالك؛ سيُستبدل الحساب القديم تلقائياً.
@@ -240,12 +242,19 @@ function CvPdfCard() {
 
 function PushGateBanner() {
   const { user } = useAdminAuth()
-  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(() => (
-    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
-  ))
+  const [permission, setPermission] = useState<AdminPushPermission>(initialAdminPushPermission)
   const [registered, setRegistered] = useState(() => typeof window !== 'undefined' && localStorage.getItem('admin:push-registered') === '1')
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
+  const native = isNativeShell()
+
+  /* داخل التطبيق يُقرأ إذن النظام الحقيقي (لا يوجد Notification في WKWebView). */
+  useEffect(() => {
+    if (!native) return
+    let active = true
+    void readAdminPushPermission().then((value) => { if (active) setPermission(value) })
+    return () => { active = false }
+  }, [native])
 
   /* العرض التوضيحي: لا جهاز حقيقي يُربط، فلا نعرض دعوة تفعيل إشعارات بلا معنى. */
   if (DEMO_MODE || permission === 'unsupported') return null
@@ -271,7 +280,7 @@ function PushGateBanner() {
     <div className="mb-5 rounded-2xl border border-accent/[.35] bg-accent/[.05] px-4 py-3" data-push-gate="needs-enable">
       <p className="text-[.82rem] font-semibold text-ink">الإشعارات الفورية غير مفعّلة على هذا الجهاز</p>
       <p className="mt-1 text-[.76rem] leading-relaxed text-soft">
-        رسائل القراء واشتراكات النشرة تصل صندوقك، لكنها لن توقظ هاتفك حتى تربط هذا الجهاز مرة واحدة. اضغط الزر ثم اسمح للمتصفح.
+        رسائل القراء واشتراكات النشرة تصل صندوقك، لكنها لن توقظ هاتفك حتى تربط هذا الجهاز مرة واحدة. {native ? 'اضغط الزر ثم اسمح للتطبيق.' : 'اضغط الزر ثم اسمح للمتصفح.'}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button type="button" disabled={Boolean(busy) || !user} onClick={() => {
@@ -279,7 +288,7 @@ function PushGateBanner() {
           setBusy('enable')
           setNotice('أربط هذا الجهاز…')
           void registerAdminPush(user).then((result) => {
-            setPermission(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
+            void readAdminPushPermission().then(setPermission)
             setNotice(result.message)
             if (result.ok) { localStorage.setItem('admin:push-registered', '1'); setRegistered(true) }
           }).catch((error) => setNotice(error instanceof Error ? error.message : 'تعذّر الربط على هذا الجهاز.'))
@@ -583,23 +592,27 @@ function InboxPanel() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [newsletterDraft, setNewsletterDraft] = useState<NewsletterDraft | null>(null)
   const [loading, setLoading] = useState(true)
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => (
-    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
-  ))
+  const [notificationPermission, setNotificationPermission] = useState<AdminPushPermission>(initialAdminPushPermission)
+  const nativeShell = isNativeShell()
   const [pushNotice, setPushNotice] = useState('')
   const [pushRegistered, setPushRegistered] = useState(() => typeof window !== 'undefined' && localStorage.getItem('admin:push-registered') === '1')
   const paged = usePagedList(items, 10, String(items.length))
   const subscriberPaged = usePagedList(subscribers, 8, `subscribers|${subscribers.length}`)
 
   useEffect(() => {
-    if (!user || !pushRegistered || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+    if (!user || !pushRegistered) return
     let active = true
-    void registerAdminPush(user).then((result) => {
+    void readAdminPushPermission().then((current) => {
+      if (!active) return
+      setNotificationPermission(current)
+      if (current !== 'granted') return
+      return registerAdminPush(user).then((result) => {
       if (!active) return
       if (result.ok) return
       localStorage.removeItem('admin:push-registered')
       setPushRegistered(false)
       setPushNotice(result.message)
+      })
     }).catch(() => {
       if (!active) return
       localStorage.removeItem('admin:push-registered')
@@ -674,16 +687,16 @@ function InboxPanel() {
   }, [])
 
   const enableNotifications = async () => {
-    if (typeof Notification === 'undefined') { setNotificationPermission('unsupported'); return }
+    if (initialAdminPushPermission() === 'unsupported') { setNotificationPermission('unsupported'); return }
     if (!user) { setPushNotice('تعذّر التحقق من جلسة المشرف.'); return }
     setPushNotice('جاري ربط هذا الجهاز بالإشعارات الفورية…')
     try {
       const result = await registerAdminPush(user)
-      setNotificationPermission(Notification.permission)
+      setNotificationPermission(await readAdminPushPermission())
       setPushNotice(result.message)
       if (result.ok) { localStorage.setItem('admin:push-registered', '1'); setPushRegistered(true) }
     } catch (error) {
-      setNotificationPermission(Notification.permission)
+      setNotificationPermission(await readAdminPushPermission())
       setPushNotice(error instanceof Error ? error.message : 'تعذّر ربط Push على هذا الجهاز.')
     }
   }
@@ -773,14 +786,14 @@ function InboxPanel() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p><strong className="text-ink">التحديث مباشر الآن.</strong> رسائل التواصل الخاصة تظهر هنا فوراً، من دون إعادة تحميل الصفحة.</p>
           {notificationPermission === 'unsupported' ? (
-            <span className="text-[.78rem] text-soft">هذا المتصفح لا يدعم Push على الويب.</span>
+            <span className="text-[.78rem] text-soft">{nativeShell ? 'إشعارات النظام غير متاحة في هذا التطبيق.' : 'هذا المتصفح لا يدعم Push على الويب.'}</span>
           ) : pushRegistered && notificationPermission === 'granted' ? (
             <span className="rounded-full border border-accent/25 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent">Push الحقيقي مربوط بهذا الجهاز</span>
           ) : (
             <button type="button" onClick={() => void enableNotifications()} className="rounded-full border border-accent/30 bg-canvas px-4 py-2 text-[.78rem] font-semibold text-accent transition-colors hover:bg-accent hover:text-white">فعّل Push الحقيقي</button>
           )}
         </div>
-        <p className="mt-2 text-[.76rem] text-soft">بعد ربط الجهاز، تصل إشعارات الرسائل والاشتراكات عبر Firebase Cloud Messaging حتى عندما لا تكون صفحة لوحة التحكم مفتوحة، بحسب دعم نظام التشغيل والمتصفح للإشعارات الخلفية. الضغط على التنبيه يفتح صندوق الوارد مباشرة.</p>
+        <p className="mt-2 text-[.76rem] text-soft">{nativeShell ? 'بعد ربط الجهاز، تصل إشعارات الرسائل والاشتراكات عبر إشعارات Apple حتى عندما يكون التطبيق مغلقاً. الضغط على التنبيه يفتح صندوق الوارد مباشرة.' : 'بعد ربط الجهاز، تصل إشعارات الرسائل والاشتراكات عبر Firebase Cloud Messaging حتى عندما لا تكون صفحة لوحة التحكم مفتوحة، بحسب دعم نظام التشغيل والمتصفح للإشعارات الخلفية. الضغط على التنبيه يفتح صندوق الوارد مباشرة.'}</p>
         {pushNotice && <p className="mt-2 rounded-lg border border-hair bg-canvas px-3 py-2 text-[.74rem] text-soft">{pushNotice}</p>}
       </div>
 

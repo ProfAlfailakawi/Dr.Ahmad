@@ -1,0 +1,34 @@
+{
+  "appId": "kw.edu.drahmad.app",
+  "appName": "د. أحمد",
+  "webDir": "www",
+  "server": {
+    "url": "https://dr-alfailakawi.com",
+    "errorPath": "offline.html",
+    "allowNavigation": [
+      "dr-alfailakawi.com",
+      "dr-alfailakawi.web.app",
+      "*.r2.dev",
+      "*.googleapis.com"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "launchAutoHide": true,
+      "backgroundColor": "#FCFCFA",
+      "showSpinner": false
+    },
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    }
+  },
+  "android": {
+    "backgroundColor": "#FCFCFA",
+    "allowMixedContent": false
+  }
+}

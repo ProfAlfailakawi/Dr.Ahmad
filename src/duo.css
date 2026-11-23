@@ -189,3 +189,14 @@ html[data-device="duo"] .mihwar-frame {
   .site-nav > div > .flex.items-center > button,
   .site-nav > div > .flex.items-center > button:active { transition: none; transform: none; }
 }
+
+/* ١٣) تلميح «حدّد أي جملة» على الشاشة الخارجية عرضاً (ارتفاعٌ ≈466pt): كان يطفو أسفل الشاشة فوق سطرٍ من المقال،
+   والشاشة القصيرة لا تحمل غير بضعة أسطر، ورأسُها مشغولٌ بالشعار وأزرار التنقّل فلا مكان خالياً له. يُخفى كما في
+   وضع الكتاب (index.css): التحديد باللمس يعمل دونه، وأدواته تظهر عند التحديد نفسه. */
+@media screen and (orientation: landscape) and (max-height: 520px) {
+  html[data-device="duo"] .selection-discovery-chip { display: none; }
+}
+
+/* ١٤) «الإذاعة» داخل التطبيق: خلفيتها الدافئة كانت تقف عند حافة المحتوى فيبقى تحت عمود الساعة شريطٌ أبيض.
+   لون الصفحة نفسها يصير لون الإذاعة، فتمتدّ الخلفية تحت العمود والمحتوى يبقى قبله. */
+html[data-device="duo"] body:has(.radio-root) { background: var(--radio-bg); }

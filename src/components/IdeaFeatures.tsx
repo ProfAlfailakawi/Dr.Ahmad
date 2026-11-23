@@ -1,4 +1,5 @@
 import { arabicCountPhrase, CONNECTION_FORMS } from '../lib/arabic-count.ts'
+import { imageSaveFallbackFeedback } from '../lib/image-save-fallback'
 /* أداة تحديدٍ واحدة أنيقة (أحادية اللون، بلا تلوث بصري): تظهر عند تظليل أي جملةٍ في المقال،
    وتقدّم فعلين متباعدين في شريطٍ واحد لا يتداخلان:
    1) تتبّع الجملة: كل المقالات التي لامست الفكرة نفسها عبر السنوات.
@@ -788,11 +789,7 @@ export function SelectionTools({ current, articles, body, excerpt }: { current: 
       setDownloadFeedback('بدأ تنزيل الصورة.')
     } catch (reason) {
       if ((reason as DOMException)?.name === 'AbortError') return
-      const objectUrl = URL.createObjectURL(blob)
-      const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer')
-      if (!opened) URL.revokeObjectURL(objectUrl)
-      else window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
-      setDownloadFeedback(opened ? 'فُتحت الصورة؛ احفظها من قائمة المتصفح.' : 'تعذّر فتح الصورة. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.')
+      setDownloadFeedback(imageSaveFallbackFeedback(blob))
     }
   }
 

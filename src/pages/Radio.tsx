@@ -4,6 +4,7 @@ import kuwaitiSchedule from '../data/radio-schedule-kw.json'
 import { versionedAudioUrl } from '../components/extras'
 import { useSeo } from '../components/seo'
 import { dialogueVariantPreference, dialogueVariantSuffix, rememberDialogueVariant, type DialogueAudioVariant } from '../lib/dialogue-variant'
+import RadioMajlis from '../components/RadioMajlis'
 import './radio.css'
 
 /* ═══════════ الإذاعة — بثٌّ متزامن بساعة الكويت ═══════════
@@ -377,6 +378,19 @@ export default function Radio() {
             <time>{clock(Math.min(pos.into, pos.item.dur))} / {clock(pos.item.dur)}</time>
           </div>
         </div>
+
+        <RadioMajlis
+          items={items}
+          loop={loop}
+          idx={pos.idx}
+          into={pos.into}
+          suffix={dialogueVariantSuffix(variant)}
+          speaker={betweenEpisodes ? '' : line.sp}
+          playing={playing}
+          utterances={utterances}
+          audioRef={audioRef}
+          loadedSlugRef={loadedSlugRef}
+        />
 
         <div className="radio-next">
           {upcoming.map((row, i) => (

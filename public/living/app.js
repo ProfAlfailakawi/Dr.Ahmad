@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=40';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=40';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=40';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=40';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=40';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=41';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=41';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=41';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=41';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=41';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -569,7 +569,7 @@ let ar = null, rotor = null;
 
 const test = TEST ? { since: 0, rows: [], frames: 0, fpsAt: 0, fps: 0 } : null;
 
-const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=17`), location.href).href;
+const PACK_URL = () => new URL(asset(`targets/all.pack.gz?v=18`), location.href).href;
 let fastWorkers = [];
 function packFailed() {
   $('loading').classList.remove('hidden');
@@ -585,7 +585,7 @@ async function startAR(id = packId) {
     const cores = navigator.hardwareConcurrency || 4;
     fastWorkers = captureWorkers(Math.min(4, Math.max(2, cores - 2)));
     const mind = new MindARThree({
-      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=17`), maxTrack: 1,
+      container: $('arStage'), imageTargetSrc: asset(`${pack.file}?v=18`), maxTrack: 1,
       uiLoading: 'no', uiScanning: 'no', uiError: 'no', filterMinCF: 0.0001, filterBeta: 0.001, warmupTolerance: 1, missTolerance: 10,
     });
     // MindAR creates its controller inside start(); the fast matching is attached at that moment, before the pages load.

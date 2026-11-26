@@ -257,7 +257,7 @@ const bookTocs: Record<string, string> = {
 
 export const books = [
   { slug: 'encyclopedia', coAuthors: 'د. عبدالعزيز دخيل العنزي', title: 'موسوعة تكنولوجيا التعليم', isbn: '978-99966-1-281-7',
-    cover: '/covers/encyclopedia-0a30b239b9.webp',
+    cover: '/covers/encyclopedia-d8abb1ce6b.webp',
     pdf: '/files/encyclopedia.pdf',
     pdfPolicy: 'sample',
     year: '2016', edition: 'الطبعة الأولى', publisher: 'المؤلفون', pageCount: '696', toc: bookTocs.encyclopedia,

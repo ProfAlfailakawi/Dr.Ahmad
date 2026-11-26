@@ -1,0 +1,185 @@
+/* ═══════════ المجلس المتوهّج — بادئة radio-majlis / radio-ember ═══════════
+   يقرأ ألوان الإذاعة نفسها (radio.css): الورق ‎#EAE4D7‎ نهاراً و‎#0E0C0A‎ ليلاً،
+   والصوتان ‎#B0703A‎ (فهد) و‎#4E6E70‎ (نورة). لا لون جديد.                  */
+
+.radio-majlis {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 4vw, 32px);
+  padding: 6px 0 22px;
+  min-width: 0;
+}
+
+.radio-majlis__dial-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(150px, 34vw, 188px);
+  aspect-ratio: 1;
+}
+.radio-majlis__dial {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  cursor: grab;
+  touch-action: none; /* السحب على القرص لا يمرّر الصفحة */
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 50%;
+}
+.radio-majlis.is-previewing .radio-majlis__dial { cursor: grabbing }
+.radio-majlis__dial:focus { outline: none }
+.radio-majlis__dial:focus-visible { outline: 2px solid var(--radio-voice); outline-offset: 4px }
+
+.radio-majlis__ring { fill: none; stroke: var(--radio-hair); stroke-width: 1.5 }
+.radio-majlis__elapsed {
+  fill: none;
+  stroke: color-mix(in srgb, var(--radio-voice) 42%, var(--radio-hair));
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke 1.2s;
+}
+.radio-majlis__loop { stroke: var(--radio-soft); stroke-width: 1; opacity: .45 }
+.radio-majlis__hour { stroke: var(--radio-hair); stroke-width: 1 }
+.radio-majlis__hour.is-major { stroke: var(--radio-soft); stroke-width: 1.4 }
+.radio-majlis__label {
+  fill: var(--radio-soft);
+  font-size: 10px;
+  font-family: 'SF Arabic', system-ui, sans-serif;
+}
+.radio-majlis__now {
+  fill: var(--radio-voice);
+  stroke: var(--radio-bg);
+  stroke-width: 2;
+  transition: fill 1.2s;
+}
+.radio-majlis__ahead {
+  fill: none;
+  stroke: var(--radio-fg);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+  opacity: .55;
+}
+.radio-majlis__handle {
+  fill: var(--radio-bg);
+  stroke: var(--radio-fg);
+  stroke-width: 2;
+}
+
+/* الموقد: جمرتان في قلب القرص */
+.radio-majlis__hearth {
+  position: absolute;
+  inset: 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14%;
+  pointer-events: none;
+}
+.radio-ember {
+  --ember: .12;
+  --ember-c: var(--radio-fahd);
+  position: relative;
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%,
+    color-mix(in srgb, var(--ember-c) 55%, #fff 45%) 0%,
+    var(--ember-c) 46%,
+    color-mix(in srgb, var(--ember-c) 70%, var(--radio-bg)) 100%);
+  opacity: calc(.38 + var(--ember) * .62);
+  transform: scale(calc(.86 + var(--ember) * .26));
+  will-change: transform, opacity;
+}
+.radio-ember--noura { --ember-c: var(--radio-noura) }
+.radio-ember.is-speaking { --ember: .7 } /* السكون (تقليل الحركة): الجمرة المتكلّمة مضاءةٌ بثبات؛ مع الحركة تغلبها القيمة الحيّة */
+/* الهالة: تتّسع وتشتدّ مع الموجة */
+.radio-ember::before {
+  content: "";
+  position: absolute;
+  inset: -90%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ember-c) 70%, transparent) 0%, transparent 62%);
+  opacity: calc(var(--ember) * .85);
+  transform: scale(calc(.6 + var(--ember) * .6));
+  pointer-events: none;
+}
+html.dark .radio-ember::before { mix-blend-mode: screen }
+html.dark .radio-ember {
+  background: radial-gradient(circle at 50% 45%,
+    color-mix(in srgb, var(--ember-c) 45%, #FFE9C8 55%) 0%,
+    var(--ember-c) 50%,
+    color-mix(in srgb, var(--ember-c) 55%, var(--radio-bg)) 100%);
+}
+
+/* القراءة: الساعة، وعند المعاينة ما يُبثّ فيها */
+.radio-majlis__read {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 400;
+  color: var(--radio-soft);
+}
+.radio-majlis__when {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.radio-majlis__when time { font-family: 'SF Arabic', system-ui, sans-serif; color: var(--radio-fg) }
+.radio-majlis__hint { font-size: 13.5px; line-height: 1.7 }
+.radio-majlis__title {
+  margin: 2px 0 0;
+  color: var(--radio-fg);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.radio-majlis__cat { font-size: 12.5px }
+.radio-majlis__then {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.radio-majlis__then li {
+  padding: 5px 0;
+  border-top: 1px solid color-mix(in srgb, var(--radio-hair) 60%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.radio-majlis__back { margin-top: 4px; font-size: 12px; color: var(--radio-voice) }
+
+/* الدخول مع بقية المسرح */
+.radio-majlis {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .9s cubic-bezier(.22, 1, .36, 1), transform .9s cubic-bezier(.22, 1, .36, 1);
+}
+.radio-entered .radio-majlis { opacity: 1; transform: none; transition-delay: .34s }
+
+@media (max-width: 420px) {
+  .radio-majlis { gap: 16px }
+  .radio-majlis__dial-wrap { width: 138px }
+  .radio-majlis__title { font-size: 15.5px }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radio-majlis, .radio-entered .radio-majlis { opacity: 1; transform: none; transition: none }
+  .radio-majlis *, .radio-majlis *::before { transition: none !important; animation: none !important }
+}
+
+/* iPhone Duo — الكتاب المفتوح (الشرط المعتمد نفسه في radio.css): المجلس على الصفحة اليسرى
+   تحت جدول ما يلي، أصغر قليلاً كي لا يدفع الصفحة إلى ما بعد الطيّة. */
+@media screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape) {
+  /* زرّ «استمع» ثابتٌ في ذيل هذه الصفحة: هامشٌ سفليّ يتيح تمرير المجلس فوقه */
+  .radio-stage > .radio-majlis { margin-top: 1.25rem; margin-bottom: 4.5rem; padding-bottom: 0 }
+  .radio-majlis__dial-wrap { width: 140px }
+  .radio-majlis__title { font-size: 15.5px }
+}

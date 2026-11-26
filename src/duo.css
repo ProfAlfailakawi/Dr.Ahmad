@@ -225,8 +225,10 @@ html[data-device="duo"] body:has(.radio-root) { background: var(--radio-bg); }
 
 /* الشريط الاحترافي: زرّا البحث والقائمة كبسولةٌ داكنة عمودية تحت الساعة في عمودها، بالشكل والمكان نفسيهما في كل وضعية فيها
    عمود ساعة (التطبيق: الخارجية طولاً وعرضاً بجهتيها، والداخلية عرضاً). نقلٌ لا زيادة ولا حذف؛ أسماء الزرّين باقية لقارئ الشاشة. */
-html[data-device="duo"] { --duo-clock-end: 176px; }
-@media screen and (orientation: landscape) { html[data-device="duo"] { --duo-clock-end: 116px; } }
+/* مربع الساعة على الجهاز الحقيقي يمتدّ إلى ≈235pt على الشاشة الخارجية (لقطة المالك 2026-11-26)، أطول منه في المحاكاة:
+   فأول عنصرٍ في العمود يبدأ بعد 244pt، أو بعد ارتفاع الودجت + 8 إن كان أكبر. والداخلية عرضاً ركنُها أقصر (116). */
+html[data-device="duo"] { --duo-clock-end: max(244px, calc(var(--duo-widget-h, 0px) + 8px)); }
+@media screen and (orientation: landscape) and (min-height: 481px) { html[data-device="duo"] { --duo-clock-end: 116px; } }
 @media (max-width: 520px), (max-height: 480px), screen and (orientation: landscape) and (min-width: 860px) and (max-width: 1000px) and (min-height: 500px) and (max-height: 760px) {
   html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center {
     position: fixed;

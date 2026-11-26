@@ -14,7 +14,9 @@ const escapeHtml = (value = '') => value
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#039;')
 
-export const NATIVE_AFTER_PRINT_MS = 4000
+/* شبكة أمان فقط: جسر التطبيق يُطلق afterprint عند إغلاق ورقة الطباعة. مهلة الأربع ثوانٍ كانت
+   تُنهي وضع الطباعة قبل أن ترسم iOS الورقة (أبطأ في المرة الأولى)، فتُطبع الصفحة كاملة. */
+export const NATIVE_AFTER_PRINT_MS = 5 * 60 * 1000
 
 const mobileLike = () => {
   if (typeof window === 'undefined') return false
@@ -33,8 +35,8 @@ export function printSiteContent({ selector = '#main', title = document.title, b
 
   /* داخل التطبيق الأصلي (WKWebView) لا توجد نوافذ منبثقة ولا تبويبات: window.open يعيد null
      أو يفتح صفحةً فارغة. والغلاف يحوّل window.print() في الإطار الرئيسي إلى ورقة الطباعة
-     الأصلية، فنطبع الصفحة نفسها بقواعد @media print. الورقة الأصلية لا تُطلق afterprint،
-     فنستدعي afterPrint بعد مهلة قصيرة (مرة واحدة) كي لا تبقى الصفحة في وضع الطباعة. */
+     الأصلية، فنطبع الصفحة نفسها بقواعد @media print. والجسر يُطلق afterprint عند إغلاق الورقة؛
+     والمهلة الطويلة شبكة أمان لنسخٍ قديمة، فـafterPrint يُستدعى مرة واحدة. */
   if (isNativeShell()) {
     if (afterPrint) {
       let done = false

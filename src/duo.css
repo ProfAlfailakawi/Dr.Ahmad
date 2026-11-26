@@ -200,3 +200,54 @@ html[data-device="duo"] .mihwar-frame {
 /* ١٤) «الإذاعة» داخل التطبيق: خلفيتها الدافئة كانت تقف عند حافة المحتوى فيبقى تحت عمود الساعة شريطٌ أبيض.
    لون الصفحة نفسها يصير لون الإذاعة، فتمتدّ الخلفية تحت العمود والمحتوى يبقى قبله. */
 html[data-device="duo"] body:has(.radio-root) { background: var(--radio-bg); }
+
+/* ١٥) ملاحظات المالك 2026-11-26: الشاشة الكاملة ليست كتاباً، والمفصل في المنتصف، ولا شيء تحت الساعة، وشريطٌ احترافي واحد.
+   · حدّ الساعة الأيمن: قيمة iOS عادةً، وفي الداخلية عرضاً داخل التطبيق لا يقلّ عن عمود الساعة (84)، لأن iOS قد يبلغ صفراً
+     والساعة في الركن الأعلى الأيمن (main.tsx يعدّ الجهة «يمين» عندها) — فكان الشعار تحت الساعة. */
+@media screen and (orientation: landscape) and (min-width: 860px) and (max-width: 1000px) and (min-height: 500px) and (max-height: 760px) {
+  html[data-device="duo"][data-shell="app"][data-widget-side="right"] { --duo-safe-right: max(env(safe-area-inset-right, 0px), 84px); }
+}
+@media screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape) {
+  /* اللوحان متساويان والكعب على 50vw تماماً: حشوة الجهتين واحدة (عرض عمود الساعة)، فلا يضيق اللوح الأيمن وحده. */
+  html[data-device="duo"] body {
+    padding-left: max(var(--duo-safe-left), var(--duo-safe-right));
+    padding-right: max(var(--duo-safe-left), var(--duo-safe-right));
+  }
+  /* قارئ المقال: الجسم يحجز الحدّين بالتساوي، فحشوة المقال نفسها متساوية — كانت تضيف حدّ iOS الأيمن مرةً ثانية فيقع
+     الكعب قبل المنتصف ويمرّ في سطور الصفحة اليمنى. */
+  html[data-device="duo"] article.article-shell { padding-left: 2.75rem; padding-right: 2.75rem; }
+  /* الشاشة الكاملة ليست كتاباً: لا خطّ ولا ظلّ في المنتصف. Safari لا يعلن المفصل، فالخطّ يعود حين يعلنه المتصفح وحده. */
+  html[data-device="duo"] #main:has(.duo-book)::before { display: none; }
+}
+@media screen and (min-width: 721px) and (max-width: 1000px) and (min-height: 520px) and (max-height: 960px) and (orientation: landscape) and (horizontal-viewport-segments: 2) {
+  html[data-device="duo"] #main:has(.duo-book)::before { display: block; }
+}
+
+/* الشريط الاحترافي: زرّا البحث والقائمة كبسولةٌ داكنة عمودية تحت الساعة في عمودها، بالشكل والمكان نفسيهما في كل وضعية فيها
+   عمود ساعة (التطبيق: الخارجية طولاً وعرضاً بجهتيها، والداخلية عرضاً). نقلٌ لا زيادة ولا حذف؛ أسماء الزرّين باقية لقارئ الشاشة. */
+html[data-device="duo"] { --duo-clock-end: 176px; }
+@media screen and (orientation: landscape) { html[data-device="duo"] { --duo-clock-end: 116px; } }
+@media (max-width: 520px), (max-height: 480px), screen and (orientation: landscape) and (min-width: 860px) and (max-width: 1000px) and (min-height: 500px) and (max-height: 760px) {
+  html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center {
+    position: fixed;
+    z-index: 231;
+    top: calc(var(--duo-safe-top) + var(--duo-clock-end));
+    flex-direction: column;
+    gap: .25rem;
+    padding: .3rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / .1);
+    background: rgb(15 23 42 / .86);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+    box-shadow: 0 1px 0 rgb(255 255 255 / .06) inset, 0 12px 30px rgb(10 14 12 / .28);
+  }
+  html[data-device="duo"][data-shell="app"][data-widget-side="right"] .site-nav > div > .flex.items-center { right: max(.25rem, calc((var(--duo-safe-right) - 3.3rem) / 2)); left: auto; }
+  html[data-device="duo"][data-shell="app"][data-widget-side="left"] .site-nav > div > .flex.items-center { left: max(.25rem, calc((var(--duo-safe-left) - 3.3rem) / 2)); right: auto; }
+  html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center .site-menu-trigger > span[class*="sm:block"] { display: none; }
+  html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center :is(button, .site-menu-trigger > span.rounded-full) {
+    border-color: transparent;
+    color: rgb(255 255 255 / .88);
+  }
+  html[data-device="duo"][data-shell="app"]:is([data-widget-side="right"], [data-widget-side="left"]) .site-nav > div > .flex.items-center .site-menu-trigger > span.rounded-full > span { background: rgb(255 255 255 / .88); }
+}

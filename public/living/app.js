@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=40';
-import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=40';
-import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=40';
-import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=40';
-import { captureWorkers, installFast, stopPack } from './fast.js?v=40';
+import { EXPERIENCES, PAGES, PACKS, toAr } from './experiences.js?v=41';
+import { PAGE_H, FX, sweepBand, ease, easeBack, fontsReady, syncLines } from './kit.js?v=41';
+import { sfx, unlockAudio, isMuted, setMuted } from './sound.js?v=41';
+import { bumpVisit, memory, bridge, isFacing, paperVideo, roomLight, liftOff } from './extras.js?v=41';
+import { captureWorkers, installFast, stopPack } from './fast.js?v=41';
 
 const $ = (id) => document.getElementById(id);
 const asset = (path) => new URL(path, import.meta.url).href;
@@ -689,7 +689,7 @@ async function startAR(id = packId) {
     $('loading').classList.add('hidden');
     $('scan').classList.remove('hidden');
     // the book-map star was removed from the camera view
-    $('photoBtn').classList.remove('hidden');
+    // the keepsake-photo button is not shown (the reader can take a screenshot); the back arrow is hidden too, see below
     if (test) { test.since = performance.now(); renderTest(); }
   } catch (err) {
     console.error(err);
@@ -976,6 +976,8 @@ addEventListener('pointerdown', unlockAudio, { capture: true });
 ['gesturestart', 'gesturechange', 'gestureend'].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 
 $('back').onclick = leaveExp;
+// The back arrow only restarted the camera for a reader; it stays for the lecturer's modes (?dev, ?lecture, remote).
+$('back').classList.toggle('hidden', !DEV);
 $('openAR').onclick = () => startAR();
 $('openShow').onclick = () => startShowcase(EXPERIENCES.indexOf(PAGES[0]));
 $('mapClose').onclick = closeMap;

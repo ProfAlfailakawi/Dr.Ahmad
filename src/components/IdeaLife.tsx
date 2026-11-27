@@ -48,11 +48,12 @@ type IndexedNeighbor = {
   url?: string
   year?: string
   reasons?: string[]
+  relation?: ThreadNode['relation']
+  reason?: string
 }
 const ARTICLE_GRAPH = (rawArticleGraph as { neighbors?: Record<string, IndexedNeighbor[]> }).neighbors || {}
 const threadRelation = (item: IndexedNeighbor): ThreadNode['relation'] => {
-  if ((item.reasons || []).some((reason) => reason.includes('امتداد'))) return 'امتداد'
-  return /لكن|ضد|نقيض|مقابل|ليس/.test(`${item.title} ${item.excerpt || ''}`) ? 'تضاد' : 'سياق'
+  return item.relation || ((item.reasons || []).some((reason) => reason.includes('امتداد')) ? 'امتداد' : 'سياق')
 }
 const threadKind = (kind: string): ThreadNode['kind'] => kind === 'book' ? 'كتاب' : kind === 'paper' ? 'بحث' : kind === 'media' ? 'لقاء' : 'مقال'
 

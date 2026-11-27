@@ -22,6 +22,7 @@ import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, BOOK_PLAIN_FORMS, PAPER_FORMS }
 const STORAGE_KEY = 'visitor:threshold-overture:v1'
 
 type Counts = { articles: number; books: number; papers: number; episodes: number }
+type ArchiveDay = { title: string; line: string; slug: string; year: string }
 
 /* ───────────────────────── المشاهد المصغّرة ───────────────────────── */
 
@@ -184,9 +185,18 @@ type Act = {
   ms: number
 }
 
-function buildActs(c: Counts): Act[] {
+function buildActs(c: Counts, archiveDay?: ArchiveDay | null): Act[] {
   return [
-    {
+    archiveDay ? {
+      id: 'ignition',
+      kicker: 'في مثل هذا اليوم',
+      title: archiveDay.title,
+      line: archiveDay.line,
+      path: `/articles/${archiveDay.slug}`,
+      door: 'افتح المقال',
+      visual: <IgnitionVisual />,
+      ms: 3600,
+    } : {
       id: 'ignition',
       kicker: 'تقديمٌ قصير',
       title: 'هذا أرشيفٌ يفكّر.',
@@ -266,7 +276,7 @@ function buildActs(c: Counts): Act[] {
 
 /* ───────────────────────── المكوّن ───────────────────────── */
 
-export default function ThresholdOverture({ articles = 0, books = 0, papers = 0, episodes = 0 }: Partial<Counts> = {}) {
+export default function ThresholdOverture({ articles = 0, books = 0, papers = 0, episodes = 0, archiveDay = null }: Partial<Counts> & { archiveDay?: ArchiveDay | null } = {}) {
   const [open, setOpen] = useState(false)
   const [act, setAct] = useState(0)
   // إيقافان منفصلان: «المسافة» قرارٌ يبقى، وضغطة الإصبع تزول برفعه.
@@ -290,7 +300,7 @@ export default function ThresholdOverture({ articles = 0, books = 0, papers = 0,
   const rootRef = useRef<HTMLDivElement>(null)
   const touchX = useRef(0)
 
-  const acts = useMemo(() => buildActs({ articles, books, papers, episodes }), [articles, books, papers, episodes])
+  const acts = useMemo(() => buildActs({ articles, books, papers, episodes }, archiveDay), [archiveDay, articles, books, papers, episodes])
   const doorGroups = useMemo(() => [
     { label: 'أفهم', ids: new Set(['ask', 'search']) },
     { label: 'أستكشف', ids: new Set(['sky', 'paths', 'decade']) },

@@ -56,12 +56,14 @@ const sourceChecks = [
   ['src/pages/AskLibrary.tsx', 'bookKnowledgeText'],
   ['src/pages/ArticleDetail.tsx', 'bookKnowledgeAnchor'],
   ['src/pages/PaperDetail.tsx', 'الجذر النظري والامتداد في المؤلفات'],
-  ['src/pages/MediaDetail.tsx', 'امتداد اللقاء في المشروع المعرفي'],
-  ['src/components/BookWorld.tsx', 'خريطة بُنيت من متن الكتاب كاملاً'],
+  ['src/pages/MediaDetail.tsx', 'امتداد اللقاء'],
+  ['src/components/BookWorld.tsx', 'خريطة مبنيّة من الكتاب'],
   ['src/pages/ThoughtPaths.tsx', 'bookKnowledgeText'],
   ['server.mjs', 'findBookEvidence'],
-  ['Dockerfile', 'book-evidence.json'],
-  ['.gcloudignore', '!src/data/book-evidence.json'],
+  /* الإنتاج يحمل الاقتباسات المقيسة المنشورة فقط؛ فهرس المتن الكامل محلي
+     ومهمل من Git عمداً، فلا نعيد إدخاله إلى صورة Cloud Run عبر اختبار قديم. */
+  ['Dockerfile', 'book-quotes.json'],
+  ['.gcloudignore', '!src/data/book-quotes.json'],
 ]
 for (const [file, marker] of sourceChecks) expect(read(file).includes(marker), `${file}: الربط المطلوب مفقود`)
 

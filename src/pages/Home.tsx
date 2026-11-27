@@ -149,7 +149,6 @@ function DailySpark({ compact = false }: { compact?: boolean }) {
       data-hover
       className={`group relative block h-full overflow-hidden rounded-2xl border border-hair bg-canvas transition-colors duration-300 hover:border-accent ${compact ? 'p-6 md:p-7' : 'p-8 md:p-11'}`}
     >
-      <span aria-hidden className="pointer-events-none absolute left-5 top-5 h-8 w-8 rounded-full border border-accent/20" />
       <p className="relative mb-4 flex items-center gap-2.5 text-[.76rem] font-semibold text-accent">
         <span className="pulse relative h-1.5 w-1.5 rounded-full bg-accent" />
         فكرة اليوم · {c.kind}
@@ -1078,11 +1077,27 @@ function Card({ children, delay = 0, className = '' }: { children: React.ReactNo
   )
 }
 
+function archiveDayOf(articles: ArticleRecord[]) {
+  const today = new Date()
+  const marker = (date: Date) => Date.UTC(2000, date.getUTCMonth(), date.getUTCDate())
+  const target = marker(today)
+  const older = articles.map((article) => ({ article, date: new Date(`${article.iso}T12:00:00Z`) }))
+    .filter(({ date }) => !Number.isNaN(date.getTime()) && date.getUTCFullYear() < today.getUTCFullYear())
+    .map((entry) => ({ ...entry, day: marker(entry.date) }))
+  const eligible = older.filter((entry) => entry.day <= target).sort((a, b) => b.day - a.day || b.date.getUTCFullYear() - a.date.getUTCFullYear())
+  const chosen = eligible[0] || older.sort((a, b) => b.day - a.day)[0]
+  if (!chosen) return null
+  const source = `${chosen.article.excerpt || ''} ${chosen.article.body || ''}`.replace(/\s+/g, ' ').trim()
+  const sentence = source.match(/^.{38,180}?[.!؟…](?:\s|$)/u)?.[0]?.trim() || chosen.article.excerpt || ''
+  return { title: chosen.article.title, line: sentence, slug: chosen.article.slug, year: chosen.article.iso.slice(0, 4) }
+}
+
 export default function Home() {
   useSeo({ title: 'د. أحمد حسين الفيلكاوي — أستاذ تكنولوجيا التعليم والذكاء الاصطناعي', path: '/' })
   const { articles, books, papers, media } = useCmsContent()
   const addedEvents = useExtras<SiteEvent & { id: string }>('site_upcoming')
   const upcomingItems = sortUpcomingEvents([...addedEvents, ...upcoming])
+  const archiveDay = useMemo(() => archiveDayOf(articles), [articles])
 
 
   return (
@@ -1098,7 +1113,7 @@ export default function Home() {
       <LaunchSpotlight articles={articles} books={books} papers={papers} media={media} />
 
       <Suspense fallback={null}>
-        <ThresholdOverture articles={articles.length} books={books.length} papers={papers.length} episodes={listenCount} />
+        <ThresholdOverture articles={articles.length} books={books.length} papers={papers.length} episodes={listenCount} archiveDay={archiveDay} />
       </Suspense>
 
       <HumanCoreHero />

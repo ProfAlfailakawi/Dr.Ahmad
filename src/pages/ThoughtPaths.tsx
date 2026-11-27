@@ -306,7 +306,9 @@ export default function ThoughtPaths() {
             <ol
               ref={journeyRef}
               className={`thread-spine mt-14 border-r border-hair ps-7 pe-7 md:ps-10 md:pe-10${journeyShown ? ' thread-spine--drawn' : ''}`}
+              style={{ ['--thread-duration' as string]: `${Math.max(520, Math.min(journey.nodes.length, 8) * 110 + 420)}ms` }}
             >
+              <li className="thread-passer" aria-hidden="true" />
               {journey.nodes.map((node, index) => {
                 const content = (
                   <>

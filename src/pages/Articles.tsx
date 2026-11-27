@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { FadeUp, Page, PageHead } from '../components/ui'
 import { useCmsContent } from '../lib/content'
@@ -8,6 +8,7 @@ import { ReaderFingerprint } from '../components/ReaderResonance'
 import { Pagination, usePagedList } from '../components/Pagination'
 import { SocialIcon } from '../components/icons'
 import { arabicCountPhrase, ARTICLE_PLAIN_FORMS, MATCHING_RESULT_FORMS } from '../lib/arabic-count.ts'
+import { PROJECT_START_YEAR } from '../lib/project-meta'
 
 const stableHash = (value: string) => {
   let hash = 2166136261
@@ -58,6 +59,7 @@ export default function Articles() {
   // السنة الأولى تُحسب من المقالات نفسها — تتحدّث تلقائياً مع أي إضافة
   const years = articles.map((a) => Number(a.iso.slice(0, 4))).filter((y) => y >= 1990)
   const firstYear = years.length ? Math.min(...years) : new Date().getFullYear()
+  const latestYear = years.length ? Math.max(...years) : PROJECT_START_YEAR
   useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتكنولوجيا والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${arabicCountPhrase(articles.length, ARTICLE_PLAIN_FORMS)}.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
@@ -205,13 +207,18 @@ export default function Articles() {
 
           <ul id="articles-list" className="spatial-collection mt-10 scroll-mt-28">
             {shown.map((a, i) => (
-              <li key={a.slug} className={`spatial-card ${i === 0 ? '' : 'border-t border-hair'}`}>
+              <li
+                key={a.slug}
+                className={`spatial-card article-patina-card ${i === 0 ? '' : 'border-t border-hair'}`}
+                style={{ '--article-age': Math.max(0, Math.min(1, (Number(a.iso.slice(0, 4)) - PROJECT_START_YEAR) / Math.max(1, latestYear - PROJECT_START_YEAR))) } as CSSProperties}
+              >
                 <Link
                   to={`/articles/${a.slug}`}
                   viewTransition
                   className="group flex flex-col gap-1 py-5 sm:flex-row sm:items-baseline sm:gap-6"
                 >
                   <time className="w-32 shrink-0 text-[.8rem] text-soft">{a.date}</time>
+                  <span className="article-patina" aria-hidden="true" />
                   <span className="flex-1">
                     <span style={{ viewTransitionName: `article-${a.slug}` }} className="block text-[1.08rem] font-medium leading-[1.65] text-ink transition-colors group-hover:text-accent">
                       {a.title}

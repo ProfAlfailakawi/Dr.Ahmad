@@ -19,10 +19,12 @@ import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { extractAudioPeaks } from './lib/audio-peaks.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const AUDIO = resolve(ROOT, 'audio')
 const META = resolve(ROOT, 'src/data/audio-meta.json')
+const PEAKS = resolve(ROOT, 'src/data/audio-peaks.json')
 const STATE = resolve(ROOT, '.podcast-state.json')
 const TX_FILE = resolve(ROOT, '.audio-r2-transaction.json')
 const TX_AUDITS = resolve(ROOT, 'podcast-audits/r2-transactions')
@@ -180,6 +182,7 @@ async function rollbackTransaction(tx, reason = 'requested') {
     else remoteDelete(entry.name)
   }
   atomicWrite(META, tx.previousMetaText || '{}\n')
+  atomicWrite(PEAKS, tx.previousPeaksText || '{"version":1,"samples":180,"peaks":{}}\n')
   removeRemotePrefix(tx.backupPrefix)
   tx.status = 'rolled_back'; tx.rolledBackAt = new Date().toISOString(); archiveTx(tx)
   unlinkSync(TX_FILE)
@@ -228,10 +231,12 @@ if (!base || !bucket || !endpoint || !key || !secret) {
 }
 
 const previousMetaText = existsSync(META) ? readFileSync(META, 'utf8') : '{}\n'
+const previousPeaksText = existsSync(PEAKS) ? readFileSync(PEAKS, 'utf8') : '{"version":1,"samples":180,"peaks":{}}\n'
 const meta = JSON.parse(previousMetaText)
+const peakFile = JSON.parse(previousPeaksText)
 const id = `audio-${new Date().toISOString().replace(/[:.]/g, '-')}-${process.pid}`
 const tx = { schemaVersion: 1, id, status: 'preparing', createdAt: new Date().toISOString(),
-  backupPrefix: `_rollback/${id}`, previousMetaText, files: [] }
+  backupPrefix: `_rollback/${id}`, previousMetaText, previousPeaksText, files: [] }
 saveTx(tx)
 
 try {
@@ -273,9 +278,14 @@ try {
         acceptedAt: readingAudit.finishedAt,
       } : {}),
     }
+    if (/\.dialogue\.mp3$/i.test(entry.name)) {
+      const values = await extractAudioPeaks(file)
+      if (values.length) peakFile.peaks = { ...(peakFile.peaks || {}), [entry.name]: values }
+    }
   }
   const rendered = `${JSON.stringify(Object.fromEntries(Object.entries(meta).sort(([a], [b]) => a.localeCompare(b))), null, 2)}\n`
   atomicWrite(META, rendered)
+  atomicWrite(PEAKS, `${JSON.stringify({ version: 1, samples: 180, peaks: peakFile.peaks || {} })}\n`)
   tx.status = 'pending_site_build'; tx.metaHash = createHash('sha256').update(rendered).digest('hex')
   tx.uploadedAt = new Date().toISOString(); saveTx(tx)
   console.log(`✔ نُشر مبدئياً إلى R2 وفُحص: ${tx.files.length} ملفاً · ينتظر نجاح build وpodcast.xml قبل التثبيت`)

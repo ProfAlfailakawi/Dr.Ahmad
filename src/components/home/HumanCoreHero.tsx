@@ -294,7 +294,7 @@ export default function HumanCoreHero() {
                 animate={{ y: 0 }}
                 transition={{ duration: 0.76, delay: 0.18, ease: EASE }}
               >
-                أُبقي <span className="human-core__human">الإنسانَ</span>
+                أَبقي <span className="human-core__human">الإنسانَ</span>
               </motion.span>
             </span>
             <span className="-my-[0.3em] block overflow-hidden py-[0.3em]">
@@ -304,7 +304,7 @@ export default function HumanCoreHero() {
                 animate={{ y: 0 }}
                 transition={{ duration: 0.76, delay: 0.28, ease: EASE }}
               >
-                في قلبِ الآلة.
+                في قلب الآلة.
               </motion.span>
             </span>
           </h1>

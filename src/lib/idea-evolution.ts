@@ -29,6 +29,15 @@ const CAUTION = [
 const count = (text: string, list: string[]) =>
   list.reduce((total, word) => total + (text.includes(word) ? 1 : 0), 0)
 
+/** حرارة نبرة مقال واحد. null تعني أن النص لا يحمل إشارةً كافية، فلا
+ * نختلق له درجةً وسطى في السماء. */
+export function articleCaution(value = ''): number | null {
+  const promise = count(value, PROMISE)
+  const caution = count(value, CAUTION)
+  const total = promise + caution
+  return total ? Math.round((caution / total) * 100) : null
+}
+
 export type EvolutionSide = {
   year: string
   articles: number

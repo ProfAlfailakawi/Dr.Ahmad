@@ -4,12 +4,13 @@ import type { ArticleRecord, BookRecord, PaperRecord } from '../lib/cms'
 import { createIdeaDna } from '../lib/idea-dna'
 import { ideaWords } from '../lib/idea-life'
 import { bookArchiveDate, buildBookWorldTimeline } from '../lib/book-world-timeline'
-import { bookQuotes, loadBookPassages, quotesForConcept, searchBookPassages, type BookQuoteMatch } from '../lib/book-quotes'
+import { bookPassageAtPage, bookQuotes, loadBookPassages, quotesForConcept, searchBookPassages, type BookQuote, type BookQuoteMatch } from '../lib/book-quotes'
 import { QuoteCite } from './QuoteCite'
 import { QuoteImage } from './QuoteImage'
 import { RESONANCE_FLOOR, loadPassageResonance, recordPassageHighlight } from '../lib/passage-resonance'
 import { bookKnowledgeAnchor, bookKnowledgeText, getBookKnowledge } from '../lib/book-knowledge'
 import { buildSmartQueryPlan } from '../lib/smart-search'
+import { BookTerrain } from './BookTerrain'
 
 function scoreAgainst(source: Set<string>, value: string) {
   return ideaWords(value).reduce((total, word) => total + (source.has(word) ? 1 : 0), 0)
@@ -197,6 +198,7 @@ export function BookWorld({
   const [askReady, setAskReady] = useState(false)
   const [asked, setAsked] = useState('')
   const [askOpen, setAskOpen] = useState(false)
+  const [terrainQuote, setTerrainQuote] = useState<BookQuote | null>(null)
   const stagedQuestion = (searchParams.get('book_question') || '').trim()
 
   const askBook = (question: string) => {
@@ -206,6 +208,14 @@ export function BookWorld({
     setAskOpen(true)
     if (askReady) return
     void loadBookPassages().then(() => setAskReady(true))
+  }
+  const openTerrainPage = (page: number) => {
+    setAskOpen(true)
+    void loadBookPassages().then(() => {
+      setAskReady(true)
+      setTerrainQuote(bookPassageAtPage(book.slug, page))
+      window.history.replaceState(null, '', `${location.pathname}${location.search}#book-page-${page}`)
+    })
   }
 
   const askedPlan = useMemo(() => buildSmartQueryPlan(asked), [asked])
@@ -253,6 +263,16 @@ export function BookWorld({
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
         document.getElementById('ask-book-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }))
+      return
+    }
+    const terrainPage = Number(hash.match(/^book-page-(\d+)$/)?.[1] || 0)
+    if (terrainPage > 0) {
+      setAskOpen(true)
+      void loadBookPassages().then(() => {
+        setAskReady(true)
+        setTerrainQuote(bookPassageAtPage(book.slug, terrainPage))
+        window.requestAnimationFrame(() => document.getElementById('ask-book-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+      })
       return
     }
     const concept = model.knowledge?.concepts.find((item) => bookKnowledgeAnchor(item) === hash)
@@ -347,6 +367,7 @@ export function BookWorld({
             title="ابحث في هذا الكتاب"
             lockOpen={Boolean(asked) || askOpen}
           >
+            <BookTerrain slug={book.slug} title={book.title} activePages={bookAnswer.map((match) => match.quote.page)} onSelectPage={openTerrainPage} />
             <form
               id="ask-book-section"
               onSubmit={(event) => { event.preventDefault(); askBook(bookQuestion) }}
@@ -361,6 +382,12 @@ export function BookWorld({
               />
               <button type="submit" className="min-h-11 w-full rounded-full bg-accent px-5 py-2.5 text-[.75rem] font-semibold text-white transition-colors hover:bg-accent-deep sm:w-auto">ابحث</button>
             </form>
+            {terrainQuote && (
+              <figure className="mt-4 rounded-xl border border-accent/[.28] bg-wash px-4 py-3.5">
+                <blockquote className="border-r-2 border-accent/40 pr-3 text-[.84rem] font-light leading-[1.9] text-ink/[.85]">{terrainQuote.text}</blockquote>
+                <figcaption className="mt-2 pr-3 text-[.66rem] text-soft">{book.title} · ص {terrainQuote.page}</figcaption>
+              </figure>
+            )}
             {bookQuestion.trim().length >= 2 && (questionPlan.interpretation || questionPlan.suggestions.length > 0) && (
               <div className="mt-3 rounded-xl border border-hair bg-wash px-3.5 py-3">
                 {questionPlan.interpretation && <p className="text-[.7rem] leading-[1.8] text-soft"><span className="font-semibold text-accent">فهم البحث: </span>{questionPlan.interpretation}</p>}

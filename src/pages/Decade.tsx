@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useSeo } from '../components/seo'
 import { FadeUp, Page, PageHead, SocialIcon } from '../components/ui'
@@ -73,6 +73,8 @@ export default function Decade() {
   const [bodiesReady, setBodiesReady] = useState(false)
   /* مشاركة بطاقة توقع (مقترح معتمد): رابط يفتح السجل على التوقع نفسه */
   const [copiedPrediction, setCopiedPrediction] = useState('')
+  const yearsRef = useRef<HTMLOListElement>(null)
+  const [yearsLit, setYearsLit] = useState(false)
   const sharePrediction = (slug: string, key: string) => {
     const query = new URLSearchParams({ 'عرض': 'تنبؤات', 'مقال': slug })
     const url = `${window.location.origin}/decade?${query.toString()}`
@@ -91,6 +93,17 @@ export default function Decade() {
   }
 
   useEffect(() => { setDraft(idea) }, [idea])
+  useEffect(() => {
+    const element = yearsRef.current
+    if (!element || yearsLit) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      setYearsLit(true)
+      observer.disconnect()
+    }, { threshold: .12 })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [yearsLit])
   /* المتون تُجلب عند الحاجة وحدها: الرحلة بلا فكرةٍ لا تحتاجها، ومع فكرةٍ
      تصير ضرورية — فالعنوان وحده لا يكفي للحكم بأن المقال يخصّها. */
   useEffect(() => {
@@ -470,25 +483,23 @@ export default function Decade() {
                 <span className="text-[.78rem] font-semibold text-accent">الخط الزمني السنوي</span>
                 <h2 className="mt-3 font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-ink">العقد، سنةً سنة.</h2>
               </FadeUp>
-              <ol className="mt-10 divide-y divide-hair border-y border-hair">
+              <ol ref={yearsRef} className={`decade-bloom mt-10 divide-y divide-hair border-y border-hair${yearsLit ? ' is-lit' : ''}`}>
                 {/* السنوات ذات المقالات فقط — لا نعرض سنوات فارغة */}
                 {document.chapters.filter((chapter) => chapter.articles.length > 0).map((chapter, index) => (
-                  <FadeUp key={chapter.year} delay={Math.min(index * 0.025, 0.18)}>
-                    {/* رابط سنة (مقترح معتمد): #y-2023 يقود مباشرة إلى سطر السنة */}
-                    <li id={`y-${chapter.year}`} className="grid scroll-mt-28 gap-3 py-6 sm:grid-cols-[90px_1fr] sm:gap-7">
-                      <a href={`#y-${chapter.year}`} className="font-display text-[1.35rem] font-semibold text-accent transition-colors hover:text-accent-deep" title="رابط مباشر لهذه السنة">
-                        <time>{chapter.year}</time>
-                      </a>
-                      <div>
-                        <p className="text-[.78rem] text-soft">{arabicCountPhrase(chapter.articles.length, ARTICLE_FORMS, number.format)} · {categoryLabel(chapter.dominant)}</p>
-                        {chapter.representative && (
-                          <Link to={`/articles/${chapter.representative.slug}`} className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">
-                            {chapter.representative.title} ←
-                          </Link>
-                        )}
-                      </div>
-                    </li>
-                  </FadeUp>
+                  <li key={chapter.year} id={`y-${chapter.year}`} className="decade-bloom__year relative grid scroll-mt-28 gap-3 py-6 pe-5 sm:grid-cols-[90px_1fr] sm:gap-7" style={{ '--decade-delay': `${Math.min(index, 11) * 150}ms` } as CSSProperties}>
+                    <span aria-hidden className="decade-bloom__node" />
+                    <a href={`#y-${chapter.year}`} className="font-display text-[1.35rem] font-semibold text-accent transition-colors hover:text-accent-deep" title="رابط مباشر لهذه السنة">
+                      <time>{chapter.year}</time>
+                    </a>
+                    <div>
+                      <p className="text-[.78rem] text-soft">{arabicCountPhrase(chapter.articles.length, ARTICLE_FORMS, number.format)} · {categoryLabel(chapter.dominant)}</p>
+                      {chapter.representative && (
+                        <Link to={`/articles/${chapter.representative.slug}`} className="mt-1.5 block font-display text-[1.05rem] font-medium leading-[1.65] text-ink transition-colors hover:text-accent">
+                          {chapter.representative.title} ←
+                        </Link>
+                      )}
+                    </div>
+                  </li>
                 ))}
               </ol>
             </div>

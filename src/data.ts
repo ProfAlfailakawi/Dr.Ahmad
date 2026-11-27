@@ -20,7 +20,7 @@ export const profile = {
   tagline: 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي · باحث · مستشار',
   scholar: 'https://scholar.google.com/citations?user=WVAtInIAAAAJ&hl=en',
   researchgate: 'https://www.researchgate.net/profile/Ahmad-Alfailakawi',
-  aboutHeading: 'أُبقي الإنسان\nفي قلب الآلة.',
+  aboutHeading: 'أَبقي الإنسانَ\nفي قلب الآلة.',
   about:
     'حاصل على درجة دكتوراه الفلسفة في التربية، تخصص تكنولوجيا التعليم من جامعة شمال كولورادو. أستاذ مشارك في كلية التربية الأساسية (PAAET) وأستاذ منتدب في كلية التربية بجامعة الكويت. خبير ومستشار في وزارة الإعلام والمجلس الوطني للثقافة والفنون والآداب ومكتبة الكويت الوطنية والهيئة العامة للشباب.',
   facts: [

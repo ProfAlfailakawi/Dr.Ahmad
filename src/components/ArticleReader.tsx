@@ -1171,7 +1171,7 @@ async function findCanonicalHighlight(input: PopularQuoteInput, version: string,
        فيبقى الرقم الظاهر جامداً بينما تتناثر عدّادات يتيمة بقيمة 1.
        نقبل الاندماج متى تقاطع التحديدان فعلياً وتشاركا نصف الكلمات على الأقل،
        ونختار الأقوى تقاطعاً عند تعدد المرشحين.
-       نسمح باختلاف في الطول يصل إلى 30% زيادة أو نقصان من التحديد الأصلي لرفع العداد نفسه. */
+       نسمح باختلاف في الطول يصل إلى 40% زيادة أو نقصان من التحديد الأصلي لرفع العداد نفسه. */
     const scored = candidates
       .map((item) => {
         const spans = intervalOverlap(startOffset, endOffset, item.start, item.end)
@@ -1182,16 +1182,13 @@ async function findCanonicalHighlight(input: PopularQuoteInput, version: string,
         const lenExisting = Math.max(1, item.end - item.start)
         const lenDiffRatio = Math.abs(lenUser - lenExisting) / lenExisting
 
-        // يتقاطعان في حدود الفقرة ذاتها وبنسبة اختلاف لا تتجاوز 30% زيادة أو نقصاناً
-        const hasIntersection = Math.max(startOffset, item.start) < Math.min(endOffset, item.end)
-        const withinThirtyPercent = lenDiffRatio <= 0.30 && (spans > 0.15 || words > 0.20 || hasIntersection)
+        // اتفاقنا المعتمد: زيادة/نقصان حتى 40% مع بقاء معظم الجملة نفسها.
+        const withinFortyPercent = lenDiffRatio <= 0.40 && spans >= 0.60 && words >= 0.50
 
-        return { item, spans, words, lenDiffRatio, withinThirtyPercent }
+        return { item, spans, words, lenDiffRatio, withinFortyPercent }
       })
-      .filter(({ spans, words, withinThirtyPercent }) => withinThirtyPercent || (spans >= .35 && words >= .40))
+      .filter(({ withinFortyPercent }) => withinFortyPercent)
       .sort((left, right) => {
-        if (left.withinThirtyPercent && !right.withinThirtyPercent) return -1
-        if (!left.withinThirtyPercent && right.withinThirtyPercent) return 1
         return (right.spans + right.words - right.lenDiffRatio) - (left.spans + left.words - left.lenDiffRatio)
       })
     return scored[0]?.item || null

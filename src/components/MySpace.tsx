@@ -14,6 +14,7 @@ import {
   isArticleSaved,
   isMediaSaved,
   progressFor,
+  readArticleJourney,
   readingSpaceSnapshot,
   sanitizeReadingSpace,
   toggleSavedArticle,
@@ -415,12 +416,14 @@ export function MySpace({ variant = "floating" }: { variant?: "floating" | "foot
   const latestIsAsk = Boolean(latestAsk && (!snapshot.last || latestAsk.updatedAt >= snapshot.last.at) && (!snapshot.audio || latestAsk.updatedAt >= snapshot.audio.updatedAt));
   const otherAskSessions = askSessions.slice(latestIsAsk ? 1 : 0, latestIsAsk ? 3 : 2);
   const journeySummary = useMemo(() => {
-    const ordered = [...snapshot.recent].sort((left, right) => left.at - right.at);
+    const ordered = readArticleJourney();
     const byCategory = new Map<string, number>();
     ordered.forEach((item) => byCategory.set(item.cat, (byCategory.get(item.cat) || 0) + 1));
     const top = [...byCategory.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] || "";
-    return { count: ordered.length, top, first: ordered[0], last: ordered[ordered.length - 1] };
-  }, [snapshot.recent]);
+    const first = [...ordered].sort((left, right) => Number(left.firstAt || left.at) - Number(right.firstAt || right.at))[0];
+    const last = [...ordered].sort((left, right) => right.at - left.at)[0];
+    return { count: ordered.length, top, first, last };
+  }, [version]);
 
   if (location.pathname.startsWith("/admin") || location.pathname.startsWith("/cv-file/")) return null;
 

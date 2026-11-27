@@ -13,8 +13,10 @@ const localTsc = join(root, 'node_modules', '.bin', process.platform === 'win32'
 const compile = spawnSync(localTsc, [
   'src/lib/editorial-board.ts',
   '--target', 'ES2022',
-  '--module', 'ES2022',
+  '--module', 'Preserve',
   '--moduleResolution', 'bundler',
+  '--rewriteRelativeImportExtensions',
+  '--resolveJsonModule',
   '--skipLibCheck',
   '--noEmitOnError',
   '--outDir', out,

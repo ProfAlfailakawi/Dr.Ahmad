@@ -13,7 +13,21 @@ export type AtlasEditorialSettings = {
 }
 
 const CACHE_KEY = 'atlas:editorial-settings:v1'
-const EMPTY: AtlasEditorialSettings = { dailyStarSlug: '', constellations: [] }
+const DEFAULT_SETTINGS: AtlasEditorialSettings = {
+  dailyStarSlug: '',
+  constellations: [
+    {
+      id: 'educational-anxiety',
+      title: 'رحلة القلق التربوي',
+      slugs: ['the-classroom-that-fears-mistakesarabic', 'when-a-student-wishes-for-death-before-the-first-bell-2', 'he-passed-the-exam-but-failed-the-question-2'],
+    },
+    {
+      id: 'human-and-machine',
+      title: 'الإنسان مقابل الآلة',
+      slugs: ['qabas-201702-001', 'qabas-201712-002', 'artificial-intelligence-teaches-while-the-human-mind-is-pushed-aside-2', 'students-minds-are-on-vacation-while-chatgpt-works-full-time-2'],
+    },
+  ],
+}
 const clean = (value: unknown) => typeof value === 'string' ? value.trim() : ''
 
 const normalizeConstellation = (value: unknown, index: number): AtlasConstellation | null => {
@@ -28,7 +42,7 @@ const normalizeConstellation = (value: unknown, index: number): AtlasConstellati
 }
 
 export function normalizeAtlasSettings(value: unknown): AtlasEditorialSettings {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return EMPTY
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return DEFAULT_SETTINGS
   const row = value as Record<string, unknown>
   return {
     dailyStarSlug: clean(row.dailyStarSlug),
@@ -54,8 +68,8 @@ export function constellationLines(items: AtlasConstellation[]) {
 }
 
 function cachedSettings() {
-  if (typeof window === 'undefined') return EMPTY
-  try { return normalizeAtlasSettings(JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')) } catch { return EMPTY }
+  if (typeof window === 'undefined') return DEFAULT_SETTINGS
+  try { return normalizeAtlasSettings(JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')) } catch { return DEFAULT_SETTINGS }
 }
 
 export function cacheAtlasSettings(value: AtlasEditorialSettings) {

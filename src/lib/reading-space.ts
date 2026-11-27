@@ -3,6 +3,7 @@ import type { PersistentTrack } from "./persistent-audio";
 
 export const READ_LAST_KEY = "read:last";
 export const RECENT_KEY = "reader:recent:v1";
+export const JOURNEY_KEY = "reader:journey:v1";
 export const SAVED_KEY = "reader:saved:v1";
 export const READ_KEY = "reader:read:v1";
 export const QUOTES_KEY = "reader:quotes:v2";
@@ -15,7 +16,7 @@ type ArticleSeed = Pick<
   ArticleRecord,
   "slug" | "title" | "cat" | "excerpt" | "iso"
 >;
-export type StoredArticle = ArticleSeed & { at: number };
+export type StoredArticle = ArticleSeed & { at: number; firstAt?: number };
 export type StoredQuote = {
   id?: string;
   slug: string;
@@ -86,7 +87,22 @@ export function recordArticleVisit(article: ArticleSeed) {
     (entry) => entry?.slug && entry.slug !== article.slug,
   );
   writeJson(RECENT_KEY, [item, ...recent].slice(0, 24));
+  /* البصمة المعرفية تحتاج الرحلة كاملةً لا آخر 24 زيارة فقط. تبقى محليةً
+     في جهاز القارئ، وتخزّن كل مقال مرةً واحدة: firstAt يحفظ أول نجمة، وat
+     يتجدد كي يبقى آخر ما عاد إليه القارئ هو «آخر نجمة» فعلاً. */
+  const journey = readJson<StoredArticle[]>(JOURNEY_KEY, []).filter(
+    (entry) => entry?.slug && entry.slug !== article.slug,
+  );
+  const previous = readJson<StoredArticle[]>(JOURNEY_KEY, []).find((entry) => entry?.slug === article.slug);
+  const journeyItem: StoredArticle = { ...item, firstAt: Number(previous?.firstAt || previous?.at || now) };
+  writeJson(JOURNEY_KEY, [...journey, journeyItem]
+    .sort((left, right) => Number(left.firstAt || left.at) - Number(right.firstAt || right.at))
+    .slice(-300));
   notifyReadingSpace();
+}
+
+export function readArticleJourney() {
+  return readJson<StoredArticle[]>(JOURNEY_KEY, []).filter((item) => item?.slug);
 }
 
 export function savedArticles() {
@@ -220,6 +236,12 @@ export function sanitizeReadingSpace(articles: ArticleRecord[], media: MediaReco
   if (!inBrowser()) return;
   const bySlug = new Map(articles.map((article) => [article.slug, article]));
   const snapshot = readingSpaceSnapshot(articles, media);
+  const journey = readArticleJourney()
+    .map((item) => {
+      const article = bySlug.get(clean(item?.slug));
+      return article ? { ...seedOf(article), at: Number(item.at || 0), firstAt: Number(item.firstAt || item.at || 0) } : null;
+    })
+    .filter(Boolean) as StoredArticle[];
 
   if (snapshot.last)
     writeJson(READ_LAST_KEY, {
@@ -237,6 +259,7 @@ export function sanitizeReadingSpace(articles: ArticleRecord[], media: MediaReco
   writeJson(RECENT_KEY, snapshot.recent);
   writeJson(SAVED_KEY, snapshot.saved);
   writeJson(QUOTES_KEY, snapshot.quotes);
+  writeJson(JOURNEY_KEY, journey);
   writeJson(MEDIA_SAVED_KEY, snapshot.savedMedia.map((item) => item.slug));
 
   const storedAudio = readLastAudio();

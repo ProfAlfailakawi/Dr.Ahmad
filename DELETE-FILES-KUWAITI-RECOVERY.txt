@@ -1,0 +1,3 @@
+# These are duplicate/root ghost files only if the live src equivalents are verified byte-for-byte.
+# Do NOT delete automatically. Review after tests.
+StyleChecker.tsx

@@ -44,6 +44,7 @@ const Indicators = lazy(() => import('../components/admin/Indicators').then((mod
 const IntelligenceLab = lazy(() => import('../components/admin/IntelligenceLab').then((module) => ({ default: module.IntelligenceLab })))
 const NextBookCard = lazy(() => import('../components/admin/NextBookCard').then((module) => ({ default: module.NextBookCard })))
 const PublishingStudio = lazy(() => import('../components/admin/PublishingStudio').then((module) => ({ default: module.PublishingStudio })))
+const StyleChecker = lazy(() => import('../components/admin/StyleChecker').then((module) => ({ default: module.StyleChecker })))
 const SocialDesignStudio = lazy(() => import('../components/admin/SocialDesignStudio').then((module) => ({ default: module.SocialDesignStudio })))
 const TweetStudio = lazy(() => import('../components/admin/TweetStudio').then((module) => ({ default: module.TweetStudio })))
 const StoryboardAtlas = lazy(() => import('../components/admin/StoryboardAtlas').then((module) => ({ default: module.StoryboardAtlas })))
@@ -365,6 +366,7 @@ function Panel({ email }: { email: string }) {
     production: <ProductionHealthCenter view="production" articles={cms.articles} books={cms.books} papers={cms.papers} onOpen={chooseTab} />,
     analytics: <div className="grid gap-4"><UsageAnalytics /><ReaderPulse /><VisitorJourneySuggestion articles={cms.articles} /><Indicators articles={cms.articles} /></div>,
     studio: <div className="grid gap-5"><PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} /><AtlasEditorialSettings articles={cms.articles} /></div>,
+    'style-checker': <StyleChecker articles={cms.articles} />,
     'social-posts': <PublishingStudio articles={cms.articles} onTransferToArticles={openTransferredArticle} initialView="pulse" />,
     design: <SocialDesignStudio />,
     tweets: <TweetStudio />,

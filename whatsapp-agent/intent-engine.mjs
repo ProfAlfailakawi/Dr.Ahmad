@@ -24,6 +24,7 @@ import {
 import {
   buildFifteenSecondChallenge,
   buildQuietIdeaNetwork,
+  distillItem,
   extractVerbatimAtSpeed,
   isVerbatimFromItem,
   selectDailyUnsentContent,
@@ -120,7 +121,12 @@ const patterns = [
      «قراءة المقال» و«الحوار». الأنماط القديمة تبقى مفهومة للتوافق، بلا أن
      يقترحها البوت أو يعيد أسماءها في الرد. */
   [INTENTS.LISTEN_DIALOGUE, [/(استمع|شغل|سمعني|بصوت)\s*\S*\s*(الحوار|حوار)|^الحوار$/, 0.92]],
-  [INTENTS.LISTEN_FAHED, [/(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|قراءه المقال|قراءة المقال|القراءه الصوتيه|القراءة الصوتية|اسمع المقال)(?:\s+لي)?$|(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:فهد|الرجل|رجل|رجال)|صوت الرجل/, 0.95]],
+  /* شكوى الدكتور (١ أغسطس): «قراءة صوتية للمقالة ما يعمل». الجذر أن الصيغة
+     كانت تشترط أداة التعريف — «القراءه الصوتيه» تُفهم و«قراءه صوتيه» تسقط إلى
+     بحثٍ أعمى، وهي الصيغة التي يكتبها الناس وتظهر في الموقع نفسه. وكذلك
+     «اسمعها» و«شغلها» و«اقرا لي المقاله» و«ابي اسمعها» كنّ يسقطن.
+     الآن: أداة التعريف اختيارية، والضمير الملتصق مقبول، وفعل الرغبة قبلها. */
+  [INTENTS.LISTEN_FAHED, [/^(?:(?:ابي|ابغي|ابغى|اريد|ودي|ممكن)\s+)?(?:اسمعها|اسمعه|اسمعهم|اسمع|سمعني|سمعها|سمعه|شغلها|شغله|شغل|استماع|اقراها لي|اقراه لي|اقرا لي|اقرا)?\s*(?:ال)?قراءه\s*(?:ال)?صوتيه(?:\s+(?:لي|للمقال|للمقاله|للماده|المقال|المقاله))?$|^(?:(?:ابي|ابغي|ابغى|اريد|ودي|ممكن)\s+)?(?:اسمعها|اسمعه|اسمع|سمعني|سمعها|شغلها|شغله|شغل|استماع|اقراها لي|اقراه لي|اقرا لي)(?:\s+(?:لي|المقال|المقاله|الماده|صوتيا))?$|(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|قراءه المقال|قراءة المقال|القراءه الصوتيه|القراءة الصوتية|اسمع المقال)(?:\s+لي)?$|(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:فهد|الرجل|رجل|رجال)|صوت الرجل/, 0.95]],
   [INTENTS.LISTEN_NOURA, [/(?:اسمع|شغل|سمعني|اقراها لي|اقراه لي|صوت|بصوت|قراءه)\s*(?:لي\s*)?(?:نوره|نورا|المراه|امراه)|صوت المراه/, 0.95]],
   [INTENTS.QUOTE_CARD, [/(بطاقه اقتباس|صوره اقتباس)/, 0.92]],
   [INTENTS.QUOTE, [/(اقتباس|جمله جميله|عطني اقتباس)/, 0.90]],
@@ -1392,27 +1398,9 @@ function correctionReply(db, jid, session, input, correction = null) {
 /* ═══ التلخيص الحقيقي: «اختصرها» يجب أن يقصّر فعلاً لا أن يُعيد النصّ نفسه —
    حتى المختارات القصيرة. نقطف أكثفَ عبارةٍ دلالةً (مقطوعةً على الشرطة وعلامات
    الوقف) بشرط أن تكون منسوخةً حرفاً بحرف من المتن (isVerbatimFromItem) فلا تحريف. */
-function distilledClause(item) {
-  const source = String(item?.body || item?.excerpt || '').trim()
-  if (!source) return null
-  const whole = source.replace(/\s+/g, ' ').trim()
-  const clauses = source
-    .split(/\s*[—–]\s*|[.؟!\n؛…]+/)
-    .map((part) => part.trim())
-    .filter((part) => part.length >= 14 && part.length < whole.length && isVerbatimFromItem(item, part))
-  if (!clauses.length) return { text: whole, whole: true }
-  const dense = (text) => {
-    const words = clean(text).split(/\s+/).filter((word) => word.length > 2)
-    return new Set(words).size / Math.sqrt(Math.max(6, words.length))
-  }
-  let best = clauses[0]
-  let bestScore = -1
-  for (const clause of clauses) {
-    const score = dense(clause)
-    if (score > bestScore) { bestScore = score; best = clause }
-  }
-  return { text: best, whole: false }
-}
+/* التطبيق نفسه انتقل إلى daily-experience.mjs ليستورده العقل المركزي أيضاً —
+   كان العقل يقصّ رأس المتن فيبدو «لخّص» إعادةً للمادة. تطبيقٌ واحدٌ للاثنين. */
+const distilledClause = (item) => distillItem(item)
 
 function summaryReply(db, item) {
   if (!item) return { text: 'اختر مادة أولاً: اكتب آخر مقالاته، ثم قل الأولى أو الثانية.', contentId: null }

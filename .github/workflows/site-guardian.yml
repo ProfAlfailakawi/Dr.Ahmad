@@ -43,4 +43,12 @@ jobs:
           git config user.email "site-guardian[bot]@users.noreply.github.com"
           git add src/data/site-guardian.json src/data/knowledge-graph.json src/data/curated-dead-links.json src/data/dead-links.json src/data/audio.json src/data/audio-meta.json || true
           git diff --cached --quiet || git commit -m "chore: refresh site guardian report"
-          git push || true
+          # `git push || true` كان يبتلع الرفض بصمت: يوم يتصادم مع دفعةٍ أخرى
+          # يضيع تقرير الحارس ولا يعلم أحد. نعيد المحاولة فوق أحدث main، فإن
+          # عجزنا صرّحنا — سكوتُ الحارس أخطر من احمرار سطر.
+          pushed=0
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then pushed=1; break; fi
+            sleep $((attempt * 5))
+          done
+          if [ "$pushed" != 1 ]; then echo "::error::تعذّر رفع تقرير الحارس بعد ثلاث محاولات."; exit 1; fi

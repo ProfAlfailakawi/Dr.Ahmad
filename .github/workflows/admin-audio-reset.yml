@@ -157,8 +157,12 @@ jobs:
             echo 'لا تغيير يُرفع.'
           else
             git commit -m "chore(audio): تصفير شامل بأمر الدكتور (استُبقي: ${{ inputs.keep }})"
+            # الحلقة القديمة كانت تنتهي بـ`sleep` فتُرجع صفراً ولو فشلت المحاولات
+            # الثلاث — فيُعلن نجاحٌ كاذب. الآن يُرصد النجاح صراحةً.
+            pushed=0
             for attempt in 1 2 3; do
-              git pull --rebase --autostash origin main && git push origin HEAD:main && break
-              sleep 5
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then pushed=1; break; fi
+              sleep $((attempt * 5))
             done
+            if [ "$pushed" != 1 ]; then echo "::error::تعذّر تثبيت التصفير بعد ثلاث محاولات."; exit 1; fi
           fi

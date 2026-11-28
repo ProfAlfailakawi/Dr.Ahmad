@@ -3,6 +3,8 @@ import { buildContentIndex } from '../../whatsapp-agent/content-index.mjs'
 import { LEXICON_SIZE, toRoot } from '../../whatsapp-agent/dialect-lexicon.mjs'
 import { classifyIntent, INTENTS } from '../../whatsapp-agent/intent-engine.mjs'
 import { DEFAULT_BOT_MESSAGES, getBotMessages, refreshBotMessages } from '../../whatsapp-agent/bot-messages.mjs'
+import { distillItem } from '../../whatsapp-agent/daily-experience.mjs'
+import { conceptQueryFor, glossarySize } from '../../whatsapp-agent/domain-concepts.mjs'
 
 const SITE_URL = String(process.env.WHATSAPP_SITE_URL || 'https://dr-alfailakawi.com').replace(/\/+$/, '')
 const OWNER_ALERT_FALLBACK = 'طلب صاحب هذه الرسالة التواصل معك مباشرة. افتح محادثات واتساب من جهازك المرتبط.'
@@ -55,17 +57,55 @@ export function returningReaderLine(conversation = {}, at = Date.now()) {
   const current = currentConversationItem(conversation)
   const topic = current?.title || bounded(conversation.lastTopic, 90)
   if (topic) return `أهلاً بعودتك ${when}. آخر مرة وقفنا عند «${topic}» — نكمل منها أم نفتح جديداً؟`
+  /* ذاكرةٌ تتراكم: من لم نحفظ له موضوعاً بعينه قد نكون عرفنا ما يشغله عبر
+     جلساتٍ متفرّقة. سطرٌ واحد يثبت أننا نعرفه، بلا عرضِ بياناتٍ لم يطلبها. */
+  const interests = readerInterests(conversation, 2)
+  if (interests.length) return `أهلاً بعودتك ${when}. أذكر أن ${interests.length > 1 ? 'اهتمامك دار حول' : 'اهتمامك دار حول'} ${interests.join(' و')} — نكمل من هناك أم نفتح جديداً؟`
   return `أهلاً بعودتك ${when}.`
 }
 
-function buildWakeWelcome(messages = botMessagesNow(), at = new Date()) {
-  const gate = dailyGateItem(at)
+/* ═══ الأرشيف الذي ينتبه لك ═══
+   الفكرة الأصلية كانت أن يبادر البوت برسالةٍ إلى من سأل قبل شهر — وهي تلمس
+   الناس بلا استدعاء وتخرق قانون الإيقاظ. **اقتراح الدكتور أفضل منها**: تظهر
+   عند الإيقاظ نفسه، حين يفتح هو الباب بيده — فلا رسالةَ لم تُطلب، ولا حارسَ
+   مواعيدَ نحتاجه، ويصل الخبر في اللحظة التي هو منتبهٌ فيها أصلاً.
+   الشرطان اللذان يمنعان الادّعاء: أن يكون الاهتمام **متكرّراً** (إشارتان في
+   ذاكرته لا كلمةً عابرة)، وأن تكون المادة **منشورةً بعد آخر زيارته فعلاً**
+   وبتاريخٍ موثّق — فلا نقول «جديد» لقديم، ولا نُلحّ بما رآه من قبل. */
+function attentiveGateItem(conversation = {}, at = new Date()) {
+  const interests = readerInterests(conversation, 3)
+  if (!interests.length) return null
+  const lastSeen = Date.parse(conversation.lastInboundAt || conversation.updatedAt || '')
+  if (!Number.isFinite(lastSeen)) return null
+  const seen = new Set(Array.isArray(conversation.seenContentIds) ? conversation.seenContentIds : [])
+  const nowMs = at instanceof Date ? at.getTime() : Number(at) || Date.now()
+  const candidates = siteIndex()
+    .filter((item) => !seen.has(item.id))
+    .filter((item) => {
+      const published = Date.parse(String(item.date || ''))
+      return Number.isFinite(published) && published > lastSeen && published <= nowMs
+    })
+    .map((item) => ({ item, ...scoreContent(item, interests) }))
+    .filter((row) => row.matched > 0 && row.score >= 8)
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+  if (!candidates.length) return null
+  return { item: candidates[0].item, interest: interests[0] }
+}
+
+function buildWakeWelcome(messages = botMessagesNow(), at = new Date(), conversation = {}) {
   const header = `${timeGreeting(at)} · ${messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'}.`
   const options = messages.optionsPrompt || 'شنو يناسب وقتك؟ ٣٠ ثانية · دقيقتان · تعمّق · اختبرني'
-  if (!gate) return { text: `${header}\n\n${options}`, contextItemIds: [], evidence: [] }
+  /* بوابةٌ تخصّه تسبق بوابة اليوم العامة — فما نُشر بعد زيارته في موضوعه هو
+     أولى بوقته مما اخترناه للناس جميعاً. */
+  const attentive = attentiveGateItem(conversation, at)
+  const gate = attentive?.item || dailyGateItem(at)
+  if (!gate) return { text: `${header}\n\n${options}`, contextItemIds: [], evidence: [], attentive: false }
   const quote = normalizeWhitespace(gate.excerpt || gate.body || '').split(/\s+/).slice(0, 26).join(' ')
-  const text = `${header}\n\n${messages.dailyGateLabel || 'بوابة اليوم:'}\n*${gate.title}*\n${quote ? `«${quote}…»\n` : ''}${gate.url}\n\n${options}`
-  return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title }
+  const label = attentive
+    ? `تسأل عن ${attentive.interest}، ونشر الدكتور بعد آخر زيارتك:`
+    : (messages.dailyGateLabel || 'بوابة اليوم:')
+  const text = `${header}\n\n${label}\n*${gate.title}*\n${quote ? `«${quote}…»\n` : ''}${gate.url}\n\n${options}`
+  return { text, contextItemIds: [gate.id], evidence: [gate.id], lastTopic: gate.title, attentive: Boolean(attentive) }
 }
 function welcomeText(messages = botMessagesNow(), at = new Date()) {
   const line = messages.welcomeLine || 'حيّاك الله. فتحت لك مكتبة د. أحمد الفيلكاوي'
@@ -106,6 +146,7 @@ const COLLECTIONS = Object.freeze({
   commands: 'whatsapp_bridge_commands',
   events: 'whatsapp_attention_events',
   settings: 'whatsapp_settings',
+  quality: 'whatsapp_quality_daily',
   audienceContacts: 'whatsapp_audience_contacts',
   audienceLists: 'whatsapp_audience_lists',
   audienceMembers: 'whatsapp_audience_members',
@@ -646,6 +687,291 @@ function excerptReply(item, short = false) {
   return `*${item.title}*\n\n${excerpt ? `«${excerpt}${words.length > limit ? '…' : ''}»` : 'هذه المادة متاحة كاملة في موقع الدكتور.'}\n\n${item.url}`
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   عقلٌ يفهم ويحلّل، لا يطابق أنماطاً (أمر الدكتور — أول أغسطس ٢٠٢٦)
+   أربعة أبواب: السؤال المركّب والمضمر · الشكّ الذي يسأل بدل أن يخمّن ·
+   ذاكرةٌ تتراكم عبر الجلسات · تحليلٌ ومقارنةٌ لا استرجاعٌ لقائمة.
+   والحدّ المقدّس باقٍ فوقها كلّها: لا يُنسب للدكتور إلا ما نشره حرفاً بحرف،
+   وما لا نجده نصارح به ولا نخترعه.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── التلخيص: زبدةٌ من متنه، لا مقدّمته ──
+   `excerptReply(item, true)` كان يقصّ أوّل ٤٢ كلمة، وأوّلُ المتن هو بعينه ما
+   تفتح به بطاقةُ المادة — فبدا «لخّص» إعادةً للمادة نفسها (شكوى الدكتور).
+   الزبدة الآن أكثفُ عبارةٍ دلالةً في المتن، منسوخةً حرفاً بحرف. */
+function distilledReply(item) {
+  const distilled = distillItem(item)
+  if (!distilled?.text) return excerptReply(item, true)
+  const words = normalizeWhitespace(distilled.text).split(/\s+/).filter(Boolean)
+  const clipped = words.length > 60 ? `${words.slice(0, 60).join(' ')}…` : words.join(' ')
+  const note = distilled.whole
+    ? 'المادة مختصرةٌ أصلاً، وهذا لبّها بنصّه:'
+    : 'زبدتها في جملةٍ من نصّ الدكتور:'
+  return `*${item.title}*\n\n${note}\n«${clipped}»\n\n${item.url}`
+}
+
+/* ── المضمر: ما يقوله الناس ولا يصوغونه أمراً ──
+   «ما فهمت» ليست بحثاً عن مادةٍ عنوانها «ما فهمت» — هي طلبُ تبسيطٍ لما بين
+   أيدينا. وكان البحث الأعمى يبتلعها فيعود بأقرب العناوين لفظاً، وهو ردٌّ
+   يشبه الآلة. شرطان يمنعان التوسّع: أن تكون بين أيدينا مادةٌ حاضرة، وأن
+   تكون الجملة قصيرة (إيماءةً لا طلباً صريحاً له نمطه الخاص). */
+const IMPLIED_READINGS = [
+  ['simplify', /(?:^|\s)(?:ما|مو|مب|مهوب)\s*(?:فهمت|فاهم|فاهمه|واضح|واضحه)|(?:^|\s)(?:غير|مو)\s*(?:واضح|مفهوم)|ما\s*وضح|(?:^|\s)(?:صعب|صعبه|معقد|معقده|ثقيل|ثقيله|طويل|طويله|طولت|كثير|كثيره)(?:\s|$)|بسطها|بسطه|سهلها|وضحها/],
+  ['deepen', /(?:^|\s)(?:زدني|زد|عمقها|اتعمق|قليل|قليله|ناقص|ما يكفي|ابي اكثر|اكثر من كذا)(?:\s|$)/],
+  ['whyMatters', /^(?:ليش|لماذا|وليش|طيب ليش|ليه)(?:\s+(?:مهم|مهمه|يهمني|تهمني))?\s*[؟?]?$/],
+]
+function impliedReading(cleanText) {
+  const words = String(cleanText || '').split(/\s+/).filter(Boolean)
+  if (!words.length || words.length > 4) return ''
+  for (const [reading, pattern] of IMPLIED_READINGS) if (pattern.test(cleanText)) return reading
+  return ''
+}
+
+/* ── الشكّ الذي يسأل ──
+   حين يكون الطلب تخميناً (fallback) وكلمتُه واحدةً أو كلمتين، ويتقارب أعلى
+   مرشَّحَين تقارباً حقيقياً، فالصوابُ سؤالٌ واحد لا ثلاثةُ روابطَ تُلقى على
+   القارئ. الشكّ يُصرَّح به ولا يُخفى خلف قائمة. */
+export function scoredSiteResults(query, options = {}) {
+  const tokens = contentTokens(options.overrideQuery || query).slice(0, 8)
+  if (!tokens.length) return []
+  const excluded = new Set(Array.isArray(options.excludeIds) ? options.excludeIds : [])
+  const kinds = new Set(Array.isArray(options.kinds) ? options.kinds : [])
+  return siteIndex()
+    .filter((item) => matchesCompoundFilters(item, options.filters || null))
+    .filter((item) => !excluded.has(item.id) && (!kinds.size || kinds.has(item.kind)))
+    .map((item) => ({ item, ...scoreContent(item, tokens) }))
+    .filter((row) => {
+      if (tokens.length === 1) return row.score >= 5
+      const neededMatches = Math.min(tokens.length, Math.max(1, Math.ceil(tokens.length * .38)))
+      return row.score >= 7 && row.matched >= neededMatches
+    })
+    /* درجةٌ منسوبة إلى أقصى ما يمكن لهذا السؤال: الدرجة الخام تكبر بكثرة
+       الألفاظ، فلا تصلح للموازنة بين بحثين مختلفَي الألفاظ (اللفظي والمفهومي).
+       النسبة تجعلهما قابلَين للمقارنة بإنصاف. */
+    .map((row) => ({ ...row, norm: row.score / Math.max(1, tokens.length * 8) }))
+    .sort((a, b) => b.score - a.score || String(b.item.date || '').localeCompare(String(a.item.date || '')))
+    .slice(0, Math.max(1, Math.min(5, Number(options.limit || 3))))
+}
+/* حدُّ الشكّ الحقيقي — درسٌ من التجربة الأولى:
+   «قرابة الدرجات» ليست شكّاً. الكلمة الواسعة («الحفظ»، «الخوف») تتقارب فيها
+   عشراتُ الموادّ لأن الأرشيف غنيّ لا لأن المعنى ملتبس — والسؤال عندها يُخفي
+   البقيّة ويبدو ارتباكاً. الالتباس الصادق أن **يحمل عنوانان اثنان** الكلمةَ
+   نفسها ولا ثالثَ لهما: «النجاح الذي لا يفرح صاحبه» و«النجاح الذي دمّرنا» —
+   هنا السؤال إنصافٌ للقارئ. فإن كان الأقوياء ثلاثةً فأكثر فالقائمة أصدق،
+   وإن لم يكن فيهم قويٌّ فالمسار المُصارِح القائم (أقرب المواد) هو الصواب. */
+const STRONG_TITLE_SCORE = 20
+function ambiguousRivals(rows, query, isGuess) {
+  if (!isGuess) return null
+  if (contentTokens(query).length > 2) return null
+  const strong = rows.filter((row) => row.score >= STRONG_TITLE_SCORE)
+  if (strong.length !== 2) return null
+  const [top, next] = strong
+  if (next.score / top.score < .85) return null
+  return [top.item, next.item]
+}
+
+/* ── السؤال المركّب: طلبان في نفَسٍ واحد ──
+   «عطني آخر مقالة وبحث عن التقويم» كان يذهب كلّه بحثاً واحداً فيضيع أحد
+   الطلبين بلا اعتذار. الفصل محافظ: لا نقطع إلا على فاصلةٍ صريحة أو واوٍ
+   يتبعها فعلُ طلب — وإلا فالجملة واحدة كما هي.
+   **يُقرأ من النصّ الخام لا من المطبَّع:** `normalizeArabicMessage` يمسح
+   الترقيم، فالفاصلة — وهي أوضح علامةٍ على طلبين — تختفي قبل أن نراها. */
+const COMPOUND_SPLIT = /\s*[،؛,]\s*|\s+ثم\s+|\s*\+\s*|\s+و(?=(?:أبي|ابي|أبغي|ابغي|أبغى|ابغى|أريد|اريد|عطني|أعطني|اعطني|ورني|شنو|وش|ايش|أيش|كذلك|أيضا|ايضا|بعدين|عن)\b)/u
+function splitCompoundAsks(rawText) {
+  const parts = normalizeWhitespace(rawText).split(COMPOUND_SPLIT)
+    .map((part) => normalizeArabicMessage(part).trim())
+    .filter((part) => part.length >= 3)
+  return parts.length === 2 ? parts : null
+}
+
+/* ── ذاكرةٌ تتراكم عبر الجلسات ──
+   `seenContentIds` تحفظ ما عُرض، لا ما يشغل القارئ. هنا نراكم جذور ما يسأل
+   عنه فعلاً — أرقامٌ ولغةٌ فقط، بلا اسمٍ ولا رقمٍ ولا شيءٍ يخصّ شخصه —
+   فيصير الترحيب بعد الغياب معرفةً لا تكراراً، والاختيارُ على مقاسه.
+   **لماذا مصفوفة لا خريطة؟** وثيقة المحادثة تُكتب بـ`merge: true`، وهو يدمج
+   الخرائط المتداخلة مفتاحاً مفتاحاً — فخريطةٌ «مقصوصة» لا تُنقص شيئاً أبداً
+   وتتضخّم مع الشهور. المصفوفة تُستبدل كاملةً عند الدمج، فالسقف سقفٌ حقيقي.
+   والتكرار في المصفوفة هو الوزن: ما يسأل عنه مراراً يتقدّم. */
+const INTEREST_MEMORY_CAP = 40
+function interestMemory(conversation = {}) {
+  return Array.isArray(conversation.topicMemory) ? conversation.topicMemory.filter((token) => typeof token === 'string') : []
+}
+/* نحفظ الصورة الظاهرة للكلمة لا جذرها: `contentTokens` يعيد الاثنين معاً
+   («الذكاء» و«ذكاء») فكان الترحيب يقول «اهتمامك دار حول الذكاء وذكاء». */
+function interestPatch(conversation = {}, query = '') {
+  const tokens = [...new Set(stripArabicGreetings(query).split(' ')
+    .filter((token) => token.length >= 4 && !NOISE_WORDS.has(token)))].slice(0, 3)
+  if (!tokens.length) return null
+  return { topicMemory: [...interestMemory(conversation), ...tokens].slice(-INTEREST_MEMORY_CAP) }
+}
+function readerInterests(conversation = {}, limit = 2) {
+  /* التجميع على الجذر ثم العرض بأشهر صورةٍ ظاهرة: «التعليم» و«تعلم» اهتمامٌ
+     واحد لا اثنان، فلا يُعَدّ مرّتين ولا يظهر مكرّراً في سطر الترحيب. */
+  const byRoot = new Map()
+  for (const token of interestMemory(conversation)) {
+    const root = semanticWord(token) || token
+    const row = byRoot.get(root) || { count: 0, forms: new Map() }
+    row.count += 1
+    row.forms.set(token, (row.forms.get(token) || 0) + 1)
+    byRoot.set(root, row)
+  }
+  return [...byRoot.values()]
+    .filter((row) => row.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map((row) => [...row.forms.entries()].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0][0])
+}
+
+/* ── تحليلٌ لا استرجاع ──
+   المقارنة كانت قائمتين متجاورتين و«الحكم لقراءتك» — وهذا استرجاع. التحليل
+   أن نقول: ما الخيط الجامع بين الطرفين في كلام الدكتور، وما الذي ينفرد به
+   كلٌّ منهما. والمفردات كلّها مستخرجةٌ من عناوينه ومتونه لا من عندنا. */
+function analyticalTokens(items) {
+  const counts = new Map()
+  for (const item of items) {
+    const seen = new Set(contentTokens(`${item.title} ${item.keywords || ''} ${item.excerpt || ''}`)
+      .filter((token) => token.length >= 4))
+    for (const token of seen) counts.set(token, (counts.get(token) || 0) + 1)
+  }
+  return counts
+}
+function compareAnalysis(leftItems, rightItems) {
+  if (!leftItems.length || !rightItems.length) return null
+  const left = analyticalTokens(leftItems)
+  const right = analyticalTokens(rightItems)
+  const shared = [...left.keys()].filter((token) => right.has(token))
+    .sort((a, b) => (right.get(b) + left.get(b)) - (right.get(a) + left.get(a)))
+    .slice(0, 3)
+  const only = (source, other) => [...source.keys()].filter((token) => !other.has(token))
+    .sort((a, b) => source.get(b) - source.get(a))
+    .slice(0, 3)
+  return { shared, leftOnly: only(left, right), rightOnly: only(right, left) }
+}
+
+/* ── مبادرةٌ منضبطة ──
+   المبادرة بلا انضباط ثرثرة. الشرط: أن توجد مادةٌ مرتبطةٌ حقيقةً بما بين
+   أيدينا (من `related` المبنيّة في الفهرس لا من تخميننا)، وألّا تكون قد
+   عُرضت من قبل، وألّا نبادر مرّتين متتاليتين. سطرٌ واحد، وسؤالٌ يُجاب بنعم. */
+/* ═══ البوت يعرف أنه أخطأ — ويتعلّم منك وحدك ═══
+   الصياغات التي لم تُفهم كانت تُرصد للمراقبة فقط، فيبقى الخطأ يتكرّر إلى
+   الأبد. الآن يعرضها عليك، وتُسنِد أنت الصياغة إلى موضوعٍ من موادّك بنقرة،
+   فتُجاب في المرة القادمة. **لا تعلّمَ آليّاً**: لا شيء يدخل هنا إلا بإسنادك
+   الصريح، والجواب يبقى بحثاً في المنشور لا كلاماً مولَّداً — فالبوّابة
+   المقدّسة (لا يُنسب للدكتور إلا ما نشره) لم تُخترق. */
+const taughtPhrases = new Map()
+let taughtPhrasesAt = 0
+const TAUGHT_TTL_MS = 5 * 60_000
+/* الجزء الخالص مفصولٌ عن الجلب كي يُختبر بلا قاعدة بيانات. */
+export function applyTaughtPhrases(rows = []) {
+  taughtPhrases.clear()
+  for (const row of rows) {
+    const phrase = normalizeArabicMessage(row?.phrase || '')
+    const query = bounded(row?.teachQuery, 160)
+    if (phrase.length >= 2 && query) taughtPhrases.set(phrase, query)
+  }
+  return taughtPhrases.size
+}
+async function primeTaughtPhrases(db, force = false) {
+  const now = Date.now()
+  if (!force && now - taughtPhrasesAt < TAUGHT_TTL_MS) return
+  taughtPhrasesAt = now
+  const snapshot = await db.collection(COLLECTIONS.learning).where('status', '==', 'taught').limit(300).get()
+  applyTaughtPhrases(snapshot.docs.map((doc) => doc.data() || {}))
+}
+function taughtQueryFor(cleanText) {
+  const phrase = String(cleanText || '').trim()
+  if (!phrase) return ''
+  const direct = taughtPhrases.get(phrase)
+  if (direct) return direct
+  /* مطابقةُ الاحتواء للصياغات الطويلة: من علّمتَه «الدمج» يُجيب على «شنو رأيه
+     في الدمج» أيضاً — بشرط أن تكون العبارة المُعلَّمة كلمةً قائمة لا جزءَ كلمة. */
+  for (const [known, query] of taughtPhrases) {
+    if (known.length >= 4 && new RegExp(`(?:^|\\s)${known.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`).test(phrase)) return query
+  }
+  return ''
+}
+
+/* ═══ من يسأل؟ ═══
+   الذاكرة كانت تعرف الموضوع ولا تعرف صاحبه — مع أن أسلوب السؤال يفضحه.
+   نستنتج صفته من مفرداته هو (لا نسأله عنها أبداً، ولا نعلنها في وجهه)،
+   ونستعملها في **ترتيب ما نقدّمه** لا في تغيير الحقائق: الباحث تُقدَّم له
+   الورقة المحكّمة، وولي الأمر يُقدَّم له المقال. إشارتان على الأقل قبل الحكم،
+   فلا تُصنَّف كلمةٌ عابرة إنساناً. */
+const READER_KINDS = [
+  ['teacher', /(?:^|\s)(?:طلابي|طلبتي|صفي|حصتي|حصه|المنهج|منهجي|تلاميذي|ادرس|تدريسي|مدرستي|الوزاره|الاداره المدرسيه|زملائي المعلمين)(?:\s|$)/],
+  ['parent', /(?:^|\s)(?:ابني|بنتي|ولدي|عيالي|اولادي|بنتي|طفلي|ابنتي|ولد ي|مدرسه ابني|ولي امر)(?:\s|$)/],
+  ['researcher', /(?:^|\s)(?:دراسه|الدراسات|منهجيه|عينه|المراجع|مرجع|اطروحتي|رسالتي|بحثي|الادبيات|استبانه|احصائيا)(?:\s|$)/],
+]
+function readerKindSignal(cleanText) {
+  for (const [kind, pattern] of READER_KINDS) if (pattern.test(cleanText)) return kind
+  return ''
+}
+export function readerKindOf(conversation = {}) {
+  const signals = Array.isArray(conversation.readerSignals) ? conversation.readerSignals : []
+  if (signals.length < 2) return ''
+  const counts = new Map()
+  for (const signal of signals) counts.set(signal, (counts.get(signal) || 0) + 1)
+  const [top] = [...counts.entries()].sort((a, b) => b[1] - a[1])
+  return top && top[1] >= 2 ? top[0] : ''
+}
+/* الترتيب وحده يتغيّر — لا المحتوى ولا الصدق. */
+function kindsForReader(kind) {
+  if (kind === 'researcher') return ['paper', 'book', 'article']
+  if (kind === 'parent') return ['article', 'curated', 'podcast']
+  if (kind === 'teacher') return ['article', 'paper', 'podcast']
+  return []
+}
+
+/* ═══ حضور الدكتور ═══
+   كان البوت يقول «وصلت رسالتك للدكتور» بصيغةٍ واحدة سواءٌ كان الدكتور متابعاً
+   اليوم أم غائباً أسبوعاً — وعدٌ متساوٍ في حالتين مختلفتين. الآن يعرف: كل
+   رسالةٍ يكتبها الدكتور بيده في أي محادثة تُثبِت حضوره. فيصدُق في الحالين،
+   ولا يَعِد بموعدٍ قط. */
+let ownerLastActiveAt = 0
+const OWNER_PRESENT_MS = 12 * 60 * 60_000
+export function markOwnerActive(at = Date.now()) {
+  const stamp = typeof at === 'number' ? at : Date.parse(at) || Date.now()
+  if (stamp > ownerLastActiveAt) ownerLastActiveAt = stamp
+}
+export function ownerPresenceLine(at = Date.now()) {
+  if (!ownerLastActiveAt) return ''
+  return at - ownerLastActiveAt <= OWNER_PRESENT_MS
+    ? '\n\nوالدكتور متابعٌ لرسائله اليوم — لكنّي لا أعدك بموعد رد.'
+    : ''
+}
+
+/* ═══ الجودة تُقاس لا تُدّعى ═══
+   كل ترقيةٍ بعد اليوم يجب أن تُقاس بأثرها لا بذوق من بناها: كم سؤالاً أُجيب
+   من المنشور، وكم انتهى بـ«ما لقيت»، وكم أنقذه المفهوم أو تعليمُ الدكتور.
+   عدّادٌ يوميّ واحد لكل محادثة — بلا حفظ نصوص الناس ولا أرقامهم. */
+const QUALITY_BUCKETS = new Map([
+  ['no-grounded-answer', 'missed'], ['near-suggestions', 'missed'],
+  ['active-clarify', 'clarified'], ['doubt-clarify', 'clarified'],
+  ['context-missing', 'clarified'], ['correction-clarify', 'clarified'],
+  ['human-request', 'escalated'],
+  ['concept-search', 'concept'], ['taught-phrase', 'taught'],
+])
+export function qualityBucketFor(reason) {
+  const key = String(reason || '')
+  if (QUALITY_BUCKETS.has(key)) return QUALITY_BUCKETS.get(key)
+  if (key.startsWith('rule-no-grounding')) return 'missed'
+  return 'answered'
+}
+
+const INITIATIVE_COOLDOWN_MS = 30 * 60_000
+function initiativeLine(conversation = {}, item = null, previousIds = [], at = Date.now()) {
+  if (!item) return ''
+  const lastOffered = Date.parse(conversation.lastInitiativeAt || '')
+  if (Number.isFinite(lastOffered) && at - lastOffered < INITIATIVE_COOLDOWN_MS) return ''
+  const related = Array.isArray(item.related) ? item.related : []
+  if (!related.length) return ''
+  const byId = new Map(siteIndex().map((row) => [row.id, row]))
+  const seen = new Set([...previousIds, item.id])
+  const next = related.map((id) => byId.get(id)).find((row) => row && !seen.has(row.id))
+  if (!next) return ''
+  return `\n\nولاحظت أن للدكتور مادةً تمدّ هذه الفكرة: «${next.title}» — أفتحها لك؟`
+}
+
 function intentKinds(intent) {
   if ([INTENTS.LATEST_ARTICLE, INTENTS.LATEST_ARTICLES, INTENTS.MOST_VIEWED_ARTICLE].includes(intent)) return ['article']
   if (intent === INTENTS.LATEST_BOOK) return ['book']
@@ -685,7 +1011,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   }
   if (!clean) return { kind: 'reply', reason: 'empty-after-normalization', reply: signReply(clarifyText(messages, conversation), messages) }
   if (HUMAN_PATTERNS.some((pattern) => pattern.test(clean))) {
-    return { kind: 'escalate', reason: 'human-request', reply: signReply(HUMAN_ACK, messages) }
+    return { kind: 'escalate', reason: 'human-request', reply: signReply(`${HUMAN_ACK}${ownerPresenceLine()}`, messages) }
   }
 
   const rule = findRuleMatch(text, rules)
@@ -744,12 +1070,12 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     return {
       kind: 'reply', reason: 'delete-preferences', intent,
       reply: signReply('تم. مسحت ما احتفظت به لهذه المحادثة من سياق وتفضيلات ومحفوظات. نبدأ من صفحة بيضاء متى ما أردت.', messages),
-      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null },
+      patch: { contextItemIds: [], contextIndex: 0, seenContentIds: [], savedItemIds: [], lastTopic: null, challenge: null, topicMemory: [], lastInitiativeAt: null },
     }
   }
 
   if (PRICE_PATTERNS.some((pattern) => pattern.test(clean)) || isGreetingOnly(text) || intent === INTENTS.WELCOME) {
-    const welcome = buildWakeWelcome(messages)
+    const welcome = buildWakeWelcome(messages, new Date(), conversation)
     return {
       kind: 'reply', reason: isGreetingOnly(text) ? 'greeting' : 'welcome', intent,
       reply: signReply(welcome.text, messages),
@@ -856,9 +1182,43 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     }
   }
 
+  /* ─── المضمر: إيماءةٌ قصيرة على مادةٍ حاضرة ───
+     تُقرأ قبل آلة البحث لأن البحث كان يبتلعها: «ما فهمت» تعود بأقرب عنوانٍ
+     يشبهها لفظاً، وهو ردٌّ يفضح أن أحداً لم يقرأ ما قيل. */
+  const implied = current ? impliedReading(clean) : ''
+  if (implied === 'simplify') {
+    return {
+      kind: 'reply', reason: 'implied-simplify', intent,
+      reply: signReply(`واضح، أثقلتك المادة. خذها في سطر:\n\n${distilledReply(current)}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: 42, readCursorItemId: current.id },
+    }
+  }
+  if (implied === 'deepen') {
+    const full = normalizeWhitespace(current.body || current.excerpt || '')
+    const words = full.split(/\s+/).filter(Boolean)
+    const chunk = words.slice(0, 120).join(' ')
+    return {
+      kind: 'reply', reason: 'implied-deepen', intent,
+      reply: signReply(`فهمت، تبي أعمق. هذا نصّ الدكتور موسّعاً:\n\n*${current.title}*\n\n${chunk}${words.length > 120 ? '…' : ''}\n\nوقل «كمل» أواصل، أو «المصدر» أعطيك الرابط:\n${current.url}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+      patch: { readCursor: Math.min(words.length, 120), readCursorItemId: current.id },
+    }
+  }
+  if (implied === 'whyMatters') {
+    return {
+      kind: 'reply', reason: 'implied-why', intent,
+      reply: signReply(`لأن هذا لبّها بكلام الدكتور نفسه — والحكم لك بعده:\n\n${distilledReply(current)}`, messages),
+      evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
+    }
+  }
+
   /* ─── مقارنة بين فكرتين من المنشور ───
      البنية أصدق من التصنيف هنا: «قارن بين المعلم والتقنية» كان يخطفها نمط
-     «لمعلم» في محرك الشرح، فنُحكِم صيغة المقارنة الصريحة قبل النيات الأخرى. */
+     «لمعلم» في محرك الشرح، فنُحكِم صيغة المقارنة الصريحة قبل النيات الأخرى.
+     وترقية أول أغسطس: قائمتان متجاورتان استرجاعٌ لا مقارنة. نقرأ الطرفين
+     فنقول ما يجمعهما وما ينفرد به كلٌّ منهما — بمفرداتٍ مأخوذةٍ من عناوين
+     الدكتور ومتونه، لا من عندنا، ولا حكمَ ننسبه إليه لم يقله. */
   if (intent === INTENTS.COMPARE || /(?:قارن|الفرق بين|مقارنه بين|ايهما افضل)/.test(clean)) {
     const sides = compareSides(stripped || clean)
     if (sides) {
@@ -868,9 +1228,17 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
           ? `*${label}:*\n${items.map((item) => `• ${item.title}\n${item.url}`).join('\n')}`
           : `*${label}:* ما لقيت مادة منشورة مباشرة عنها.`
         const all = [...leftItems, ...rightItems]
+        const analysis = compareAnalysis(leftItems, rightItems)
+        const readingLines = []
+        if (analysis?.shared.length) readingLines.push(`• الخيط الجامع بينهما في كتابته: ${analysis.shared.join(' · ')}.`)
+        if (analysis?.leftOnly.length) readingLines.push(`• ما ينفرد به «${sides[0]}»: ${analysis.leftOnly.join(' · ')}.`)
+        if (analysis?.rightOnly.length) readingLines.push(`• ما ينفرد به «${sides[1]}»: ${analysis.rightOnly.join(' · ')}.`)
+        const reading = readingLines.length
+          ? `\n\n*قراءتي في الطرفين* (من مفردات الدكتور نفسها):\n${readingLines.join('\n')}\n\nوالحكم النهائي لقراءتك — لا أنسب للدكتور رأياً لم يكتبه.`
+          : '\n\nوالحكم لقراءتك.'
         return {
           kind: 'reply', reason: 'compare-topics', intent,
-          reply: signReply(`جمعت لك طرفي المقارنة من منشورات الدكتور — والحكم لقراءتك:\n\n${block(sides[0], leftItems)}\n\n${block(sides[1], rightItems)}`, messages),
+          reply: signReply(`جمعت لك طرفي المقارنة من منشورات الدكتور:\n\n${block(sides[0], leftItems)}\n\n${block(sides[1], rightItems)}${reading}`, messages),
           evidence: all.map((item) => item.id), contextItemIds: all.map((item) => item.id).slice(0, 12), contextIndex: 0, lastTopic: `${sides[0]} و${sides[1]}`,
         }
       }
@@ -989,7 +1357,7 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
     return current
       ? {
         kind: 'reply', reason: 'context-summary', intent,
-        reply: signReply(excerptReply(current, true), messages),
+        reply: signReply(distilledReply(current), messages),
         evidence: [current.id], contextItemIds: conversation.contextItemIds, contextIndex: conversation.contextIndex || 0,
         /* التلخيص يبدأ رحلة القراءة من أولها: «كمل» بعده تُعطي ما بعد الملخص. */
         patch: { readCursor: 42, readCursorItemId: current.id },
@@ -1106,9 +1474,19 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   if ([INTENTS.SURPRISE_ME, INTENTS.CONTENT_BY_MOOD, INTENTS.CURATED_PICKS].includes(intent)) {
     const pool = siteIndex().filter((item) => !previousIds.includes(item.id) && ['article', 'curated', 'podcast'].includes(item.kind))
     const signature = Number.parseInt(hash(`${conversation.lastInboundAt || ''}:${text}:${previousIds.join('|')}`).slice(0, 8), 16)
-    const found = pool.length ? [pool[signature % pool.length]] : latestSiteItems([], 1)
+    /* «فاجئني» على مقاس القارئ: من تراكم اهتمامه عبر الجلسات نختار له من
+       داخل اهتمامه أولاً — ومن لا ذاكرة له يبقى الاختيار كما كان. */
+    const interests = readerInterests(conversation, 2)
+    const tailored = interests.length
+      ? pool.filter((item) => scoreContent(item, interests).matched > 0)
+      : []
+    const source = tailored.length ? tailored : pool
+    const intro = tailored.length
+      ? `اخترتها لك من داخل ما تتابعه (${interests.join(' · ')}):`
+      : 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:'
+    const found = source.length ? [source[signature % source.length]] : latestSiteItems([], 1)
     if (found.length) return {
-      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, 'اخترت لك هذه؛ فيها فكرة تستحق الوقوف عندها:'), messages),
+      kind: 'reply', reason: 'surprise', intent, reply: signReply(siteResultReply(found, intro), messages),
       evidence: found.map((item) => item.id), contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: found[0].title,
     }
   }
@@ -1120,12 +1498,137 @@ export function decideGroundedResponse({ text, hasMedia = false, rules = [], pri
   /* ترقية ٣: شرطا النوع والزمن يُقرآن من نص السؤال نفسه ويُطبَّقان مرشِّحَين. */
   const filters = parseCompoundFilters(text)
   const filterLabel = describeCompoundFilters(filters)
-  const found = exactSiteResults(query, '', { kinds, limit: 3, filters })
-  if (found.length) return {
-    kind: 'reply', reason: classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
-    reply: signReply(siteResultReply(found, filterLabel ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:` : undefined), messages),
-    evidence: found.map((item) => item.id),
-    contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
+
+  /* ─── طلبان في نفَسٍ واحد ───
+     يُجرَّب قبل البحث الواحد، ولا يُعتمد إلا إذا أثمر الطرفان معاً مادةً
+     منشورة — وإلا فالجملة واحدةٌ كما وردت، بلا تقطيعٍ يشوّه المعنى. */
+  const compoundAsks = splitCompoundAsks(text)
+  if (compoundAsks) {
+    const answered = compoundAsks.map((ask) => ({ ask, items: exactSiteResults(ask, ask, { limit: 2 }) }))
+    if (answered.every((row) => row.items.length)) {
+      const blocks = answered.map(({ ask, items }) => `*${ask}:*\n${items.map((item) => `• ${item.title}\n${item.url}`).join('\n')}`)
+      const all = answered.flatMap((row) => row.items)
+      return {
+        kind: 'reply', reason: 'compound-two-asks', intent,
+        reply: signReply(`فهمت منك طلبين، وهذا جواب كلٍّ منهما من منشور الدكتور:\n\n${blocks.join('\n\n')}`, messages),
+        evidence: all.map((item) => item.id),
+        contextItemIds: all.map((item) => item.id).slice(0, 12), contextIndex: 0, lastTopic: compoundAsks.join(' و'),
+        ...(interestPatch(conversation, `${compoundAsks[0]} ${compoundAsks[1]}`) ? { patch: interestPatch(conversation, `${compoundAsks[0]} ${compoundAsks[1]}`) } : {}),
+      }
+    }
+  }
+
+  /* ما علّمتَه إيّاه: صياغةٌ أخطأ فيها من قبل، وأسندتَها أنت إلى موضوع.
+     تُقرأ قبل التخمين الأعمى — فالخطأ الذي صُحّح مرّةً لا يتكرّر. */
+  const taught = classification.fallback || intent === INTENTS.UNKNOWN ? taughtQueryFor(clean) : ''
+  if (taught) {
+    const learnedRows = scoredSiteResults(taught, { limit: 3 })
+    if (learnedRows.length) {
+      const learned = learnedRows.map((row) => row.item)
+      return {
+        kind: 'reply', reason: 'taught-phrase', intent,
+        reply: signReply(siteResultReply(learned, 'فهمتها من تصحيح الدكتور لي سابقاً — وهذا ما عنده فيها:'), messages),
+        evidence: learned.map((item) => item.id),
+        contextItemIds: learned.map((item) => item.id), contextIndex: 0, lastTopic: taught,
+      }
+    }
+  }
+
+  /* ترتيبٌ على مقاس من يسأل: الباحث تُقدَّم له الورقة المحكّمة، وولي الأمر
+     المقال. الترتيب وحده يتغيّر — لا المحتوى ولا الصدق ولا ما هو منشور. */
+  const readerKind = readerKindOf(conversation)
+  const readerOrder = kinds.length ? [] : kindsForReader(readerKind)
+  /* **ترتيبٌ لا ترشيح، وأفضلُ مطابقةٍ لا تُزاح.**
+     لو رشّحنا بالنوع لأخفينا عن الباحث مقالاً يفيده. ولو اكتفينا بترتيب
+     الثلاثة الأولى لما رأى الباحثُ ورقةً محكّمةً جاءت رابعةً في الدرجات.
+     فنوسّع النظر إلى خمسةٍ، ونُثبّت أعلى مطابقةٍ في مكانها مهما كان نوعها
+     (فالصلة أصدق من الصفة)، ثم نرتّب البقيّة على مقاسه ونأخذ ثلاثة. */
+  const rows = scoredSiteResults(query, { kinds, limit: readerOrder.length ? 5 : 3, filters })
+  const orderedRows = readerOrder.length && rows.length > 1
+    ? [rows[0], ...rows.slice(1)
+      .map((row, index) => ({ row, index }))
+      .sort((a, b) => {
+        const rank = (item) => { const i = readerOrder.indexOf(item.kind); return i === -1 ? readerOrder.length : i }
+        return rank(a.row.item) - rank(b.row.item) || a.index - b.index
+      })
+      .map((entry) => entry.row)]
+    : rows
+  let found = orderedRows.slice(0, 3).map((row) => row.item)
+
+  /* ═══ المعنى قبل اللفظ ═══
+     «تقييم الطلاب بلا درجات» لا تطابق «التقويم التربوي» حرفاً، وهما الشيء
+     نفسه عند الدكتور. نردّ لفظ السائل إلى مفهومه من معجمه (٢٩٠ مفهوماً و١٣٢٢
+     اسماً) ونبحث بأسماء المفهوم كلها. **زيادةُ إدراكٍ لا استبدال**: لا نُشغّله
+     إلا حين يقصُر البحث الحرفي، ولا نُزيح ما وجده — فما كان يعمل يبقى كما هو،
+     وما كان يسقط صار يُدرَك. */
+  const conceptHit = conceptQueryFor(query)
+  let conceptUsed = false
+  if (conceptHit) {
+    const conceptRows = scoredSiteResults(conceptHit.query, { kinds, limit: 5, filters })
+    const literalBest = orderedRows[0]?.norm || 0
+    const conceptBest = conceptRows[0]?.norm || 0
+    /* ثلاث حالاتٍ فقط يتدخّل فيها المفهوم — وفي غيرها يبقى البحث الحرفي كما
+       هو، فما كان يعمل لا يُمسّ:
+       (١) لم يجد اللفظُ شيئاً       → إنقاذٌ كامل
+       (٢) وجد أقلّ من ثلاث        → إكمالٌ بلا إزاحة
+       (٣) وجد، والمفهوم أوضح منه بفارقٍ بيّن (≥١٫٢٥×) → إعادة ترتيبٍ بالنسبة */
+    if (!found.length && conceptRows.length) {
+      conceptUsed = true
+      found = conceptRows.slice(0, 3).map((row) => row.item)
+    } else if (found.length < 3 && conceptRows.length) {
+      const known = new Set(found.map((item) => item.id))
+      found = [...found, ...conceptRows.map((row) => row.item).filter((item) => !known.has(item.id))].slice(0, 3)
+    } else if (conceptBest >= literalBest * 1.25 && conceptRows.length) {
+      const merged = new Map()
+      for (const row of [...orderedRows, ...conceptRows]) {
+        const previous = merged.get(row.item.id)
+        if (!previous || row.norm > previous.norm) merged.set(row.item.id, row)
+      }
+      const reranked = [...merged.values()].sort((a, b) => b.norm - a.norm).slice(0, 3)
+      /* لا نُعلن «فهمت مقصدك» إلا إذا غيّر المفهومُ الصدارة فعلاً. */
+      conceptUsed = reranked[0]?.item?.id !== found[0]?.id
+      found = reranked.map((row) => row.item)
+    }
+  }
+
+  /* ─── الشكّ يُسأل عنه، ولا يُخمَّن ───
+     كلمةٌ واحدة تخميناً + مرشَّحان متقاربان = سؤالٌ واحد. والجواب بـ«الأولى»
+     أو «الثانية» يمشي على مسار التنقّل المثبت (لا برقمٍ مجرّد، فالرقم
+     المفرد لغةُ التحدّي في هذه المحادثة). */
+  const rivals = ambiguousRivals(rows, query, Boolean(classification.fallback))
+  if (rivals) {
+    return {
+      kind: 'reply', reason: 'doubt-clarify', intent,
+      reply: signReply(`كلمتك تحتمل وجهين عند الدكتور، وما أحب أخمّن عليك:\n\n١) *${rivals[0].title}*\n٢) *${rivals[1].title}*\n\nأيّهما تقصد؟ قل «الأولى» أو «الثانية»، أو وضّح بكلمةٍ ثانية.`, messages),
+      evidence: rivals.map((item) => item.id),
+      contextItemIds: rivals.map((item) => item.id), contextIndex: 0, lastTopic: query,
+    }
+  }
+
+  if (found.length) {
+    const offer = found.length === 1 ? initiativeLine(conversation, found[0], previousIds) : ''
+    const signal = readerKindSignal(clean)
+    const patch = {
+      ...(interestPatch(conversation, query) || {}),
+      ...(offer ? { lastInitiativeAt: asIso() } : {}),
+      /* إشاراتٌ لا أحكام: نجمع ما يقوله عن نفسه ضمناً، ولا نصنّفه إلا بإشارتين.
+         مصفوفة محدودة السقف — كذاكرة الاهتمام، ولنفس سبب `merge:true`. */
+      ...(signal ? { readerSignals: [...(Array.isArray(conversation.readerSignals) ? conversation.readerSignals : []), signal].slice(-12) } : {}),
+    }
+    /* حين يكون الإدراكُ من المفهوم لا من اللفظ، نُصرّح به: هذه أمانةٌ مع
+       السائل (عرفتُ مقصدك لا لفظك)، وهي أيضاً أجملُ ما في الردّ. */
+    const intro = filterLabel
+      ? `فهمت شرطك (${filterLabel}). هذا ما يطابقه من موقع الدكتور:`
+      : conceptUsed && conceptHit
+        ? `فهمت أنك تقصد «${conceptHit.concept.canonicalAr}» — وهذا ما كتبه الدكتور فيه:`
+        : undefined
+    return {
+      kind: 'reply', reason: conceptUsed ? 'concept-search' : classification.fallback ? 'dialect-semantic-search' : 'site-index', intent,
+      reply: signReply(`${siteResultReply(found, intro)}${offer}`, messages),
+      evidence: found.map((item) => item.id),
+      contextItemIds: found.map((item) => item.id), contextIndex: 0, lastTopic: query,
+      ...(Object.keys(patch).length ? { patch } : {}),
+    }
   }
   /* الشرط مفهوم لكن لا مادة تطابقه: نصارح بالشرط ونعرض ما يطابق الموضوع
      وحده — أصدق من الصمت، وأنظف من تقديم مادةٍ تخالف شرطه بلا تنبيه. */
@@ -2338,6 +2841,11 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
         lastManualAt: now,
         updatedAt: now,
       }, { merge: true })
+      /* كتابةُ الدكتور بيده في أي محادثة دليلُ حضوره — يُستفاد منها في صدق
+         وعد التحويل البشري، ولا تُحفظ عنها أي بيانات أخرى. */
+      markOwnerActive(now)
+      void db.collection(COLLECTIONS.settings).doc('owner-presence')
+        .set({ lastActiveAt: now, updatedAt: now }, { merge: true }).catch(() => {})
       sendJson(res, 200, { ok: true, wakeActive: false })
       return
     }
@@ -2414,6 +2922,12 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     /* تحديث قوالب اللوحة خلفيّ لا يؤخر رداً: يجلب bot_messages/templates ضمن
        TTL داخلي، فيسري تحرير الدكتور من لوحة «رسائل البوت» خلال دقائق. */
     void refreshBotMessages().catch(() => {})
+    void primeTaughtPhrases(db).catch(() => {})
+    void (async () => {
+      if (ownerLastActiveAt) return
+      const snapshot = await db.collection(COLLECTIONS.settings).doc('owner-presence').get()
+      if (snapshot.exists) markOwnerActive(snapshot.data()?.lastActiveAt || 0)
+    })().catch(() => {})
     const wakePhrase = isWhatsAppWakePhrase(text)
     const manualTakeoverActive = data.mode === 'human'
       || (data.mode === 'silent' && Boolean(data.lastManualAt) && data.wakeActive !== true)
@@ -2442,10 +2956,14 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
        فتحها صاحبها بكتابة «موقع د. أحمد» بنفسه. wakeVersion=2 هي نسخة
        الإيقاظ المعتمدة؛ ما فتحه الوضع القديم تلقائياً (نسخة ١) لاغٍ. */
     if (wakePhrase) {
-      const welcome = buildWakeWelcome()
+      const welcome = buildWakeWelcome(botMessagesNow(), new Date(), data)
       /* ترقية ١: العائد بعد غياب يُستقبل باسم ما وقفنا عنده، لا كزائرٍ أول
-         مرة. البوابة نفسها لم تُمس — هذا سطرٌ فوق ترحيبٍ استحقه بإيقاظه. */
-      const returningLine = returningReaderLine(data)
+         مرة. البوابة نفسها لم تُمس — هذا سطرٌ فوق ترحيبٍ استحقه بإيقاظه.
+         وحين تحمل البوابةُ خبرَه هو، يُختصر السطر إلى تحيّةٍ ولا يُسأل
+         «نكمل من هناك؟» — فالجواب أمامه، والتكرار ثرثرة. */
+      const returningLine = welcome.attentive
+        ? returningReaderLine(data).split('.')[0] + (returningReaderLine(data) ? '.' : '')
+        : returningReaderLine(data)
       const signedWelcome = signReply(returningLine ? `${returningLine}\n\n${welcome.text}` : welcome.text)
       await ref.set({
         ...basePatch,
@@ -2646,6 +3164,21 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
     /* ذاكرة اللهجة الحيّة: الصياغة التي لم تُفهم بثقة تُرصد للمراقبة في اللوحة
        (كما كانت أيام الوكيل المحلي). رصدٌ خلفي لا يؤخر الرد، ولا يتعلم البوت
        منها جواباً — الاعتماد يبقى للدكتور صراحةً. */
+    /* عدّاد الجودة اليومي: رقمٌ واحد لكل ردّ، بلا نصٍّ ولا رقم هاتف. */
+    void (async () => {
+      /* `FieldValue` يُستورد هنا لا في رأس الملف: العقل يُختبر بلا firebase،
+         واستيرادُه ساكناً كان يجرّ حزمة الخادم كاملةً إلى الاختبارات. */
+      const { FieldValue } = await import('firebase-admin/firestore')
+      const day = new Intl.DateTimeFormat('en-CA', { timeZone: KUWAIT_TZ }).format(new Date())
+      const bucket = qualityBucketFor(decision.reason)
+      await db.collection(COLLECTIONS.quality).doc(day).set({
+        day,
+        total: FieldValue.increment(1),
+        [bucket]: FieldValue.increment(1),
+        updatedAt: now,
+      }, { merge: true })
+    })().catch(() => {})
+
     if (['active-clarify', 'no-grounded-answer', 'near-suggestions', 'correction-clarify'].includes(decision.reason)) {
       const phrase = bounded(stripArabicGreetings(text) || normalizeArabicMessage(text), 160)
       if (phrase.length >= 2) {
@@ -2658,7 +3191,9 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
           await patternRef.set({
             id: patternId,
             phrase,
-            status: previous.status === 'learned' ? 'learned' : 'observing',
+            /* الصياغة التي علّمتَها لا تعود «قيد المراقبة» لمجرّد تكرارها —
+               وإلا محا التكرارُ تعليمك. المعتمد والمُعلَّم يبقيان. */
+            status: ['learned', 'taught'].includes(previous.status) ? previous.status : 'observing',
             reason: bounded(decision.reason, 60),
             hits: Number(previous.hits || 0) + 1,
             firstSeenAt: previous.firstSeenAt || now,
@@ -3703,6 +4238,38 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       return
     }
 
+    /* ═══ الجودة مقيسة ═══
+       سبعة أرقامٍ عن أسبوع: كم سؤالاً أُجيب من المنشور، وكم انتهى بـ«ما
+       لقيت»، وكم أنقذه المعجم أو تعليم الدكتور. بلا هذه الأرقام يبقى كل
+       تحسينٍ تخميناً — ومنها يُعرف هل الترقيات تنفع فعلاً. */
+    if (path === '/quality' && method === 'GET') {
+      const snapshot = await db.collection(COLLECTIONS.quality).orderBy('day', 'desc').limit(14).get().catch(() => ({ docs: [] }))
+      const days = snapshot.docs.map(serializeDoc).filter(Boolean)
+      const week = days.slice(0, 7)
+      const sum = (key) => week.reduce((total, row) => total + Number(row[key] || 0), 0)
+      const total = sum('total')
+      const missed = sum('missed')
+      const pct = (value) => (total ? Math.round((value / total) * 100) : 0)
+      sendJson(res, 200, {
+        days,
+        week: {
+          total,
+          answered: sum('answered'),
+          clarified: sum('clarified'),
+          missed,
+          escalated: sum('escalated'),
+          concept: sum('concept'),
+          taught: sum('taught'),
+          missedPercent: pct(missed),
+          answeredPercent: pct(sum('answered')),
+        },
+        glossary: glossarySize(),
+        note: total
+          ? `من ${total} ردّاً هذا الأسبوع: ${pct(sum('answered'))}٪ أُجيب من المنشور، و${pct(missed)}٪ انتهى بلا مادة. كلما نزلت نسبة «بلا مادة» صار الفهم أعمق.`
+          : 'لم تُسجَّل ردود بعد. الأرقام تبدأ من أول محادثة بعد هذا التحديث.',
+      })
+      return
+    }
     if (path === '/learning' && method === 'GET') {
       /* الذاكرة الحيّة تعرض الصياغات المرصودة فعلاً (ما لم يُفهم بثقة) —
          كانت اللوحة تقرأ أصفاراً لأن العقل المركزي لم يكن يرصد شيئاً. */
@@ -3713,20 +4280,23 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const observed = observedSnapshot.docs.map(serializeDoc).filter(Boolean)
       const observing = observed.filter((row) => row.status === 'observing')
       const ignored = observed.filter((row) => row.status === 'ignored')
+      const taught = observed.filter((row) => row.status === 'taught')
       sendJson(res, 200, {
         total: LEXICON_SIZE + rules.length + observed.length,
         learned: LEXICON_SIZE,
         observing: observing.length,
         ignored: ignored.length,
-        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. الصياغات غير المفهومة تُرصد هنا للمراقبة فقط، ولا يتعلم البوت منها قاعدة أو جواباً بلا اعتمادك الصريح.',
+        taught: taught.length,
+        policy: 'القاموس الكويتي والمصطلحات المعتمدة مفعّلة في الفهم الدلالي. الصياغات غير المفهومة تُرصد هنا، ولا يتعلم البوت منها شيئاً إلا بإسنادك الصريح — وحين تُسنِدها يبحث عن موضوعك في المنشور، ولا يولّد جواباً.',
         items: [
           ...observed.slice(0, 80).map((row) => ({
             id: String(row.id),
             phrase: bounded(row.phrase, 160),
-            status: row.status === 'ignored' ? 'ignored' : 'observing',
+            status: row.status === 'ignored' ? 'ignored' : row.status === 'taught' ? 'taught' : 'observing',
             kind: 'observed-phrase',
             hits: Number(row.hits || 1),
             lastSeenAt: row.lastSeenAt || null,
+            teachQuery: bounded(row.teachQuery, 160) || null,
           })),
           ...rules.slice(0, 40).map((rule) => ({
             id: String(rule.id),
@@ -3742,7 +4312,20 @@ export function createWhatsAppController({ getFirestore, verifyAdminRequest } = 
       const learningAction = path.match(/^\/learning\/([A-Za-z0-9_-]{4,64})\/(observing|ignored)$/)
       if (learningAction && method === 'POST') {
         await db.collection(COLLECTIONS.learning).doc(learningAction[1])
-          .set({ status: learningAction[2], updatedAt: asIso() }, { merge: true })
+          .set({ status: learningAction[2], updatedAt: asIso(), teachQuery: null }, { merge: true })
+        await primeTaughtPhrases(db, true).catch(() => {})
+        return handleAdmin(req, res, new URL('/api/whatsapp/admin/learning', 'http://localhost'), 'GET')
+      }
+      /* التعليم: تُسنِد الصياغة التي أخطأ فيها إلى موضوعٍ من موادّك، فيجيب
+         عنها في المرة القادمة بحثاً في المنشور — لا جواباً مولَّداً. */
+      const teachAction = path.match(/^\/learning\/([A-Za-z0-9_-]{4,64})\/teach$/)
+      if (teachAction && method === 'POST') {
+        const body = await readJson(req)
+        const teachQuery = bounded(body.query, 160).trim()
+        if (!teachQuery) { sendJson(res, 400, { ok: false, error: 'اكتب الموضوع الذي تُسنِد إليه هذه الصياغة.' }); return }
+        await db.collection(COLLECTIONS.learning).doc(teachAction[1])
+          .set({ status: 'taught', teachQuery, taughtAt: asIso(), updatedAt: asIso() }, { merge: true })
+        await primeTaughtPhrases(db, true).catch(() => {})
         return handleAdmin(req, res, new URL('/api/whatsapp/admin/learning', 'http://localhost'), 'GET')
       }
     }

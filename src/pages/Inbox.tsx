@@ -257,7 +257,6 @@ export default function Inbox() {
                   <span className="text-[.72rem] font-bold text-accent">خيوط من الأرشيف</span>
                   <h2 id="archive-dialogue-title" className="mt-2 font-display text-[clamp(1.45rem,3vw,2.25rem)] font-semibold leading-[1.55] text-ink">حين تتجاور المواد، تظهر فكرة جديدة.</h2>
                 </div>
-                <p className="text-[.84rem] font-light leading-[1.9] text-soft">تجمع هذه البطاقات مواد متباعدة حول خيطٍ واحد، لتكشف زاوية جديدة بين المقال والبحث والكتاب.</p>
               </div>
             </FadeUp>
             <div className="archive-dialogue-rail mobile-card-rail mt-8 grid items-stretch gap-5 md:grid-cols-2">

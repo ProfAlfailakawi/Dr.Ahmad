@@ -5,7 +5,7 @@
     "cleanUrls": true,
     "ignore": [
       "firebase.json",
-      "**/.*",
+      "**/.!(well-known)",
       "**/node_modules/**"
     ],
     "redirects": [
@@ -290,6 +290,49 @@
           {
             "key": "Content-Security-Policy",
             "value": "default-src 'self'; script-src 'self' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.adtrafficquality.google https://adservice.google.com https://googleads.g.doubleclick.net https://www.google.com https://www.gstatic.com https://plausible.io; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; media-src 'self' https:; connect-src 'self' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.adtrafficquality.google https://adservice.google.com https://googleads.g.doubleclick.net https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebasestorage.googleapis.com https://*.firebasestorage.app https://www.google.com https://plausible.io https://api.crossref.org https://api.pexels.com https://images.pexels.com https://api.openverse.org https://commons.wikimedia.org https://upload.wikimedia.org wss://*.firebaseio.com https://orbitq8.web.app; frame-src https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.adtrafficquality.google https://adservice.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://maps.google.com https://www.youtube-nocookie.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+          }
+        ]
+      },
+      {
+        "source": "/.well-known/apple-app-site-association",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "/card.vcf",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/vcard; charset=utf-8"
+          },
+          {
+            "key": "Content-Disposition",
+            "value": "inline; filename=\"Dr-Ahmad-Alfailakawi.vcf\""
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "/card.pkpass",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/vnd.apple.pkpass"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
           }
         ]
       },

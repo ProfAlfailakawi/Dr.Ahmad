@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["55V8UB9X3H.com.dralfailakawi.library"],
+        "components": [{ "/": "/card", "comment": "البطاقة الرقمية" }]
+      }
+    ]
+  },
+  "appclips": {
+    "apps": ["55V8UB9X3H.com.dralfailakawi.library.Clip"]
+  }
+}

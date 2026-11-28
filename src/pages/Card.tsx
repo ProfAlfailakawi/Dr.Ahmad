@@ -1,48 +1,52 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Page, SocialIcon } from '../components/ui'
 import { useSeo } from '../components/seo'
 import { profile, socials, academicProfiles, links, site } from '../data'
-import { ArrowLeft, Check, Globe, UserPlus } from 'lucide-react'
+import { ArrowLeft, Check, Globe, UserPlus, Wallet } from 'lucide-react'
 
 /*
  * البطاقة الرقمية `/card`: صفحةٌ مستقلّةٌ للمؤتمرات واللقاءات — اسمك وصفتك،
  * وزرٌّ واحدٌ يحفظ جهة اتصالك في هاتف من أمامك (ملف vCard قياسي)، ثم روابطك
  * الرسمية بهدوء. لا خدمة خارجية، ولا تلوّث على صفحاتك القائمة.
  */
-const SAVED_CONTACT_TITLE = 'أستاذ تكنولوجيا التعليم والذكاء الاصطناعي'
+/* ملف vCard ثابت في public/card.vcf يحمل الصورة والروابط بعناوينها. Safari وApp Clip
+   يفتحانه مباشرةً في معاينة «جهة اتصال جديدة»، بلا تنزيل ملف. */
+const VCARD_URL = '/card.vcf'
 
-function buildVCard() {
-  return [
-    'BEGIN:VCARD',
-    'VERSION:3.0',
-    `FN:${profile.fullName}`,
-    'N:الفيلكاوي;أحمد;حسين;د.;',
-    `TITLE:${SAVED_CONTACT_TITLE}`,
-    `URL:${site.url}`,
-    ...academicProfiles.map((item) => `URL:${item.url}`),
-    ...socials.map((item) => `URL:${item.url}`),
-    'END:VCARD',
-  ].join('\r\n')
-}
+/* لافتة App Clip في Safari: تظهر أعلى الصفحة باسم البطاقة وزر «فتح». */
+const APP_CLIP_META = 'app-id=6834582484, app-clip-bundle-id=com.dralfailakawi.library.Clip, app-clip-display=card'
 
 export default function Card() {
   useSeo({ title: 'البطاقة الرقمية', path: '/card', description: 'البطاقة الرقمية للدكتور أحمد حسين الفيلكاوي — احفظ جهة الاتصال والروابط الرسمية بلمسة.' })
   const [saved, setSaved] = useState(false)
 
+  useEffect(() => {
+    // index.html يحمل وسم apple-itunes-app للتطبيق؛ في /card نضيف إليه الـ App Clip ثم نعيده.
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="apple-itunes-app"]')
+    const created = !meta
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.name = 'apple-itunes-app'
+      document.head.appendChild(meta)
+    }
+    const previous = meta.content
+    meta.content = APP_CLIP_META
+    return () => {
+      if (created) meta?.remove()
+      else if (meta) meta.content = previous
+    }
+  }, [])
+
+  // .pkpass يفتح في Wallet على أجهزة Apple فقط؛ أندرويد لا يفهمه فلا نعرض الزر له.
+  const [isApple, setIsApple] = useState(false)
+  useEffect(() => {
+    const ua = navigator.userAgent
+    setIsApple(/iPhone|iPad|iPod|Macintosh/.test(ua) && !/Android/.test(ua))
+  }, [])
+
   const saveContact = () => {
-    try {
-      const blob = new Blob([buildVCard()], { type: 'text/vcard;charset=utf-8' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'د-أحمد-الفيلكاوي.vcf'
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 3000)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2600)
-    } catch { /* التنزيل اختياري */ }
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2600)
   }
 
   const globe = (
@@ -61,8 +65,8 @@ export default function Card() {
           <h1 className="mt-6 font-display text-[clamp(1.6rem,5vw,2.1rem)] font-bold leading-[1.25] text-ink">{profile.fullName}</h1>
           <p className="mt-2 text-[.86rem] font-light leading-[1.8] text-soft">{profile.eyebrow}</p>
 
-          <button
-            type="button"
+          <a
+            href={VCARD_URL}
             onClick={saveContact}
             className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-accent px-7 py-3 text-[.9rem] font-semibold text-canvas transition-colors duration-300 hover:bg-accent-deep"
           >
@@ -74,8 +78,14 @@ export default function Card() {
                 احفظ جهة الاتصال
               </>
             )}
-          </button>
-          <p className="mt-3 text-[.7rem] text-soft/75">تُضاف إلى جهات اتصال هاتفك مباشرةً (ملف vCard).</p>
+          </a>
+          <p className="mt-3 text-[.7rem] text-soft/75">تُضاف إلى جهات اتصال هاتفك مباشرةً مع الصورة والروابط.</p>
+          {isApple && (
+            <a href="/card.pkpass" className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-xl bg-black px-5 py-2.5 text-[.82rem] font-semibold text-white">
+              <Wallet aria-hidden size={17} strokeWidth={1.6} />
+              أضف إلى Apple Wallet
+            </a>
+          )}
 
           <div className="mt-10 flex items-center justify-center gap-2.5" aria-label="الملفات الأكاديمية">
             {academicProfiles.map((item) => (

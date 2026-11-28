@@ -15,6 +15,9 @@ import { buildBookArchitecture, buildEvidenceChain, buildMeaningFingerprint, typ
 import { buildPublicationPassportDraft, type PublicationPassportDraft, type SignedPublicationPassport } from '../../lib/sovereign-publishing.mjs'
 import { requestPublicationPassportSignature } from '../../lib/publication-passport-client'
 import { audioProofAssets } from '../../lib/audio-proof'
+import { buildMultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
+import { advanceCascadeCorrection, buildCascadeCorrectionCase, cascadeCorrectionId, cascadeCorrectionSummary, correctionBlocksRelease, correctionReadyForPassport, type CascadeCorrectionCase, type CascadeCorrectionEvent } from '../../lib/cascade-correction.mjs'
+import { buildImpactMirror } from '../../lib/impact-mirror.mjs'
 
 export type ManagedKind = 'article' | 'book' | 'paper' | 'media'
 
@@ -83,9 +86,9 @@ const labels: Record<ManagedKind, { singular: string; plural: string }> = {
 
 const editableFields: Record<ManagedKind, string[]> = {
   article: ['slug', 'title', 'iso', 'date', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt'],
-  book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors'],
+  book: ['slug', 'title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors', 'year', 'edition', 'publisher', 'pageCount', 'longDescription', 'targetAudience', 'whyWritten', 'toc'],
   paper: ['slug', 'title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'scholar', 'researchgate', 'orcid', 'repository', 'coAuthors', 'doi', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt', 'fieldEvidence', 'conflictReport', 'qualityReport', 'qualityReady'],
-  media: ['slug', 'title', 'outlet', 'url', 'iso', 'date'],
+  media: ['slug', 'title', 'outlet', 'url', 'iso', 'date', 'program', 'channel', 'duration', 'topics', 'thumbnail', 'clipStart', 'clipEnd', 'transcript'],
 }
 
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.94rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -251,9 +254,9 @@ function slugify(value: string) {
 function blank(kind: ManagedKind): Form {
   const iso = todayIso()
   if (kind === 'article') return { slug: '', title: '', iso, date: dateArabic(iso), cat: '', excerpt: '', body: '', bodyVocalized: '', source: '', url: '', status: 'draft', scheduledAt: '', _aiReady: '', _manualPublishOverride: '', _manualPublishReason: '' }
-  if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '' }
+  if (kind === 'book') return { slug: '', title: '', isbn: '', desc: '', cover: '', pdf: '', coAuthors: '', year: '', edition: '', publisher: '', pageCount: '', longDescription: '', targetAudience: '', whyWritten: '', toc: '' }
   if (kind === 'paper') return { slug: '', title: '', titleAr: '', meta: '', abstractAr: '', journal: '', source: '', url: '', pdf: '', scholar: '', researchgate: '', orcid: DEFAULT_RESEARCH_ORCID, repository: '', coAuthors: '', doi: '', reviewStatus: 'محكّم', studyType: '', methodology: '', sample: '', researchQuestion: '', keyFinding: '', contribution: '', applications: '', limitations: '', year: '', metadataText: '', pdfText: '', analysisText: '', analysisFingerprint: '', analysisSources: '', evidenceLabel: '', evidenceScore: '', keywords: '', openAccess: '', analysisConfidence: '', analysisNeedsReview: '', analyzedAt: '', fieldEvidence: '', conflictReport: '[]', qualityReport: '', qualityReady: '' }
-  return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso) }
+  return { slug: '', title: '', outlet: '', url: '', iso, date: dateArabic(iso), program: '', channel: '', duration: '', topics: '', thumbnail: '', clipStart: '', clipEnd: '', transcript: '' }
 }
 
 /* مركز جاهزية النشر: المسودة تُحفظ دائماً، أما النشر فيحتاج اكتمال الفحوص أو
@@ -268,8 +271,10 @@ function publishReadiness(kind: ManagedKind, form: Form) {
     )
   } else if (kind === 'book') {
     checks.push(
-      { label: 'وصف تعريفي (٢٠ كلمة فأكثر)', ok: (form.desc || '').trim().split(/\s+/).filter(Boolean).length >= 20 },
+      { label: 'وصف الكتاب', ok: Boolean((form.longDescription || '').trim()) },
       { label: 'غلاف الكتاب', ok: Boolean(form.cover) },
+      { label: 'البيانات الببليوغرافية', ok: Boolean(form.year && form.edition && form.publisher && form.pageCount && form.isbn) },
+      { label: 'الجمهور وسبب التأليف والفهرس', ok: Boolean(form.targetAudience && form.whyWritten && form.toc) },
     )
   } else if (kind === 'paper') {
     checks.push(
@@ -282,6 +287,8 @@ function publishReadiness(kind: ManagedKind, form: Form) {
       { label: 'رابط يوتيوب صالح', ok: /(?:v=|youtu\.be\/|shorts\/|embed\/)[\w-]{6,}/.test(form.url || '') },
       { label: 'الجهة الإعلامية', ok: Boolean((form.outlet || '').trim()) },
       { label: 'تاريخ اللقاء', ok: Boolean(form.iso) },
+      { label: 'مدة ومحاور ومقتطف', ok: Boolean(form.duration && form.topics && form.clipStart && form.clipEnd) },
+      { label: 'نص مفرّغ مراجع', ok: Boolean((form.transcript || '').trim()) },
     )
   }
   /* الإنذار الأمني الفوري: بصمة المنظومة الخاصة في حقل عام تُكشف وقت الكتابة لا وقت البناء */
@@ -330,7 +337,14 @@ function objectRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, any> : {}
 }
 
-function articlePublicationPassportDraft(form: Form, current?: ManagedRecord | null, evidenceAlerts: string[] = []): PublicationPassportDraft {
+function correctionCaseFromForm(form: Form): CascadeCorrectionCase | null {
+  try {
+    const value = JSON.parse(form._correctionCase || 'null')
+    return value?.kind === 'cascade-correction-protocol' ? value as CascadeCorrectionCase : null
+  } catch { return null }
+}
+
+function articlePublicationPassportDraft(form: Form, current?: ManagedRecord | null, evidenceAlerts: string[] = [], correctionCase?: CascadeCorrectionCase | null): PublicationPassportDraft {
   const studio = objectRecord(current?.publishingStudio)
   const socialPack = objectRecord(studio.socialPack)
   const existingPassport = objectRecord(current?.publicationPassport)
@@ -341,15 +355,17 @@ function articlePublicationPassportDraft(form: Form, current?: ManagedRecord | n
     || !same(form.body, current.body)
     || !same(form.excerpt, current.excerpt)
   ))
-  const audioAssets = contentChanged ? [] : audioProofAssets(form.slug || current?.slug || '')
+  const activeCorrection = correctionCase && correctionBlocksRelease(correctionCase) ? correctionCase : null
+  const holds = activeCorrection?.holds
+  const audioAssets = contentChanged || holds?.audioReuse ? [] : audioProofAssets(form.slug || current?.slug || '')
   const existingDesign = objectRecord(existingComponents.design)
   const visualDirections = Array.isArray(socialPack.visualDirections) ? socialPack.visualDirections : []
   const carouselSlides = Array.isArray(socialPack.carouselSlides) ? socialPack.carouselSlides : []
-  const designCount = contentChanged ? 0 : visualDirections.length + carouselSlides.length || Number(existingDesign.assetCount || 0)
+  const designCount = contentChanged || holds?.designExport ? 0 : visualDirections.length + carouselSlides.length || Number(existingDesign.assetCount || 0)
   const existingSocial = objectRecord(existingComponents.social)
   const xPosts = Array.isArray(socialPack.x) ? socialPack.x.map(String) : []
   const socialValues = [socialPack.linkedin, socialPack.facebook, socialPack.threads, socialPack.instagramCaptions, socialPack.stories, socialPack.whatsapp, socialPack.newsletter]
-  const platformCount = contentChanged ? 0 : 1 + socialValues.filter((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)).length
+  const platformCount = contentChanged || holds?.socialReuse ? 0 : 1 + socialValues.filter((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)).length
   const relatedPapers = Array.isArray(studio.relatedPapers) ? studio.relatedPapers.map((item: unknown) => String(objectRecord(item).slug || '')).filter(Boolean) : []
   const existingSources = objectRecord(existingComponents.sources)
   const sourceIds = [...relatedPapers, form.source || form.url || '', ...(Array.isArray(existingSources.ids) ? existingSources.ids.map(String) : [])].filter(Boolean)
@@ -360,32 +376,69 @@ function articlePublicationPassportDraft(form: Form, current?: ManagedRecord | n
   ].filter(Boolean)
   const alerts = [...evidenceAlerts]
   if (contentChanged && sourceIds.length) alerts.push('تغيّر النص بعد الجواز السابق؛ تحتاج صلة المصادر مراجعة جديدة.')
+  const fingerprint = buildMeaningFingerprint({
+    slug: form.slug || current?.slug || '',
+    title: form.title || '',
+    excerpt: form.excerpt || '',
+    body: form.body || '',
+    sourceIds,
+  })
+  const socialRows: Array<{ id: string; channel: string; text: string }> = []
+  const appendSocial = (channel: string, value: unknown) => {
+    const list = Array.isArray(value) ? value : value ? [value] : []
+    list.map(String).filter(Boolean).forEach((text, index) => socialRows.push({ id: `${channel}-${index + 1}`, channel, text }))
+  }
+  if (!contentChanged && !holds?.socialReuse) {
+    appendSocial('X', socialPack.x); appendSocial('LinkedIn', socialPack.linkedin); appendSocial('Facebook', socialPack.facebook)
+    appendSocial('Threads', socialPack.threads); appendSocial('Instagram', socialPack.instagramCaptions); appendSocial('Stories', socialPack.stories)
+    appendSocial('Reel', socialPack.reelScript); appendSocial('WhatsApp', socialPack.whatsapp); appendSocial('Newsletter', socialPack.newsletter)
+  }
+  const designRows = contentChanged || holds?.designExport ? [] : [
+    ...visualDirections.map((item: unknown, index: number) => { const row = objectRecord(item); return { id: `direction-${index + 1}`, channel: 'اتجاه بصري', text: `${String(row.headline || '')}\n${String(row.subline || '')}` } }),
+    ...carouselSlides.map((item: unknown, index: number) => { const row = objectRecord(item); return { id: `slide-${index + 1}`, channel: 'شريحة', text: `${String(row.kicker || '')}\n${String(row.title || '')}\n${String(row.body || '')}` } }),
+  ].filter((item) => item.text.trim())
+  const semanticCourtInput = {
+    article: { slug: form.slug || current?.slug || '', title: form.title || '', excerpt: form.excerpt || '', body: form.body || '' },
+    fingerprint,
+    media: { audio: audioAssets, social: socialRows, designs: designRows },
+    evidence: { sourceIds, proofs: sourceProofs, alerts },
+  }
+  const semanticCourt = buildMultimodalMeaningCourt(semanticCourtInput)
   return buildPublicationPassportDraft({
     article: {
       slug: form.slug || current?.slug || '',
       title: form.title || '',
       excerpt: form.excerpt || '',
       body: form.body || '',
-      meaningFingerprint: String(objectRecord(studio.sovereignPublication).fingerprint || ''),
+      meaningFingerprint: fingerprint.hash,
     },
     audio: { assets: audioAssets },
     design: {
       assetCount: designCount,
-      qualityScore: contentChanged ? 0 : Number(socialPack.qualityScore || existingDesign.qualityScore || 0),
+      qualityScore: contentChanged || holds?.designExport ? 0 : Number(socialPack.qualityScore || existingDesign.qualityScore || 0),
       fingerprints: visualDirections.map((item: unknown) => JSON.stringify(item)),
     },
     social: {
-      tweetCount: contentChanged ? 0 : xPosts.length || Number(existingSocial.tweetCount || 0),
-      platformCount: contentChanged ? 0 : platformCount || Number(existingSocial.platformCount || 0),
+      tweetCount: contentChanged || holds?.socialReuse ? 0 : xPosts.length || Number(existingSocial.tweetCount || 0),
+      platformCount: contentChanged || holds?.socialReuse ? 0 : platformCount || Number(existingSocial.platformCount || 0),
       campaignId: String(objectRecord(studio.sovereignPublication).campaignId || existingSocial.campaignId || ''),
-      content: contentChanged ? '' : JSON.stringify(socialPack),
+      content: socialRows.map((item) => item.text).join('\n\n'),
     },
     evidence: { sourceIds, proofs: sourceProofs, alerts },
+    semanticCourt,
+    semanticCourtInput,
     releaseDecision: {
       targetStatus: form.status || 'draft',
       manualOverride: form._manualPublishOverride === '1',
       overrideReason: form._manualPublishReason || '',
     },
+    ...(activeCorrection ? { correction: {
+      caseId: activeCorrection.id,
+      status: activeCorrection.status,
+      sourceStatus: activeCorrection.trigger.sourceStatus,
+      replacesPassportId: activeCorrection.previousPassportId || String(existingPassport.passportId || ''),
+      readyForPassport: correctionReadyForPassport(activeCorrection),
+    } } : {}),
   })
 }
 
@@ -707,7 +760,9 @@ function Editor({
   const [bookArchitecture, setBookArchitecture] = useState<BookArchitecture | null>(null)
   const [bookArchitectureBusy, setBookArchitectureBusy] = useState(false)
   const [bookArchitectureNotice, setBookArchitectureNotice] = useState('')
-  const [articleEvidenceReview, setArticleEvidenceReview] = useState<{ needsReview: boolean; alerts: string[] } | null>(null)
+  const [articleEvidenceReview, setArticleEvidenceReview] = useState<{ needsReview: boolean; alerts: string[]; sourceRefs: string[] } | null>(null)
+  const [correctionCase, setCorrectionCase] = useState<CascadeCorrectionCase | null>(null)
+  const [correctionBusy, setCorrectionBusy] = useState(false)
   // أي رقم هندي يكتبه الدكتور يتحوّل غربياً فوراً — قاعدة الموقع في كل الخانات
   const west = (s: string) => s.replace(/[٠-٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
   const set = (field: string, value: string) => setForm((previous) => {
@@ -757,22 +812,117 @@ function Editor({
   }, [current?.slug, kind])
 
   useEffect(() => {
-    if (kind !== 'article' || !current?.slug) { setArticleEvidenceReview(null); return }
+    if (kind !== 'article' || !current?.slug) { setArticleEvidenceReview(null); setCorrectionCase(null); return }
     let active = true
     void getDb().then(async (db) => {
       if (!db || !active) return
       const { doc, getDoc } = await import('firebase/firestore')
       const snapshot = await getDoc(doc(db, 'admin_content_intelligence', `article:${current.slug}`))
-      if (!active || !snapshot.exists()) { if (active) setArticleEvidenceReview(null); return }
+      if (!active || !snapshot.exists()) { if (active) { setArticleEvidenceReview(null); setCorrectionCase(null) } return }
       const data = snapshot.data() as Record<string, unknown>
+      const sourceAlerts = Array.isArray(data.sourceWatchAlerts) ? data.sourceWatchAlerts.map(String) : []
       const rawAlerts = [
-        ...(Array.isArray(data.sourceWatchAlerts) ? data.sourceWatchAlerts : []),
+        ...sourceAlerts,
         ...(Array.isArray(data.evidenceAlerts) ? data.evidenceAlerts : []),
       ].map((item) => String(item || '').replace(/^\[personal:[^\]]+\]\s*/, '').trim()).filter(Boolean)
-      setArticleEvidenceReview({ needsReview: data.needsEvidenceReview === true, alerts: [...new Set(rawAlerts)].slice(0, 8) })
-    }).catch(() => { if (active) setArticleEvidenceReview(null) })
+      const sourceRefs = [...new Set([
+        ...sourceAlerts.map((item) => item.match(/^\[(personal:[^\]]+)\]/)?.[1] || ''),
+        ...(Array.isArray(data.sourceIds) ? data.sourceIds.map(String).filter((item) => item.startsWith('personal:')) : []),
+      ].filter(Boolean))]
+      setArticleEvidenceReview({ needsReview: data.needsEvidenceReview === true, alerts: [...new Set(rawAlerts)].slice(0, 8), sourceRefs })
+      const caseIds = [...new Set([
+        ...(Array.isArray(data.correctionCaseIds) ? data.correctionCaseIds.map(String) : []),
+        String(data.correctionCaseId || (data.correctionProtocol as Record<string, unknown> | undefined)?.id || ''),
+      ].filter(Boolean))]
+      if (!caseIds.length) { setCorrectionCase(null); setForm((previous) => ({ ...previous, _correctionCase: '' })); return }
+      const caseSnapshots = await Promise.all(caseIds.map((caseId) => getDoc(doc(db, 'admin_correction_cases', caseId))))
+      if (!active) return
+      const cases = caseSnapshots.filter((item) => item.exists()).map((item) => item.data() as CascadeCorrectionCase)
+      const nextCase = cases.find((item) => item.status !== 'resolved') || cases[0]
+      if (!nextCase) return
+      setCorrectionCase(nextCase)
+      setForm((previous) => ({ ...previous, _correctionCase: JSON.stringify(nextCase) }))
+    }).catch(() => { if (active) { setArticleEvidenceReview(null); setCorrectionCase(null) } })
     return () => { active = false }
-  }, [current?.slug, kind])
+  }, [current?.slug, kind, setForm])
+
+  const persistCorrectionCase = async (nextCase: CascadeCorrectionCase) => {
+    if (kind !== 'article' || !current?.slug) return
+    const db = await getDb(); if (!db) throw new Error('Firebase غير متاح.')
+    const { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } = await import('firebase/firestore')
+    const intelligenceRef = doc(db, 'admin_content_intelligence', `article:${current.slug}`)
+    const intelligenceSnapshot = await getDoc(intelligenceRef)
+    const intelligence = intelligenceSnapshot.exists() ? intelligenceSnapshot.data() as Record<string, any> : {}
+    const caseIds = [...new Set([...(Array.isArray(intelligence.correctionCaseIds) ? intelligence.correctionCaseIds.map(String) : []), nextCase.id])]
+    const otherSnapshots = await Promise.all(caseIds.filter((id) => id !== nextCase.id).map((id) => getDoc(doc(db, 'admin_correction_cases', id))))
+    const otherOpen = otherSnapshots.filter((item) => item.exists()).map((item) => item.data() as CascadeCorrectionCase).find((item) => item.status !== 'resolved') || null
+    const displayCase = nextCase.status === 'resolved' && otherOpen ? otherOpen : nextCase
+    const summary = cascadeCorrectionSummary(displayCase)
+    await Promise.all([
+      setDoc(doc(db, 'admin_correction_cases', nextCase.id), { ...nextCase, updatedAt: serverTimestamp() }, { merge: true }),
+      setDoc(intelligenceRef, {
+        correctionCaseId: displayCase.id,
+        correctionCaseIds: caseIds,
+        correctionProtocol: summary,
+        needsEvidenceReview: displayCase.status !== 'resolved',
+        updatedAt: serverTimestamp(),
+        ...(nextCase.status === 'resolved' && !otherOpen ? { sourceWatchAlerts: [], evidenceReviewedAt: serverTimestamp() } : {}),
+      }, { merge: true }),
+    ])
+    if (nextCase.status === 'resolved' && !otherOpen) {
+      const queued = await getDocs(query(collection(db, 'social_queue'), where('articleSlug', '==', current.slug)))
+      await Promise.all(queued.docs.map((row) => {
+        const data = row.data() as Record<string, any>
+        return setDoc(row.ref, {
+          status: String(data.statusBeforeCorrection || 'ready_for_review'),
+          correctionReleasedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      }))
+    }
+    setCorrectionCase(displayCase)
+    setForm((previous) => ({ ...previous, _correctionCase: JSON.stringify(displayCase) }))
+  }
+
+  const openCorrectionProtocol = async () => {
+    if (kind !== 'article' || !current?.slug || correctionBusy) return
+    setCorrectionBusy(true)
+    try {
+      const db = await getDb(); if (!db) throw new Error('Firebase غير متاح.')
+      const { doc, getDoc } = await import('firebase/firestore')
+      const intelligenceSnapshot = await getDoc(doc(db, 'admin_content_intelligence', `article:${current.slug}`))
+      const dependency = intelligenceSnapshot.exists() ? intelligenceSnapshot.data() as Record<string, any> : {}
+      const sourceRef = articleEvidenceReview?.sourceRefs[0] || (Array.isArray(dependency.sourceIds) ? dependency.sourceIds.find((item: unknown) => String(item).startsWith('personal:')) : '')
+      if (!sourceRef) throw new Error('لم أجد معرف المصدر المتأثر في سلسلة الدليل.')
+      const sourceId = String(sourceRef).replace(/^personal:/, '')
+      const sourceSnapshot = await getDoc(doc(db, 'admin_source_desk', sourceId))
+      const source = sourceSnapshot.exists() ? { id: sourceId, ...sourceSnapshot.data() } : { id: sourceId, status: 'needs_review' }
+      const caseId = cascadeCorrectionId(sourceId, current.slug)
+      const existingSnapshot = await getDoc(doc(db, 'admin_correction_cases', caseId))
+      const built = buildCascadeCorrectionCase({ source, dependency, article: current, existingCase: existingSnapshot.exists() ? existingSnapshot.data() : null })
+      await persistCorrectionCase(advanceCascadeCorrection(built, 'start'))
+    } finally { setCorrectionBusy(false) }
+  }
+
+  const moveCorrection = async (event: CascadeCorrectionEvent, payload: Record<string, any> = {}) => {
+    if (!correctionCase || correctionBusy) return
+    setCorrectionBusy(true)
+    try { await persistCorrectionCase(advanceCascadeCorrection(correctionCase, event, payload)) }
+    finally { setCorrectionBusy(false) }
+  }
+
+  const confirmDerivedCorrection = async () => {
+    if (!correctionCase || correctionBusy) return
+    setCorrectionBusy(true)
+    try {
+      let next = correctionCase
+      for (const event of ['design_rebuilt', 'social_rebuilt', 'campaign_rebuilt'] as CascadeCorrectionEvent[]) {
+        const layer = event === 'design_rebuilt' ? 'design' : event === 'social_rebuilt' ? 'social' : 'campaign'
+        if (next.affectedLayers[layer].state !== 'verified') next = advanceCascadeCorrection(next, event)
+      }
+      await persistCorrectionCase(next)
+    } finally { setCorrectionBusy(false) }
+  }
 
   const resolveArticleEvidenceReview = async () => {
     if (kind !== 'article' || !current?.slug) return
@@ -789,7 +939,7 @@ function Editor({
         needsEvidenceReview: chainAlerts.length > 0,
         evidenceReviewedAt: serverTimestamp(),
       }, { merge: true })
-      setArticleEvidenceReview({ needsReview: chainAlerts.length > 0, alerts: chainAlerts })
+      setArticleEvidenceReview({ needsReview: chainAlerts.length > 0, alerts: chainAlerts, sourceRefs: articleEvidenceReview?.sourceRefs || [] })
     } catch { /* التنبيه يبقى ظاهراً إذا تعذّر إثبات المراجعة */ }
   }
 
@@ -943,9 +1093,10 @@ ${form.outlet || ''}`
 
   const researchAnalysis = useMemo(() => kind === 'paper' ? analyzeResearch(form) : null, [form, kind])
   const readiness = publishReadiness(kind, form)
+  const formCorrectionCase = correctionCaseFromForm(form)
   const passportPreview = useMemo(
-    () => kind === 'article' ? articlePublicationPassportDraft(form, current, articleEvidenceReview?.alerts || []) : null,
-    [articleEvidenceReview?.alerts, current, form, kind],
+    () => kind === 'article' ? articlePublicationPassportDraft(form, current, articleEvidenceReview?.alerts || [], formCorrectionCase) : null,
+    [articleEvidenceReview?.alerts, current, form, formCorrectionCase, kind],
   )
   const passportChecks = passportPreview ? [
     { label: 'جواز: النص', ok: passportPreview.components.text.status === 'verified' },
@@ -953,6 +1104,9 @@ ${form.outlet || ''}`
     { label: 'جواز: التصميم', ok: passportPreview.components.design.status === 'verified' },
     { label: 'جواز: التغريدات', ok: passportPreview.components.social.status === 'verified' },
     { label: 'جواز: المصادر', ok: passportPreview.components.sources.status === 'verified' },
+    { label: `محكمة المعنى ${passportPreview.semanticCourt.score}٪`, ok: passportPreview.semanticCourt.releaseReady },
+    { label: `محاكي سوء الفهم ${passportPreview.semanticCourt.adversarialSimulation.score}٪`, ok: passportPreview.semanticCourt.adversarialSimulation.releaseReady },
+    ...(formCorrectionCase ? [{ label: 'سلسلة التصحيح', ok: formCorrectionCase.status === 'resolved' || correctionReadyForPassport(formCorrectionCase) }] : []),
   ] : []
   const combinedReadinessChecks = [...readiness.checks, ...passportChecks]
   const readinessComplete = combinedReadinessChecks.every((check) => check.ok) && !readiness.leaked
@@ -994,11 +1148,31 @@ ${form.outlet || ''}`
             <input className={input} dir="ltr" value={form.slug || ''} disabled={Boolean(current)} onChange={(event) => set('slug', slugify(event.target.value))} />
           </Field>
           {ideaDna && <IdeaDnaPanel dna={ideaDna} />}
-          {kind === 'article' && articleEvidenceReview?.needsReview && <div className="rounded-2xl border border-accent/35 bg-wash p-4" data-private-evidence-review="true">
-            <p className="text-[.78rem] font-semibold text-accent">مراجعة دليل خاصة مطلوبة</p>
-            <p className="mt-1 text-[.76rem] leading-relaxed text-soft">تغيّرت حالة مصدر تعتمد عليه هذه المادة. لا يظهر هذا التنبيه للزوار، ولا يغيّر المقال تلقائياً.</p>
-            {articleEvidenceReview.alerts.map((alert) => <p key={alert} className="mt-2 text-[.7rem] leading-relaxed text-ink">{alert}</p>)}
-            <button type="button" className={`${secondary} mt-3`} onClick={() => void resolveArticleEvidenceReview()}>اعتمدت مراجعة الدليل</button>
+          {kind === 'article' && (articleEvidenceReview?.needsReview || correctionCase) && <div className="rounded-2xl border border-accent/35 bg-wash p-4" data-private-evidence-review="true" data-cascade-correction={correctionCase?.status || 'available'}>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <span><p className="text-[.78rem] font-semibold text-accent">{correctionCase ? 'بروتوكول التصحيح المتسلسل' : 'مراجعة دليل خاصة مطلوبة'}</p><p className="mt-1 text-[.76rem] leading-relaxed text-soft">تغيّرت حالة مصدر تعتمد عليه هذه المادة. المقال العام لا يحذف ولا يتغير تلقائياً؛ يتوقف فقط ما يعتمد على النسخة المتأثرة.</p></span>
+              {correctionCase && <span className={`rounded-full px-3 py-1 text-[.62rem] font-bold ${correctionCase.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : correctionCase.status === 'ready_for_passport' ? 'bg-amber-100 text-amber-800' : 'bg-accent/10 text-accent'}`}>{correctionCase.status === 'resolved' ? 'اكتملت السلسلة' : correctionCase.status === 'ready_for_passport' ? 'جاهز للجواز البديل' : 'تصحيح جار'}</span>}
+            </div>
+            {articleEvidenceReview?.alerts.map((alert) => <p key={alert} className="mt-2 text-[.7rem] leading-relaxed text-ink">{alert}</p>)}
+            {!correctionCase && <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={correctionBusy} className={primary} onClick={() => void openCorrectionProtocol()}>{correctionBusy ? 'أفتح السلسلة…' : 'افتح سلسلة التصحيح'}</button><button type="button" className={secondary} onClick={() => void resolveArticleEvidenceReview()}>مراجعة عادية فقط</button></div>}
+            {correctionCase && <div className="mt-3 grid gap-2 border-t border-hair pt-3">
+              {([
+                ['text', 'النص والادعاءات', 'reviewed'],
+                ['audio', 'الصوت المصحح', 'verified'],
+                ['design', 'التصاميم', 'verified'],
+                ['social', 'التغريدات والمنصات', 'verified'],
+                ['campaign', 'الحملة المتسلسلة', 'verified'],
+                ['passport', 'الجواز البديل', 'superseded'],
+              ] as const).map(([layer, label, complete]) => <span key={layer} className={`text-[.7rem] ${correctionCase.affectedLayers[layer].state === complete ? 'text-emerald-700' : 'text-soft'}`}>{correctionCase.affectedLayers[layer].state === complete ? '✓' : '○'} {label}</span>)}
+              <div className="mt-1 flex flex-wrap gap-2">
+                {correctionCase.affectedLayers.text.state !== 'reviewed' && <button type="button" disabled={correctionBusy} className={primary} onClick={() => void moveCorrection('text_reviewed')}>ثبت مراجعة النص</button>}
+                {correctionCase.affectedLayers.text.state === 'reviewed' && correctionCase.affectedLayers.audio.state !== 'verified' && <button type="button" disabled={correctionBusy} className={primary} onClick={() => void moveCorrection('audio_replaced')}>ثبت الصوت الموافق للنص</button>}
+                {correctionCase.affectedLayers.audio.state === 'verified' && [correctionCase.affectedLayers.design.state, correctionCase.affectedLayers.social.state, correctionCase.affectedLayers.campaign.state].some((state) => state !== 'verified') && <button type="button" disabled={correctionBusy} className={primary} onClick={() => void confirmDerivedCorrection()}>ثبت إعادة بناء المشتقات</button>}
+                {correctionCase.status === 'ready_for_passport' && form.status !== 'draft' && <button type="button" disabled={busy || correctionBusy} className={primary} onClick={onSave}>وقع الجواز البديل واحفظ</button>}
+              </div>
+              {correctionCase.status === 'ready_for_passport' && form.status === 'draft' && <p className="text-[.66rem] leading-relaxed text-soft">اكتملت المعالجة. سيوقع الجواز البديل عند اختيار النشر؛ بقاء المادة مسودة لا يحتاج توقيعاً.</p>}
+              {correctionCase.status === 'resolved' && <div className="mt-1 flex flex-wrap items-center gap-2"><span className="text-[.66rem] text-soft">مرآة الأثر: هل وصل المعنى المصحح كما قصدته؟</span><button type="button" className={secondary} disabled={correctionBusy} onClick={() => void moveCorrection('landing_observed', { landed: true, observation: 'ثبت وصول المعنى المصحح وفق شاهد المالك.' })}>نعم، وصل</button><button type="button" className={secondary} disabled={correctionBusy} onClick={() => void moveCorrection('landing_observed', { landed: false, observation: 'المعنى المصحح لم يصل بعد ويحتاج توضيحا جديدا.' })}>ليس بعد</button></div>}
+            </div>}
           </div>}
 
           {kind === 'article' && (
@@ -1124,8 +1298,18 @@ ${form.outlet || ''}`
 
           {kind === 'book' && (
             <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="سنة النشر"><input className={input} dir="ltr" inputMode="numeric" value={form.year || ''} onChange={(event) => set('year', event.target.value)} /></Field>
+                <Field label="الطبعة"><input className={input} value={form.edition || ''} onChange={(event) => set('edition', event.target.value)} /></Field>
+                <Field label="الناشر"><input className={input} value={form.publisher || ''} onChange={(event) => set('publisher', event.target.value)} /></Field>
+                <Field label="عدد الصفحات"><input className={input} dir="ltr" inputMode="numeric" value={form.pageCount || ''} onChange={(event) => set('pageCount', event.target.value)} /></Field>
+              </div>
               <Field label="ISBN / ردمك"><input className={input} dir="ltr" value={form.isbn || ''} onChange={(event) => set('isbn', event.target.value)} /></Field>
-              <Field label="الوصف"><textarea className={`${input} min-h-28 leading-loose`} value={form.desc || ''} onChange={(event) => set('desc', event.target.value)} /></Field>
+              <Field label="الوصف المختصر"><textarea className={`${input} min-h-24 leading-loose`} value={form.desc || ''} onChange={(event) => set('desc', event.target.value)} /></Field>
+              <Field label="الوصف الموسّع" hint={`${(form.longDescription || '').trim().split(/\s+/).filter(Boolean).length} كلمة`}><textarea className={`${input} min-h-64 leading-loose`} value={form.longDescription || ''} onChange={(event) => set('longDescription', event.target.value)} /></Field>
+              <Field label="الفئة المستهدفة"><textarea className={`${input} min-h-24 leading-loose`} value={form.targetAudience || ''} onChange={(event) => set('targetAudience', event.target.value)} /></Field>
+              <Field label="لماذا كُتب الكتاب؟"><textarea className={`${input} min-h-24 leading-loose`} value={form.whyWritten || ''} onChange={(event) => set('whyWritten', event.target.value)} /></Field>
+              <Field label="فهرس المحتويات" hint="عنوان واحد في كل سطر؛ لا تُدخل رقماً إلا بعد مطابقته بالنسخة المعتمدة."><textarea className={`${input} min-h-48 leading-loose`} value={form.toc || ''} onChange={(event) => set('toc', event.target.value)} /></Field>
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => void suggest()} disabled={form._aiBusy === '1' || !form.title?.trim()} className={secondary}>{form._aiBusy === '1' ? 'أفكّر…' : '✦ اقترح وصفاً'}</button>
                 <span className="text-[.75rem] text-soft">الاقتراح قابل للتعديل والمراجعة قبل الحفظ.</span>
@@ -1242,6 +1426,18 @@ ${form.outlet || ''}`
           {kind === 'media' && (
             <>
               <Field label="المنصّة / القناة"><input className={input} value={form.outlet || ''} onChange={(event) => set('outlet', event.target.value)} /></Field>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="اسم البرنامج"><input className={input} value={form.program || ''} onChange={(event) => set('program', event.target.value)} /></Field>
+                <Field label="القناة / الجهة"><input className={input} value={form.channel || ''} onChange={(event) => set('channel', event.target.value)} /></Field>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-3">
+                <Field label="مدة الفيديو" hint="مثال 00:09:29"><input className={input} dir="ltr" placeholder="00:09:29" value={form.duration || ''} onChange={(event) => set('duration', event.target.value)} /></Field>
+                <Field label="بداية المقتطف"><input className={input} dir="ltr" placeholder="00:00" value={form.clipStart || ''} onChange={(event) => set('clipStart', event.target.value)} /></Field>
+                <Field label="نهاية المقتطف"><input className={input} dir="ltr" placeholder="00:45" value={form.clipEnd || ''} onChange={(event) => set('clipEnd', event.target.value)} /></Field>
+              </div>
+              <Field label="الموضوعات" hint="افصل بينها بفاصلة"><input className={input} value={form.topics || ''} onChange={(event) => set('topics', event.target.value)} /></Field>
+              <Field label="صورة مصغّرة مخصصة (اختياري)"><input className={input} dir="ltr" type="url" value={form.thumbnail || ''} onChange={(event) => set('thumbnail', event.target.value)} /></Field>
+              <Field label="النص المفرّغ المراجع" hint="لا تنشر النص التلقائي قبل مراجعته لغوياً."><textarea className={`${input} min-h-64 leading-loose`} value={form.transcript || ''} onChange={(event) => set('transcript', event.target.value)} /></Field>
               <Field label="رابط الفيديو" hint="الصق رابط يوتيوب — يُجلب العنوان والقناة تلقائياً إن كانا فارغين.">
                 <input className={input} dir="ltr" type="url" value={form.url || ''} onChange={(event) => set('url', event.target.value)}
                   onBlur={async () => {
@@ -1275,7 +1471,7 @@ ${form.outlet || ''}`
               <div className="rounded-xl border border-hair bg-wash px-4 py-3" data-sovereign-publication-gate={passportPreview ? 'true' : undefined}>
                 <p className="text-[.72rem] font-semibold text-soft">
                   جاهزية النشر: <span className={done === combinedReadinessChecks.length ? 'text-accent' : 'text-ink'}>{done}/{combinedReadinessChecks.length}</span>
-                  <span className="ms-2 font-light">— {kind === 'article' ? 'المسودة متاحة دائماً؛ قبل النشر يوقّع الخادم حالة الطبقات الخمس كما هي.' : 'مؤشر مراجعة واضح قبل الحفظ.'}</span>
+                  <span className="ms-2 font-light">— {kind === 'article' ? 'المسودة متاحة دائماً؛ قبل النشر يعيد الخادم محاكمة المعنى ثم يوقّع الطبقات كما هي.' : 'مؤشر مراجعة واضح قبل الحفظ.'}</span>
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
                   {combinedReadinessChecks.map((check) => (
@@ -1412,6 +1608,8 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       let preparedForm = { ...form }
       let publicationGateAudit: Record<string, unknown> | null = null
       let publicationPassport: SignedPublicationPassport | null = null
+      let resolvedCorrectionCase: CascadeCorrectionCase | null = null
+      let remainingCorrectionCase: CascadeCorrectionCase | null = null
       if (kind === 'paper') {
         const local = analyzeResearch(preparedForm)
         const fingerprint = local.analysisFingerprint
@@ -1474,12 +1672,19 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
         const targetsPublication = data.status !== 'draft'
         const manualOverride = preparedForm._manualPublishOverride === '1'
         const overrideReason = (preparedForm._manualPublishReason || '').trim()
-        const passportDraft = articlePublicationPassportDraft(preparedForm, current)
+        const activeCorrectionCase = correctionCaseFromForm(preparedForm)
+        if (targetsPublication && activeCorrectionCase && correctionBlocksRelease(activeCorrectionCase) && !correctionReadyForPassport(activeCorrectionCase)) {
+          throw new Error(`سلسلة التصحيح تمنع توقيع نسخة جديدة حتى يكتمل: ${activeCorrectionCase.blocking.filter((item) => item !== 'الجواز البديل').join('، ')}. التجاوز اليدوي لا يلغي سلسلة الإثبات.`)
+        }
+        const passportDraft = articlePublicationPassportDraft(preparedForm, current, [], activeCorrectionCase)
         const preliminaryPassed = readiness.checks.every((check) => check.ok) && !readiness.leaked && passportDraft.releaseReady
         if (targetsPublication && !preliminaryPassed && (!manualOverride || overrideReason.length < 12)) {
           throw new Error(`جواز النشر غير مكتمل (${passportDraft.blocking.join('، ')}). أكمل الطبقات، أو احفظ مسودة، أو فعّل تجاوزاً مسبباً من 12 حرفاً على الأقل.`)
         }
         if (targetsPublication) publicationPassport = await requestPublicationPassportSignature(passportDraft)
+        if (publicationPassport && activeCorrectionCase && correctionReadyForPassport(activeCorrectionCase)) {
+          resolvedCorrectionCase = advanceCascadeCorrection(activeCorrectionCase, 'passport_signed', { passportId: publicationPassport.passportId })
+        }
         const passportManifest = publicationPassport?.manifest || passportDraft
         const passportChecks = Object.entries(passportManifest.components).map(([key, component]) => ({
           label: `جواز:${({ text: 'النص', audio: 'الصوت', design: 'التصميم', social: 'التغريدات', sources: 'المصادر' } as Record<string, string>)[key] || key}`,
@@ -1574,17 +1779,41 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
             papers: intelligencePapers,
           })
           const existing = existingSnapshot.exists() ? existingSnapshot.data() as Record<string, unknown> : {}
-          const existingFingerprint = existing.meaningFingerprint && typeof existing.meaningFingerprint === 'object' ? existing.meaningFingerprint : null
+          const correctionCaseIds = [...new Set([
+            ...(Array.isArray(existing.correctionCaseIds) ? existing.correctionCaseIds.map(String) : []),
+            ...(resolvedCorrectionCase ? [resolvedCorrectionCase.id] : []),
+          ])]
+          if (resolvedCorrectionCase && correctionCaseIds.length > 1) {
+            const otherCases = await Promise.all(correctionCaseIds.filter((id) => id !== resolvedCorrectionCase?.id).map((id) => getDoc(doc(db, 'admin_correction_cases', id))))
+            remainingCorrectionCase = otherCases.filter((item) => item.exists()).map((item) => item.data() as CascadeCorrectionCase).find((item) => item.status !== 'resolved') || null
+          }
           const sourceWatchAlerts = Array.isArray(existing.sourceWatchAlerts) ? existing.sourceWatchAlerts.map((item) => String(item || '').trim()).filter(Boolean) : []
           const sourceWatchMessages = sourceWatchAlerts.map((item) => item.replace(/^\[personal:[^\]]+\]\s*/, '').trim()).filter(Boolean)
-          const evidenceAlerts = [...new Set([...sourceWatchMessages, ...evidenceChain.alerts])]
-          const meaningFingerprint = existingFingerprint || buildMeaningFingerprint({
+          const evidenceAlerts = resolvedCorrectionCase && !remainingCorrectionCase ? [] : [...new Set([...sourceWatchMessages, ...evidenceChain.alerts])]
+          const meaningFingerprint = buildMeaningFingerprint({
             slug,
             title: data.title || slug,
             body: data.body || '',
             excerpt: data.excerpt || '',
             sourceIds: evidenceChain.sourceIds,
           })
+          const correctionImpactMirror = resolvedCorrectionCase ? buildImpactMirror({
+            intent: {
+              title: data.title || slug,
+              thesis: meaningFingerprint.thesis,
+              protectedPoints: meaningFingerprint.protectedPoints,
+              caveats: meaningFingerprint.caveats,
+              fingerprintHash: meaningFingerprint.hash,
+            },
+            correction: {
+              caseId: resolvedCorrectionCase.id,
+              status: resolvedCorrectionCase.status,
+              sourceStatus: resolvedCorrectionCase.trigger.sourceStatus,
+              correctedFingerprintHash: meaningFingerprint.hash,
+              correctedAt: new Date().toISOString(),
+              correctedMeaningLanded: resolvedCorrectionCase.impact.correctedMeaningLanded,
+            },
+          }) : null
           await setDoc(intelligenceRef, {
             kind: 'article',
             slug,
@@ -1593,7 +1822,15 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
             evidenceChain,
             sourceIds: evidenceChain.sourceIds,
             evidenceAlerts,
-            needsEvidenceReview: evidenceAlerts.length > 0,
+            needsEvidenceReview: evidenceAlerts.length > 0 || Boolean(remainingCorrectionCase),
+            ...(resolvedCorrectionCase ? {
+              ...(!remainingCorrectionCase ? { sourceWatchAlerts: [] } : {}),
+              correctionCaseId: remainingCorrectionCase?.id || resolvedCorrectionCase.id,
+              correctionCaseIds,
+              correctionProtocol: cascadeCorrectionSummary(remainingCorrectionCase || resolvedCorrectionCase),
+              correctionImpactMirror,
+              ...(!remainingCorrectionCase ? { evidenceReviewedAt: serverTimestamp() } : {}),
+            } : {}),
             contentStatus: data.status || 'published',
             ...(publicationPassport ? {
               publicationPassportId: publicationPassport.passportId,
@@ -1607,6 +1844,35 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
           }, { merge: true })
         } catch {
           // طبقة الذكاء خاصة ومساعدة؛ تعطلها لا يمنع حفظ المقال العام الذي اكتمل بالفعل.
+        }
+      }
+      if (kind === 'article' && resolvedCorrectionCase) {
+        const { collection, getDocs, query, where } = await import('firebase/firestore')
+        await setDoc(doc(db, 'admin_correction_cases', resolvedCorrectionCase.id), {
+          ...resolvedCorrectionCase,
+          impactMirror: buildImpactMirror({
+            intent: { title: data.title || slug, thesis: data.excerpt || data.title || slug },
+            correction: {
+              caseId: resolvedCorrectionCase.id,
+              status: resolvedCorrectionCase.status,
+              sourceStatus: resolvedCorrectionCase.trigger.sourceStatus,
+              correctedAt: new Date().toISOString(),
+              correctedMeaningLanded: resolvedCorrectionCase.impact.correctedMeaningLanded,
+            },
+          }),
+          updatedAt: serverTimestamp(),
+          resolvedAt: serverTimestamp(),
+        }, { merge: true })
+        if (!remainingCorrectionCase) {
+          const heldQueue = await getDocs(query(collection(db, 'social_queue'), where('articleSlug', '==', slug)))
+          await Promise.all(heldQueue.docs.map((row) => {
+            const queued = row.data() as Record<string, any>
+            return setDoc(row.ref, {
+              status: String(queued.statusBeforeCorrection || 'ready_for_review'),
+              correctionReleasedAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            }, { merge: true })
+          }))
         }
       }
       setCurrent(undefined)
@@ -1633,6 +1899,18 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
       }))
     } catch { /* التخزين المحلي محجوب: الحدث وحده سيكفي داخل الجلسة */ }
     window.dispatchEvent(new CustomEvent('studio:campaign-seed'))
+  }
+
+  const sendToLiveDirector = (item: ManagedRecord) => {
+    const seed = {
+      type: 'article_video',
+      articleSlug: item.slug || '',
+      title: item.title || '',
+      message: item.excerpt || '',
+      at: Date.now(),
+    }
+    try { sessionStorage.setItem('admin:live-director-seed', JSON.stringify(seed)) } catch { /* الحدث يكفي داخل الجلسة */ }
+    window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed }))
   }
 
   const toggleVisibility = async (item: ManagedRecord) => {
@@ -1788,7 +2066,10 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                 : <button type="button" disabled={busy} onClick={() => void deleteItem(item)} className="min-w-0 rounded-full border border-red-700/20 px-2 py-2 font-semibold text-red-700/80 disabled:opacity-50 dark:text-red-300/80">حذف</button>}
             </div>
             {kind === 'article' && (
-              <button type="button" onClick={() => sendToDesignStudio(item)} className="mt-2 w-full rounded-full border border-accent/30 bg-accent/[.05] px-3 py-2 text-[.72rem] font-semibold text-accent transition hover:bg-accent/10">حملة تصاميم من هذا المقال</button>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={() => sendToDesignStudio(item)} className="w-full rounded-full border border-accent/30 bg-accent/[.05] px-3 py-2 text-[.72rem] font-semibold text-accent transition hover:bg-accent/10">حملة تصاميم</button>
+                <button type="button" onClick={() => sendToLiveDirector(item)} className="w-full rounded-full border border-hair bg-canvas px-3 py-2 text-[.72rem] font-semibold text-ink transition hover:border-accent hover:text-accent">فيديو في المخرج الحي</button>
+              </div>
             )}
             {item._cms.origin === 'base' && (item._cms.modified || item._cms.hidden) && (
               <button type="button" disabled={busy} onClick={() => void resetOriginal(item)} className="mt-2 w-full rounded-full border border-hair px-3 py-2 text-[.72rem] text-soft disabled:opacity-50">استعادة الأصل</button>
@@ -1845,7 +2126,7 @@ export function ContentManager({ kind, items, getBaseRecord, onChanged , openSlu
                 <td className="px-5 py-4">
                   <div className="flex flex-wrap items-center gap-3 text-[.78rem]">
                     <button type="button" onClick={() => openEdit(item)} className="font-semibold text-accent hover:text-accent-deep">تعديل</button>
-                    {kind === 'article' && <button type="button" onClick={() => sendToDesignStudio(item)} className="font-semibold text-accent/80 hover:text-accent" title="يبني حملة تصاميم اجتماعية من عنوان المقال ومقتطفه">حملة</button>}
+                    {kind === 'article' && <><button type="button" onClick={() => sendToDesignStudio(item)} className="font-semibold text-accent/80 hover:text-accent" title="يبني حملة تصاميم اجتماعية من عنوان المقال ومقتطفه">حملة</button><button type="button" onClick={() => sendToLiveDirector(item)} className="font-semibold text-accent/80 hover:text-accent" title="يفتح المقال في المخرج الحي">فيديو</button></>}
                     <button type="button" disabled={busy} onClick={() => void toggleVisibility(item)} className="text-soft hover:text-accent">{item._cms.hidden ? 'استعادة' : 'إخفاء'}</button>
                     {item._cms.hidden
                       ? <button type="button" disabled={busy} onClick={() => void purgeItem(item)} className="font-semibold text-red-700/80 transition-colors hover:text-red-700 dark:text-red-300/85 dark:hover:text-red-300">حذف نهائي</button>

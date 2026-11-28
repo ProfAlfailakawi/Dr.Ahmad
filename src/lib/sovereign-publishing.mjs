@@ -1,3 +1,5 @@
+import { buildMultimodalMeaningCourt } from './semantic-court.mjs'
+
 const ARABIC_MARKS = /[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]/g
 
 const STOP_WORDS = new Set([
@@ -85,6 +87,16 @@ export function buildPublicationPassportDraft(input = {}) {
   const platformCount = Math.max(0, Number(social.platformCount || 0))
   const designCount = Math.max(0, Number(design.assetCount || 0))
   const words = wordCount(article.body || '')
+  const semanticCourtInput = input.semanticCourtInput || {}
+  const semanticCourt = input.semanticCourt || buildMultimodalMeaningCourt(semanticCourtInput)
+  const correctionValue = input.correction && typeof input.correction === 'object' ? input.correction : {}
+  const correction = text(correctionValue.caseId) ? {
+    caseId: text(correctionValue.caseId),
+    status: text(correctionValue.status),
+    sourceStatus: text(correctionValue.sourceStatus),
+    replacesPassportId: text(correctionValue.replacesPassportId),
+    readyForPassport: correctionValue.readyForPassport === true,
+  } : null
   const components = {
     text: {
       status: status(Boolean(text(article.slug) && text(article.title) && words >= 350)),
@@ -124,16 +136,23 @@ export function buildPublicationPassportDraft(input = {}) {
   const blocking = Object.entries(components)
     .filter(([, component]) => component.status !== 'verified')
     .map(([key]) => labels[key])
+  if (!semanticCourt.releaseReady) blocking.push('محكمة المعنى')
+  if (correction && !correction.readyForPassport) blocking.push('سلسلة التصحيح')
   return {
     schemaVersion: 1,
     kind: 'sovereign-publication-passport',
     article: { slug: text(article.slug), title: text(article.title) },
     components,
+    semanticCourt,
+    // دليل عابر إلى نقطة التوقيع فقط؛ sealPublicationPassportDraft يحذفه،
+    // والخادم يعيد بناء الحكم منه ولا يثق بحكم الواجهة المرسل.
+    _semanticCourtInput: semanticCourtInput,
     releaseDecision: {
       targetStatus: ['published', 'scheduled'].includes(text(input.releaseDecision?.targetStatus)) ? text(input.releaseDecision.targetStatus) : 'draft',
       manualOverride: input.releaseDecision?.manualOverride === true,
       overrideReason: text(input.releaseDecision?.overrideReason),
     },
+    ...(correction ? { correction } : {}),
     releaseReady: blocking.length === 0,
     blocking,
   }
@@ -144,12 +163,35 @@ export async function sealPublicationPassportDraft(draft, digest) {
   const next = JSON.parse(JSON.stringify(draft))
   const textComponent = next.components.text
   const socialComponent = next.components.social
+  delete next._semanticCourtInput
   textComponent.bodyHash = await digest(textComponent.body || '')
   textComponent.excerptHash = await digest(textComponent.excerpt || '')
   delete textComponent.body
   delete textComponent.excerpt
   socialComponent.contentHash = await digest(socialComponent.content || '')
   delete socialComponent.content
+  if (next.semanticCourt && typeof next.semanticCourt === 'object') {
+    const court = next.semanticCourt
+    court.alertHashes = await Promise.all((court.alerts || []).map((item) => digest(String(item))))
+    delete court.alerts
+    for (const groupName of ['chambers', 'safeguards']) {
+      const group = court[groupName] || {}
+      for (const item of Object.values(group)) {
+        item.alertHashes = await Promise.all((item.alerts || []).map((alert) => digest(String(alert))))
+        delete item.alerts
+        delete item.units
+      }
+    }
+    if (court.adversarialSimulation && typeof court.adversarialSimulation === 'object') {
+      const simulation = court.adversarialSimulation
+      simulation.alertHashes = await Promise.all((simulation.alerts || []).map((alert) => digest(String(alert))))
+      simulation.defenseHashes = await Promise.all((simulation.defenses || []).map((defense) => digest(String(defense))))
+      simulation.scenarioHashes = await Promise.all((simulation.scenarios || []).map((scenario) => digest(stableCanonicalJson(scenario))))
+      delete simulation.alerts
+      delete simulation.defenses
+      delete simulation.scenarios
+    }
+  }
   return next
 }
 

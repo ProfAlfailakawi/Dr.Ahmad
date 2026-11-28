@@ -80,6 +80,14 @@ export type BookRecord = {
   cover: string
   pdf: string
   coAuthors?: string
+  year?: string
+  edition?: string
+  publisher?: string
+  pageCount?: string
+  longDescription?: string
+  targetAudience?: string
+  whyWritten?: string
+  toc?: string
   _cms: CmsMeta
 }
 
@@ -135,6 +143,14 @@ export type MediaRecord = {
   url: string
   iso?: string
   date?: string
+  program?: string
+  channel?: string
+  duration?: string
+  topics?: string
+  thumbnail?: string
+  clipStart?: string
+  clipEnd?: string
+  transcript?: string
   _cms: CmsMeta
 }
 
@@ -161,9 +177,9 @@ const audioMap = audioManifest as Record<string, AudioEntry>
 
 const fieldsByKind: Record<ContentKind, readonly string[]> = {
   article: ['title', 'date', 'iso', 'cat', 'excerpt', 'body', 'bodyVocalized', 'source', 'url', 'status', 'scheduledAt', 'audio', 'audioControl', 'publishingStudio', 'publicationPassport', 'publicationGate'],
-  book: ['title', 'isbn', 'desc', 'cover', 'pdf'],
+  book: ['title', 'isbn', 'desc', 'cover', 'pdf', 'coAuthors', 'year', 'edition', 'publisher', 'pageCount', 'longDescription', 'targetAudience', 'whyWritten', 'toc'],
   paper: ['title', 'titleAr', 'meta', 'abstractAr', 'journal', 'source', 'url', 'pdf', 'iso', 'date', 'coAuthors', 'scholar', 'researchgate', 'orcid', 'repository', 'doi', 'verification', 'reviewStatus', 'studyType', 'methodology', 'sample', 'researchQuestion', 'keyFinding', 'contribution', 'applications', 'limitations', 'year', 'metadataText', 'pdfText', 'analysisText', 'analysisFingerprint', 'analysisSources', 'evidenceLabel', 'evidenceScore', 'keywords', 'openAccess', 'analysisConfidence', 'analysisNeedsReview', 'analyzedAt'],
-  media: ['title', 'outlet', 'platform', 'url', 'iso', 'date'],
+  media: ['title', 'outlet', 'platform', 'url', 'iso', 'date', 'program', 'channel', 'duration', 'topics', 'thumbnail', 'clipStart', 'clipEnd', 'transcript'],
 }
 
 const wordCount = (text = '') => text.trim().split(/\s+/).filter(Boolean).length
@@ -267,6 +283,14 @@ function buildBook(value: Record<string, unknown>, cms: CmsMeta): BookRecord {
     cover: stringValue(value.cover),
     pdf: stringValue(value.pdf),
     coAuthors: stringValue(value.coAuthors) || undefined,
+    year: stringValue(value.year) || undefined,
+    edition: stringValue(value.edition) || undefined,
+    publisher: stringValue(value.publisher) || undefined,
+    pageCount: stringValue(value.pageCount) || undefined,
+    longDescription: stringValue(value.longDescription) || undefined,
+    targetAudience: stringValue(value.targetAudience) || undefined,
+    whyWritten: stringValue(value.whyWritten) || undefined,
+    toc: stringValue(value.toc) || undefined,
     _cms: cms,
   }
 }
@@ -282,8 +306,6 @@ function buildPaper(value: Record<string, unknown>, cms: CmsMeta): PaperRecord {
     source: stringValue(value.source) || undefined,
     url: stringValue(value.url) || undefined,
     pdf: stringValue(value.pdf) || undefined,
-    iso: stringValue(value.iso) || undefined,
-    date: stringValue(value.date) || undefined,
     coAuthors: stringValue(value.coAuthors) || undefined,
     scholar: stringValue(value.scholar) || undefined,
     researchgate: stringValue(value.researchgate) || undefined,
@@ -327,6 +349,14 @@ function buildMedia(value: Record<string, unknown>, cms: CmsMeta): MediaRecord {
     url: stringValue(value.url),
     iso: stringValue(value.iso) || undefined,
     date: stringValue(value.date) || undefined,
+    program: stringValue(value.program) || undefined,
+    channel: stringValue(value.channel, outlet) || undefined,
+    duration: stringValue(value.duration) || undefined,
+    topics: stringValue(value.topics) || undefined,
+    thumbnail: stringValue(value.thumbnail) || undefined,
+    clipStart: stringValue(value.clipStart) || undefined,
+    clipEnd: stringValue(value.clipEnd) || undefined,
+    transcript: stringValue(value.transcript) || undefined,
     _cms: cms,
   }
 }

@@ -13,6 +13,8 @@ import { fetchPublishedExtras, getDb } from '../../lib/firebase'
 import { beginAdminTask, setAdminTaskState } from '../../lib/admin-task-state'
 import { PublishingStudioNavigation, type PublishingStudioView } from './PublishingStudioNavigation'
 import { EditorialMemoryPanel } from './EditorialMemoryPanel'
+import { EditorialForesightPanel } from './EditorialForesightPanel'
+import { LiveDirector } from './LiveDirector'
 import { articleSimilarityReport, editorialStyleProfile, ideaLab, relatedForIdea, representativeStyleSamples, strongestQuote, suggestStrongTitle } from '../../lib/intelligence'
 /* بصمة الأسلوب: المسطرة نفسها التي يقيس بها الخادم — الملف .mjs عمداً كي
    يستورده server.mjs بلا ترجمة، فلا يمدح أحدهما ما يرفضه الآخر. */
@@ -41,6 +43,8 @@ import {
 } from '../../lib/sovereign-publishing.mjs'
 import { requestPublicationPassportSignature } from '../../lib/publication-passport-client'
 import { audioProofAssets } from '../../lib/audio-proof'
+import { buildMultimodalMeaningCourt, type MultimodalMeaningCourt } from '../../lib/semantic-court.mjs'
+import { buildImpactMirror, type EditorialImpactMirror, type ImpactObservationSource } from '../../lib/impact-mirror.mjs'
 
 const card = 'min-w-0 max-w-full rounded-2xl border border-hair bg-wash p-4 sm:p-5 md:p-6'
 const input = 'w-full rounded-xl border border-hair bg-canvas px-4 py-3 text-[.92rem] text-ink outline-none transition-colors placeholder:text-soft/60 focus:border-accent'
@@ -100,6 +104,14 @@ type EditorialCalibrationRecord = {
   actual7?: EditorialPerformanceMeasure | null
   actual30?: EditorialPerformanceMeasure | null
 }
+
+const IMPACT_SOURCE_LABELS: Array<{ value: ImpactObservationSource; label: string }> = [
+  { value: 'comment', label: 'تعليق عام' },
+  { value: 'conversation', label: 'حوار مباشر' },
+  { value: 'message', label: 'رسالة' },
+  { value: 'field', label: 'ملاحظة ميدانية' },
+  { value: 'other', label: 'شاهد آخر' },
+]
 
 const EDITORIAL_SOURCE_LABELS: Array<{ value: EditorialSourceType; label: string }> = [
   { value: 'friend', label: 'صديق' },
@@ -1384,18 +1396,14 @@ function EditorialBoardPanel({
   busy,
   historyCount,
   onStart,
-  onForceStart,
   onOpenExisting,
-  evidenceHold,
 }: {
   decision: EditorialBoardDecision | null
   progress: EditorialProgress
   busy: boolean
   historyCount: number
   onStart: (decision: EditorialBoardDecision) => void
-  onForceStart: (decision: EditorialBoardDecision) => void
   onOpenExisting: (decision: EditorialBoardDecision) => void
-  evidenceHold: boolean
 }) {
   if (busy && !decision) {
     return (
@@ -1498,10 +1506,10 @@ function EditorialBoardPanel({
       </div>
 
       {decision.waitingRoom && <div className="mt-5 rounded-xl border border-hair bg-canvas px-4 py-3"><p className="text-[.72rem] font-semibold text-accent">غرفة الانتظار التحريرية</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.waitingRoom.reason}</p><p className="mt-2 text-[.74rem] leading-relaxed text-soft">إشارة العودة: {decision.waitingRoom.trigger}</p></div>}
-      {evidenceHold && !decision.evidenceGate.ready && <div className="mt-5 rounded-xl border border-accent/35 bg-canvas px-4 py-3" data-editorial-evidence-gate="needs-evidence"><p className="text-[.72rem] font-semibold text-accent">قبل المسودة</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.evidenceGate.explanation}</p>{decision.evidenceGate.missing.map((item) => <p key={item} className="mt-1 text-[.74rem] leading-relaxed text-soft">{item}</p>)}<button type="button" className={`${ghost} mt-3`} onClick={() => onForceStart(decision)}>ابدأ المسودة مع تسجيل النقص</button></div>}
+      {!decision.evidenceGate.ready && <div className="mt-5 rounded-xl border border-accent/35 bg-canvas px-4 py-3" data-editorial-evidence-gate="needs-evidence"><p className="text-[.72rem] font-semibold text-accent">ملاحظة ترافق المسودة — ولا تعطلها</p><p className="mt-1 text-[.8rem] leading-relaxed text-ink">{decision.evidenceGate.explanation}</p>{decision.evidenceGate.missing.map((item) => <p key={item} className="mt-1 text-[.74rem] leading-relaxed text-soft">{item}</p>)}</div>}
 
       <div className="mt-6 flex flex-wrap gap-3">
-        {canStart && <button type="button" className={primary} onClick={() => onStart(decision)}>ابدأ المقال</button>}
+        {canStart && <button type="button" disabled={busy} className={primary} onClick={() => onStart(decision)}>{busy ? 'أكتب المقال…' : decision.evidenceGate.ready ? 'ابدأ المقال' : 'ابدأ المقال وسجّل الملاحظة'}</button>}
         {decision.verdict === 'update_existing' && decision.archiveCourt.nearest.some((item) => item.kind === 'article') && <button type="button" className={primary} onClick={() => onOpenExisting(decision)}>افتح المقال السابق للتحديث</button>}
         {decision.verdict === 'reject' && <span className="text-[.78rem] leading-relaxed text-soft">لم يُنشئ المجلس مسودة؛ الرفض قرار تحريري محفوظ وليس حذفاً للفكرة.</span>}
         {decision.verdict === 'wait' && <span className="text-[.78rem] leading-relaxed text-soft">حُفظت الفكرة تلقائياً في سجل المجلس مع موعد إعادة المراجعة.</span>}
@@ -1936,7 +1944,62 @@ function PublicationPassportCard({ passport }: { passport: PublicationPassportDr
     <details className="group mt-4 rounded-2xl border border-hair bg-canvas p-4" data-publication-passport="preview">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3"><span><strong className="block text-[.78rem] text-ink">جواز النشر السيادي</strong><span className="mt-1 block text-[.7rem] leading-relaxed text-soft">بصمة واحدة للنص والصوت والتصميم والتغريدات والمصادر؛ يوقّعها الخادم عند النقل، ويعيد توقيعها قبل أي نشر عام.</span></span><span className={`shrink-0 rounded-full px-3 py-1.5 text-[.68rem] font-bold ${passport.releaseReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{passport.releaseReady ? 'مكتمل' : `${passport.blocking.length} معلّق`}</span></summary>
       <div className="mt-4 grid grid-cols-2 gap-2 border-t border-hair pt-4 sm:grid-cols-5">{rows.map(([key, label]) => { const state = passport.components[key].status; return <div key={key} className="rounded-xl border border-hair bg-wash px-3 py-2 text-center"><span className={`block text-[.68rem] font-bold ${state === 'verified' ? 'text-emerald-700' : state === 'review' ? 'text-amber-700' : 'text-soft'}`}>{state === 'verified' ? '✓ مثبت' : state === 'review' ? '◐ مراجعة' : '○ معلّق'}</span><span className="mt-1 block text-[.7rem] text-ink">{label}</span></div> })}</div>
+      <div className={`mt-3 rounded-xl border px-3 py-3 ${passport.semanticCourt.status === 'passed' ? 'border-emerald-200 bg-emerald-50/70' : passport.semanticCourt.status === 'blocked' ? 'border-red-200 bg-red-50/60' : 'border-amber-200 bg-amber-50/60'}`} data-semantic-court={passport.semanticCourt.status}>
+        <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-[.72rem] text-ink">محكمة المعنى متعددة الوسائط</strong><span className={`text-[.68rem] font-bold ${passport.semanticCourt.status === 'passed' ? 'text-emerald-700' : passport.semanticCourt.status === 'blocked' ? 'text-red-700' : 'text-amber-800'}`}>{passport.semanticCourt.score}٪ · {passport.semanticCourt.status === 'passed' ? 'مجتازة' : passport.semanticCourt.status === 'blocked' ? 'أوقفت النشر' : passport.semanticCourt.status === 'review' ? 'مراجعة' : 'بانتظار الطبقات'}</span></div>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">{Object.values(passport.semanticCourt.chambers).map((chamber) => <span key={chamber.label} className={`text-[.64rem] ${chamber.status === 'passed' ? 'text-emerald-700' : chamber.status === 'blocked' ? 'text-red-700' : 'text-soft'}`}>{chamber.status === 'passed' ? '✓' : chamber.status === 'blocked' ? '✕' : '○'} {chamber.label}</span>)}</div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hair/70 pt-2" data-adversarial-misunderstanding={passport.semanticCourt.adversarialSimulation.status}>
+          <span className="text-[.64rem] font-semibold text-ink">محاكي سوء الفهم العدائي</span>
+          <span className={`text-[.64rem] font-bold ${passport.semanticCourt.adversarialSimulation.status === 'passed' ? 'text-emerald-700' : passport.semanticCourt.adversarialSimulation.status === 'blocked' ? 'text-red-700' : 'text-amber-800'}`}>{passport.semanticCourt.adversarialSimulation.score}٪ · {passport.semanticCourt.adversarialSimulation.highRiskCount ? `${passport.semanticCourt.adversarialSimulation.highRiskCount} خطر مرتفع` : passport.semanticCourt.adversarialSimulation.status === 'passed' ? 'محصن' : 'يحتاج تحصين'}</span>
+        </div>
+        {passport.semanticCourt.adversarialSimulation.scenarios[0] && <p className="mt-1 text-[.62rem] leading-relaxed text-soft">أسوأ اقتطاع محتمل: {passport.semanticCourt.adversarialSimulation.scenarios[0].attack}</p>}
+        <p className="mt-2 text-[.64rem] leading-relaxed text-soft">حارس العنوان · عهد التحفّظات · سلسلة نسب الادعاء. الخادم يعيد الحساب قبل التوقيع؛ لا يعتمد على شارة الواجهة.</p>
+        {passport.semanticCourt.alerts.length > 0 && <p className="mt-2 text-[.64rem] leading-relaxed text-soft">أول تنبيه: {passport.semanticCourt.alerts[0]}</p>}
+      </div>
       {!passport.releaseReady && <p className="mt-3 text-[.7rem] leading-relaxed text-soft">المعلّق: {passport.blocking.join('، ')}. الجواز لا يدّعي اكتمال ما ليس موجوداً؛ يسجل حالته بدقة، والنشر العام يتطلب اكتماله أو تجاوزاً تحريرياً مسبباً وموقعاً.</p>}
+    </details>
+  )
+}
+
+function ImpactMirrorInline({
+  mirror,
+  busy,
+  onSave,
+}: {
+  mirror: EditorialImpactMirror
+  busy: boolean
+  onSave: (text: string, source: ImpactObservationSource) => Promise<void>
+}) {
+  const [text, setText] = useState('')
+  const [source, setSource] = useState<ImpactObservationSource>('comment')
+  const labels: Record<EditorialImpactMirror['status'], string> = {
+    'awaiting-observations': 'بانتظار شاهد فهم',
+    preliminary: 'قراءة أولية',
+    aligned: 'النية وصلت',
+    mixed: 'أثر مختلط',
+    drift: 'المعنى انزاح',
+  }
+  const save = async () => {
+    if (text.trim().length < 12) return
+    await onSave(text, source)
+    setText('')
+  }
+  return (
+    <details className="group mt-2 rounded-lg border border-hair bg-wash px-3 py-2" data-impact-mirror={mirror.status}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+        <span className="text-[.68rem] font-semibold text-ink">مرآة الأثر · {labels[mirror.status]}</span>
+        <span className={`text-[.64rem] font-bold ${mirror.status === 'aligned' ? 'text-emerald-700' : mirror.status === 'drift' ? 'text-red-700' : 'text-soft'}`}>{mirror.semanticScore == null ? `${mirror.counts.total} شواهد` : `${mirror.semanticScore}٪ · ${mirror.counts.total} شواهد`}</span>
+      </summary>
+      <div className="mt-3 grid gap-3 border-t border-hair pt-3">
+        <p className="text-[.64rem] leading-relaxed text-soft">الانتشار لا يساوي الفهم. الأرقام تقيس الوصول والفعل، ومحاذاة المعنى لا تحسب إلا من صياغة مجهلة تسجلها هنا بلا أسماء أو أرقام أو روابط.</p>
+        {(mirror.resonance.metrics.views != null || mirror.resonance.score != null) && <div className="flex flex-wrap gap-x-4 gap-y-1 text-[.62rem] text-soft"><span>وصول: {mirror.resonance.metrics.views ?? '—'}</span><span>مشاركة: {mirror.resonance.metrics.shares ?? '—'}</span><span>انتقال تال: {mirror.resonance.metrics.onwardJourneys ?? '—'}</span><span>اكتمال صوت: {mirror.resonance.listenCompletion ?? '—'}{mirror.resonance.listenCompletion != null ? '٪' : ''}</span></div>}
+        {mirror.observations.slice(-3).reverse().map((item) => <div key={item.id} className="rounded-lg border border-hair bg-canvas px-3 py-2"><div className="flex items-center justify-between gap-3"><span className="text-[.62rem] font-semibold text-ink">{item.assessment.status === 'aligned' ? 'المعنى وصل' : item.assessment.status === 'partial' ? 'وصل جزئيا' : 'انزياح يحتاج مراجعة'}</span><span className="text-[.6rem] text-soft">{item.assessment.score}٪</span></div><p className="mt-1 text-[.66rem] leading-relaxed text-soft">{item.text}</p></div>)}
+        {mirror.reopenRecommended && <p className="rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-[.66rem] leading-relaxed text-red-700">تقترح المرآة إعادة فتح المادة في مجلس التحرير لتصحيح ما وصل، لا لمطاردة رقم المشاهدة.</p>}
+        <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)_auto]">
+          <select className="rounded-lg border border-hair bg-canvas px-3 py-2 text-[.68rem] text-ink" value={source} onChange={(event) => setSource(event.target.value as ImpactObservationSource)}>{IMPACT_SOURCE_LABELS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+          <input className="rounded-lg border border-hair bg-canvas px-3 py-2 text-[.68rem] text-ink outline-none focus:border-accent" value={text} onChange={(event) => setText(event.target.value)} placeholder="اكتب كيف أعاد القارئ الفكرة بكلماته — بلا اسم…" />
+          <button type="button" className="rounded-full border border-accent/35 px-3 py-2 text-[.66rem] font-semibold text-accent disabled:opacity-50" disabled={busy || text.trim().length < 12} onClick={() => void save()}>{busy ? 'أحفظ…' : 'سجل الشاهد'}</button>
+        </div>
+      </div>
     </details>
   )
 }
@@ -2384,6 +2447,8 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const [editorialHistory, setEditorialHistory] = useState<EditorialBoardDecision[]>([])
   const [editorialCalibrationProfile, setEditorialCalibrationProfile] = useState<EditorialCalibrationProfile>({ sampleSize: 0, strengthBias: 0, articlePotentialBias: 0 })
   const [editorialCalibrationByDecision, setEditorialCalibrationByDecision] = useState<Record<string, EditorialCalibrationRecord>>({})
+  const [editorialImpactMirrorByDecision, setEditorialImpactMirrorByDecision] = useState<Record<string, EditorialImpactMirror>>({})
+  const [impactMirrorBusyId, setImpactMirrorBusyId] = useState('')
   const [editorialProgress, setEditorialProgress] = useState<EditorialProgress>('idle')
   /* أفكار المجلس الخمس (٣١ يوليو): جرس غرفة الانتظار، مقترحات الوارد بنقرة،
      والجلسة الأسبوعية — كلها قراءة محلية فوق السجل المحفوظ، بلا نشر تلقائي. */
@@ -2423,13 +2488,51 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       ))
   }, [editorialHistory, dueWaitingIdeas])
   const [editorialBusy, setEditorialBusy] = useState(false)
-  const [editorialEvidenceHold, setEditorialEvidenceHold] = useState('')
   const [personalSources, setPersonalSources] = useState<PersonalSourceRecord[]>([])
   const [intellectualAgenda, setIntellectualAgenda] = useState<IntellectualAgendaItem[]>([])
   const handleEditorialMemoryData = useCallback((data: { sources: PersonalSourceRecord[]; agenda: IntellectualAgendaItem[] }) => {
     setPersonalSources(data.sources)
     setIntellectualAgenda(data.agenda)
   }, [])
+
+  const recordImpactObservation = async (decision: EditorialBoardDecision, observationText: string, source: ImpactObservationSource) => {
+    const cleanText = observationText.trim()
+    if (cleanText.length < 12 || impactMirrorBusyId) return
+    setImpactMirrorBusyId(decision.id)
+    setError('')
+    try {
+      const ok = isAdmin || await refresh()
+      if (!ok) throw new Error('جلسة المشرف تحتاج تحديثا قبل حفظ شاهد الأثر.')
+      const current = editorialImpactMirrorByDecision[decision.id]
+      const intent = current?.intent || {
+        title: decision.plan.primaryTitle,
+        thesis: decision.plan.thesis,
+        protectedPoints: [decision.plan.thesis, ...decision.plan.outline.slice(0, 2)],
+        caveats: decision.plan.doNotRepeat,
+        expectedAction: decision.plan.outline.at(-1) || '',
+        audience,
+        fingerprintHash: decision.fingerprint,
+      }
+      const next = buildImpactMirror({
+        intent,
+        observations: [
+          ...(current?.observations || []),
+          { id: `impact-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, text: cleanText, source, at: new Date().toISOString() },
+        ],
+        metrics: current?.resonance.metrics || {},
+      })
+      const db = await getDb()
+      if (!db) throw new Error('Firebase غير متاح الآن.')
+      const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
+      await setDoc(doc(db, 'admin_editorial_board', decision.id), { impactMirror: next, updatedAt: serverTimestamp() }, { merge: true })
+      setEditorialImpactMirrorByDecision((previous) => ({ ...previous, [decision.id]: next }))
+      setNotice(next.reopenRecommended ? 'سجلت المرآة انزياحا يستحق إعادة فتح المادة في مجلس التحرير.' : 'حفظت مرآة الأثر شاهد الفهم وربطته بالنية الأصلية.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'تعذر حفظ شاهد الأثر.')
+    } finally {
+      setImpactMirrorBusyId('')
+    }
+  }
 
   // بذرة «حملة من مقال»: عند وصولها نفتح استوديو التصاميم فوراً، وعند وجودها
   // مخزنة (وصل الحدث قبل تركيب هذا المكوّن) نلتقطها في أول تركيب.
@@ -2471,6 +2574,31 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     return () => window.removeEventListener('studio:standalone-seed', onSeed)
   }, [])
 
+  /* غرفة د. أحمد لا تنسخ الاستوديو: تسلّمه بذرة المهمة فيفتح المسار القائم
+     ومجلسه وذاكرته كما هما. */
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('admin:publishing-room-seed')
+      if (!stored) return
+      const seed = JSON.parse(stored) as { idea?: string; audience?: string; purpose?: string; openBoard?: boolean }
+      if (seed.idea) setIdea(seed.idea)
+      if (seed.audience) setAudience(seed.audience)
+      if (seed.purpose) setAngle(seed.purpose.slice(0, 180))
+      setEditorialDecision(null)
+      setView('idea')
+      sessionStorage.removeItem('admin:publishing-room-seed')
+    } catch { /* بذرة تالفة لا توقف الاستوديو */ }
+  }, [])
+
+  /* المخرج الحي يسكن داخل الاستوديو، ويستقبل بذور غرفة د. أحمد وصفحة المقال
+     ومجلس التحرير من دون إضافة تبويب رئيسي إلى لوحة التحكم أو الموقع العام. */
+  useEffect(() => {
+    const openDirector = () => setView('director')
+    window.addEventListener('studio:live-director-seed', openDirector)
+    try { if (sessionStorage.getItem('admin:live-director-seed')) setView('director') } catch { /* noop */ }
+    return () => window.removeEventListener('studio:live-director-seed', openDirector)
+  }, [])
+
   useEffect(() => {
     let active = true
     setRichArticles(articles)
@@ -2505,11 +2633,17 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           return decisionId && item.calibration ? [[decisionId, item.calibration as EditorialCalibrationRecord]] : []
         })
         setEditorialCalibrationByDecision(Object.fromEntries(calibrationEntries))
+        const mirrorEntries: Array<[string, EditorialImpactMirror]> = rows.flatMap((item): Array<[string, EditorialImpactMirror]> => {
+          const decisionId = String((item.decision as EditorialBoardDecision | undefined)?.id || item.id || '')
+          return decisionId && item.impactMirror ? [[decisionId, item.impactMirror as EditorialImpactMirror]] : []
+        })
+        setEditorialImpactMirrorByDecision(Object.fromEntries(mirrorEntries))
       } catch {
         if (active) {
           setEditorialHistory([])
           setEditorialCalibrationProfile({ sampleSize: 0, strengthBias: 0, articlePotentialBias: 0 })
           setEditorialCalibrationByDecision({})
+          setEditorialImpactMirrorByDecision({})
         }
       }
     })()
@@ -2593,13 +2727,40 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
   const weeklyPack = useMemo(() => buildWeeklyPack(bundle, richArticles, opportunityRadar[0]), [bundle, opportunityRadar, richArticles])
   const styleInsight = useMemo(() => styleReview(bundle, style), [bundle, style])
   const sevenDayCampaign = useMemo(() => buildTransformingCampaign({ bundle, pack: weeklyPack }), [bundle, weeklyPack])
+  const semanticCourtInput = useMemo(() => {
+    const pack = bundle.socialPack
+    const social: Array<{ id: string; channel: string; text: string }> = []
+    const append = (channel: string, values: unknown) => {
+      const list = Array.isArray(values) ? values : values ? [values] : []
+      list.map(String).filter(Boolean).forEach((text, index) => social.push({ id: `${channel}-${index + 1}`, channel, text }))
+    }
+    if (pack) {
+      append('X', pack.x); append('LinkedIn', pack.linkedin); append('Facebook', pack.facebook)
+      append('Threads', pack.threads); append('Instagram', pack.instagramCaptions); append('Stories', pack.stories)
+      append('Reel', pack.reelScript); append('WhatsApp', pack.whatsapp); append('Newsletter', pack.newsletter)
+    } else Object.entries(bundle.social).forEach(([channel, value]) => append(channel, value))
+    const designs = pack ? [
+      ...pack.visualDirections.map((item, index) => ({ id: `direction-${index + 1}`, channel: 'اتجاه بصري', text: `${item.headline}\n${item.subline}` })),
+      ...pack.carouselSlides.map((item, index) => ({ id: `slide-${index + 1}`, channel: 'شريحة', text: `${item.kicker}\n${item.title}\n${item.body}` })),
+    ] : []
+    return {
+      article: { slug: bundle.slug, title: bundle.title, excerpt: bundle.excerpt, body: bundle.body },
+      fingerprint: meaningFingerprint,
+      media: { audio: audioProofAssets(bundle.slug), social, designs },
+      evidence: {
+        sourceIds: editorialEvidenceChain.sourceIds,
+        proofs: editorialEvidenceChain.sources,
+        alerts: editorialEvidenceChain.alerts,
+        claims: editorialEvidenceChain.claims,
+      },
+    }
+  }, [bundle, editorialEvidenceChain, meaningFingerprint])
+  const semanticCourt: MultimodalMeaningCourt = useMemo(() => buildMultimodalMeaningCourt(semanticCourtInput), [semanticCourtInput])
   const publicationPassportDraft = useMemo(() => {
-    const audioAssets = audioProofAssets(bundle.slug)
+    const audioAssets = semanticCourtInput.media.audio
     const socialPack = bundle.socialPack
     const visualDirections = socialPack?.visualDirections || []
-    const socialTexts = socialPack
-      ? [...socialPack.x, ...socialPack.linkedin, ...(socialPack.facebook || []), ...socialPack.threads, ...socialPack.instagramCaptions, ...socialPack.stories, socialPack.reelScript, socialPack.whatsapp, socialPack.newsletter]
-      : Object.values(bundle.social)
+    const socialTexts = semanticCourtInput.media.social.map((item) => item.text)
     const platformCount = socialPack
       ? [socialPack.x, socialPack.linkedin, socialPack.facebook, socialPack.threads, socialPack.instagramCaptions, socialPack.stories, socialPack.whatsapp, socialPack.newsletter].filter((value) => Array.isArray(value) ? value.length > 0 : Boolean(value)).length
       : Object.values(bundle.social).filter(Boolean).length
@@ -2618,9 +2779,11 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         proofs: editorialEvidenceChain.sources.map((source) => JSON.stringify(source)),
         alerts: editorialEvidenceChain.alerts,
       },
+      semanticCourt,
+      semanticCourtInput,
       releaseDecision: { targetStatus: 'draft', manualOverride: false, overrideReason: '' },
     })
-  }, [bundle, editorialEvidenceChain.alerts, editorialEvidenceChain.sourceIds, meaningFingerprint.hash, sevenDayCampaign.id])
+  }, [bundle, editorialEvidenceChain, meaningFingerprint.hash, semanticCourt, semanticCourtInput, sevenDayCampaign.id])
   const privateMemoryMatches = useMemo(() => privateBookMatches(bundle, privateLinks), [bundle, privateLinks])
   const editorialDecisionSuite = useMemo(() => buildEditorialDecisionSuite({
     bundle,
@@ -2832,13 +2995,21 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       const previous = editorialHistory.find((item) => item.fingerprint === decision.fingerprint)
       if (previous) decision.why.push(`سبق عرض الفكرة نفسها على المجلس بتاريخ ${new Date(previous.generatedAt).toLocaleDateString('ar-KW')}؛ حُفظ هذا التحليل كتاريخ قرار جديد لا كنسخة تمحو السابق.`)
       setEditorialDecision(decision)
-      setEditorialEvidenceHold('')
       setEditorialHistory((items) => [decision, ...items.filter((item) => item.id !== decision.id)].slice(0, 24))
 
       const db = await getDb()
       if (db) {
         const { doc, serverTimestamp, setDoc } = await import('firebase/firestore')
         const safeDecision = JSON.parse(JSON.stringify(decision)) as EditorialBoardDecision
+        const initialImpactMirror = buildImpactMirror({ intent: {
+          title: decision.plan.primaryTitle,
+          thesis: decision.plan.thesis,
+          protectedPoints: [decision.plan.thesis, ...decision.plan.outline.slice(0, 2)],
+          caveats: decision.plan.doNotRepeat,
+          expectedAction: decision.plan.outline.at(-1) || '',
+          audience,
+          fingerprintHash: decision.fingerprint,
+        } })
         await setDoc(doc(db, 'admin_editorial_board', decision.id), {
           id: decision.id,
           fingerprint: decision.fingerprint,
@@ -2854,10 +3025,12 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
           linkedArticleId: null,
           publishedAt: null,
           calibration: { mode: 'feedback-loop', status: 'awaiting-article', due7At: null, due30At: null, actual7: null, actual30: null },
+          impactMirror: initialImpactMirror,
           generatedAt: decision.generatedAt,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         })
+        setEditorialImpactMirrorByDecision((items) => ({ ...items, [decision.id]: initialImpactMirror }))
       } else {
         setNotice('اكتمل قرار المجلس، لكن تعذّر حفظ السجل لأن Firestore غير متاح الآن.')
       }
@@ -2872,7 +3045,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     }
   }
 
-  const launchEditorialArticle = (decision: EditorialBoardDecision, evidenceOverride = false) => {
+  const launchEditorialArticle = async (decision: EditorialBoardDecision, evidenceOverride = false) => {
     if (!['write_now', 'change_angle'].includes(decision.verdict)) return
     const handoffAngle = [
       decision.plan.angle,
@@ -2881,22 +3054,31 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       decision.plan.referencesNeeded.length ? `تحقق قبل الحسم من: ${decision.plan.referencesNeeded.join(' ')}` : '',
       evidenceOverride && decision.evidenceGate.missing.length ? `بوابة الدليل — أكمل قبل النشر: ${decision.evidenceGate.missing.join(' ')}` : '',
     ].filter(Boolean).join('\n')
-    setEditorialEvidenceHold('')
+    const seeded = buildBundle(decision.plan.primaryTitle, audience, handoffAngle, richArticles)
+    setBundle({
+      ...seeded,
+      title: decision.plan.primaryTitle,
+      slug: makeSlug(decision.plan.primaryTitle),
+      socialPack: null,
+    })
+    setIdea(decision.plan.primaryTitle)
     setAngle(handoffAngle)
-    void rebuild({ title: decision.plan.primaryTitle, angle: handoffAngle })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    /* لا نربط فتح المحرر بنجاح الشبكة: القرار والعنوان وملاحظة الدليل تنتقل
+       فوراً، ثم يصل النص إلى المحرر نفسه. وكان تأخير الانتقال حتى نهاية الطلب
+       يجعل أي بطء أو خطأ يبدو كأنه أعاد الصفحة بلا استجابة. */
+    setView('write')
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.getElementById('article-writing-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }))
+    const written = await rebuild({ title: decision.plan.primaryTitle, angle: handoffAngle })
+    if (!written) return
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.getElementById('article-writing-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }))
   }
 
   const startEditorialArticle = (decision: EditorialBoardDecision) => {
-    if (!decision.evidenceGate.ready) {
-      setEditorialEvidenceHold(decision.id)
-      return
-    }
-    launchEditorialArticle(decision)
-  }
-
-  const forceStartEditorialArticle = (decision: EditorialBoardDecision) => {
-    launchEditorialArticle(decision, true)
+    void launchEditorialArticle(decision, !decision.evidenceGate.ready)
   }
 
   const openExistingEditorialArticle = async (decision: EditorialBoardDecision) => {
@@ -2998,7 +3180,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     setNotice(`اعتُمدت النسخة الثانية (${alternate.structure} · ${alternate.score}٪). حزمة التوزيع ستُبنى من جديد.`)
   }
 
-  const rebuild = async (override?: { title?: string; angle?: string }) => {
+  const rebuild = async (override?: { title?: string; angle?: string }): Promise<boolean> => {
     const task = beginAdminTask('توليد المقال')
     setError('')
     setNotice('')
@@ -3101,9 +3283,11 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
       setView('write')
       task.needsInput('المقال جاهز للمراجعة')
       void requestSocialPack(nextBundle, false).catch(() => undefined)
+      return true
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'تعذّر بناء المقال الكامل.')
       task.fail(reason, 'تعذّر بناء المقال الكامل')
+      return false
     } finally {
       setGenerating(false)
     }
@@ -3115,7 +3299,6 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
     setIdea(title)
     setAngle(suggestion)
     setEditorialDecision(null)
-    setEditorialEvidenceHold('')
     setEditorialProgress('idle')
     setView('idea')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -3237,13 +3420,29 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         updatedAt: serverTimestamp(),
       }, { merge: true })
       if (editorialDecision) {
+        const existingMirror = editorialImpactMirrorByDecision[editorialDecision.id]
+        const impactMirror = buildImpactMirror({
+          intent: {
+            title: bundle.title.trim(),
+            thesis: meaningFingerprint.thesis || editorialDecision.plan.thesis,
+            protectedPoints: meaningFingerprint.protectedPoints,
+            caveats: meaningFingerprint.caveats,
+            expectedAction: editorialDecision.plan.outline.at(-1) || '',
+            audience,
+            fingerprintHash: meaningFingerprint.hash,
+          },
+          observations: existingMirror?.observations || [],
+          metrics: existingMirror?.resonance.metrics || {},
+        })
         await setDoc(doc(db, 'admin_editorial_board', editorialDecision.id), {
           lifecycleStatus: 'draft_started',
           linkedArticleId: bundle.slug,
           draftStartedAt: serverTimestamp(),
           calibration: { mode: 'feedback-loop', status: 'awaiting-publication', due7At: null, due30At: null, actual7: null, actual30: null },
+          impactMirror,
           updatedAt: serverTimestamp(),
         }, { merge: true })
+        setEditorialImpactMirrorByDecision((items) => ({ ...items, [editorialDecision.id]: impactMirror }))
       }
       setNotice(`نُقل المقال إلى «المقالات» كمسودة بجواز موقّع ${signedPassport.fingerprint.slice(0, 12)}…${signedPassport.manifest.releaseReady ? ' ومكتمل الطبقات' : `؛ وتبقى قبل النشر: ${signedPassport.manifest.blocking.join('، ')}`} ✓`)
       await onTransferToArticles?.(bundle.slug)
@@ -3272,6 +3471,12 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         : [weeklyPack.linkedin, weeklyPack.x, weeklyPack.generalX, weeklyPack.instagram, weeklyPack.question, weeklyPack.quote, weeklyPack.radarComment].filter(Boolean).join(' ')
       const meaningGuard = reviewMeaningDrift(meaningFingerprint, socialText)
       if (!meaningGuard.ready) throw new Error(`بصمة المعنى أوقفت الحزمة قبل الطابور: ${meaningGuard.explanation}`)
+      if (semanticCourt.chambers.social.status === 'blocked'
+        || semanticCourt.safeguards.headlineGuard.status === 'blocked'
+        || semanticCourt.safeguards.claimLineage.status === 'blocked'
+        || semanticCourt.adversarialSimulation.status === 'blocked') {
+        throw new Error(`محكمة المعنى أوقفت الحزمة قبل الطابور: ${semanticCourt.alerts[0] || 'نسخة مشتقة لا تحفظ معنى الأصل.'}`)
+      }
       await addDoc(collection(db, 'social_queue'), {
         status: 'ready_for_review',
         source: 'publishing_studio',
@@ -3279,6 +3484,7 @@ export function PublishingStudio({ articles, onTransferToArticles, initialView =
         articleTitle: bundle.title,
         meaningFingerprintHash: meaningFingerprint.hash,
         meaningGuard,
+        semanticCourt,
         idea,
         audience,
         posts: bundle.socialPack ? {
@@ -3448,6 +3654,33 @@ ${effectivePurpose}`,
       const db = await getDb()
       if (!db) throw new Error('Firebase غير متاح الآن.')
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      const pulseOrigin = `${pulseIdea.trim()}\n${pulsePurpose.trim()}`.trim()
+      const pulseFingerprint = buildMeaningFingerprint({ slug: 'standalone-post', title: pulseIdea.trim(), body: pulseOrigin, excerpt: pulsePurpose.trim(), sourceIds: ['standalone-author-input'] })
+      const pulseSocial: Array<{ id: string; channel: string; text: string }> = []
+      const append = (channel: string, value: unknown) => {
+        const list = Array.isArray(value) ? value : value ? [value] : []
+        list.map(String).filter(Boolean).forEach((text, index) => pulseSocial.push({ id: `${channel}-${index + 1}`, channel, text }))
+      }
+      append('X', pulsePack.x); append('LinkedIn', pulsePack.linkedin); append('Facebook', pulsePack.facebook)
+      append('Threads', pulsePack.threads); append('Instagram', pulsePack.instagramCaptions); append('Stories', pulsePack.stories)
+      append('Reel', pulsePack.reelScript); append('WhatsApp', pulsePack.whatsapp); append('Newsletter', pulsePack.newsletter)
+      const pulseCourt = buildMultimodalMeaningCourt({
+        article: { slug: 'standalone-post', title: pulseIdea.trim(), excerpt: pulsePurpose.trim(), body: pulseOrigin },
+        fingerprint: pulseFingerprint,
+        media: {
+          social: pulseSocial,
+          designs: [
+            ...pulsePack.visualDirections.map((item, index) => ({ id: `direction-${index + 1}`, channel: 'اتجاه بصري', text: `${item.headline}\n${item.subline}` })),
+            ...pulsePack.carouselSlides.map((item, index) => ({ id: `slide-${index + 1}`, channel: 'شريحة', text: `${item.kicker}\n${item.title}\n${item.body}` })),
+          ],
+        },
+        evidence: { sourceIds: ['standalone-author-input'], proofs: ['standalone-author-input|author-confirmed'], alerts: [] },
+      })
+      if (pulseCourt.chambers.social.status === 'blocked' || pulseCourt.chambers.design.status === 'blocked'
+        || pulseCourt.safeguards.headlineGuard.status === 'blocked' || pulseCourt.safeguards.claimLineage.status === 'blocked'
+        || pulseCourt.adversarialSimulation.status === 'blocked') {
+        throw new Error(`محكمة المعنى أوقفت المنشور المستقل: ${pulseCourt.alerts[0] || 'إحدى النسخ لا تحفظ الفكرة الأصلية.'}`)
+      }
       await addDoc(collection(db, 'social_queue'), {
         status: 'ready_for_review',
         source: 'standalone_social_studio',
@@ -3455,6 +3688,8 @@ ${effectivePurpose}`,
         purpose: pulsePurpose.trim(),
         audience: pulseAudience,
         posts: pulsePack,
+        meaningFingerprintHash: pulseFingerprint.hash,
+        semanticCourt: pulseCourt,
         visualTemplates: buildSocialVisuals(pulsePack, { title: pulseIdea.trim(), excerpt: pulsePurpose.trim() }),
         currentEvent: pulsePack.event || null,
         createdAt: serverTimestamp(),
@@ -3547,7 +3782,8 @@ ${effectivePurpose}`,
             {error && <p className="mt-4 rounded-xl border border-red-300/40 bg-canvas px-4 py-3 text-[.84rem] text-soft">{error}</p>}
           </section>
           <EditorialMemoryPanel idea={`${idea} ${angle}`} articles={richArticles} books={books as any} papers={papers as any} onDataChange={handleEditorialMemoryData} />
-          <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy} historyCount={editorialHistory.length} onStart={startEditorialArticle} onForceStart={forceStartEditorialArticle} onOpenExisting={openExistingEditorialArticle} evidenceHold={Boolean(editorialDecision && editorialEvidenceHold === editorialDecision.id)} />
+          <EditorialBoardPanel decision={editorialDecision} progress={editorialProgress} busy={editorialBusy || generating} historyCount={editorialHistory.length} onStart={startEditorialArticle} onOpenExisting={openExistingEditorialArticle} />
+          {editorialDecision && ['write', 'revive'].includes(editorialDecision.verdict) && <section className={card}><div className="flex flex-wrap items-center justify-between gap-3"><span><span className="block text-[.7rem] font-semibold text-accent">بعد اعتماد الفكرة</span><span className="mt-1 block text-[.75rem] text-soft">حوّل قرار المجلس إلى مشروع Flow من دون إنشاء مقال تلقائي.</span></span><button type="button" className={ghost} onClick={() => { const seed = { type: 'public_topic_video', topic: editorialDecision.idea, message: editorialDecision.plan.thesis, audience, editorialDecisionId: editorialDecision.id }; try { sessionStorage.setItem('admin:live-director-seed', JSON.stringify(seed)) } catch { /* noop */ } window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed })); setView('director') }}>افتحها في المخرج الحي</button></div></section>}
           {editorialHistory.length > 0 && <details className={`${card} group`}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4"><span><span className="block text-[.72rem] font-semibold text-accent">سجل قرارات مجلس التحرير</span><span className="mt-1 block text-[.82rem] text-soft">آخر {editorialHistory.length} قرار محفوظ{editorialCalibrationProfile.sampleSize >= 1 ? ` · ${editorialCalibrationProfile.sampleSize} نتيجة دخلت المعايرة` : ''}{(editorialCalibrationProfile.stubbornWins || 0) > 0 ? ` · ${editorialCalibrationProfile.stubbornWins} انتصار عناد صحّح ميزانه` : ''}</span></span><span className="text-accent transition-transform group-open:rotate-45">+</span></summary>
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -3573,7 +3809,16 @@ ${effectivePurpose}`,
               const actual = calibration?.actual30 || calibration?.actual7
               const windowLabel = calibration?.actual30 ? '30 يوم' : calibration?.actual7 ? '7 أيام' : ''
               const comparison = actual?.vsSiteAveragePct == null ? '' : `${actual.vsSiteAveragePct >= 0 ? 'أعلى' : 'أقل'} من متوسط الموقع بـ${Math.abs(actual.vsSiteAveragePct)}٪`
-              return <div key={item.id} className="grid gap-1 rounded-xl border border-hair bg-canvas px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}{actual?.performanceScore != null ? ` · توقع ${item.scores.strength ?? '—'}/100 · أداء ${windowLabel} ${actual.performanceScore}/100${comparison ? ` · ${comparison}` : ''}` : ''}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div>
+              const mirror = editorialImpactMirrorByDecision[item.id] || buildImpactMirror({ intent: {
+                title: item.plan.primaryTitle,
+                thesis: item.plan.thesis,
+                protectedPoints: [item.plan.thesis, ...item.plan.outline.slice(0, 2)],
+                caveats: item.plan.doNotRepeat,
+                expectedAction: item.plan.outline.at(-1) || '',
+                audience,
+                fingerprintHash: item.fingerprint,
+              } })
+              return <div key={item.id} className="rounded-xl border border-hair bg-canvas px-4 py-3"><div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><span className="min-w-0"><strong className="block truncate text-[.8rem] text-ink">{item.idea}</strong><span className="mt-1 block text-[.68rem] text-soft">{new Date(item.generatedAt).toLocaleDateString('ar-KW')}{actual?.performanceScore != null ? ` · توقع ${item.scores.strength ?? '—'}/100 · أداء ${windowLabel} ${actual.performanceScore}/100${comparison ? ` · ${comparison}` : ''}` : ''}</span></span><span className="text-[.72rem] font-semibold text-accent">{item.verdictLabel}</span></div><ImpactMirrorInline mirror={mirror} busy={impactMirrorBusyId === item.id} onSave={(text, source) => recordImpactObservation(item, text, source)} /></div>
             })}</div>
           </details>}
           <CurrentEventsCard items={currentEvents} selected={selectedEventIds} loading={eventsLoading} opportunities={opportunityRadar} onToggle={(id) => setSelectedEventIds((previous) => previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id].slice(0, 3))} />
@@ -3583,7 +3828,19 @@ ${effectivePurpose}`,
       )}
 
       {view === 'write' && (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)]">
+        <>
+        {generating && <section className={`${card} border-accent/30`} aria-live="polite" data-article-generation-state="working">
+          <div className="h-1.5 overflow-hidden rounded-full bg-hair/60"><div className="h-full w-2/3 animate-pulse rounded-full bg-accent" /></div>
+          <h2 className="mt-4 font-display text-xl font-semibold text-ink">أكتب المقال الآن داخل المحرر.</h2>
+          <p className="mt-2 text-[.8rem] leading-relaxed text-soft">انتقلت الفكرة والعنوان وملاحظات مجلس التحرير. سيظهر النص هنا فور اكتمال الكتابة، من دون نقلك إلى أعلى الصفحة.</p>
+        </section>}
+        {!generating && error && <section className={`${card} border-red-300/45`} role="alert" data-article-generation-state="error">
+          <h2 className="font-display text-xl font-semibold text-ink">تعذّرت الكتابة، وبقيت الفكرة محفوظة.</h2>
+          <p className="mt-2 text-[.82rem] leading-relaxed text-soft">{error}</p>
+          <button type="button" className={`${ghost} mt-4`} onClick={() => void rebuild({ title: bundle.title, angle })}>أعد محاولة كتابة المقال</button>
+        </section>}
+        {!generating && notice && <p className="rounded-xl border border-accent/30 bg-wash px-4 py-3 text-[.84rem] leading-relaxed text-accent" aria-live="polite">{notice}</p>}
+        <div id="article-writing-workspace" className="scroll-mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,.7fr)]">
           <section className={card}>
             <div className="grid gap-4">
               <Field label="العنوان"><input className={input} value={bundle.title} onChange={(event) => updateBundle({ title: event.target.value })} /></Field>
@@ -3620,10 +3877,13 @@ ${effectivePurpose}`,
             <button type="button" onClick={() => setView('review')} className={primary}>انتقل إلى بوابة الجودة</button>
           </aside>
         </div>
+        <EditorialForesightPanel title={bundle.title} body={bundle.body} articles={richArticles} onInsertFairAnswer={(paragraph) => updateBundle({ body: `${bundle.body.trim()}\n\n${paragraph}`.trim() })} />
+        </>
       )}
 
       {view === 'review' && (
         <>
+          <EditorialForesightPanel title={bundle.title} body={bundle.body} articles={richArticles} onInsertFairAnswer={(paragraph) => { updateBundle({ body: `${bundle.body.trim()}\n\n${paragraph}`.trim() }); setView('write') }} />
           <EditorialDecisionRoom suite={editorialDecisionSuite} />
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
             <div className="grid content-start gap-5">
@@ -3647,6 +3907,8 @@ ${effectivePurpose}`,
           </div>
         </>
       )}
+
+      {view === 'director' && <LiveDirector articles={richArticles} />}
 
       {view === 'pulse' && (
         <div className="grid gap-5">
@@ -3713,6 +3975,17 @@ ${effectivePurpose}`,
 
       {view === 'distribution' && (
         <>
+          <section className={card}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span><span className="block text-[.7rem] font-semibold text-accent">امتداد بصري للحزمة</span><span className="mt-1 block text-[.75rem] text-soft">ابنِ فيديو المقال من النسخة نفسها؛ المخرج يشرح الجوهر ولا يقرأ المقال كاملاً.</span></span>
+              <button type="button" className={ghost} onClick={() => {
+                const seed = { type: 'article_video', articleSlug: bundle.slug, article: { slug: bundle.slug, title: bundle.title, excerpt: bundle.excerpt, body: bundle.body, cat: bundle.cat }, title: bundle.title, message: bundle.excerpt }
+                try { sessionStorage.setItem('admin:live-director-seed', JSON.stringify(seed)) } catch { /* noop */ }
+                window.dispatchEvent(new CustomEvent('studio:live-director-seed', { detail: seed }))
+                setView('director')
+              }}>افتح فيديو المقال في المخرج الحي</button>
+            </div>
+          </section>
           {bundle.socialPack ? (
             <PerfectSocialPackCard
               pack={bundle.socialPack}

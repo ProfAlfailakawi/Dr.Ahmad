@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload blind public samples
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: podcast-voice-bakeoff-public
           path: public/audio/bakeoff
@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload private technical report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: podcast-voice-bakeoff-private-report
           path: podcast-audits/voice-bakeoff.private.json

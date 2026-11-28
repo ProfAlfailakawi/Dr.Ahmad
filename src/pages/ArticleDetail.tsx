@@ -19,9 +19,9 @@ import { usePersistentAudio } from '../lib/persistent-audio'
 import { rememberIdeaVisit } from '../lib/idea-memory'
 import { recordArticleVisit } from '../lib/reading-space'
 import { SaveForLaterButton } from '../components/MySpace'
-import bookTocLinks from '../data/book-toc-links.json'
 import IdeaLife from '../components/IdeaLife'
 import { categoryLabel } from '../lib/content-taxonomy'
+import { bestBookConcept, bookKnowledgeAnchor, bookKnowledgeText } from '../lib/book-knowledge'
 
 const canUseDropCap = (paragraph: string) =>
   /^[\s\u061C\u200E\u200F]*[\u0621-\u064A]/.test(paragraph)
@@ -418,28 +418,13 @@ function deepDive(a: { title: string; excerpt?: string }, papers: PaperRecord[],
   }
   return {
     paper: best(papers, (paper) => paper.meta || ''),
-    book: best(books, (book) => book.desc || ''),
+    book: best(books, (book) => `${book.desc || ''} ${bookKnowledgeText(book.slug)}`),
   }
 }
 
-/* لا أرقام صفحات هنا: عناوين الفصول المنشورة وحدها — أرقام النسخ الداخلية محظورة (أمر الدكتور) */
-type BookTocSection = { label: string; keywords?: string[] }
-type BookTocLink = { title: string; sections?: BookTocSection[] }
-
 function bestBookTocMatch(article: ArticleRecord) {
   const articleText = `${article.title} ${article.excerpt || ''} ${article.cat} ${article.body || ''}`
-  const mine = tokensOf(articleText)
-  let best: { bookTitle: string; section: BookTocSection; score: number } | null = null
-  for (const book of (bookTocLinks as { books?: BookTocLink[] }).books || []) {
-    for (const section of book.sections || []) {
-      let score = 0
-      for (const token of tokensOf(`${book.title} ${section.label}`)) if (mine.has(token)) score += 1
-      for (const keyword of section.keywords || []) {
-        if ([...tokensOf(keyword)].some((token) => mine.has(token))) score += 2
-      }
-      if (score > (best?.score || 0)) best = { bookTitle: book.title, section, score }
-    }
-  }
+  const best = bestBookConcept(articleText)
   return best && best.score >= 3 ? best : null
 }
 
@@ -548,8 +533,8 @@ function StudentArchive({ a, articles, books, papers }: { a: ArticleRecord; arti
             )}
             {bookPageLink && (
               <p className="mt-3 rounded-xl border border-hair bg-canvas px-4 py-3 text-[.84rem] leading-relaxed text-soft">
-                قريب من «{bookPageLink.bookTitle}»<br />
-                فصل: {bookPageLink.section.label}
+                قريب من <Link to={`/publications/${bookPageLink.book.slug}#${bookKnowledgeAnchor(bookPageLink.concept)}`} className="font-semibold text-ink transition-colors hover:text-accent">«{bookPageLink.book.title}»</Link><br />
+                {bookPageLink.concept.title} · ص {bookPageLink.concept.pageStart}
               </p>
             )}
           </div>

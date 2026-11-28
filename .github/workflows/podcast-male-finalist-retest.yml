@@ -60,7 +60,7 @@ jobs:
         run: node scripts/podcast-dialogue.mjs --male-finalist-retest --males="${{ github.event.inputs.males }}"
 
       - name: Upload blind samples
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: podcast-male-finalist-retest-output
           path: |

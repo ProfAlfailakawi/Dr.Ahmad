@@ -162,7 +162,7 @@ test('11) save and reload decision', () => {
 test('12) start article handoff', () => {
   assert.match(studio, /const launchEditorialArticle/)
   assert.match(studio, /const startEditorialArticle/)
-  assert.match(studio, /void rebuild\(\{ title: decision\.plan\.primaryTitle, angle: handoffAngle \}\)/)
+  assert.match(studio, /await rebuild\(\{ title: decision\.plan\.primaryTitle, angle: handoffAngle \}\)/)
   assert.match(studio, /doNotRepeat/)
   assert.match(studio, /evidenceGate\.ready/)
 })
@@ -236,7 +236,8 @@ test('21) بوابة الدليل صامتة عند الجاهزية وتظهر 
   assert.equal(missing.evidenceGate.ready, false)
   assert.ok(missing.evidenceGate.missing.length >= 1)
   assert.match(studio, /data-editorial-evidence-gate="needs-evidence"/)
-  assert.match(studio, /ابدأ المسودة مع تسجيل النقص/)
+  assert.match(studio, /ابدأ المقال وسجّل الملاحظة/)
+  assert.doesNotMatch(studio, /ابدأ المسودة مع تسجيل النقص/)
 })
 
 test('22) الأداة شخصية بالكامل ولا تقرأ messages أو views لقرار المجلس', () => {
@@ -260,6 +261,15 @@ test('24) المصادر الشخصية تقوي الدليل الفعّال و�
   assert.equal(active.personalSources[0]?.status, 'active')
   const retracted = board.buildEditorialBoardDecision(input({ personalSourceMatches: [{ id: 's2', title: 'دراسة مسحوبة', kind: 'doi', status: 'retracted', score: 78, reference: '10.1000/retracted', summary: 'مصدر غير صالح للاعتماد', linkedArticles: [], linkedBooks: [], linkedPapers: [] }] }))
   assert.ok(retracted.evidenceGate.missing.some((line) => /مسحوب|منسحب|مراجعة/.test(line)))
+})
+
+test('25) مرآة الأثر تعيش داخل سجل المجلس ولا تدخل قرار ما قبل الكتابة', () => {
+  assert.match(studio, /buildImpactMirror/)
+  assert.match(studio, /data-impact-mirror=/)
+  assert.match(studio, /recordImpactObservation/)
+  const runBlock = studio.match(/const runEditorialBoard[\s\S]*?const launchEditorialArticle/)?.[0] || ''
+  assert.ok(runBlock.indexOf('buildEditorialBoardDecision') < runBlock.indexOf('initialImpactMirror'), 'نية الأثر تسجل بعد صدور القرار ولا تدخل حسابه')
+  assert.doesNotMatch(runBlock, /recordImpactObservation|collection\([^\n]*['"](?:messages|views)['"]/, 'شواهد ما بعد النشر لا يجوز أن تدخل قرار ما قبل الكتابة')
 })
 
 // حلقة المعايرة: لا تؤثر قبل وجود عينة كافية، ثم تُحَدّ بثماني نقاط فقط.

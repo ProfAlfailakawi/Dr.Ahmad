@@ -1,4 +1,5 @@
 import type { ArticleRecord, BookRecord, PaperRecord } from './cms'
+import { bookKnowledgeText } from './book-knowledge.ts'
 
 type SimpleBook = Pick<BookRecord, 'slug' | 'title' | 'desc'>
 type SimplePaper = Pick<PaperRecord, 'slug' | 'title' | 'meta' | 'abstractAr' | 'journal'>
@@ -95,7 +96,7 @@ export function suggestStrongTitle(idea: string) {
 
 export function ideaLab(idea: string, articles: ArticleLike[], books: SimpleBook[], papers: SimplePaper[]) {
   const relatedArticles = relatedForIdea(idea, articles, (a) => `${a.excerpt || ''} ${a.body || ''}`, 4)
-  const relatedBooks = relatedForIdea(idea, books, (b) => b.desc || '', 2)
+  const relatedBooks = relatedForIdea(idea, books, (b) => `${b.desc || ''} ${bookKnowledgeText(b.slug)}`, 2)
   const relatedPapers = relatedForIdea(idea, papers, (p) => `${p.meta || ''} ${p.abstractAr || ''} ${p.journal || ''}`, 2)
   const title = suggestStrongTitle(idea)
   const seed = relatedArticles[0]
@@ -182,7 +183,7 @@ export function articleSystem(article: ArticleLike, articles: ArticleLike[], boo
   const first = body.replace(/\s+/g, ' ').slice(0, 280)
   const quote = strongestQuote(body)
   const relatedArticles = relatedForIdea(`${article.title} ${article.excerpt}`, articles.filter((a) => a.slug !== article.slug), (a) => `${a.excerpt || ''} ${a.body || ''}`, 4)
-  const relatedBooks = relatedForIdea(`${article.title} ${article.excerpt}`, books, (b) => b.desc || '', 2)
+  const relatedBooks = relatedForIdea(`${article.title} ${article.excerpt}`, books, (b) => `${b.desc || ''} ${bookKnowledgeText(b.slug)}`, 2)
   const relatedPapers = relatedForIdea(`${article.title} ${article.excerpt}`, papers, (p) => `${p.meta || ''} ${p.abstractAr || ''} ${p.journal || ''}`, 2)
   return {
     summary: `${article.title}: ${article.excerpt || first}`,
@@ -209,7 +210,7 @@ export function topicMemory(title: string, body: string, articles: ArticleLike[]
   const years = relatedArticles.map((a) => a.iso?.slice(0, 4)).filter(Boolean)
   return {
     relatedArticles,
-    relatedBooks: relatedForIdea(idea, books, (b) => b.desc || '', 2),
+    relatedBooks: relatedForIdea(idea, books, (b) => `${b.desc || ''} ${bookKnowledgeText(b.slug)}`, 2),
     relatedPapers: relatedForIdea(idea, papers, (p) => `${p.meta || ''} ${p.abstractAr || ''} ${p.journal || ''}`, 2),
     note: relatedArticles.length
       ? `كتبت حول هذه الفكرة في ${Array.from(new Set(years)).join('، ')}. الزاوية الجديدة يمكن أن تكون: ماذا تغيّر اليوم؟`
@@ -277,7 +278,7 @@ export function monthlyPlan(articles: ArticleLike[], books: SimpleBook[], papers
     article,
     action: actions[(index + seed) % actions.length],
     companion: relatedForIdea(article.title, papers, (paper) => `${paper.meta || ''} ${paper.abstractAr || ''} ${paper.journal || ''}`, 1)[0]?.title
-      || relatedForIdea(article.title, books, (book) => book.desc || '', 1)[0]?.title
+      || relatedForIdea(article.title, books, (book) => `${book.desc || ''} ${bookKnowledgeText(book.slug)}`, 1)[0]?.title
       || 'منشور مستقل يمهّد للفكرة',
   }))
 }

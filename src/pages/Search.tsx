@@ -4,9 +4,9 @@ import { FadeUp, Page, PageHead } from '../components/ui'
 import { KnowledgeEntry } from '../components/KnowledgeEntry'
 import { useSeo } from '../components/seo'
 import { searchArticles, topKeywordsFor } from '../lib/cms'
-import { books, papers, media } from '../data'
 import { buildKnowledgeGraph, graphSearch, type KnowledgeKind } from '../lib/knowledge-graph'
 import { useCmsContent } from '../lib/content'
+import { bestBookConcept, bookKnowledgeAnchor } from '../lib/book-knowledge'
 import { categoryLabel, dynamicArticleCategories } from '../lib/content-taxonomy'
 import { usePersistentAudio } from '../lib/persistent-audio'
 import { versionedAudioUrl } from '../components/extras'
@@ -17,10 +17,9 @@ import { staticQuestions } from '../questions-data'
 const ar = (n: number | string) => String(n).replace(/[0-9]/g, (d) => '0123456789'[+d])
 
 
-/* ═══ محرك المعرفة الموحد (مقترح معتمد — الأولوية الأولى) ═══
-   البحث لم يعد جزيرة مقالات: تبويب واحد يفتح الأرشيف كله — مقالات وأبحاث
-   وكتب وإعلام وأسئلة — وكل نتيجة تحمل نوعها بوضوح. أمانة الكتب مضمونة
-   بنيوياً: فهرس الكتاب هو وصفه العام المنشور فقط، لا نصه الداخلي. */
+/* ═══ محرك المعرفة الموحد ═══
+   الكتاب يُبحث عبر خريطة مفاهيم مشتقة من متنه الكامل، لكن النتيجة لا تكشف
+   المتن ولا ملف PDF: تعرض المحور وموضعه فقط وتفتح صفحة الكتاب نفسها. */
 
 type UnifiedKind = KnowledgeKind | 'question'
 type TabId = 'all' | UnifiedKind | 'spoken'
@@ -94,7 +93,7 @@ function editDistance(a: string, b: string) {
 }
 
 export default function Search() {
-  const { articles } = useCmsContent()
+  const { articles, books, papers, media } = useCmsContent()
   const [searchParams, setSearchParams] = useSearchParams()
   useSeo({
     title: 'البحث العميق',
@@ -128,7 +127,7 @@ export default function Search() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [normalizedQuery, tab])
 
-  const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books: books as any, papers: papers as any, media: media as any }), [articles])
+  const knowledgeGraph = useMemo(() => buildKnowledgeGraph({ articles, books, papers, media }), [articles, books, media, papers])
 
   const expandedQuery = useMemo(() => expandQuery(normalizedQuery), [normalizedQuery])
 
@@ -225,13 +224,25 @@ export default function Search() {
       rows.push({ kind: 'article', title: item.title, snippet: item.excerpt || '', url: `/articles/${item.slug}`, year: item.iso.slice(0, 4), score: 1000 + (articleRank.get(item.slug) || 0) })
     }
     for (const row of graphResults) {
-      rows.push({ kind: row.node.kind as UnifiedKind, title: row.node.title, snippet: row.node.text.slice(0, 180), url: row.node.url, year: row.node.year, score: row.score * 12 })
+      const bookMatch = row.node.kind === 'book' ? bestBookConcept(expandedQuery, row.node.slug) : null
+      rows.push({
+        kind: row.node.kind as UnifiedKind,
+        title: row.node.title,
+        snippet: bookMatch && bookMatch.score > 0
+          ? `داخل الكتاب: ${bookMatch.concept.title} · ص ${bookMatch.concept.pageStart}. ${bookMatch.concept.summary}`
+          : row.node.text.slice(0, 180),
+        url: bookMatch && bookMatch.score > 0
+          ? `/publications/${row.node.slug}#${bookKnowledgeAnchor(bookMatch.concept)}`
+          : row.node.url,
+        year: row.node.year,
+        score: row.score * 12,
+      })
     }
     for (const row of questionResults) {
       rows.push({ kind: 'question', title: row.item.ar, snippet: row.item.take.slice(0, 180), url: '/questions', year: undefined, score: row.hits * 10 })
     }
     return rows.sort((a, b) => b.score - a.score)
-  }, [articleResults, graphResults, questionResults, searchStarted])
+  }, [articleResults, expandedQuery, graphResults, questionResults, searchStarted])
 
   const activeRows = useMemo(() => tab === 'all' ? unifiedRows : unifiedRows.filter((row) => row.kind === tab), [tab, unifiedRows])
 

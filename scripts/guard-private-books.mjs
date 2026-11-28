@@ -2,8 +2,9 @@
 /**
  * حزام أمان الكتب الخاصة (مقترح معتمد — البند 18)
  *
- * الخط الأحمر: الكتب الخاصة غير المنشورة لا يتسرب عنها للعموم مسار ملف،
- * ولا رقم صفحات، ولا نص داخلي. هذا الحارس يفحص طبقتين ويُفشل البناء عند الخرق:
+ * العقد الحالي: يجوز استخدام معرفة المتون كاملة، لكن لا يُنشر PDF الكامل ولا
+ * يتحول الموقع إلى قارئٍ للمتن. هذا الحارس يفصل خريطة المفاهيم العامة عن
+ * أدلة الخادم النصية، ويمنع وصول الأخيرة إلى dist.
  *   ١) الملف المشتق الآمن نفسه (src/data/private-book-links.json):
  *      ممنوع فيه أي مفتاح من عائلة المسارات أو الصفحات أو أي نص طويل يشبه المتن.
  *   ٢) مخرجات البناء العامة (dist): عناوين الكتب الخاصة لا تظهر إلا في حزمة
@@ -17,6 +18,8 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 /* كل ملف عام مشتق من منظومة الكتب يخضع للفحص نفسه — بابا التسريب المعروفان */
 const SAFE_JSON_FILES = ['src/data/private-book-links.json', 'src/data/book-toc-links.json']
+const PUBLIC_KNOWLEDGE = resolve(ROOT, 'src/data/book-knowledge.json')
+const SERVER_EVIDENCE = resolve(ROOT, 'src/data/book-evidence.json')
 const DIST = resolve(ROOT, 'dist')
 
 const failures = []
@@ -51,6 +54,30 @@ for (const relative of SAFE_JSON_FILES) {
    الخاصة: مسارات الذاكرة، حقلها السري، ملف المتون الكامل. */
 const PRIVATE_MARKERS = ['books-memory', 'private-books/', 'privateUse', 'مادة خام سرية', 'localPath']
 
+/* خريطة المفاهيم العامة تسمح بأرقام الصفحات والعناوين المشتقة فقط. */
+if (!existsSync(PUBLIC_KNOWLEDGE)) failures.push('خريطة معرفة الكتب مفقودة')
+else {
+  const publicKnowledgeText = readFileSync(PUBLIC_KNOWLEDGE, 'utf8')
+  const publicKnowledge = JSON.parse(publicKnowledgeText)
+  if (publicKnowledge?.coverage?.books !== 9 || publicKnowledge?.coverage?.pages !== 1596 || publicKnowledge?.coverage?.complete !== true) {
+    failures.push('تغطية خريطة الكتب العامة ناقصة؛ المتوقع ٩ كتب و١٥٩٦ صفحة')
+  }
+  for (const marker of ['.pdf', '/Users/', 'PrivateBooks', 'localPath', 'sourceFingerprint', '"text":']) {
+    if (publicKnowledgeText.includes(marker)) failures.push(`الخريطة العامة تحمل أثراً ممنوعاً: ${marker}`)
+  }
+}
+
+/* المتن المفهرس مسموح في الخادم فقط، ومنزوع منه اسم الملف والمسار وPDF. */
+if (!existsSync(SERVER_EVIDENCE)) failures.push('فهرس أدلة الكتب الخادمي مفقود')
+else {
+  const serverEvidenceText = readFileSync(SERVER_EVIDENCE, 'utf8')
+  const serverEvidence = JSON.parse(serverEvidenceText)
+  if (serverEvidence?.coverage?.books !== 9 || serverEvidence?.coverage?.pages !== 1596) failures.push('تغطية أدلة الكتب الخادمية ناقصة')
+  for (const marker of ['.pdf', '/Users/', 'PrivateBooks', 'localPath', 'fileName']) {
+    if (serverEvidenceText.includes(marker)) failures.push(`فهرس الخادم يحمل مساراً أو ملفاً ممنوعاً: ${marker}`)
+  }
+}
+
 if (existsSync(DIST)) {
   const assetsDir = join(DIST, 'assets')
   const allChunks = existsSync(assetsDir)
@@ -63,6 +90,7 @@ if (existsSync(DIST)) {
   const publicChunks = allChunks.filter((name) => !/^Admin-/.test(name) && !/^admin-private-memory-/.test(name))
   for (const chunk of publicChunks) {
     const content = readFileSync(join(assetsDir, chunk), 'utf8')
+    if (content.includes('SERVER ONLY — أدلة الكتب')) failures.push(`متن الكتب الخادمي ظهر في حزمة عامة: ${chunk}`)
     for (const marker of PRIVATE_MARKERS) {
       if (content.includes(marker)) failures.push(`بصمة المنظومة الخاصة «${marker}» ظهرت في حزمة عامة: ${chunk}`)
     }
@@ -100,4 +128,4 @@ if (failures.length) {
   for (const failure of failures.slice(0, 12)) console.error(`  - ${failure}`)
   process.exit(1)
 }
-console.log(`✔ حزام الكتب الخاصة: الملف الآمن نقي (${(safe?.books || []).length} كتب) ولا بصمة للمنظومة الخاصة خارج حزمة الإدارة`)
+console.log(`✔ حزام الكتب: ٩ كتب مفهرسة؛ PDF الكامل غير منشور، ودليل المتن محصور في الخادم`)

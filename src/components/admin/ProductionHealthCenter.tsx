@@ -21,9 +21,9 @@ type SourcePlace = { kind?: string; title?: string; slug?: string; where?: strin
 type SourceIssue = { url: string; state: string; status?: number; note?: string; advice?: string; owned?: boolean; replacement?: string; action?: string; places?: SourcePlace[] }
 type SourceReport = { checkedAt?: string; total?: number; places?: number; ok?: number; problems?: number; warnings?: number; items?: SourceIssue[] }
 const sourceStateLabel: Record<string, string> = {
-  dead: 'ميت', unreachable: 'النطاق لا يستجيب', suspect: 'استجابة غريبة',
-  blocked: 'يحجب الفحص', throttled: 'حدّ الطلبات', server: 'عطل مؤقت', timeout: 'بطيء جداً',
-  'host-blocked': 'النطاق محجوب عنّا',
+  dead: 'تالف مؤكد', unreachable: 'تعذّر التحقق آلياً', suspect: 'حالة غير محسومة',
+  blocked: 'الفاحص محجوب', throttled: 'حدّ الطلبات', server: 'عطل مؤقت', timeout: 'لم يكتمل الفحص',
+  'host-blocked': 'الفاحص محجوب عن النطاق',
 }
 type ProductionState = { status?: Stage; updatedAt?: unknown; note?: string; expectedDialogueContentSha256?: string }
 type Episode = {
@@ -179,6 +179,8 @@ export function ProductionHealthCenter({
 
   const ownedSourceItems = (sourceReport?.items || []).filter((item) => item.owned)
   const externalSourceItems = (sourceReport?.items || []).filter((item) => !item.owned)
+  const confirmedDeadCount = (sourceReport?.items || []).filter((item) => item.state === 'dead').length
+  const unverifiedCount = (sourceReport?.items || []).filter((item) => item.state !== 'dead').length
   const ownedSourcePages = usePagedList(ownedSourceItems, 8, `${sourceReport?.checkedAt || ''}|${ownedSourceItems.length}`)
   const externalSourcePages = usePagedList(externalSourceItems, 8, `${sourceReport?.checkedAt || ''}|${externalSourceItems.length}`)
 
@@ -379,15 +381,16 @@ export function ProductionHealthCenter({
             >
               <span className="min-w-0">
                 <span className="block text-[.82rem] font-semibold text-ink">
-                  فحص المصادر · {sourceReport.ok ?? 0} سليمة من {sourceReport.total ?? 0}
+                  فحص المصادر · {sourceReport.ok ?? 0} رابطاً استجاب سليماً
                 </span>
                 <span className="mt-0.5 block text-[.72rem] text-soft">
-                  {sourceReport.problems ? `${sourceReport.problems} مصدراً يحتاج قرارك` : 'لا مصدر تالفاً'}
-                  {sourceReport.warnings ? ` · ${sourceReport.warnings} تنبيهاً عابراً` : ''}
+                  {confirmedDeadCount ? `${confirmedDeadCount} رابطاً تالفاً مؤكداً` : 'لا رابط تالفاً مؤكداً'}
+                  {unverifiedCount ? ` · تعذّر التحقق آلياً من ${unverifiedCount}` : ''}
+                  {sourceReport.total ? ` · الإجمالي ${sourceReport.total}` : ''}
                   {sourceReport.checkedAt ? ` · ${new Date(sourceReport.checkedAt).toLocaleString('ar-KW', { dateStyle: 'medium', timeStyle: 'short', numberingSystem: 'latn' })}` : ''}
                 </span>
               </span>
-              <span className={`shrink-0 rounded-full px-3 py-1 text-[.72rem] font-semibold ${sourceReport.problems ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-[.72rem] font-semibold ${confirmedDeadCount ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>
                 {sourcesOpen ? 'إخفاء التفاصيل' : 'التفاصيل'}
               </span>
             </button>
@@ -396,7 +399,7 @@ export function ProductionHealthCenter({
                 <section className="rounded-2xl border border-hair bg-wash p-3">
                   <div className="mb-3 border-b border-hair pb-3">
                     <h3 className="text-[.86rem] font-semibold text-ink">مكتبتي</h3>
-                    <p className="mt-1 text-[.7rem] leading-relaxed text-soft">عرض ومقترحات فقط — لا حذف ولا استبدال آلي لأي رابط يخصك.</p>
+                    <p className="mt-1 text-[.7rem] leading-relaxed text-soft">عرض ومقترحات فقط — لا حذف ولا استبدال آلي. وتعذّر الفحص لا يعني أن الرابط خاطئ.</p>
                   </div>
                   <div className="grid gap-2">
                     {!ownedSourceItems.length && <p className="px-2 py-3 text-[.8rem] text-soft">لا رابط في مكتبتك يحتاج مراجعة.</p>}
@@ -406,7 +409,7 @@ export function ProductionHealthCenter({
                         <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-hair px-2.5 py-1 text-[.68rem] font-semibold text-soft">{sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}</span>{place?.kind && <span className="text-[.7rem] text-soft">{place.kind}</span>}</div>
                         {(place?.title || place?.slug) && <p className="mt-1.5 break-words text-[.84rem] font-semibold leading-[1.6] text-ink">{place.title || place.slug}</p>}
                         <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.note}{item.advice ? ` — ${item.advice}` : ''}</p>
-                        {item.replacement && <a href={item.replacement} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.72rem] font-semibold text-accent underline underline-offset-4">بديل مقترح فقط ↗</a>}
+                        {item.state === 'dead' && item.replacement && <a href={item.replacement} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.72rem] font-semibold text-accent underline underline-offset-4">بديل مقترح فقط ↗</a>}
                         <a href={item.url} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.7rem] text-soft underline underline-offset-4">فتح الرابط الحالي ↗</a>
                       </div>
                     })}
@@ -422,12 +425,12 @@ export function ProductionHealthCenter({
                     {!externalSourceItems.length && <p className="px-2 py-3 text-[.8rem] text-soft">كل المصادر الخارجية سليمة.</p>}
                     {externalSourcePages.pageItems.map((item) => {
                       const place = item.places?.[0]
-                      const critical = ['dead', 'unreachable', 'suspect'].includes(item.state)
+                      const critical = item.state === 'dead'
                       return <div key={item.url} className={`min-w-0 rounded-xl border px-3 py-3 ${critical ? 'border-accent/40 bg-accent/[.04]' : 'border-hair bg-wash'}`}>
-                        <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[.68rem] font-semibold ${critical ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>{sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}</span>{item.action && <span className="text-[.68rem] font-semibold text-accent">{item.action}</span>}</div>
+                        <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[.68rem] font-semibold ${critical ? 'bg-accent text-white' : 'border border-hair text-soft'}`}>{sourceStateLabel[item.state] || item.state}{item.status ? ` · ${item.status}` : ''}</span>{critical && item.action && <span className="text-[.68rem] font-semibold text-accent">{item.action}</span>}</div>
                         {(place?.title || place?.slug) && <p className="mt-1.5 break-words text-[.84rem] font-semibold leading-[1.6] text-ink">{place.title || place.slug}</p>}
                         <p className="mt-1 text-[.74rem] leading-relaxed text-soft">{item.note}{item.advice ? ` — ${item.advice}` : ''}</p>
-                        <a href={item.replacement || item.url} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.72rem] text-accent underline underline-offset-4">{item.replacement ? 'فتح البديل المعتمد' : 'فتح المصدر'} ↗</a>
+                        <a href={critical && item.replacement ? item.replacement : item.url} target="_blank" rel="noreferrer" className="mt-2 block break-all text-[.72rem] text-accent underline underline-offset-4">{critical && item.replacement ? 'فتح البديل المعتمد' : 'فتح المصدر'} ↗</a>
                       </div>
                     })}
                   </div>

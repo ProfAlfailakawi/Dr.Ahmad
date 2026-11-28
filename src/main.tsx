@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import '@fontsource-variable/alexandria'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
+import { startWebVitalsMonitoring } from './lib/web-vitals'
 import './index.css'
 
 /* شفاء الحزم اليتيمة: هاتفٌ فتح رابطاً بهيكلٍ قديم أثناء نشرةٍ جديدة يطلب
@@ -52,9 +53,13 @@ ReactDOM.createRoot(root).render(
 /* تحليلات اختيارية — بلا كوكيز ولا لافتة موافقة */
 const dom = import.meta.env.VITE_PLAUSIBLE_DOMAIN
 if (dom) {
+  window.plausible = window.plausible || ((...args: unknown[]) => {
+    ;(window.plausible!.q ||= []).push(args)
+  })
   const s = document.createElement('script')
   s.defer = true
   s.dataset.domain = dom
   s.src = 'https://plausible.io/js/script.js'
   document.head.appendChild(s)
+  startWebVitalsMonitoring()
 }

@@ -400,6 +400,9 @@ guard('reposts-weigh-more-than-likes')
 const designStudio = await readFile(resolve('src/components/admin/SocialDesignStudio.tsx'), 'utf8')
 assert.match(designStudio, /resolveResonantQuotes/, 'استوديو التصاميم يجب أن يستعمل المحلّل المشترك لا نسخةً ثانية')
 assert.doesNotMatch(designStudio, /paragraph\.slice\(Number\(row\.startOffset/, 'ولا تبقى فيه نسخةٌ يدويةٌ من الاقتطاع تتباعد عن الأصل')
+assert.match(designStudio, /authorizeMeaningExport/, 'كل تصدير تصميم يجب أن يمر بمحكمة المعنى نفسها')
+assert.match(designStudio, /court\.adversarialSimulation\.status !== 'blocked'/, 'محاكي سوء الفهم يجب أن يحرس تصدير التصميم')
+assert.match(designStudio, /exportCampaignRaster[\s\S]*authorizeMeaningExport/, 'الحملة الكاملة لا تتجاوز المحكمة من باب التصدير الجماعي')
 guard('one-resonance-resolver-for-both-studios')
 
 /* الكلمة المحورية تخرج بلا سابقةٍ ملتصقة: «بالمعرفة» كانت تصير «نتحدث عن بالمعرفة». */
@@ -446,6 +449,9 @@ guard('standalone-handoff-is-clean')
 
 /* الجسر بين الاستوديوين: حدثٌ يرسله استوديو التغريدات ويستقبله استوديو النشر. */
 const tweetStudio = await readFile(resolve('src/components/admin/TweetStudio.tsx'), 'utf8')
+assert.match(tweetStudio, /meaningBlocked/, 'نسخ التغريدة وتسليمها للتصميم يجب أن يتوقفا عند انزياح المعنى')
+assert.match(publishing, /pulseCourt/, 'المنشور المستقل يجب أن يمر بمحكمة المعنى قبل طابور الموافقة')
+assert.match(tweetStudio, /meaningCourt\.adversarialSimulation\.status === 'blocked'/, 'محاكي سوء الفهم يجب أن يحرس نسخ التغريدة وتسليمها')
 assert.match(tweetStudio, /studio:standalone-seed/, 'استوديو التغريدات يرسل البذرة')
 assert.match(tweetStudio, /يفحص المسبك أربع عشرة زاويةً بلاغيةً ثم يعرض أقوى عشر/, 'الوعد الظاهر يطابق المحرك: يفحص 14 ويعرض أقوى 10')
 assert.match(publishing, /studio:standalone-seed/, 'استوديو النشر يستقبل البذرة وإلا ضاع زر «صمّمها في منشور مستقل»')

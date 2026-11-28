@@ -59,7 +59,9 @@ export default function Articles() {
   useSeo({ title: 'مقالاتي الفكرية', path: '/articles', description: `مقالات فكرية تتتبّع تحولات التعليم والتكنولوجيا والمجتمع منذ انطلاق الرحلة العلمية عام 2015 — ${articles.length} مقالاً.` })
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('الكل')
+  const [year, setYear] = useState('الكل')
   const categories = useMemo(() => dynamicArticleCategories(articles), [articles])
+  const archiveYears = useMemo(() => Array.from(new Set(articles.map((article) => article.iso.slice(0, 4)).filter(Boolean))).sort((left, right) => right.localeCompare(left)), [articles])
   const featured = useMemo(() => {
     if (!articles.length) return []
     /* ثلاث عدسات موضوعية متجددة تلقائياً:
@@ -72,7 +74,9 @@ export default function Articles() {
     const minuteBlock = Math.floor(Number(part('minute') || 0) / 15)
     const period = `${part('year')}-${part('month')}-${part('day')}-${part('hour')}-${minuteBlock}`
 
-    const pool = cat === 'الكل' ? articles : articles.filter((a) => a.cat === cat)
+    const pool = articles
+      .filter((a) => cat === 'الكل' || a.cat === cat)
+      .filter((a) => year === 'الكل' || a.iso.startsWith(year))
     const eligible = pool.filter((article) => article.title && (article.excerpt || '').trim().length >= 30)
     if (!eligible.length) return []
 
@@ -101,15 +105,16 @@ export default function Articles() {
     if (card3Best) chosen.push(card3Best)
 
     return chosen.map(articleCard)
-  }, [articles, cat])
+  }, [articles, cat, year])
 
   const term = q.trim()
-  const archiveActive = Boolean(term || cat !== 'الكل')
+  const archiveActive = Boolean(term || cat !== 'الكل' || year !== 'الكل')
   const filtered = articles
     .filter((a) => (cat === 'الكل' ? true : a.cat === cat))
+    .filter((a) => (year === 'الكل' ? true : a.iso.startsWith(year)))
     .filter((a) => (term ? (a.title + ' ' + (a.excerpt || '')).includes(term) : true))
   const displayArticles = archiveActive ? filtered : diversifyArticles(filtered)
-  const paged = usePagedList(displayArticles, 18, `${cat}|${term}`)
+  const paged = usePagedList(displayArticles, 18, `${cat}|${year}|${term}`)
   const shown = paged.pageItems
 
   return (
@@ -121,7 +126,7 @@ export default function Articles() {
       />
 
       <section className="sticky top-16 z-[120] border-b border-hair bg-canvas/92 px-4 py-3 backdrop-blur-md sm:px-6 md:px-11">
-        <div className="mx-auto grid max-w-shell gap-3 lg:grid-cols-[minmax(260px,.62fr)_minmax(0,1fr)_auto] lg:items-center">
+        <div className="mx-auto grid max-w-shell gap-3 lg:grid-cols-[minmax(230px,.55fr)_minmax(0,1fr)_auto_auto] lg:items-center">
           <div className="relative">
             <input
               value={q}
@@ -145,6 +150,18 @@ export default function Articles() {
               </button>
             ))}
           </div>
+          <label className="relative min-w-36">
+            <span className="sr-only">تصفية المقالات حسب السنة</span>
+            <select
+              value={year}
+              onChange={(event) => setYear(event.target.value)}
+              className="min-h-11 w-full appearance-none rounded-full border border-hair bg-canvas py-2 pe-9 ps-4 text-[.82rem] font-medium text-soft outline-none transition-colors hover:border-accent focus:border-accent"
+            >
+              <option value="الكل">كل السنوات</option>
+              {archiveYears.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[.7rem] text-soft">⌄</span>
+          </label>
           <div className="flex flex-wrap gap-4 text-[.8rem] font-semibold text-accent lg:justify-end">
             <Link to="/search" className="transition-opacity hover:opacity-70">البحث العميق ←</Link>
             <Link to="/atlas" className="transition-opacity hover:opacity-70">سماء المقالات ←</Link>

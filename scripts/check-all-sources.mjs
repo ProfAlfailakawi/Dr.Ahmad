@@ -161,8 +161,9 @@ async function probe(url) {
   }
   try {
     let result = await attempt('HEAD')
-    /* كثير من الخوادم ترفض HEAD (405/403) وهي حيّة — نعيد بـGET قبل الحكم */
-    if (result.status === 405 || result.status === 403 || result.status === 501) {
+    /* كثير من الخوادم ترفض HEAD أو تعيد له 404 رغم أن صفحة GET حيّة؛ لا نحكم
+       على الرابط قبل طلب الصفحة الفعلي. */
+    if ([403, 404, 405, 410, 501].includes(result.status)) {
       result = await attempt('GET')
     }
     const { status, finalUrl } = result
@@ -184,13 +185,13 @@ async function probe(url) {
   }
 }
 
-/* الأحوال التي تستدعي قرار الدكتور فعلاً (لا العابر منها) */
-/* host-blocked ليس منها: النطاق محجوب عن الفاحص لا ميت */
-const NEEDS_ATTENTION = new Set(['dead', 'unreachable', 'suspect'])
+/* لا نسمّي الرابط تالفاً إلا بعد 404/410 مؤكد بطلب GET مرتين. تعذّر الوصول،
+   والمهلة، والحجب، والاستجابة الغريبة: «تعذّر التحقق» وليست حكماً على الرابط. */
+const NEEDS_ATTENTION = new Set(['dead'])
 const ADVICE = {
   dead: 'الرابط ميت فعلاً — استبدله أو احذف المادة.',
-  unreachable: 'النطاق نفسه لا يستجيب — ربما انتهى تسجيله.',
-  suspect: 'استجابة غريبة — افتحه بنفسك للتأكد.',
+  unreachable: 'تعذّر على الفاحص الوصول؛ هذا لا يعني أن الرابط خاطئ.',
+  suspect: 'استجابة غير مألوفة للفاحص؛ لا تُعد دليلاً على عطل الرابط.',
   blocked: 'المصدر يحجب الفاحص الآلي؛ غالباً يعمل عندك في المتصفح.',
   throttled: 'المصدر حدّ الطلبات مؤقتاً — سيُفحص في الجولة القادمة.',
   server: 'عطل مؤقت عند المصدر — لا تتسرع بالحذف.',
@@ -214,7 +215,8 @@ if (SELF_TEST) {
   const cases = [
     [{ state: 'dead' }, true], [{ state: 'blocked' }, false],
     [{ state: 'throttled' }, false], [{ state: 'server' }, false],
-    [{ state: 'unreachable' }, true], [{ state: 'ok' }, false],
+    [{ state: 'unreachable' }, false], [{ state: 'suspect' }, false],
+    [{ state: 'timeout' }, false], [{ state: 'ok' }, false],
   ]
   for (const [probeResult, shouldFlag] of cases) {
     if (NEEDS_ATTENTION.has(probeResult.state) !== shouldFlag) {
@@ -222,7 +224,7 @@ if (SELF_TEST) {
       process.exit(1)
     }
   }
-  console.log('✓ اختبار الفاحص الشامل: 404/نطاق ميت → يُبلَّغ · 403/429/5xx/مهلة → لا يُبلَّغ عنه كعطب')
+  console.log('✓ اختبار الفاحص الشامل: 404/410 المؤكد فقط → تالف · الحجب/تعذّر الوصول/429/5xx/المهلة → تعذّر تحقق لا عطب')
   process.exit(0)
 }
 

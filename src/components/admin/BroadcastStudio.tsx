@@ -345,9 +345,10 @@ export function BroadcastStudio({ request, episodes = [], onNotice }: Props) {
           >
             {emergencyBusy ? 'يوقف الآن…' : 'إيقاف أي إرسال معلّق الآن'}
           </button>
+          <p className="mt-2 max-w-2xl text-[.72rem] leading-relaxed text-soft">مهلة أمان بين كل رسالة والتي تليها؛ تقلل فشل الدفعة واحتمال تقييد الرقم، وتتيح للإيقاف الطارئ أن يعمل قبل الرسالة التالية. القيمة الموصى بها: ٤٥ ثانية.</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <label className="text-[.78rem] text-soft">
-              فاصل بين الرسائل:
+              مهلة الأمان:
               <select value={interval} onChange={(event) => setIntervalSeconds(Number(event.target.value))} className="ms-2 rounded-lg border border-hair bg-canvas px-2 py-1 text-[.78rem] text-ink">
                 <option value={30}>٣٠ ثانية</option>
                 <option value={45}>٤٥ ثانية</option>

@@ -49,7 +49,7 @@ ok(buildStatic.includes('mergeCloudAdditions') && buildStatic.includes('override
 ok(buildStatic.includes('href="/decade"') && buildStatic.includes('وثيقة العقد'), 'التنقل الثابت يبرز وثيقة العقد بدل إعادة About إلى الواجهة')
 ok(buildStatic.includes("desc: `Official website") && buildStatic.includes("desc: `${nPapers} peer-reviewed"), 'أرقام النسخة الإنجليزية ديناميكية وليست نصوصاً ثابتة قديمة')
 
-console.log('\nLegacy WordPress retirement')
+console.log('\nRetired-index URL migration')
 const redirects = firebase.hosting.redirects || []
 const redirectMap = new Map(redirects.map((entry) => [entry.source, entry]))
 const researchSource = read('src/data/research-papers.ts')
